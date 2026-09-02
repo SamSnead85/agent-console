@@ -1,0 +1,2366 @@
+/*
+ * Agent Console — glass cockpit.
+ *
+ * Flat instrument ground, hairline rules, no gradients, no rounded cards, no
+ * animation on a schedule. Chroma is reserved: only status and money carry hue,
+ * so a coloured pixel still means something after six hours of watching.
+ *
+ * Fonts are system faces only. A <link> to a font CDN is an outbound request
+ * that leaks the viewer's IP and the fact that this panel is open, which would
+ * break the same promise telemetry would.
+ */
+
+:root {
+  --void: #06080b;
+  --slate: #0e1319;
+  --raise: #161c24;
+  --rule: #242c36;
+  --mute: #7a8899;
+  --bone: #eaf0f6;
+  --sig: #5aa9ff;
+
+  --st-live: #3fd07a;
+  --st-idle: #7a8899;
+  --st-warn: #f0b429;
+  --st-dead: #ff5c5c;
+
+  /* Money ramp: one hue, four steps, ordered by price per token. */
+  --m-out: #bfe3ff; /* output       5.00x input */
+  --m-cw: #7fc2f5; /* cache write  1.25x        */
+  --m-in: #4a86c4; /* input        1.00x        */
+  --m-cr: #346789; /* cache read   0.10x        */
+
+  --f-read:
+    ui-sans-serif, -apple-system, "SF Pro Text", "Segoe UI", Roboto,
+    "Helvetica Neue", sans-serif;
+  --f-label: var(--f-read);
+  --f-id:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
+
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+
+  --rail-h: 28px;
+  --head-h: 196px;
+  --foot-h: 32px;
+  --inst-h: auto;
+  /* The roster's FLOOR. It used to be minmax(0, 1fr) — the roster took what was
+     left after every fixed band, and on a 720px-tall window what was left was
+     47px: the sticky header, then one row sliced in half across the middle of
+     its own text, and every other session invisible below the cut. The table is
+     the primary view, so it gets a guaranteed height first and the page scrolls
+     if the window cannot hold the whole chassis. Six rows plus the header. */
+  --roster-min-h: 200px;
+}
+
+* {
+  box-sizing: border-box;
+  border-radius: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--void);
+  color: var(--bone);
+  font-family: var(--f-read);
+  font-size: 12.5px;
+  line-height: 1.4;
+  /* Keep page-level navigation free of horizontal scrolling. Below 1100px the
+     instrument bands restack, while the intentionally dense roster table
+     scrolls inside its own container.
+
+     Vertical scrolling is allowed, and is the honest answer to a window too
+     short for the chassis: a page that scrolls is readable, a row cut through
+     the middle of its own text is not. */
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.mono {
+  font-family: var(--f-id);
+}
+
+.label {
+  font-family: var(--f-label);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dim {
+  color: var(--mute);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------- chassis */
+
+#app {
+  display: grid;
+  /* The head row sizes to its content with --head-h as a FLOOR. It was a fixed
+     height, so anything that needed one more line — a wrapped legend, a fourth
+     model, a two-line cause — was cut off instead of pushing the roster down.
+     The period band (history) sits between the rail and the head and sizes to
+     its own content. */
+  /* Row 2 is the project-progress strip. It sizes to its own content and is
+     absent entirely when there is no progress record to show. */
+  /* Row 6 is the coordination board. It sizes to its own content and is
+     absent entirely when no ledger was asked for. */
+  grid-template-rows:
+    var(--rail-h) auto auto minmax(var(--head-h), auto)
+    minmax(var(--roster-min-h), 1fr) auto auto
+    var(--inst-h);
+  /* `min-height`, not `height`. With a fixed 100vh the roster row was still
+     crushed below its floor on a short window — measured: one row clipped
+     through its own text at 1512×720, 1280×800, 1024×768 and 700×800, and the
+     instrument strip unreachable because nothing could scroll to it. The
+     chassis fills a tall window exactly and grows past a short one, and the
+     page scrolls to the bottom of it. */
+  min-height: 100vh;
+  /* No minimum width. See body{} above: the bands restack rather than being
+     pushed off the right-hand edge. */
+  max-width: 100%;
+  min-width: 0;
+}
+
+.rule-bottom {
+  border-bottom: 1px solid var(--rule);
+}
+
+/* ------------------------------------------------------------------- rail */
+
+#rail {
+  display: grid;
+  /* `auto` rather than a hard 260px: the brand block needs 277px and was being
+     clipped mid-word inside its own column at every width. minmax(0, …) so the
+     tracks can still give way on a narrow window instead of pushing the right
+     end of the rail off the screen. */
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) minmax(0, auto);
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  background: var(--slate);
+  border-bottom: 1px solid var(--rule);
+  font-size: 10.5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#rail .brand {
+  font-family: var(--f-label);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone);
+  font-size: 10px;
+}
+
+#rail .brand span {
+  color: var(--mute);
+}
+
+#latched {
+  display: flex;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.latch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--st-warn);
+  color: var(--st-warn);
+  background: transparent;
+  font: inherit;
+  font-family: var(--f-id);
+  font-size: 10.5px;
+  padding: 1px 6px;
+  cursor: pointer;
+}
+
+.latch.dead {
+  border-color: var(--st-dead);
+  color: var(--st-dead);
+}
+
+.latch:hover {
+  background: var(--raise);
+}
+
+#railright {
+  color: var(--mute);
+  font-family: var(--f-id);
+  font-size: 10.5px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  /* The rail clips rather than scrolls, so anything that cannot shrink pushes
+     the glossary key off the right-hand edge — and the ? is the affordance the
+     whole "nothing is unexplained" promise hangs on. The stamp gives way
+     instead: an elided timestamp is still a timestamp. */
+  min-width: 0;
+}
+
+#stamp {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+#railright .est {
+  color: var(--st-warn);
+  letter-spacing: 0.1em;
+}
+
+#redcount {
+  color: var(--st-warn);
+}
+
+/* ------------------------------------------------------------ period band */
+
+/* The history headline: totals are PERIOD-scoped and say so. This is the fix
+   for "1.8 billion yesterday, apparently reset today" — the number was never
+   wrong, the implied scope was. */
+
+#periodband {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(280px, 1.6fr) minmax(
+      260px,
+      0.9fr
+    );
+  border-bottom: 1px solid var(--rule);
+  background: var(--slate);
+}
+
+#periodband > section {
+  padding: 8px 14px;
+  min-width: 0;
+}
+
+#periodband > section + section {
+  border-left: 1px solid var(--rule);
+}
+
+.phead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#period {
+  background: var(--void);
+  border: 1px solid var(--rule);
+  color: var(--bone);
+  font-family: var(--f-id);
+  font-size: 10.5px;
+  padding: 1px 4px;
+}
+
+#period:focus {
+  outline: 1px solid var(--sig);
+  outline-offset: 1px;
+}
+
+#period,
+#project,
+#filter,
+#glossarykey,
+.drawer > button,
+dialog button {
+  min-height: 24px;
+}
+
+.model-split-label {
+  margin-top: 6px;
+}
+
+#periodtotals .pbig {
+  font-size: 40px;
+  line-height: 1.05;
+  font-weight: 650;
+  letter-spacing: -0.5px;
+  font-family: var(--f-id);
+  margin-top: 4px;
+}
+
+#periodtotals .psub {
+  font-family: var(--f-id);
+  font-size: 12.5px;
+  color: var(--mute);
+  margin-top: 2px;
+}
+
+#periodtotals .psub b {
+  color: var(--bone);
+  font-weight: 600;
+}
+
+.pclasses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 6px;
+  font-family: var(--f-id);
+  font-size: 10px;
+  color: var(--mute);
+}
+
+.pclasses > span {
+  white-space: nowrap;
+}
+
+.pclasses i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  font-style: normal;
+}
+
+.pnote {
+  margin-top: 6px;
+  font-family: var(--f-id);
+  font-size: 10px;
+  color: var(--mute);
+  overflow-wrap: anywhere;
+}
+
+.pnote b {
+  color: var(--bone);
+  font-weight: 600;
+}
+
+#historysvg {
+  display: block;
+  width: 100%;
+  height: 108px;
+  margin-top: 6px;
+  border: 1px solid var(--rule);
+  background: var(--void);
+}
+
+.pminirows {
+  display: grid;
+  gap: 2px;
+  margin-top: 3px;
+}
+
+/* The figure column was a hard 62px holding strings like "1.82B · $1233.44".
+   It overflowed by 40px, which pushed #periodsplit past #periodband, which
+   pushed #app past the viewport — one clipped money column was the whole reason
+   the page had a horizontal scrollbar at 1512. The column now sizes to its own
+   content and the NAME is what gives way. */
+.pminirow {
+  display: grid;
+  grid-template-columns: minmax(60px, 1fr) minmax(30px, 90px) max-content;
+  gap: 8px;
+  align-items: center;
+  font-family: var(--f-id);
+  font-size: 10px;
+  line-height: 1.3;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.pminirow > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.pminibar {
+  height: 7px;
+  display: flex;
+  background: var(--void);
+}
+
+#pricewarn {
+  color: var(--st-warn);
+}
+
+/* The remaining-work list is styled with the progress strip it belongs to,
+   further down this file. It had a second definition here, from when the list
+   lived in the period band. */
+
+/* ------------------------------------------------------------------- head */
+
+#head {
+  display: grid;
+  /* The master cause is "the only thing you need to read from across a desk",
+     and a hard 320px column clipped it in every state at every width. The
+     column now takes the space it needs before the spectrum does; the cause
+     also carries a title attribute so the full text is reachable regardless. */
+  grid-template-columns: minmax(320px, 0.9fr) minmax(280px, 1.4fr) 400px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--void);
+}
+
+#head > section {
+  padding: 8px 14px;
+  min-width: 0;
+  /* The head row is `minmax(--head-h, auto)`, so it normally grows to fit. On a
+     short viewport the grid cannot give it everything it asks for, and without
+     this the master column's tallest element — the progress trend — drew over
+     the roster's first rows. Clipping at the section boundary is the honest
+     degradation: the top of the column is the important half. */
+  overflow: hidden;
+}
+
+#head > section + section {
+  border-left: 1px solid var(--rule);
+}
+
+/* master readout */
+
+#master .word {
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -0.5px;
+  font-weight: 650;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+#master .glyph {
+  font-family: var(--f-id);
+  font-size: 22px;
+}
+
+#master.s-IDLE .word {
+  color: var(--st-idle);
+}
+
+#master.s-NOMINAL .word {
+  color: var(--st-live);
+}
+
+#master.s-BURNING .word {
+  color: var(--m-out);
+}
+
+#master.s-ATTENTION .word {
+  color: var(--st-warn);
+}
+
+#master .cause {
+  margin-top: 8px;
+  font-size: 14px;
+  font-family: var(--f-id);
+  color: var(--bone);
+  /* Two lines before anything is dropped, and the ellipsis is a last resort
+     rather than the normal case. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+#master .totals {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--mute);
+}
+
+#master .totals b {
+  color: var(--bone);
+  font-weight: 600;
+}
+
+#master .chips {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  font-family: var(--f-id);
+  font-size: 10px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 0 4px;
+  color: var(--st-warn);
+}
+
+/* spend spectrum */
+
+#spectrum .head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#spectrum .head > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barA {
+  height: 44px;
+  display: flex;
+  border: 1px solid var(--rule);
+  overflow: hidden;
+}
+
+.barB {
+  height: 14px;
+  display: flex;
+  border: 1px solid var(--rule);
+  border-top: 0;
+  overflow: hidden;
+}
+
+.seg {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.seg > span {
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--f-id);
+  font-size: 10px;
+  white-space: nowrap;
+  color: var(--void);
+}
+
+.seg.dark > span {
+  color: var(--bone);
+}
+
+.ribbons {
+  display: block;
+  width: 100%;
+  height: 20px;
+}
+
+.legend {
+  display: flex;
+  /* The legend exists as a leader line for the slivers, so the class it fails
+     to show is precisely the one it was built for. At 1280px it needed 823px in
+     a 531px box and dropped `output` — the most expensive class — entirely off
+     the right edge. It wraps now. */
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 5px;
+  font-family: var(--f-id);
+  font-size: 10px;
+  color: var(--mute);
+}
+
+.legend > span {
+  white-space: nowrap;
+}
+
+.legend i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  font-style: normal;
+}
+
+#modelrows {
+  margin-top: 5px;
+  display: grid;
+  gap: 2px;
+}
+
+.modelrow {
+  display: grid;
+  grid-template-columns: 120px 1fr 64px;
+  gap: 8px;
+  align-items: center;
+  font-family: var(--f-id);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.modelbar {
+  height: 8px;
+  display: flex;
+  background: var(--slate);
+}
+
+.hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--rule),
+    var(--rule) 1px,
+    transparent 1px,
+    transparent 5px
+  );
+}
+
+/* burn band */
+
+#burn .readout {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+#burn .big {
+  font-size: 22px;
+  font-family: var(--f-id);
+  line-height: 1;
+}
+
+#burn .sub {
+  font-size: 12.5px;
+  color: var(--mute);
+  font-family: var(--f-id);
+}
+
+/* The figure IS the control. It has to look like one without becoming a
+   button-shaped ornament in the middle of a readout: a quiet hairline that
+   lights up on hover, a pointer cursor, and a hint that names what a click
+   does. `u` still works and is unchanged. */
+#burnswap {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 3px 5px 4px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+#burnswap:hover,
+#burnswap:focus-visible {
+  border-color: var(--rule);
+  background: rgba(90, 169, 255, 0.06);
+}
+
+#burnswap:focus-visible {
+  outline: 1px solid var(--sig);
+  outline-offset: 1px;
+}
+
+#burnswap:hover .altbig,
+#burnswap:focus-visible .altbig {
+  color: var(--bone);
+}
+
+/* The hint is dim but ALWAYS present, and brightens under the pointer. A hint
+   that only appears on hover still has to be found by hovering, which is the
+   same failure as a key that has to be found by guessing. */
+.burnhint {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--f-label);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--st-idle);
+  opacity: 0.75;
+  transition:
+    opacity 0.12s ease,
+    color 0.12s ease;
+}
+
+#burnswap:hover .burnhint,
+#burnswap:focus-visible .burnhint {
+  opacity: 1;
+  color: var(--sig);
+}
+
+/* The second unit. Same measurement, so it sits directly under the first and
+   reads as a restatement rather than as another metric — smaller and dimmer,
+   but permanently on screen. `u` and a click both swap which row is which. */
+#burn .burnalt {
+  margin-top: 2px;
+}
+
+#burn .altbig {
+  font-size: 14px;
+  font-family: var(--f-id);
+  line-height: 1;
+  color: var(--mute);
+}
+
+#burn .burnalt .sub {
+  font-size: 11px;
+}
+
+#burnsvg {
+  display: block;
+  width: 100%;
+  height: 96px;
+  margin-top: 8px;
+}
+
+/* ----------------------------------------------------------------- roster */
+
+/* The roster is the primary view, so it is the one region that is allowed to
+   scroll on both axes INSIDE ITSELF. Nothing it contains may widen the page:
+   `min-width: 0` is what lets it shrink below its table's natural width instead
+   of pushing the chassis sideways. */
+/* Scrolls on both axes INSIDE itself, and never widens the page: `min-width: 0`
+   is what lets a grid item shrink below its table's natural width. There is
+   deliberately no max-height. Capping it made a long list scroll inside a page
+   that was also scrolling — two scrollbars for one list — and the chassis floor
+   above is what actually stops rows being sliced. */
+#roster {
+  overflow: auto;
+  min-width: 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.mobile-roster-hint {
+  display: none;
+}
+
+#rosterhead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--void);
+  border-bottom: 1px solid var(--rule);
+}
+
+table.grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* Column widths live here rather than in a <colgroup> so that a column can be
+   dropped whole when the window is narrow. Priority when space runs out:
+   the four raw token classes first, then model, then the sparkline. Rows never
+   wrap and the roster never scrolls sideways. */
+/* 92, not 68. The column has to hold the longest word it can print (UNKNOWN)
+   plus the glyph and the † that marks a row left out of the count — at 78px it
+   rendered "⋯ STALE…", eliding the very marker that explains the row. */
+.c-state {
+  width: 92px;
+}
+.c-project {
+  width: 210px;
+}
+/* 120, not 100: a declared session's id is its NAME (LAPTOP-ORCH,
+   orchestrator-Mac.lan-05d2f37e), not an eight-character hash, and the cell now
+   also leads with the DECL tag. It still elides — the full id is on hover and
+   in the row facts — but it elides after something readable. */
+.c-id {
+  width: 120px;
+}
+.c-model {
+  width: 116px;
+}
+.c-spark {
+  width: 70px;
+}
+.c-hot {
+  width: 84px;
+}
+.c-in,
+.c-out,
+.c-cw,
+.c-cr {
+  width: 72px;
+}
+.c-total {
+  width: 88px;
+}
+.c-cost {
+  width: 82px;
+}
+.c-agents {
+  width: 64px;
+}
+.c-last {
+  width: 54px;
+}
+
+@media (max-width: 1480px) {
+  .c-cw,
+  .c-cr {
+    display: none;
+  }
+}
+
+@media (max-width: 1340px) {
+  .c-in,
+  .c-out {
+    display: none;
+  }
+}
+
+@media (max-width: 1220px) {
+  .c-model {
+    display: none;
+  }
+}
+
+@media (max-width: 1140px) {
+  .c-spark {
+    display: none;
+  }
+}
+
+table.grid th {
+  font-family: var(--f-label);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mute);
+  font-weight: 600;
+  text-align: left;
+  padding: 5px 8px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--rule);
+  background: var(--void);
+  position: sticky;
+  top: 0;
+}
+
+table.grid th.num {
+  text-align: right;
+}
+
+table.grid td {
+  height: 28px;
+  padding: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid rgba(36, 44, 54, 0.4);
+  font-size: 11.5px;
+}
+
+tr.row:hover td {
+  background: var(--raise);
+}
+
+tr.row.cursor td {
+  background: var(--raise);
+  box-shadow: inset 0 0 0 1px var(--sig);
+}
+
+td.state {
+  font-family: var(--f-id);
+  border-left: 2px solid transparent;
+}
+
+tr.s-LIVE td.state {
+  color: var(--st-live);
+  border-left-color: var(--st-live);
+}
+
+tr.s-WARM td.state {
+  color: var(--mute);
+  border-left-color: var(--mute);
+}
+
+tr.s-IDLE td.state {
+  color: var(--st-idle);
+  border-left-color: var(--st-idle);
+}
+
+tr.s-COLD td.state {
+  color: var(--st-idle);
+  border-left-color: transparent;
+}
+
+tr.s-STALL td.state {
+  color: var(--st-warn);
+  border-left: 3px solid var(--st-warn);
+}
+
+tr.s-RUN td.state {
+  color: var(--st-warn);
+  border-left: 3px solid var(--st-warn);
+}
+
+tr.s-DEAD td.state {
+  color: var(--st-dead);
+  border-left: 3px solid var(--st-dead);
+}
+
+tr.s-DEAD td.state span.word {
+  text-decoration: line-through;
+}
+
+/* Stalled rows dim rather than brighten: the grammar is "stopped producing". */
+tr.s-STALL td:not(.state) {
+  color: var(--mute);
+}
+
+tr.s-DEAD td:not(.state) {
+  color: var(--mute);
+}
+
+tr.s-COLD td:not(.state) {
+  color: var(--st-idle);
+}
+
+/* Declared states. Neither may look like LIVE from across the room: green is
+   reserved for a measurement, and these two are the absence of one. UNKNOWN
+   carries the signal blue of "you are being told something", STALE the flat
+   grey of a claim that has expired. */
+tr.s-UNKNOWN td.state {
+  color: var(--sig);
+  border-left-color: rgba(90, 169, 255, 0.55);
+}
+
+tr.s-STALE td.state {
+  color: var(--st-idle);
+  border-left-color: rgba(122, 136, 153, 0.35);
+}
+
+tr.s-STALE td:not(.state) {
+  color: var(--st-idle);
+}
+
+/* A row nothing on this machine measured. The hatch is the whole point: it
+   reads as "outline, not fill" at a glance, so a declared row can never be
+   mistaken for a measured one even before its DECL tag is read. */
+tr.declaredrow td {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(122, 136, 153, 0.05) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+tr.declaredrow td.c-project .offmachine {
+  color: var(--mute);
+  font-style: italic;
+}
+
+/* Listed, and deliberately outside the count printed above it. */
+.notcounted {
+  color: var(--st-warn);
+  cursor: help;
+}
+
+/* The DECL tag leads the id cell, so it survives the cell's ellipsis. */
+td.c-id .src {
+  margin-right: 5px;
+}
+
+/* The arithmetic behind the count, under the rows it explains. */
+tr.rosterfoot td {
+  color: var(--mute);
+  font-family: var(--f-id);
+  font-size: 10.5px;
+  white-space: normal;
+  line-height: 1.5;
+  padding: 6px 8px;
+  border-bottom: 0;
+}
+
+tr.rosterfoot td .term {
+  color: var(--sig);
+}
+
+td.fill {
+  position: relative;
+}
+
+td.fill .bg {
+  position: absolute;
+  left: 0;
+  top: 3px;
+  bottom: 3px;
+  background: rgba(74, 134, 196, 0.18);
+}
+
+tr.s-RUN td.fill .bg {
+  background: rgba(240, 180, 41, 0.22);
+}
+
+td.fill .v {
+  position: relative;
+}
+
+.mono-cell {
+  font-family: var(--f-id);
+  font-size: 11px;
+}
+
+.spark {
+  display: block;
+  width: 64px;
+  height: 16px;
+}
+
+/* change acknowledgement: luminance decay only, never movement */
+@keyframes settle {
+  from {
+    background-color: var(--raise);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+td.changed {
+  animation: settle 900ms ease-out;
+}
+
+tr.tree td {
+  height: auto;
+  padding: 4px 8px 8px 8px;
+  font-family: var(--f-id);
+  font-size: 11px;
+  color: var(--mute);
+  background: var(--slate);
+  /* A table cell is not a scroll container; the div inside it is. */
+  max-width: 0;
+}
+
+tr.tree .live {
+  color: var(--st-live);
+}
+
+tr.tree .tok {
+  color: var(--bone);
+}
+
+tr.tree .guessed {
+  font-style: italic;
+}
+
+tr.tree .facts {
+  display: block;
+  margin-top: 6px;
+  white-space: normal;
+  color: var(--mute);
+}
+
+tr.tree .facts b {
+  color: var(--bone);
+  font-weight: 600;
+}
+
+tr.foldrow td {
+  color: var(--mute);
+  font-family: var(--f-id);
+  cursor: pointer;
+}
+
+.emptyline {
+  padding: 12px;
+  color: var(--mute);
+  font-family: var(--f-id);
+  font-size: 11.5px;
+}
+
+#roster {
+  position: relative;
+}
+
+/* Inside the 210px project header this overflowed by 17px and the next header's
+   opaque background painted over it, so the only affordance that says the table
+   is frozen read "PROJECT / BRANCH ⇅ ORDER HE". It floats over the roster now. */
+.hold {
+  position: absolute;
+  top: 4px;
+  right: 12px;
+  z-index: 3;
+  color: var(--sig);
+  background: var(--slate);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 1px 6px;
+  font-family: var(--f-id);
+  font-size: 10px;
+  pointer-events: none;
+}
+
+#roster:focus {
+  outline: 1px solid var(--sig);
+  outline-offset: -1px;
+}
+
+#roster:focus-visible {
+  outline: 1px solid var(--sig);
+}
+
+/* A tree row spans the whole table; its content scrolls inside its own
+   container rather than widening any column. */
+.treewrap {
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.treewrap .facts {
+  white-space: normal;
+}
+
+/* An unpriced model is not free, and must not read like a small number. */
+.unpricedcell {
+  color: var(--st-warn);
+}
+
+/* ------------------------------------------------------------------ board */
+
+/* The ledger, on the face of the console rather than folded into the footer.
+   Same instrument language as the roster: hairline rules, one accent, hue only
+   where a state means something. Rows are a grid rather than a table because
+   the columns are labels of different kinds, not a numeric series — and
+   because a grid can restack on a phone without a horizontal scrollbar. */
+
+#board {
+  border-bottom: 1px solid var(--rule);
+  background: var(--slate);
+  min-width: 0;
+}
+
+#board[hidden] {
+  display: none;
+}
+
+.boardhead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 14px 5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.boardcount {
+  font-family: var(--f-id);
+  font-size: 11px;
+  color: var(--bone);
+}
+
+/* Only ever conditions the ledger states, and only when there are any. */
+.boardattention {
+  font-family: var(--f-id);
+  font-size: 11px;
+  color: var(--st-warn);
+}
+
+.boardattention[hidden] {
+  display: none;
+}
+
+.boardsource {
+  margin-left: auto;
+  font-family: var(--f-id);
+  font-size: 10.5px;
+  color: var(--mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.boardbody {
+  max-height: 240px;
+  overflow: auto;
+}
+
+.boardrow {
+  display: grid;
+  grid-template-columns:
+    92px minmax(0, 1.6fr) minmax(0, 0.8fr) minmax(0, 1fr)
+    minmax(0, 1fr) minmax(0, 0.9fr) 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  height: 26px;
+  border-top: 1px solid rgba(36, 44, 54, 0.4);
+  font-size: 11.5px;
+  color: var(--mute);
+}
+
+.boardrow > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.boardrow b {
+  color: var(--bone);
+  font-weight: 600;
+}
+
+/* The state chip. Its hue is the row's only colour, so a coloured pixel here
+   still means one thing: which of the five states this package is in — or,
+   overriding all of them, that its ground can be taken back. */
+.boardstate {
+  font-family: var(--f-label);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--rule);
+  padding: 1px 4px;
+  text-align: center;
+  color: var(--mute);
+}
+
+.t-live > .boardstate {
+  color: var(--st-live);
+  border-color: rgba(63, 208, 122, 0.4);
+}
+
+.t-reserved > .boardstate {
+  color: var(--st-warn);
+  border-color: rgba(240, 180, 41, 0.35);
+}
+
+.t-open > .boardstate {
+  color: var(--sig);
+  border-color: rgba(90, 169, 255, 0.4);
+}
+
+.t-done > .boardstate {
+  color: var(--st-idle);
+}
+
+.t-quiet > .boardstate {
+  color: var(--st-idle);
+}
+
+.t-reclaim > .boardstate {
+  color: var(--st-dead);
+  border-color: rgba(255, 92, 92, 0.45);
+}
+
+.t-reclaim > .boardgate {
+  color: var(--st-dead);
+}
+
+.boardfence,
+.boardevidence {
+  font-size: 10.5px;
+}
+
+/* NOT collapsed here, deliberately. A healthy in-progress package has no gate
+   and may have no evidence yet, and hiding those cells on the desktop grid
+   reflows every cell after them: measured, the age column sat 214px left on a
+   row with one empty cell and the whole board stopped reading as columns.
+   Empty cells are collapsed only in the phone layout below, where the row is
+   restacked and there are no columns left to break. */
+
+.boardflagged {
+  border-top: 1px solid var(--rule);
+  padding: 6px 14px;
+}
+
+.boardflagged[hidden] {
+  display: none;
+}
+
+.boardmessage {
+  font-family: var(--f-id);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.boardmessage b {
+  color: var(--bone);
+  font-weight: 600;
+}
+
+.boardmessage .pend {
+  color: var(--st-warn);
+}
+
+/* ------------------------------------------------------------------- foot */
+
+#foot {
+  border-bottom: 1px solid var(--rule);
+  background: var(--void);
+}
+
+.drawer > button {
+  width: 100%;
+  height: var(--foot-h);
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--rule);
+  color: var(--mute);
+  font-family: var(--f-label);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 0 14px;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.drawer > button:hover {
+  background: var(--raise);
+  color: var(--bone);
+}
+
+.drawer .body {
+  max-height: 260px;
+  overflow: auto;
+  border-top: 1px solid var(--rule);
+  background: var(--slate);
+}
+
+.drawer[hidden] {
+  display: none;
+}
+
+/* ------------------------------------------------------------ fleet panel */
+
+.fleetblock {
+  padding: 8px 14px;
+}
+
+.fleetblock + .fleetblock {
+  border-top: 1px solid var(--rule);
+}
+
+.fleetblock .label {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.fleetline {
+  font-family: var(--f-id);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fleetline b {
+  color: var(--bone);
+  font-weight: 600;
+}
+
+.fleetline .ok {
+  color: var(--st-live);
+}
+
+.fleetline .bad {
+  color: var(--st-dead);
+}
+
+.fleetline .pend {
+  color: var(--st-warn);
+}
+
+/* ------------------------------------------------------------- instrument */
+
+#instrument {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 12px;
+  background: var(--slate);
+  font-family: var(--f-id);
+  font-size: 10px;
+  color: var(--mute);
+  /* Diagnostic provenance must wrap rather than hide the evidence that makes
+     the instrument trustworthy, especially when a scan reports an error. */
+  overflow: hidden;
+  line-height: 1.35;
+}
+
+#instrumenttext {
+  overflow-wrap: anywhere;
+}
+
+#instrument.bad {
+  color: var(--st-warn);
+}
+
+/* ----------------------------------------------------------------- dialog */
+
+dialog {
+  border: 1px solid var(--rule);
+  background: var(--slate);
+  color: var(--bone);
+  padding: 0;
+  max-width: 640px;
+  width: 90vw;
+}
+
+dialog::backdrop {
+  background: rgba(6, 8, 11, 0.82);
+}
+
+dialog .dtitle {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--f-label);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--st-warn);
+}
+
+dialog .dbody {
+  padding: 14px;
+  font-family: var(--f-id);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+dialog .dbody dl {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 2px 10px;
+  margin: 0 0 10px 0;
+}
+
+dialog .dbody dt {
+  color: var(--mute);
+}
+
+dialog .dbody dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+dialog .dactions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 10px 14px;
+  border-top: 1px solid var(--rule);
+}
+
+dialog button {
+  font-family: var(--f-label);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--bone);
+  cursor: pointer;
+}
+
+dialog button:hover {
+  background: var(--raise);
+}
+
+#helpbody kbd {
+  font-family: var(--f-id);
+  border: 1px solid var(--rule);
+  padding: 0 4px;
+  color: var(--bone);
+}
+
+#filterwrap {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+#filterwrap.on {
+  display: flex;
+}
+
+#filter {
+  background: var(--void);
+  border: 1px solid var(--sig);
+  color: var(--bone);
+  font-family: var(--f-id);
+  font-size: 10.5px;
+  padding: 1px 6px;
+  width: 260px;
+}
+
+#filter:focus {
+  outline: 1px solid var(--sig);
+  outline-offset: 1px;
+}
+
+.redacted {
+  color: var(--mute);
+  border-bottom: 1px dotted rgba(240, 180, 41, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  td.changed {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------- the console
+ *
+ * Everything below is additive and stays inside the established language:
+ * flat ground, hairline rules, one hue for status and one for money, tabular
+ * figures. Nothing new is a card, nothing new is rounded, nothing new animates
+ * on a schedule. Explanation is carried by a dotted underline and a hover
+ * rather than by another permanent row of chrome.
+ */
+
+/* A word that has a definition. Deliberately quiet: a dotted underline the eye
+   skips until it is looking for it, and a cursor that admits there is more. */
+.term {
+  border-bottom: 1px dotted var(--rule);
+  cursor: help;
+}
+
+.term:hover,
+.term:focus-visible {
+  border-bottom-color: var(--sig);
+  color: var(--bone);
+  outline: 1px solid var(--sig);
+  outline-offset: 2px;
+}
+
+#glossarykey {
+  font-family: var(--f-id);
+  font-size: 10.5px;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--mute);
+  cursor: pointer;
+}
+
+#glossarykey:hover {
+  border-color: var(--sig);
+  color: var(--sig);
+}
+
+#rail .brandthin {
+  color: var(--mute);
+  letter-spacing: 0.18em;
+}
+
+#rail .brandby {
+  color: var(--mute);
+  letter-spacing: 0.06em;
+  text-transform: none;
+  font-size: 9px;
+  opacity: 0.75;
+  margin-left: 4px;
+}
+
+.selects {
+  display: inline-flex;
+  gap: 6px;
+}
+
+#project {
+  background: var(--void);
+  border: 1px solid var(--rule);
+  color: var(--bone);
+  font-family: var(--f-id);
+  font-size: 10.5px;
+  padding: 1px 4px;
+  max-width: 190px;
+}
+
+#project:focus {
+  outline: 1px solid var(--sig);
+  outline-offset: 1px;
+}
+
+/* STALLED: idle capacity. Not red — nothing is broken — but not green either,
+   because the fleet is being paid for and is producing nothing. */
+#master.s-STALLED .word {
+  color: var(--m-cw);
+}
+
+.chip.warn {
+  border-color: var(--st-warn);
+}
+
+.chip.quiet {
+  color: var(--mute);
+}
+
+.rostercount {
+  color: var(--bone);
+  font-weight: 600;
+}
+
+.deadmark {
+  color: var(--st-warn);
+}
+
+/* ---------------------------------------------- project progress strip
+
+   A full-width row of its own, directly under the rail. It spent a release
+   folded into the master column at 15px with a one-line summary clipped to 55%
+   of its own width, which is how the remaining-work affordance and the setback
+   warning both disappeared off the right edge.
+
+   The grid is: label · big percent · [bar over summary] · sparkline · measured
+   counters · disclosure. Only the bar/summary cell flexes, so the summary has
+   real room and nothing else has to shrink to give it any. */
+
+#pstrip {
+  display: grid;
+  grid-template-columns: 128px auto minmax(240px, 1fr) 200px auto auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0 16px;
+  padding: 7px 14px 8px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--slate);
+}
+
+#pstrip[hidden] {
+  display: none;
+}
+
+/* Just the label now — the badge that used to sit under it is gone. */
+.pslead {
+  grid-row: 1 / span 2;
+}
+
+/* The percentage. Unmissable is the requirement, so it is sized like the other
+   headline figures on this screen rather than like a caption. */
+.pspct {
+  grid-row: 1 / span 2;
+  font-family: var(--f-id);
+  font-size: 42px;
+  line-height: 1;
+  font-weight: 650;
+  color: var(--bone);
+  letter-spacing: -0.02em;
+  cursor: help;
+}
+
+.psmid {
+  grid-row: 1 / span 2;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* The determinate bar provides the fastest scan of overall progress. */
+.psbar {
+  position: relative;
+  height: 14px;
+  border: 1px solid var(--rule);
+  background: var(--void);
+  overflow: hidden;
+}
+
+.psfill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--m-cr), var(--sig));
+  transition: width 0.35s ease;
+}
+
+/* Where the estimate peaked before it came down. Present only on a setback. */
+.pspeak {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--st-warn);
+}
+
+.pspeak[hidden] {
+  display: none;
+}
+
+/* The summary gets the row's slack and WRAPS to a second line rather than
+   ellipsising. Clipping this line is the regression being fixed. */
+.pssummary {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--mute);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pssummary .warn {
+  color: var(--st-warn);
+}
+
+.psspark {
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+#progresssvg {
+  display: block;
+  width: 100%;
+  height: 32px;
+  border: 1px solid var(--rule);
+  background: var(--void);
+}
+
+/* The delta line sat in a 200px column and overflowed it by 5px with the text
+   it actually renders. It wraps rather than spilling past its own column. */
+.psdelta {
+  font-family: var(--f-id);
+  font-size: 10px;
+  color: var(--mute);
+  white-space: normal;
+  min-width: 0;
+}
+
+.psdelta.up {
+  color: var(--st-live);
+}
+
+.psdelta.down {
+  color: var(--st-warn);
+}
+
+/* The measured counters. A different kind of number, so never the same look. */
+.psmeasured {
+  grid-row: 1 / span 2;
+  font-family: var(--f-id);
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--mute);
+  white-space: nowrap;
+}
+
+.psmeasured b {
+  color: var(--bone);
+  font-weight: 600;
+}
+
+/* The disclosure. Its label carries the count, so the affordance announces
+   both that it exists and what opening it will show. */
+#psrest {
+  grid-row: 1 / span 2;
+  justify-self: end;
+  position: relative;
+}
+
+#psrest[hidden] {
+  display: none;
+}
+
+.pstoggle {
+  font-family: var(--f-label);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mute);
+  border: 1px solid var(--rule);
+  padding: 4px 8px;
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.pstoggle::-webkit-details-marker {
+  display: none;
+}
+
+.pstoggle:hover,
+#psrest[open] .pstoggle {
+  color: var(--bone);
+  border-color: var(--sig);
+}
+
+.pstoggle:focus-visible {
+  outline: 1px solid var(--sig);
+  outline-offset: 1px;
+}
+
+#psrest[open] .pstoggle {
+  /* ▸ becomes ▾ by rotation rather than by swapping the glyph, so the label
+     text stays exactly what renderProgress wrote. */
+}
+
+#progressremaining {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 40;
+  width: max(320px, 34vw);
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  background: var(--raise);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--bone);
+  /* Two columns: eight short items in one tall list makes the panel taller
+     than the strip it hangs from. */
+  columns: 2;
+  column-gap: 20px;
+}
+
+#progressremaining > div {
+  padding: 1px 0;
+  break-inside: avoid;
+}
+
+/* Both of the progress strip's badges are gone, and their rules with them —
+   `.etag` (DECLARED, on the percentage) and `.mtag` (MEASURED, on the git
+   counters).
+
+   MEASURED only carried information in CONTRAST with DECLARED. Once the
+   percentage was unbadged, every number on the strip was measured, and a badge
+   with no alternative to distinguish itself from is noise wearing the costume
+   of rigour. The distinction still exists and is still explained — in the
+   `progress` glossary entry, behind the strip's own label, where it costs no
+   pixels.
+
+   The cost column's EST badge is `#railright .est` and is deliberately
+   untouched: a dollar figure priced from a bundled API rate table IS
+   misleading without one, because it is not anybody's subscription bill. */
+
+/* Evidence tags. The sessions drawer that used to carry these is gone — every
+   session is a row in the roster — so the only survivor is the small DECL tag
+   in the id column, which marks a row nothing here measured. */
+
+.src {
+  font-family: var(--f-label);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--rule);
+  padding: 0 3px;
+  margin-right: 3px;
+  color: var(--mute);
+  white-space: nowrap;
+}
+
+.src.s-observed {
+  color: var(--st-live);
+  border-color: rgba(63, 208, 122, 0.4);
+}
+
+.src.s-registered,
+.src.s-declared {
+  color: var(--st-warn);
+  border-color: rgba(240, 180, 41, 0.35);
+}
+
+.src.s-join {
+  color: var(--sig);
+  border-color: rgba(90, 169, 255, 0.4);
+}
+
+.warn {
+  color: var(--st-warn);
+}
+
+.ok {
+  color: var(--st-live);
+}
+
+/* projects */
+
+tr.selectedproject > td {
+  background: rgba(90, 169, 255, 0.08);
+}
+
+.pkgstatus {
+  font-family: var(--f-label);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--rule);
+  padding: 0 3px;
+  color: var(--mute);
+}
+
+.pkgstatus.st-open {
+  color: var(--sig);
+  border-color: rgba(90, 169, 255, 0.4);
+}
+
+.pkgstatus.st-done {
+  color: var(--st-live);
+  border-color: rgba(63, 208, 122, 0.4);
+}
+
+.pkgstatus.st-assigned,
+.pkgstatus.st-in-progress {
+  color: var(--st-warn);
+  border-color: rgba(240, 180, 41, 0.35);
+}
+
+/* the reference */
+
+#helpdialog {
+  max-width: 860px;
+}
+
+#helpdialog .dtitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: var(--bone);
+}
+
+.dtabs {
+  display: flex;
+  gap: 6px;
+}
+
+dialog button.dtab {
+  padding: 2px 8px;
+  color: var(--mute);
+}
+
+dialog button.dtab.on {
+  color: var(--sig);
+  border-color: var(--sig);
+}
+
+#glossarybody {
+  max-height: 68vh;
+  overflow-y: auto;
+  columns: 2;
+  column-gap: 22px;
+}
+
+.gnote {
+  column-span: all;
+  color: var(--mute);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.gentry {
+  break-inside: avoid;
+  margin-bottom: 12px;
+  padding-left: 8px;
+  border-left: 1px solid var(--rule);
+}
+
+.gentry.hit {
+  border-left-color: var(--sig);
+  background: rgba(90, 169, 255, 0.06);
+}
+
+.ghead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gkind {
+  font-family: var(--f-label);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--rule);
+  padding: 0 3px;
+  color: var(--mute);
+  white-space: nowrap;
+}
+
+.gkind.k-measured {
+  color: var(--st-live);
+  border-color: rgba(63, 208, 122, 0.4);
+}
+
+.gkind.k-estimated,
+.gkind.k-declared {
+  color: var(--st-warn);
+  border-color: rgba(240, 180, 41, 0.35);
+}
+
+.gkind.k-derived {
+  color: var(--sig);
+  border-color: rgba(90, 169, 255, 0.4);
+}
+
+.gshort {
+  color: var(--bone);
+}
+
+.gbody {
+  color: var(--mute);
+  font-size: 10.5px;
+  line-height: 1.55;
+  margin-top: 3px;
+}
+
+@media (max-width: 1340px) {
+  #glossarybody {
+    columns: 1;
+  }
+}
+
+/* ------------------------------------------------------- narrow chassis */
+
+/* Below 1100 the page used to stop responding and start scrolling: #app carried
+   a hard 1100px minimum, so at 1024 the rail, the burn median, the DOING column
+   and the right-hand third of every band were off-screen behind a horizontal
+   scrollbar. The bands restack instead. Nothing is dropped — the same figures
+   are on the page, in one fewer column — and the page never scrolls sideways at
+   any width.
+
+   The roster keeps its full column set and scrolls INSIDE #roster, which is the
+   one place a dense table is allowed to be wider than the window. */
+
+@media (max-width: 1340px) {
+  /* Evidence is the first board column to go: a branch@sha is the one figure
+     on the row that is always reachable another way (`muster status`). */
+  .boardevidence {
+    display: none;
+  }
+
+  .boardrow {
+    grid-template-columns:
+      92px minmax(0, 1.6fr) minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 0.9fr) 44px;
+  }
+}
+
+@media (max-width: 1100px) {
+  /* The fence goes next. The gate stays: "blocked by X" and "lease expired"
+     are the two readings that change what an operator does next. */
+  .boardfence {
+    display: none;
+  }
+
+  .boardrow {
+    grid-template-columns: 92px minmax(0, 1.6fr) minmax(0, 0.9fr) minmax(0, 1fr) 44px;
+  }
+
+  /* The progress strip is six columns wide and 1078px of them are fixed, which
+     put the page back on a horizontal scrollbar the moment the window dropped
+     below 1100. Nothing is dropped from it — the percent, the bar, the summary,
+     the trend, the remaining affordance and the staleness label are all still
+     on screen — the six columns become three over two rows, and the label and
+     the percentage keep their pairing at the head of it. */
+  #pstrip {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    row-gap: 8px;
+  }
+
+  /* Explicit placement, or the auto-flow puts the "remaining" disclosure ahead
+     of the label it belongs to. Reading order stays: what this is, how far
+     along, the bar and its caption, then the evidence. */
+  .pslead {
+    grid-area: 1 / 1 / 2 / 2;
+  }
+
+  .pspct {
+    grid-area: 1 / 2 / 2 / 3;
+    font-size: 34px;
+  }
+
+  #psrest {
+    grid-area: 1 / 3 / 2 / 4;
+  }
+
+  .psmid {
+    grid-area: 2 / 1 / 3 / -1;
+  }
+
+  .psspark {
+    grid-area: 3 / 1 / 4 / 3;
+  }
+
+  .psmeasured {
+    grid-area: 3 / 3 / 4 / 4;
+    white-space: normal;
+  }
+
+  #periodband {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  /* The split panel drops to the full width beneath the two it sat beside,
+     rather than being squeezed to a third of a third. */
+  #periodsplit {
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  #head {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  #burn {
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  #progressremaining {
+    columns: 1;
+  }
+}
+
+@media (max-width: 860px) {
+  /* On a phone the row becomes two lines rather than a squeezed six columns:
+     state and id, then holder, gate and age under them. Nothing is dropped
+     that was not already dropped above. */
+  .boardrow {
+    grid-template-columns: 92px minmax(0, 1fr) 44px;
+    grid-auto-rows: min-content;
+    height: auto;
+    padding-block: 5px;
+    row-gap: 2px;
+  }
+
+  /* Explicit placement, or auto-flow drops the age below the row it belongs
+     to: it was landing on a third line, under a gate that was often empty. */
+  .boardstate {
+    grid-area: 1 / 1 / 2 / 2;
+  }
+
+  .boardid {
+    grid-area: 1 / 2 / 2 / 3;
+  }
+
+  .boardage {
+    grid-area: 1 / 3 / 2 / 4;
+  }
+
+  .boardholder {
+    grid-area: 2 / 1 / 3 / 4;
+    padding-left: 4px;
+  }
+
+  .boardgate {
+    grid-column: 1 / -1;
+    padding-left: 4px;
+  }
+
+  /* Here it is safe: each cell is placed explicitly above, so a collapsed one
+     costs a line rather than shifting a neighbour into its track. */
+  .boardgate:empty,
+  .boardevidence:empty,
+  .boardfence:empty,
+  .boardholder:empty {
+    display: none;
+  }
+
+  .boardhead {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+
+  .boardsource {
+    margin-left: 0;
+    white-space: normal;
+  }
+
+  #periodband,
+  #head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #periodband > section + section,
+  #head > section + section {
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  /* A single-column head has no fixed height to defend, and clipping it would
+     now hide whole panels rather than the tail of one. */
+  #head > section {
+    overflow: visible;
+  }
+
+  /* The rail is the one strip that clips instead of wrapping, so on a narrow
+     window the byline gives way before the freshness stamp and the ? do. */
+  .brandby {
+    display: none;
+  }
+
+  /* A full-width sparkline does not need to be as tall as a chart. */
+  #burnsvg {
+    height: 64px;
+  }
+}
+
+/* Phone view is a priority instrument, not a desktop table squeezed until its
+   labels disappear. The four fields needed for a glance stay on the rail;
+   tapping any row opens the complete evidence block (identity, model, token
+   classes, cost, activity and provenance). No measurement is discarded. */
+@media (max-width: 600px) {
+  :root {
+    --rail-h: auto;
+    --roster-min-h: 240px;
+    --foot-h: 40px;
+  }
+
+  #rail {
+    min-height: 48px;
+    padding: 6px 10px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-content: center;
+    row-gap: 4px;
+  }
+
+  #rail .brand {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #latched {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  #railright {
+    gap: 8px;
+  }
+
+  #filterwrap,
+  #stamp {
+    display: none;
+  }
+
+  #glossarykey {
+    width: 28px;
+    height: 28px;
+  }
+
+  .phead {
+    align-items: stretch;
+    flex-direction: column;
+    white-space: normal;
+  }
+
+  .selects {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  #project,
+  #period {
+    width: 100%;
+    max-width: none;
+    min-height: 34px;
+  }
+
+  #periodband > section,
+  #head > section {
+    padding: 10px 12px;
+  }
+
+  .mobile-roster-hint {
+    display: block;
+    padding: 5px 8px;
+    color: var(--mute);
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--f-label);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  table.grid {
+    table-layout: fixed;
+  }
+
+  .c-id,
+  .c-model,
+  .c-spark,
+  .c-in,
+  .c-out,
+  .c-cw,
+  .c-cr,
+  .c-total,
+  .c-cost,
+  .c-agents,
+  .c-doing {
+    display: none;
+  }
+
+  .c-state {
+    width: 82px;
+  }
+
+  .c-project {
+    width: auto;
+  }
+
+  .c-hot {
+    width: 72px;
+  }
+
+  .c-last {
+    width: 48px;
+  }
+
+  table.grid th {
+    padding: 6px;
+  }
+
+  table.grid td {
+    height: 34px;
+    padding: 0 6px;
+  }
+
+  .drawer > button {
+    min-height: 40px;
+    height: auto;
+    padding-block: 7px;
+  }
+
+  #glossarybody {
+    max-height: 62vh;
+  }
+}
+
+/* An age that came from the shared ledger rather than from this disk. Marked
+   with a star and its own hue so "1m" beside a declared row can never be read
+   as a local measurement. */
+.mentioned {
+  color: var(--sig);
+}

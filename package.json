@@ -1,0 +1,42 @@
+{
+  "name": "@lockedinlabs/agent-console",
+  "version": "0.1.0",
+  "description": "A local, read-only instrument panel for the AI coding sessions running on this machine. Measures token spend, burn, session health, and shipped work across Claude Code and Codex — no fleet, no account, no coordination required.",
+  "keywords": [
+    "claude-code",
+    "codex",
+    "ai-coding-agents",
+    "observability",
+    "dashboard",
+    "token-usage",
+    "cost-tracking",
+    "developer-tools",
+    "cli",
+    "zero-dependencies"
+  ],
+  "type": "module",
+  "bin": {
+    "agent-console": "./bin/agent-console.mjs"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "public/",
+    "server.js",
+    "scripts/",
+    "docs/",
+    "PROVENANCE.md"
+  ],
+  "scripts": {
+    "start": "node bin/agent-console.mjs",
+    "test": "node scripts/test.mjs",
+    "pack:check": "npm pack --dry-run --json",
+    "smoke:pack": "node scripts/pack-smoke.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
