@@ -198,7 +198,7 @@ test("past the table's review deadline the payload carries the drift warning", (
   assert.equal(after.instrument.priceTableExpired, true);
   assert.equal(
     after.instrument.priceTableWarning,
-    "price table dated 2026-09-01 — estimate drift possible",
+    "price table dated 2026-09-20 — estimate drift possible",
   );
   assert.equal(after.instrument.priceTableExpiry, "2026-12-01");
 

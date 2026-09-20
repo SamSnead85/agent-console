@@ -222,9 +222,10 @@ test("cache read explains why it is most of the tokens and little of the cost", 
     entry.short,
     new RegExp(CACHE_READ_MULT + "× the input rate", "u"),
   );
-  assert.match(entry.body, /largest token class/u);
-  assert.match(entry.body, /smallest cost classes/u);
-  assert.match(entry.body, /cache WORKING, not a leak/u);
+  assert.match(entry.body, /reuse is cheaper than fresh input/u);
+  assert.match(entry.body, /unnecessary context still costs money/u);
+  assert.match(entry.body, /no universal target/u);
+  assert.match(entry.short, /0.025×/u);
 });
 
 test("cost says outright that it is not the subscription bill", () => {

@@ -14,7 +14,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -99,10 +100,46 @@ try {
   // The installed artifact must actually start, in demo mode so the smoke test
   // reads none of the operator's own transcripts.
   const bin = path.join(installed, 'bin', 'agent-console.mjs');
-  const started = spawnSync(process.execPath, [bin, '--demo', '--json', '--port', '0'], {
-    encoding: 'utf8', timeout: 30_000,
+  const child = spawn(process.execPath, [bin, '--demo', '--json', '--port', '0'], {
+    stdio: ['ignore', 'pipe', 'pipe'], cwd: scratch,
   });
-  assert.match(started.stdout || '', /"ok":true/u, 'the installed console did not start');
+  const closed = once(child, 'close');
+  try {
+    const metadata = await new Promise((resolve, reject) => {
+      let output = '';
+      const timer = setTimeout(() => reject(new Error('installed console startup timed out')), 15_000);
+      const finish = (error, value) => { clearTimeout(timer); error ? reject(error) : resolve(value); };
+      child.once('error', error => finish(error));
+      child.once('exit', code => finish(new Error('installed console exited early: ' + code)));
+      child.stdout.on('data', chunk => {
+        output += chunk.toString();
+        if (!output.includes('\n')) return;
+        try { finish(null, JSON.parse(output.split('\n')[0])); }
+        catch (error) { finish(error); }
+      });
+    });
+    assert.equal(metadata.ok, true);
+    assert.ok(metadata.dashboard.port > 0);
+    const base = metadata.dashboard.url;
+    const page = await fetch(base, {signal: AbortSignal.timeout(10_000)});
+    assert.equal(page.status, 200);
+    assert.match(await page.text(), /Agent Console/);
+    const data = await fetch(base + '/api', {
+      headers: {'X-Agent-Console': '1'}, signal: AbortSignal.timeout(10_000),
+    });
+    assert.equal(data.status, 200);
+    const snapshot = await data.json();
+    assert.equal(snapshot.demo.synthetic, true);
+    assert.ok(snapshot.rows.length > 0);
+    const history = await fetch(base + '/api/history?period=24h', {
+      headers: {'X-Agent-Console': '1'}, signal: AbortSignal.timeout(10_000),
+    });
+    assert.equal(history.status, 200);
+    assert.ok((await history.json()).totals.total > 0);
+  } finally {
+    child.kill('SIGTERM');
+    await closed;
+  }
 
   process.stdout.write(
     `packed, installed and started ${packed.filename} (${packed.size} bytes; ${packed.entryCount} files)\n`,

@@ -49,3 +49,20 @@ test("the bind address is a constant with no override", () => {
   assert.equal(readConfig(["--bind", "0.0.0.0"], {}).bind, undefined);
   assert.equal(readConfig([], {}).port, DEFAULT_PORT);
 });
+
+
+test("coordination is opt-in and can always be disabled", () => {
+  assert.equal(readConfig([], {}).musterEnabled, false);
+  assert.equal(readConfig(["--muster"], {}).musterEnabled, true);
+  assert.equal(readConfig([], { AGENT_CONSOLE_MUSTER: "1" }).musterEnabled, true);
+  assert.equal(readConfig(["--muster", "--no-muster"], {}).musterEnabled, false);
+  assert.equal(readConfig(["--demo", "--muster"], {}).musterEnabled, false);
+});
+
+test("custom transcript roots are respected and demo ignores them", () => {
+  const roots = ["--claude-root", "/tmp/claude-source", "--codex-root", "/tmp/codex-source"];
+  assert.equal(readConfig(roots, {}).claudeRoot, "/tmp/claude-source");
+  assert.equal(readConfig(roots, {}).codexRoot, "/tmp/codex-source");
+  assert.equal(readConfig([], {AGENT_CONSOLE_CLAUDE_ROOT: "/tmp/custom"}).claudeRoot, "/tmp/custom");
+  assert.notEqual(readConfig(["--demo", ...roots], {}).claudeRoot, "/tmp/claude-source");
+});

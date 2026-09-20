@@ -128,3 +128,15 @@ test("the table warns only after its scheduled review date", () => {
   assert.equal(isPriceTableExpired("2027-01-01"), true);
   assert.equal(isPriceTableExpired(null), false, "no day is not an expiry");
 });
+
+
+test("Fable and Mythos 5.1 use their own lower cache-read rate", () => {
+  const tokens = { in: 1e6, out: 1e6, cr: 1e6, cw: 1e6, cw1h: 0 };
+  for (const model of ["claude-fable-5-1", "claude-mythos-5-1"]) {
+    assert.deepEqual(costSplit(model, tokens, "2026-09-20"), {
+      in: 10, out: 50, cr: 0.25, cw: 12.5,
+    });
+    assert.equal(costOf(model, tokens, "2026-09-20"), 72.75);
+  }
+  assert.equal(costSplit("claude-fable-5", tokens, "2026-09-20").cr, 1);
+});

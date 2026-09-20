@@ -233,3 +233,27 @@ test("a growing server-tool count within one response is taken at its high-water
   assert.equal(sessions[0].serverTools.search, 5);
   removeTree(home);
 });
+
+
+test("unpriced subagents keep unknown costs and journals are not agents", () => {
+  const home = scratchHome("unknown-subagent");
+  const at = Date.now();
+  const project = path.join(home, ".claude", "projects", "-tmp-project");
+  try {
+    writeJsonl(path.join(project, "session-a", "subagents", "agent-one.jsonl"), [
+      assistantLine({id: "unknown", at, model: "unknown-model", in: 100}),
+      assistantLine({id: "known", at, model: "claude-opus-5", in: 100}),
+    ]);
+    writeJsonl(path.join(project, "session-a", "subagents", "agent-journal.jsonl"), [
+      {type: "agent-created", timestamp: new Date(at).toISOString()},
+    ]);
+    const {sessions} = scan(home, at);
+    assert.equal(sessions.length, 1);
+    assert.equal(sessions[0].agentCount, 1);
+    assert.equal(sessions[0].agentLive, 1);
+    assert.equal(sessions[0].agents[0].cost, null);
+    assert.equal(sessions[0].agents[0].unpriced, true);
+    assert.ok(sessions[0].agents[0].pricedCost > 0);
+    assert.equal(sessions[0].total, 200);
+  } finally { removeTree(home); }
+});

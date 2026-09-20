@@ -792,7 +792,7 @@ function renderHistory(h) {
   const t = h.totals;
   $("periodtokens").textContent = tokens(t.total);
   $("periodtokens").title =
-    t.total.toLocaleString() + " tokens · " + h.period.label;
+    t.total.toLocaleString() + " tokens · " + h.period.label + " · Claude on this device";
   const warn =
     h.instrument && h.instrument.priceTableWarning
       ? ' · <span class="unpricedcell">' +
@@ -833,7 +833,7 @@ function renderHistory(h) {
       : esc(cov.scopeNote || "everything recorded")) +
     " · <b>" +
     (h.scope ? escRedact(h.scope.label) + " only" : "all projects") +
-    "</b> · source since " +
+    "</b> · this device · Claude only · source since " +
     esc(whenShort(cov.earliestMs)) +
     (cov.persistedFromMs
       ? " · snapshots since " + esc(whenShort(cov.persistedFromMs))
@@ -955,6 +955,16 @@ function renderHistoryChart(h) {
     );
     for (let i = 0; i < series.length; i += 1) lower[i] = upper[i];
   }
+  // Native SVG titles expose exact buckets without a chart library or a new UI.
+  for (let i = 0; i < series.length; i += 1) {
+    const point = series[i];
+    const label = whenShort(point.t) + " · " + tokens(point.total) + " tokens" +
+      " · cache read " + tokens(point.cr || 0) + " · input " + tokens(point.in || 0) +
+      " · cache write " + tokens(point.cw || 0) + " · output " + tokens(point.out || 0);
+    parts.push('<rect x="' + (i * step).toFixed(2) + '" y="0" width="' +
+      step.toFixed(2) + '" height="108" fill="transparent"><title>' + esc(label) + '</title></rect>');
+  }
+  $("historysvg").setAttribute("aria-label", "Claude token history. Peak bucket: " + tokens(peak) + " tokens. Hover a bucket for its breakdown.");
   $("historysvg").innerHTML = parts.join("");
 }
 
@@ -975,6 +985,7 @@ function renderHistoryChart(h) {
  */
 function renderBoard(d) {
   const section = $("board");
+  if (d && d.muster && d.muster.enabled === false) { section.hidden = true; return; }
   const view = FleetBoard.boardView(d && d.muster, { now: state.snapshotNow || Date.now() });
   if (!view.visible) {
     // A ledger that could not be read is news, not absence: the band stays,
@@ -1068,6 +1079,7 @@ function renderBoard(d) {
 
 function renderFleet(d) {
   const f = d.fleet || { enabled: false };
+  $("drawer-fleet").hidden = !f.enabled;
   const summary = $("fleetsummary");
   const body = $("fleetbody");
   // Coordination state is the board's, above. This drawer is only the
@@ -1547,7 +1559,7 @@ function treeRow(row) {
         '<span class="tok">' +
         tokens(a.tokens).padStart(7) +
         "</span>  " +
-        (a.cost === null ? "   Σ   " : usd(a.cost).padStart(8)) +
+        (a.cost === null ? (a.unpriced ? "unpriced" : "   Σ   ") : usd(a.cost).padStart(8)) +
         "  " +
         (a.described
           ? escRedact(String(a.desc).slice(0, 90))
@@ -2169,7 +2181,7 @@ function renderInstrument(d) {
     i.priceTableSource +
     ")" +
     (i.priceTableExpired ? " · ▲ " + i.priceTableWarning : "") +
-    " · cache write 1.25×/2.0×, read 0.10× · " +
+    " · cache write 1.25×/2.0×, read model-specific (0.10× or 0.025×) · " +
     i.badLines +
     " unparsed · " +
     d.meta.scan.files +

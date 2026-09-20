@@ -216,10 +216,10 @@ test("demo history is deterministic, period-scoped and project-scoped", () => {
     project: "demo-muster",
   });
   assert.equal(scoped.scope.slug, "demo-muster");
-  assert.equal(scoped.scope.label, "Muster");
+  assert.equal(scoped.scope.label, "Agent Console");
   assert.ok(scoped.totals.total > 0);
   assert.ok(scoped.totals.total < first.totals.total);
-  assert.ok(scoped.bySession.every((row) => row.project === "Muster"));
+  assert.ok(scoped.bySession.every((row) => row.project === "Agent Console"));
 });
 
 test("--demo and MUSTER_CONSOLE_DEMO force every capability off", () => {
@@ -438,3 +438,13 @@ syncBuiltinESMExports();
     assert.equal(reboundStatus, 421);
   },
 );
+
+
+test("the standalone demo presents local observability without a coordination board", () => {
+  const d = createDemoSnapshot({observability: true});
+  assert.equal(d.muster.enabled, false);
+  assert.equal(d.roster.counts.machines, 1);
+  assert.equal(d.roster.counts.declared, 0);
+  assert.equal(d.roster.counts.sessions, 4);
+  assert.equal(d.roster.machines.every(m => m.isLocal), true);
+});

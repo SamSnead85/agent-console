@@ -176,7 +176,7 @@ function networkPosture() {
 async function build() {
   // This branch is intentionally first. Demo mode is not a filter over a real
   // scan; it is a separate in-memory data source with no access to local state.
-  if (config.demo) return createDemoSnapshot({ pollMs: config.pollMs });
+  if (config.demo) return createDemoSnapshot({ pollMs: config.pollMs, observability: true });
   const started = Date.now();
   const now = started;
   const day = dayKeyOf(now);
@@ -331,7 +331,7 @@ const MIN_REBUILD_MS = 1500;
 
 function snapshot() {
   if (config.demo) {
-    if (!cached) cached = createDemoSnapshot({ pollMs: config.pollMs });
+    if (!cached) cached = createDemoSnapshot({ pollMs: config.pollMs, observability: true });
     return Promise.resolve(cached);
   }
   if (building) return building;
@@ -698,7 +698,8 @@ server.on("error", (error) => {
 });
 
 server.listen(config.port, BIND_ADDRESS, () => {
-  const address = "http://localhost:" + config.port;
+  config.port = server.address().port;
+  const address = "http://127.0.0.1:" + config.port;
   if (config.json) {
     process.stdout.write(
       JSON.stringify({

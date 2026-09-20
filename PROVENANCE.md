@@ -38,3 +38,11 @@ The prefix is matched literally, and a `<placeholder>` is rejected, so this
 documentation cannot satisfy the check it describes — the first version of the
 gate was defeated by exactly that. Nothing here grants the authorization; that
 is the owner's to give.
+
+## Recorded decision
+
+REDISTRIBUTION AUTHORIZED: Sam Sweilem, 2026-09-20. This package may be redistributed under its MIT licence.
+
+The owner instructed Codex to publish the current console as the open-source
+observability product, after the proprietary origin and MIT redistribution
+requirement had been disclosed in the same conversation.

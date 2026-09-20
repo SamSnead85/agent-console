@@ -1,7 +1,7 @@
 {
   "name": "@lockedinlabs/agent-console",
   "version": "0.1.0",
-  "description": "A local, read-only instrument panel for the AI coding sessions running on this machine. Measures token spend, burn, session health, and shipped work across Claude Code and Codex — no fleet, no account, no coordination required.",
+  "description": "Local observability for Claude Code and Codex: sessions, subagents, token usage, model costs, and delivery evidence.",
   "keywords": [
     "claude-code",
     "codex",
@@ -38,5 +38,13 @@
   },
   "license": "MIT",
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamSnead85/agent-console.git"
+  },
+  "homepage": "https://github.com/SamSnead85/agent-console#readme",
+  "bugs": {
+    "url": "https://github.com/SamSnead85/agent-console/issues"
+  }
 }

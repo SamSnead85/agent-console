@@ -1,217 +1,179 @@
-<div align="center">
-
 # Agent Console
 
-**An instrument panel for the AI coding sessions you are already running.**
+**See what your AI coding agents are doing—and what they consume.**
 
-No fleet. No coordination. No account. It reads what Claude Code and Codex
-already write to your disk and tells you where the money went, what is alive,
-and what is stuck.
+A local observability console for Claude Code and Codex. Keep it open beside
+an editor to watch sessions, subagent activity, models, token usage, estimated
+API costs, and delivery evidence across the projects on your machine.
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-4c6fff.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-%E2%89%A5%2018-3c873a.svg)](#requirements)
-[![Runtime dependencies](https://img.shields.io/badge/runtime_dependencies-0-2ea44f.svg)](package.json)
+![Agent Console with synthetic demonstration data](docs/console-desktop.png)
 
-</div>
+*The actual console, running in demo mode. Every value in this image is synthetic.*
+
+No account, API key, coordination protocol, or build step. Node's standard
+library handles collection and serving; the interface uses plain HTML, CSS,
+and JavaScript. **Zero runtime dependencies. MIT licensed.**
+
+## Install and open
+
+Requires **Node.js 18 or newer** and Git. A current Node LTS is recommended.
+macOS and Linux are the supported collection environments. On Windows,
+process telemetry is unavailable; Windows is not a verified release target.
 
 ```sh
-npx @lockedinlabs/agent-console
-# http://127.0.0.1:6787
+git clone https://github.com/SamSnead85/agent-console.git
+cd agent-console
+node bin/agent-console.mjs --open
 ```
 
-That is the whole install. It works in any directory, including one that is
-not a Git repository, and it needs nothing running beside it.
+Your browser opens `http://127.0.0.1:6787`. Leave the terminal running; Ctrl+C
+stops the collector. You do not need to run `npm install` from this checkout.
 
-## What it is for
+For a globally installed command, use the tested GitHub release artifact:
 
-You have four Claude Code windows open. They are not a fleet and they are not
-coordinated — they are just four sessions, on different projects, and between
-them they are spending real money and writing real code. You cannot see any of
-it in one place.
+```sh
+npm install --global https://github.com/SamSnead85/agent-console/releases/download/v0.1.0/lockedinlabs-agent-console-0.1.0.tgz
+agent-console --open
+```
 
-That is the entire problem this solves. On the machine it was built on, a
-single ordinary afternoon looked like this:
+This release is distributed through **GitHub**, not the npm registry. There is
+no native desktop installer yet. Download the source ZIP from GitHub if you
+prefer not to clone; extract it and run the same Node command inside the folder.
 
-| | |
-|---|---|
-| Sessions seen | **127** across **104** projects |
-| Live right now | **7** |
-| Tokens today | **590.8M** |
-| Estimated | **$429.14** |
-| Cumulative threads excluded | **118** — see [what it refuses](#what-it-refuses-to-tell-you) |
+To explore without reading any of your sessions:
 
-None of those sessions knew about each other. They did not have to.
+```sh
+node bin/agent-console.mjs --demo --port 6790 --open
+```
 
-## What it shows
+Demo mode uses an isolated synthetic data source: no transcript scans, process
+inspection, Git reads, outgoing requests, or history writes.
 
-- **Where the money went.** Token classes priced separately, scoped by period
-  and by project, because cache reads and output tokens are not the same
-  expense and a single total hides which one is eating the budget.
-- **What is actually alive.** A session with a live process and a silent
-  transcript is *stalled*, not working, and it is named as such. A session
-  burning tokens and producing nothing is *deadheading*.
-- **What shipped.** Commits, merges, changed lines, and pull requests from
-  this machine today, beside the tokens they cost.
-- **Sub-agent trees.** How many agents a session spawned, how many are live,
-  and how much of the spend is theirs.
-- **The pressure signals.** Retries, hook errors, cache misses, compactions,
-  quota pressure, unusually large swarms.
+## What you can see
 
-Every number carries its own definition. Press `?`, or click any underlined
-word, and the reference opens at that term — served by the server, interpolated
-against the constants that actually enforce it, so the explanation cannot drift
-away from the code.
+- **Sessions and subagents:** project, branch, model, recent activity, parent
+  session details, and child-agent usage. Expand a session to inspect its tree.
+- **Token composition:** input, output, cache creation, and cache reads as
+  distinct classes; rolling periods and project filters.
+- **Cost estimates:** model-specific Claude API rates, including Fable 5.1's
+  cache rate. Unpriced usage stays visible as unknown, not a free session.
+- **Activity over time:** token history, live burn, and recent baselines. Hover
+  a history bucket to inspect its token breakdown.
+- **Delivery evidence:** local commits, changed lines, and available pull
+  request evidence. These are observations, not productivity scores.
+- **Pressure signals:** unusually high burn, retries, compactions, quota
+  pressure, and stalled-session heuristics, with definitions in the `?` panel.
 
-## What it refuses to tell you
+The compact dark instrument-panel interface is the product. Search sessions,
+change the period/project, switch burn units, and expand details without leaving
+it. Your browser retains view preferences. [Phone screenshot](docs/console-mobile.png).
 
-This is the part that makes the rest trustworthy.
+## Understand the numbers
 
-- **Codex counters are cumulative, and are never added to a day.** They cover
-  the whole life of a thread. Summed beside Claude's day-scoped totals they
-  produced 109.9 **billion** tokens against a real day of 590 million — about
-  190× the truth, labelled "today". They are marked `Σ`, kept out of every
-  period total, and the exclusion is stated rather than hidden.
-- **An unknown model rate stays `unpriced`.** It never becomes `$0`. The price
-  table carries its verification date and turns visibly stale rather than
-  quietly presenting an old estimate as current.
-- **Dollar figures are estimates at published API list prices.** They are not
-  your subscription invoice, and the screen says so.
-- **A session on another machine is never rendered live.** This program reads
-  one disk. A session that declared itself from elsewhere is real evidence
-  that a session exists and no evidence at all about whether it is working, so
-  the row says `UNKNOWN`.
-- **Missing evidence is never rendered as zero.** There is no vulnerability
-  count, no defect count, and no causal "this skill is looping" diagnosis,
-  because nothing here measures those things.
+| Reading | Meaning |
+| --- | --- |
+| Rolling headline | Claude usage in the selected period, on this machine's disk |
+| Claude session row | Local-calendar-day usage, including its recorded subagents |
+| Codex `Σ` row | Thread-lifetime counters; **excluded** from period totals |
+| Estimated dollars | Standard Claude API-equivalent token cost, **not** a subscription invoice |
+| Unpriced | No verified model rate; partial estimates do not include that usage |
+| Live / stalled | Derived from transcript activity and available process evidence |
 
-## Embedding it
+A large cache-read share is not itself waste: long-running agents reuse context
+on successive requests. Input cache reuse and cache share of all tokens are
+different metrics. Neither measures engineering productivity.
 
-The console goes into other applications — a command center, an internal
-dashboard, a page of your own. One script tag and one element:
+**One machine today.** The console does not collect another laptop's logs or
+aggregate a team. Copied logs may carry history from elsewhere. Shared identity,
+origin tracking, cross-device deduplication, and team aggregation are future work.
+
+Read [the measurement contract](docs/MEASUREMENTS.md) for sources, time windows,
+deduplication, and limits. No OpenAI cost table is included in this release.
+
+## Configure collection
+
+```sh
+# Faster display refresh; deeper transcript discovery
+agent-console --poll-ms 5000 --window-hours 168
+
+# Custom source directories (local or explicitly mounted)
+agent-console --claude-root /path/to/claude/projects --codex-root /path/to/codex/sessions
+
+# Scan another local home; keep derived history in a chosen directory
+agent-console --home /path/to/home --history-dir /path/to/private-history
+
+# Include local delivery evidence from a project
+agent-console --repo /path/to/project
+```
+
+| Option | Default / purpose |
+| --- | --- |
+| `--port` | `6787`; always binds `127.0.0.1` |
+| `--poll-ms` | `10000`; browser refresh interval |
+| `--window-hours` | `72`; transcript file discovery window |
+| `--home` | Current user's home |
+| `--claude-root` | `<home>/.claude/projects` |
+| `--codex-root` | `<home>/.codex/sessions` |
+| `--history-dir` | `~/.muster-console` (legacy state location retained) |
+| `--repo` | Current directory; no Git repository is required |
+| `--demo` | Isolated synthetic tour |
+| `--open` | Open the browser |
+| `--embed` | Exact allowed origins for embedding; off by default |
+| `--github` | Opt in to legacy GitHub checks; may contact GitHub |
+| `--muster` | Opt in to a legacy coordination ledger; may contact its Git remote |
+| `--no-muster` | Explicitly disable ledger access |
+| `--json` | Print launch metadata; keep the server running |
+
+Collection settings also accept `AGENT_CONSOLE_` environment variables:
+`PORT`, `POLL_MS`, `WINDOW_HOURS`, `HOME`, `CLAUDE_ROOT`, `CODEX_ROOT`,
+`HISTORY_DIR`, `REPO`, `EMBED`, `DEMO`, and `MUSTER`.
+Use `agent-console --help` for the full command reference.
+
+## Privacy and embedding
+
+The default console reads local session logs and serves them only on loopback.
+It sends no analytics. Known credential patterns are redacted before responses
+reach the browser, but session labels and activity can still be sensitive.
+Use demo mode for public screenshots and presentations.
+
+A dependency-free `<agent-console-panel>` can be embedded in another local
+application. Start with its exact origin explicitly allowed:
+
+```sh
+agent-console --embed http://localhost:3000
+```
 
 ```html
 <script src="http://127.0.0.1:6787/panel.js"></script>
 <agent-console-panel src="http://127.0.0.1:6787" rows="5"></agent-console-panel>
 ```
 
-Start the console with that page's origin allowed:
+The panel uses Shadow DOM. Wildcard and `null` origins are refused; Host checks
+remain enforced. A hosted portal still needs a local collector and a carefully
+designed connection—it cannot read local logs by itself. See [security](SECURITY.md).
+
+## Development and releases
 
 ```sh
-agent-console --embed http://localhost:3000
+npm test
+npm run smoke:pack
 ```
 
-The panel uses Shadow DOM, so it cannot restyle the page it lands in and the
-page cannot restyle it by accident. Everything you *are* meant to restyle is a
-custom property:
+The suite covers real local servers, usage parsing, duplicate records, privacy
+boundaries, history, and rendering models. The release smoke check packs,
+installs into an isolated prefix, and starts the installed application in demo
+mode. GitHub CI runs the suite and package smoke on macOS and Linux.
 
-```css
-agent-console-panel {
-  --ac-bg: #fff;
-  --ac-fg: #111;
-  --ac-rule: #e3e8ee;
-  --ac-accent: #2f6fd0;
-  --ac-radius: 8px;
-}
-```
+See [contributing](CONTRIBUTING.md), [release notes](CHANGELOG.md), and the
+[roadmap](docs/ROADMAP.md). Improvements should preserve the console's compact
+visual character and explicit measurement boundaries.
 
-It is read-only. The console has an acknowledge route; the panel does not call
-it. An embedded widget that can mutate what it observes is a surface nobody
-audited.
+## Origins and license
 
-For a full page rather than a panel, iframe `http://127.0.0.1:6787` — the same
-`--embed` list drives `frame-ancestors`. Or skip both and read `GET /api`
-yourself with an `X-Agent-Console: 1` header, which is what the panel does.
+Agent Console grew out of a local engineering dashboard and was extracted from
+[Muster](https://github.com/SamSnead85/muster). Observability is now the standalone
+product; orchestration is not required. Legacy coordination adapters are opt-in
+for existing users, not the onboarding path.
 
-### What `--embed` will not do
-
-The default posture is loopback bind, pinned Host, no CORS, no framing. Those
-four together stop a page on the public internet from resolving its own
-hostname to `127.0.0.1` and reading your prompts out of your own browser.
-`--embed` opens exactly one door in that wall:
-
-- **`*` is refused.** Always. There is no flag for it.
-- **`null` is refused** — a sandboxed frame and a `file://` page both send it,
-  so it identifies nobody.
-- **Origins match exactly.** `http://localhost:3000` does not admit
-  `http://localhost:3001`, and does not admit `https://localhost:3000`.
-- **A malformed allowlist stops the server**, rather than starting with
-  embedding quietly off while you debug a panel that says "no answer".
-- **The Host pin is never relaxed**, and a request that fails it earns no
-  permission at all — not even to read the refusal.
-
-## Options
-
-| Flag | |
-|---|---|
-| `--port <n>` | listener port, always bound to `127.0.0.1` (default `6787`) |
-| `--open` | open the page once it is listening |
-| `--demo` | a deterministic synthetic tour: no scans, no network, no history written |
-| `--embed <origins>` | comma-separated origins allowed to fetch and frame this console |
-| `--window-hours <n>` | how far back a transcript may have been touched (default `72`) |
-| `--poll-ms <n>` | refresh interval (default `10000`) |
-| `--repo <path>` | a repository whose Git history and Muster ledger are read |
-| `--history-dir <path>` | where derived history is kept (default `~/.muster-console`) |
-| `--no-muster` | do not read a Muster coordination ledger |
-| `--json` | print launch metadata and keep running |
-
-Every flag has an `AGENT_CONSOLE_` environment equivalent.
-
-Want to see it before pointing it at your own transcripts?
-
-```sh
-npx @lockedinlabs/agent-console --demo --open
-```
-
-Demo mode is a separate in-memory data source, not a filter over a real scan.
-It reads no transcript, process table, repository, ledger, or history
-directory, makes no outbound request, and writes nothing.
-
-## Privacy
-
-- It binds `127.0.0.1` and refuses every routable address. There is no flag to
-  change that, because there is no configuration under which serving private
-  transcripts on a routable interface is correct.
-- It reads `~/.claude/projects`, `~/.claude/sessions`, `~/.codex/sessions`,
-  local process arguments, and local Git history.
-- Known credential forms are redacted on the server before anything is
-  serialized to the browser. That is defense in depth, not permission to
-  expose the console to an untrusted local user.
-- Derived history — project slugs, session ids, model names, token totals —
-  is kept in `~/.muster-console`, outside any repository, mode `0700`.
-  Uninstalling does not delete it.
-- It sends no analytics anywhere.
-
-For another computer or a phone, keep it on loopback and carry it through a
-trusted authenticated encrypted tunnel:
-
-```sh
-ssh -N -L 6787:127.0.0.1:6787 studio.example
-```
-
-## Coordination is optional
-
-If a [Muster](https://github.com/SamSnead85/muster) ledger exists in the
-repository you point `--repo` at, the console shows the coordination board
-too: packages, holders, write fences, recorded branch and HEAD, dependency
-gates, lease state. If there is no ledger, that band says so and everything
-else works exactly the same.
-
-The console does not require Muster, does not start it, and never writes to it.
-
-## Requirements
-
-- **Node.js ≥ 18.** No build step, no bundler, no runtime dependencies.
-- macOS and Linux are the tested surfaces. On native Windows, process-level
-  telemetry is unavailable — the collector uses the POSIX `ps` interface — and
-  the console renders that as unavailable rather than as zero processes.
-
-## Provenance
-
-This console was extracted from the Muster CLI, where it shipped as "Muster
-Console". Its origins and the redistribution terms it is subject to are
-recorded in [PROVENANCE.md](PROVENANCE.md); read that file before publishing
-this package anywhere.
-
-## License
-
-MIT © 2026 LockedIn Labs. See [LICENSE](LICENSE).
+MIT © 2026 LockedIn Labs. Redistribution authorization and source origins are
+recorded in [PROVENANCE.md](PROVENANCE.md).
