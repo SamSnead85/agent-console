@@ -171,14 +171,21 @@ test("the whole surface behaves, and no credential reaches the browser", async (
         "an external origin is allowed by the policy: " + csp,
       );
       const html = await page.text();
+      // Nothing is LOADED from another origin: no script, stylesheet, image or
+      // font. Plain links out (the firm's site, the source) are not loads.
       assert.ok(
-        !/https?:\/\/(?!localhost|127\.0\.0\.1)/u.test(html),
-        "the page references an external origin",
+        !/<(?:script|img|link|iframe)\b[^>]*(?:src|href)="https?:\/\//u.test(html),
+        "the page loads something from an external origin",
       );
+      assert.ok(!/url\(\s*["']?https?:/u.test(html), "the page styles from an external origin");
       for (const asset of [
-        "/app.css",
-        "/app.js",
-        "/units.js",
+        "/house.css",
+        "/console.css",
+        "/console.js",
+        "/theme.js",
+        "/fonts/ibm-plex-sans-latin-400-normal.woff2",
+        "/fonts/LICENSE-OFL.txt",
+        "/favicon.svg",
         "/manifest.webmanifest",
         "/icon-192.png",
       ]) {
@@ -188,21 +195,17 @@ test("the whole surface behaves, and no credential reaches the browser", async (
           asset + " is missing",
         );
       }
-      const client = await (await fetch(base + "/app.js")).text();
-      assert.equal(
-        (client.match(/headers: CONSOLE_HEADERS/gu) || []).length,
-        2,
-        "both telemetry GETs must carry explicit Console request intent",
+      const css = await (await fetch(base + "/house.css")).text();
+      assert.ok(!/url\(\s*["']?https?:/u.test(css), "a stylesheet reaches another origin");
+      const client = await (await fetch(base + "/console.js")).text();
+      assert.ok(
+        (client.match(/headers: HEADERS/gu) || []).length >= 1 && /\.\.\.HEADERS/u.test(client),
+        "every console request must carry explicit Console request intent",
       );
       assert.match(
         client,
-        /\.\.\.CONSOLE_HEADERS/u,
-        "acknowledgement must carry the same request-intent header",
-      );
-      assert.match(
-        client,
-        /state\.snapshotNow = Number\(data\.meta && data\.meta\.now\)/u,
-        "relative times must use the served snapshot clock in deterministic demo mode",
+        /D\.now \+ \(performance\.now\(\) - receivedAt\)/u,
+        "relative times must use the served clock, not the browser's",
       );
     },
   );
@@ -536,27 +539,14 @@ test("every term the page can point at is defined in the payload", async (t) => 
   assert.ok(snapshot.glossary, "the payload carries no glossary");
   const defined = new Set(snapshot.glossary.entries.map((e) => e.id));
 
-  // Read the terms straight out of the shipped page, so a term added to the
-  // markup without a definition fails here rather than rendering a bare word.
-  const page = await (await fetch("http://127.0.0.1:" + port + "/")).text();
-  const referenced = Array.from(page.matchAll(/data-term="([^"]+)"/gu)).map(
-    (m) => m[1],
-  );
-  assert.ok(referenced.length >= 8, "the page stopped explaining itself");
-  for (const id of referenced) {
-    assert.ok(
-      defined.has(id),
-      'the page points at "' + id + '" and nothing defines it',
-    );
-  }
-  // And the client's own hardcoded pointers.
-  const client = await (
-    await fetch("http://127.0.0.1:" + port + "/app.js")
+  // The embeddable panel still points at glossary terms; each must be defined.
+  const panel = await (
+    await fetch("http://127.0.0.1:" + port + "/panel.js")
   ).text();
-  for (const m of client.matchAll(/data-term=\\?"([A-Za-z0-9-]+)\\?"/gu)) {
+  for (const m of panel.matchAll(/data-term=\\?"([A-Za-z0-9-]+)\\?"/gu)) {
     assert.ok(
       defined.has(m[1]),
-      'app.js points at "' + m[1] + '" and nothing defines it',
+      'panel.js points at "' + m[1] + '" and nothing defines it',
     );
   }
 

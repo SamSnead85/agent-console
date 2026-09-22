@@ -1,16 +1,17 @@
 # Direction
 
-The local console is the product. Preserve fast startup, no required account,
-read-only collection, and the dense instrument-panel interface.
+The console is the product: fast to start, no account, read-only collection,
+metadata only, and a dense screen that tells the truth about gaps.
 
-1. Extend verified model pricing and Codex period attribution, with replay and
-   mixed-model evidence. Improve coverage and activity-state explanations.
-2. Offer easier desktop launch, background startup, signed installers, and
-   reliable updates without replacing the console with a marketing webpage.
-3. Add opt-in personal multi-device collectors with offline buffering,
-   idempotent ingestion, execution-origin tracking, and copied-log deduplication.
-4. Add user/team/project views with tenant isolation, explicit enrollment,
-   metadata-only uploads, retention controls, and audit history.
+Shipped in 0.2.0: many machines reporting to one hub, joined by single-use
+links; per-person and per-machine views; copied-transcript deduplication.
 
-Portal discovery and Engineering integration are candidates, not implemented
-capabilities. No team or cross-machine token total is claimed by this release.
+Next candidates, none of them implemented yet:
+
+1. A background service for the reporter (launchd, systemd, Task Scheduler) so
+   reporting survives a restart without a terminal window.
+2. HTTPS on the hub without a separate proxy, and Windows in CI.
+3. Codex period attribution and pricing for more models as vendors publish
+   rates; the price table stays dated and offline.
+4. Project and label management from the console, rather than per machine.
+5. Signed installers and in-place updates.

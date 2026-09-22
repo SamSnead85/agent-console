@@ -154,7 +154,7 @@ test("the permission covers the panel script and the page, not only the API", as
   try {
     // An embedder loads panel.js cross-origin before it ever calls /api. A
     // policy attached to the API alone breaks at the first script tag.
-    for (const asset of ["/panel.js", "/app.css", "/"]) {
+    for (const asset of ["/panel.js", "/console.css", "/"]) {
       const response = await fetch(server.base + asset, {
         headers: { Origin: ALLOWED },
       });

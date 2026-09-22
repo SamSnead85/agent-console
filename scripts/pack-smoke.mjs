@@ -136,6 +136,18 @@ try {
     });
     assert.equal(history.status, 200);
     assert.ok((await history.json()).totals.total > 0);
+    // The v0.2 hub: the console's own view, and the join page another machine opens.
+    const hub = await fetch(base + '/api/console', {
+      headers: {'X-Agent-Console': '1'}, signal: AbortSignal.timeout(10_000),
+    });
+    assert.equal(hub.status, 200);
+    const view = await hub.json();
+    assert.equal(view.hub.demo, true);
+    assert.ok(view.devices.length > 1 && view.day.tokens.total > 0);
+    const join = await fetch(base + '/join', {signal: AbortSignal.timeout(10_000)});
+    assert.equal(join.status, 200);
+    const tarball = await fetch(`${base}/agent-console-${manifest.version}.tgz`, {signal: AbortSignal.timeout(10_000)});
+    assert.equal(tarball.status, 200);
   } finally {
     child.kill('SIGTERM');
     await closed;

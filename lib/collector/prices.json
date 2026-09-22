@@ -1,0 +1,358 @@
+{
+  "v": 1,
+  "currency": "USD",
+  "basis": "standard-global-api-equivalent",
+  "inventoryCheckedOn": "2026-09-20",
+  "assumptions": [
+    "Published standard global API rates checked on vendor pages, not provider invoices.",
+    "Anthropic lifetime splits use observed 5m and 1h components; an unknown lifetime uses an explicitly labeled 5m assumption.",
+    "OpenAI short-context rates are a baseline assumption where context tiers apply; service tier, geography, discounts and subscription charges are not observed.",
+    "API-equivalent estimates never measure productivity or claim actual spend.",
+    "Exact model ids only. Every model found in the local metadata inventory has a row; unverifiable models and token rates stay null."
+  ],
+  "rows": [
+    {
+      "model": "claude-fable-5",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "cacheWriteBasis": "5m-assumed",
+      "assumptions": [],
+      "usdPerMillion": {
+        "fresh": 10,
+        "output": 50,
+        "cacheWrite": 12.5,
+        "cacheWrite5m": 12.5,
+        "cacheWrite1h": 20,
+        "cacheRead": 1
+      }
+    },
+    {
+      "model": "claude-fable-5-1",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "cacheWriteBasis": "5m-assumed",
+      "assumptions": [],
+      "usdPerMillion": {
+        "fresh": 10,
+        "output": 50,
+        "cacheWrite": 12.5,
+        "cacheWrite5m": 12.5,
+        "cacheWrite1h": 20,
+        "cacheRead": 0.25
+      }
+    },
+    {
+      "model": "claude-haiku-4-5-20251001",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "cacheWriteBasis": "5m-assumed",
+      "assumptions": [],
+      "usdPerMillion": {
+        "fresh": 1,
+        "output": 5,
+        "cacheWrite": 1.25,
+        "cacheWrite5m": 1.25,
+        "cacheWrite1h": 2,
+        "cacheRead": 0.1
+      }
+    },
+    {
+      "model": "claude-opus-4-6",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "cacheWriteBasis": "5m-assumed",
+      "assumptions": [],
+      "usdPerMillion": {
+        "fresh": 5,
+        "output": 25,
+        "cacheWrite": 6.25,
+        "cacheWrite5m": 6.25,
+        "cacheWrite1h": 10,
+        "cacheRead": 0.5
+      }
+    },
+    {
+      "model": "claude-opus-4-7",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "cacheWriteBasis": "5m-assumed",
+      "assumptions": [],
+      "usdPerMillion": {
+        "fresh": 5,
+        "output": 25,
+        "cacheWrite": 6.25,
+        "cacheWrite5m": 6.25,
+        "cacheWrite1h": 10,
+        "cacheRead": 0.5
+      }
+    },
+    {
+      "model": "claude-opus-4-8",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "cacheWriteBasis": "5m-assumed",
+      "assumptions": [],
+      "usdPerMillion": {
+        "fresh": 5,
+        "output": 25,
+        "cacheWrite": 6.25,
+        "cacheWrite5m": 6.25,
+        "cacheWrite1h": 10,
+        "cacheRead": 0.5
+      }
+    },
+    {
+      "model": "claude-opus-5",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "cacheWriteBasis": "5m-assumed",
+      "assumptions": [],
+      "usdPerMillion": {
+        "fresh": 5,
+        "output": 25,
+        "cacheWrite": 6.25,
+        "cacheWrite5m": 6.25,
+        "cacheWrite1h": 10,
+        "cacheRead": 0.5
+      }
+    },
+    {
+      "model": "claude-sonnet-4-6",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "cacheWriteBasis": "5m-assumed",
+      "assumptions": [],
+      "usdPerMillion": {
+        "fresh": 3,
+        "output": 15,
+        "cacheWrite": 3.75,
+        "cacheWrite5m": 3.75,
+        "cacheWrite1h": 6,
+        "cacheRead": 0.3
+      }
+    },
+    {
+      "model": "claude-sonnet-5",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "cacheWriteBasis": "5m-assumed",
+      "assumptions": [],
+      "usdPerMillion": {
+        "fresh": 2,
+        "output": 10,
+        "cacheWrite": 2.5,
+        "cacheWrite5m": 2.5,
+        "cacheWrite1h": 4,
+        "cacheRead": 0.2
+      }
+    },
+    {
+      "model": "codex-auto-review",
+      "status": "unpriced",
+      "verifiedOn": "2026-09-20",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "reason": "No exact public API token rates were verified on the vendor pricing page.",
+      "usdPerMillion": {
+        "fresh": null,
+        "output": null,
+        "cacheWrite": null,
+        "cacheWrite5m": null,
+        "cacheWrite1h": null,
+        "cacheRead": null
+      }
+    },
+    {
+      "model": "gpt-5.2",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://developers.openai.com/api/docs/models/gpt-5.2",
+      "cacheWriteBasis": "published-standard",
+      "assumptions": [
+        "Standard global API rates are used; actual service tier and purchasing terms are not observed."
+      ],
+      "notes": "No separate cache-write rate was verified for this exact model. Nonzero cache writes remain unpriced; a missing usage counter remains unknown.",
+      "usdPerMillion": {
+        "fresh": 1.75,
+        "output": 14,
+        "cacheWrite": null,
+        "cacheWrite5m": null,
+        "cacheWrite1h": null,
+        "cacheRead": 0.175
+      }
+    },
+    {
+      "model": "gpt-5.3-codex-spark",
+      "status": "unpriced",
+      "verifiedOn": "2026-09-20",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "reason": "No exact public API token rates were verified on the vendor pricing page.",
+      "usdPerMillion": {
+        "fresh": null,
+        "output": null,
+        "cacheWrite": null,
+        "cacheWrite5m": null,
+        "cacheWrite1h": null,
+        "cacheRead": null
+      }
+    },
+    {
+      "model": "gpt-5.4",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://developers.openai.com/api/docs/models/gpt-5.4",
+      "cacheWriteBasis": "published-standard",
+      "assumptions": [
+        "Standard global API rates are used; actual service tier and purchasing terms are not observed.",
+        "Short-context pricing is assumed; per-request context size is not reported."
+      ],
+      "notes": "No separate cache-write rate was verified for this exact model. Nonzero cache writes remain unpriced; a missing usage counter remains unknown.",
+      "usdPerMillion": {
+        "fresh": 2.5,
+        "output": 15,
+        "cacheWrite": null,
+        "cacheWrite5m": null,
+        "cacheWrite1h": null,
+        "cacheRead": 0.25
+      }
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://developers.openai.com/api/docs/models/gpt-5.4-mini",
+      "cacheWriteBasis": "published-standard",
+      "assumptions": [
+        "Standard global API rates are used; actual service tier and purchasing terms are not observed."
+      ],
+      "notes": "No separate cache-write rate was verified for this exact model. Nonzero cache writes remain unpriced; a missing usage counter remains unknown.",
+      "usdPerMillion": {
+        "fresh": 0.75,
+        "output": 4.5,
+        "cacheWrite": null,
+        "cacheWrite5m": null,
+        "cacheWrite1h": null,
+        "cacheRead": 0.075
+      }
+    },
+    {
+      "model": "gpt-5.5",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://developers.openai.com/api/docs/models/gpt-5.5",
+      "cacheWriteBasis": "published-standard",
+      "assumptions": [
+        "Standard global API rates are used; actual service tier and purchasing terms are not observed.",
+        "Short-context pricing is assumed; per-request context size is not reported."
+      ],
+      "notes": "No separate cache-write rate was verified for this exact model. Nonzero cache writes remain unpriced; a missing usage counter remains unknown.",
+      "usdPerMillion": {
+        "fresh": 5,
+        "output": 30,
+        "cacheWrite": null,
+        "cacheWrite5m": null,
+        "cacheWrite1h": null,
+        "cacheRead": 0.5
+      }
+    },
+    {
+      "model": "gpt-5.6-luna",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "cacheWriteBasis": "published-standard",
+      "assumptions": [
+        "Standard global API rates are used; actual service tier and purchasing terms are not observed.",
+        "Short-context pricing is assumed; per-request context size is not reported."
+      ],
+      "usdPerMillion": {
+        "fresh": 0.2,
+        "output": 1.2,
+        "cacheWrite": 0.25,
+        "cacheWrite5m": null,
+        "cacheWrite1h": null,
+        "cacheRead": 0.02
+      }
+    },
+    {
+      "model": "gpt-5.6-sol",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "cacheWriteBasis": "published-standard",
+      "assumptions": [
+        "Standard global API rates are used; actual service tier and purchasing terms are not observed.",
+        "Short-context pricing is assumed; per-request context size is not reported."
+      ],
+      "usdPerMillion": {
+        "fresh": 4,
+        "output": 20,
+        "cacheWrite": 5,
+        "cacheWrite5m": null,
+        "cacheWrite1h": null,
+        "cacheRead": 0.4
+      }
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "cacheWriteBasis": "published-standard",
+      "assumptions": [
+        "Standard global API rates are used; actual service tier and purchasing terms are not observed.",
+        "Short-context pricing is assumed; per-request context size is not reported."
+      ],
+      "usdPerMillion": {
+        "fresh": 2,
+        "output": 12,
+        "cacheWrite": 2.5,
+        "cacheWrite5m": null,
+        "cacheWrite1h": null,
+        "cacheRead": 0.2
+      }
+    },
+    {
+      "model": "gpt-6-astra",
+      "status": "verified",
+      "verifiedOn": "2026-09-20",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "cacheWriteBasis": "published-standard",
+      "assumptions": [
+        "Standard global API rates are used; actual service tier and purchasing terms are not observed.",
+        "Short-context pricing is assumed; per-request context size is not reported."
+      ],
+      "usdPerMillion": {
+        "fresh": 10,
+        "output": 50,
+        "cacheWrite": 12.5,
+        "cacheWrite5m": null,
+        "cacheWrite1h": null,
+        "cacheRead": 1
+      }
+    },
+    {
+      "model": "gpt-reserve",
+      "status": "unpriced",
+      "verifiedOn": "2026-09-20",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "reason": "No exact public API token rates were verified on the vendor pricing page.",
+      "usdPerMillion": {
+        "fresh": null,
+        "output": null,
+        "cacheWrite": null,
+        "cacheWrite5m": null,
+        "cacheWrite1h": null,
+        "cacheRead": null
+      }
+    }
+  ]
+}

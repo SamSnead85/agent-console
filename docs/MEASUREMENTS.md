@@ -53,8 +53,15 @@ reported judgments, not independently measured completion percentages.
 ## Coverage
 
 Missing logs, an offline device, unpriced usage, and unavailable process data
-must not be interpreted as zero activity or zero cost. Another laptop is not
-collected unless its logs are deliberately supplied; copied logs have no
-reliable execution-origin guarantee. Personal/team aggregation requires stable
-identity, event provenance, and cross-device deduplication before totals can be
-combined responsibly.
+must not be interpreted as zero activity or zero cost.
+
+Since 0.2.0 other computers can report to a hub. Each reporting device is
+enrolled with its own token and reports what its own transcripts say; the hub
+records when it last heard from each one. A device that stops reporting keeps
+its last contact time and is excluded, by name, from "right now" figures; its
+earlier reports still count. Record ids are keyed by the transcript's own
+session and message identity under the hub's organization salt, so a transcript
+copied to a second device is recognised and counted once. The reporting device
+is not proof of where the work ran; execution origin stays unknown unless a
+transcript names it. Device counts mean devices reporting — never seats or
+people. The full rules are in [COLLECTOR-CONTRACT.md](COLLECTOR-CONTRACT.md).

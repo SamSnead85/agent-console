@@ -44,17 +44,17 @@
     :host {
       /* Every one of these is a documented knob. A host restyles the panel by
          setting them; nothing else about this element is public API. */
-      --ac-bg: #0e1319;
-      --ac-fg: #eaf0f6;
-      --ac-mute: #8695a6;
-      --ac-rule: #232b35;
-      --ac-accent: #5aa9ff;
-      --ac-live: #3fd07a;
-      --ac-warn: #f0b429;
-      --ac-bad: #ff6b6b;
-      --ac-radius: 0px;
-      --ac-font: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
-      --ac-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --ac-bg: #0B101A;
+      --ac-fg: #EEF2F8;
+      --ac-mute: #7E8AA0;
+      --ac-rule: #1C2330;
+      --ac-accent: #5B9BFF;
+      --ac-live: #4FE0A8;
+      --ac-warn: #F2C14E;
+      --ac-bad: #FF7A6B;
+      --ac-radius: 12px;
+      --ac-font: "IBM Plex Sans", ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --ac-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
       display: block;
       background: var(--ac-bg);

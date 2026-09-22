@@ -1,370 +1,231 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Agent Console · by LockedIn Labs</title>
-    <meta name="color-scheme" content="dark" />
-    <meta name="theme-color" content="#06080b" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="/icon-192.png" sizes="192x192" type="image/png" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
-    <link rel="stylesheet" href="/app.css" />
-  </head>
-  <body>
-    <main id="app">
-      <h1 class="visually-hidden">Agent Console</h1>
-      <div id="rail">
-        <div class="brand">
-          AGENT <span class="brandthin">CONSOLE</span>
-          <span class="brandby">by LockedIn Labs</span>
-          <span class="brandmode">· read-only</span>
-          <span id="host">·</span>
-        </div>
-        <div id="latched" aria-live="polite" aria-atomic="false"></div>
-        <div id="railright">
-          <span id="filterwrap"
-            ><span class="label">filter</span
-            ><input
-              id="filter"
-              type="text"
-              spellcheck="false"
-              autocomplete="off"
-          /></span>
-          <span id="redcount" hidden></span>
-          <span id="pricewarn" hidden></span>
-          <span class="est" data-term="cost">EST</span>
-          <span id="stamp">connecting…</span>
-          <button
-            type="button"
-            id="glossarykey"
-            title="what every word on this screen means (?)"
-          >
-            ?
-          </button>
-        </div>
+<head>
+<meta charset="utf-8">
+<title>Agent Console · LockedIn Labs</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Agent Console by LockedIn Labs: sessions, tokens, cache reads and writes, models and spend across every machine you connect.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/house.css">
+<link rel="stylesheet" href="/console.css">
+<script src="/theme.js"></script>
+</head>
+<body data-view="console">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <!-- The LockedIn Labs mark, from the house brand package. -->
+    <symbol id="mk-lockedin" viewBox="96 64 880 896">
+      <path d="M105 72H275V775H703V952H105Z" fill="currentColor"/>
+      <path d="M380 72H968V952H803V243H380Z" fill="#0B5CFF"/>
+      <path d="M383 392L527 472V510L383 590V545L482 491L383 437Z" fill="currentColor"/>
+      <rect x="556" y="585" width="147" height="34" fill="currentColor"/>
+    </symbol>
+    <!-- Vendor marks: the official paths (Simple Icons), drawn in the current ink. -->
+    <symbol id="mk-anthropic" viewBox="0 0 24 24"><path fill="currentColor" d="M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5528h3.7442L10.5363 3.5409Zm-.3712 10.2232 2.2914-5.9456 2.2914 5.9456Z"/></symbol>
+    <symbol id="mk-openai" viewBox="0 0 24 24"><path fill="currentColor" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></symbol>
+    <pattern id="hatchfill" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+      <rect width="3" height="7" fill="var(--hatch)"/>
+    </pattern>
+  </defs>
+</svg>
+
+<div class="shell">
+
+  <header class="top">
+    <a class="lockup" href="https://lockedinlabs.ai" target="_blank" rel="noopener" title="Agent Console by LockedIn Labs — lockedinlabs.ai">
+      <svg role="img" aria-label="LockedIn Labs"><use href="#mk-lockedin"/></svg>
+      <span class="word"><b>LOCKEDIN</b> <span>LABS</span></span>
+    </a>
+    <nav class="tabs" id="tabs" aria-label="Views">
+      <button class="tab" data-view="console" aria-current="page">Console</button>
+      <button class="tab" data-view="team">Team <em id="tabTeam">—</em></button>
+      <button class="tab" data-view="projects">Projects <em>this machine</em></button>
+    </nav>
+    <div class="right">
+      <span class="stamp demo-only" title="Every figure on this screen is generated. Nothing was read from any machine.">DEMO</span>
+      <span class="reach" id="reach" title=""><i></i><span id="reachText">—</span></span>
+      <button class="themebtn" id="themeBtn" type="button" aria-label="Switch between light and dark">Light</button>
+      <button class="btn primary" id="addBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add a machine</button>
+    </div>
+  </header>
+
+  <main id="app">
+
+  <!-- ─────────────── CONSOLE ─────────────── -->
+  <section class="view" id="view-console" aria-labelledby="h-console">
+    <section class="hero">
+      <svg class="week" id="heroWeek" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true"><path id="heroWeekArea"/><path id="heroWeekLine"/></svg>
+      <div class="hero-copy">
+        <h1 id="h-console">Agent Console</h1>
+        <p class="by">by LockedIn Labs</p>
+        <p class="ctx"><span id="heroWhen">—</span><em id="heroCounts">—</em></p>
       </div>
+      <div class="hero-id"><span id="heroScope">—</span><b id="heroWeekLabel">seven days, every machine</b></div>
+    </section>
 
-      <!-- Project progress is a dedicated full-width instrument so completion,
-           remaining work, and regressions stay visible at supported widths.
-           Its glossary entry carries the source and interpretation details. -->
-      <section id="pstrip" aria-label="Project progress" hidden>
-        <div class="pslead">
-          <span class="label" data-term="progress">project progress</span>
-        </div>
+    <div class="conhead">
+      <span class="cap"><i id="liveDot"></i>Agent console<b class="stamp demo-only">DEMO</b></span>
+      <span class="ctrls">
+        <button id="voidBtn" type="button" aria-pressed="false">Show unavailable</button>
+        <button id="motionBtn" type="button" aria-pressed="false">Pause motion</button>
+      </span>
+    </div>
 
-        <div class="pspct" id="pspct">—</div>
-
-        <div class="psmid">
-          <div
-            class="psbar"
-            id="psbar"
-            role="progressbar"
-            aria-valuemin="0"
-            aria-valuemax="100"
-            aria-label="project progress"
-          >
-            <div class="psfill" id="psfill"></div>
-            <div class="pspeak" id="pspeak" hidden></div>
-          </div>
-          <div class="pssummary" id="pssummary">—</div>
-        </div>
-
-        <div class="psspark">
-          <svg
-            id="progresssvg"
-            viewBox="0 0 320 40"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          ></svg>
-          <div class="psdelta" id="psdelta"></div>
-        </div>
-
-        <div class="psmeasured" id="psmeasured"></div>
-
-        <details id="psrest">
-          <summary class="pstoggle" id="pstoggle">remaining ▸</summary>
-          <div id="progressremaining"></div>
-        </details>
-      </section>
-
-      <div id="periodband">
-        <section id="periodtotals" aria-label="Token totals">
-          <div class="phead">
-            <span class="label" data-term="period"
-              >total tokens spent · claude</span
-            >
-            <span class="selects">
-              <select id="project" aria-label="project scope">
-                <option value="all">all projects</option>
-              </select>
-              <select id="period" aria-label="aggregation period">
-                <option value="hour">last hour</option>
-                <option value="24h" selected>last 24 hours</option>
-                <option value="3d">last 3 days</option>
-                <option value="all">everything recorded</option>
-              </select>
-            </span>
-          </div>
-          <div class="pbig" id="periodtokens">—</div>
-          <div class="psub" id="periodcost">—</div>
-          <div class="pclasses" id="periodclasses"></div>
-          <div class="pnote" id="periodcoverage">
-            period-scoped, not day-scoped — change the period above
-          </div>
-        </section>
-        <section id="periodchartbox" aria-label="Token history">
-          <div class="phead">
-            <span class="label">tokens over time · stacked by class</span>
-            <span class="label" id="chartspan">—</span>
-          </div>
-          <svg
-            id="historysvg"
-            role="img"
-            viewBox="0 0 720 108"
-            preserveAspectRatio="none"
-            aria-label="Claude token history"
-          ></svg>
-          <div class="pnote" id="periodship">—</div>
-        </section>
-        <section id="periodsplit" aria-label="Usage by session and model">
-          <div class="label">by session</div>
-          <div id="periodsessions" class="pminirows"></div>
-          <div class="label model-split-label">by model</div>
-          <div id="periodmodels" class="pminirows"></div>
-        </section>
+    <div class="console" id="band">
+      <div class="col tokens">
+        <div class="cap">Tokens · last 24 hours</div>
+        <div id="cTotal" class="big">—</div>
+        <div class="tline"><span id="cSpend">—</span><em><span id="cMsgs">—</span> messages</em></div>
+        <div class="prov" id="cProv">—</div>
+        <div class="mix" id="cMix" role="img" aria-label="Token composition"></div>
+        <div class="classes" id="cClasses"></div>
       </div>
-
-      <div id="head">
-        <section id="master" class="s-IDLE" aria-label="Fleet health">
-          <div class="word">
-            <span class="glyph">·</span
-            ><span id="masterword" data-term="health">—</span>
-          </div>
-          <div class="cause" id="mastercause">first scan in progress…</div>
-          <div class="totals" id="mastertotals">
-            <b>$—</b> est today · <b>—</b> live / <b>—</b> sessions
-          </div>
-          <div class="chips" id="masterchips"></div>
-        </section>
-
-        <section id="spectrum" aria-label="Cost and token mix">
-          <div class="head">
-            <span class="label"
-              >spend spectrum · cost share over token share</span
-            >
-            <span class="label" id="spectrumtotal">—</span>
-          </div>
-          <div class="barA" id="barA"></div>
-          <svg
-            class="ribbons"
-            id="ribbons"
-            viewBox="0 0 1000 20"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          ></svg>
-          <div class="barB" id="barB"></div>
-          <div class="legend" id="legend"></div>
-          <div id="modelrows"></div>
-        </section>
-
-        <section id="burn" aria-label="Recent token burn">
-          <div class="readout">
-            <span class="label" data-term="burn-units"
-              >burn · last 60 minutes</span
-            >
-            <span class="label" id="burnmedian">—</span>
-          </div>
-          <!-- Both units remain visible. Clicking the figure swaps visual
-               priority; `u` provides the same keyboard action. -->
-          <button type="button" id="burnswap">
-            <div class="readout">
-              <span class="big" id="burnbig">—</span>
-              <span class="sub" id="burncost">—</span>
-            </div>
-            <div class="readout burnalt">
-              <span class="altbig" id="burnalt">—</span>
-              <span class="sub" id="burnaltcost">—</span>
-            </div>
-            <span class="burnhint" id="burnswaphint"></span>
-          </button>
-          <svg
-            id="burnsvg"
-            viewBox="0 0 600 72"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          ></svg>
-        </section>
-      </div>
-
-      <div id="roster" tabindex="0" role="region" aria-label="Sessions">
-        <span class="hold" id="holdchip" hidden>&#8645; order held</span>
-        <div class="mobile-roster-hint">tap a session for full telemetry</div>
-        <table class="grid" id="rostertable">
-          <caption class="visually-hidden">
-            Measured and declared coding sessions with state, project, model,
-            token usage, cost estimate, agent count, freshness, and activity.
-          </caption>
-          <thead id="rosterhead">
-            <tr>
-              <th class="c-state"><span data-term="liveness">state</span></th>
-              <th class="c-project">project / branch</th>
-              <th class="c-id">id · vendor</th>
-              <th class="c-model">model</th>
-              <th class="c-spark">spark</th>
-              <th class="c-hot num"><span data-term="5m">5m</span></th>
-              <th class="c-in num"><span data-term="input">in</span></th>
-              <th class="c-out num"><span data-term="output">out</span></th>
-              <th class="c-cw num">
-                <span data-term="cache-write">c-wr</span>
-              </th>
-              <th class="c-cr num"><span data-term="cache-read">c-rd</span></th>
-              <th class="c-total num">
-                <span data-term="classes">total</span>
-              </th>
-              <th class="c-cost num"><span data-term="cost">est $</span></th>
-              <th class="c-agents num">agents</th>
-              <th class="c-last num">last</th>
-              <th class="c-doing">doing</th>
-            </tr>
-          </thead>
-          <tbody id="rosterbody">
-            <tr>
-              <td colspan="15" class="emptyline">reading transcripts…</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- The coordination board: the muster ledger as the sessions declared
-           it. The roster above MEASURES this machine; this band carries what
-           the fleet DECLARED through the CLI, wherever those sessions run. It
-           was a footer drawer, which put the one cross-machine surface in this
-           program behind a click while every host-local panel was permanent. -->
-      <section id="board" aria-label="Coordination board" hidden>
-        <div class="boardhead">
-          <span class="label" data-term="board">coordination board · muster ledger</span>
-          <span class="boardcount" id="boardcount">—</span>
-          <span class="boardattention" id="boardattention"></span>
-          <span class="boardsource" id="boardsource">—</span>
+      <div class="col flow">
+        <div class="cap">Tokens over time
+          <span class="seg" id="winSeg" role="group" aria-label="Chart window">
+            <button type="button" data-w="1h" aria-pressed="false">1H</button><button type="button" data-w="24h" class="on" aria-pressed="true">24H</button><button type="button" data-w="7d" aria-pressed="false">7D</button>
+          </span>
         </div>
-        <div class="boardbody" id="boardbody"></div>
-        <div class="boardflagged" id="boardflagged" hidden></div>
-      </section>
+        <div class="flowwrap" id="flowWrap">
+          <div class="voidstate"><b>Reading unavailable</b><span id="voidReason">No machine has reported yet. Nothing is estimated in its place.</span></div>
+          <svg id="cFlow" viewBox="0 0 520 100" preserveAspectRatio="none" role="img" aria-label="Tokens over time">
+            <defs><linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--chart-top)"/><stop offset="1" stop-color="var(--chart-bottom)"/></linearGradient></defs>
+            <rect id="cGap" x="0" y="0" width="0" height="100" fill="url(#hatchfill)"/>
+            <path id="cArea" fill="url(#fg)"/>
+            <path id="cLine" fill="none" stroke="var(--chart-line)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+            <line id="cHover" x1="0" x2="0" y1="0" y2="100" stroke="var(--quiet)" stroke-width="1" vector-effect="non-scaling-stroke" opacity="0"/>
+          </svg>
+          <div class="gaplabel" id="cGapLabel" hidden></div>
+          <div class="tip" id="cTip" hidden></div>
+        </div>
+        <div class="bx"><span id="axLeft">24 hours ago</span><span id="axMid">Claude Code · Codex</span><span>now</span></div>
+      </div>
+      <div class="col burn">
+        <div class="cap">Burn · right now<button type="button" class="unit" id="unitBtn" aria-label="Switch burn unit">per minute ⇄</button></div>
+        <div id="cBurn" class="big mid">—</div>
+        <div class="brate"><span id="cRate">—</span></div>
+        <div class="bprov" id="cBurnNote">—</div>
+        <div class="mhead"><span>by model · 24 h</span><span>share</span><span>est.</span></div>
+        <div id="cModels"></div>
+      </div>
+    </div>
 
-      <!-- The roster is the single session inventory. Count reconciliation is
-           rendered as a footnote only when declarations and observations differ. -->
-      <div id="foot">
-        <div class="drawer" id="drawer-projects">
-          <button type="button" data-drawer="projects">
-            <span>▸ projects</span
-            ><span id="projectssummary" class="dim"></span>
-          </button>
-          <div class="body" hidden id="projectsbody"></div>
-        </div>
-        <div class="drawer" id="drawer-effort">
-          <button type="button" data-drawer="effort">
-            <span>▸ effort</span><span id="effortsummary" class="dim"></span>
-          </button>
-          <div class="body" hidden id="effortbody"></div>
-        </div>
-        <div class="drawer" id="drawer-procs">
-          <button type="button" data-drawer="procs">
-            <span>▸ processes</span><span id="procsummary" class="dim"></span>
-          </button>
-          <div class="body" hidden id="procsbody"></div>
-        </div>
-        <div class="drawer" id="drawer-ship">
-          <button type="button" data-drawer="ship">
-            <span>▸ shipped today</span
-            ><span id="shipsummary" class="dim"></span>
-          </button>
-          <div class="body" hidden id="shipbody"></div>
-        </div>
-        <div class="drawer" id="drawer-fleet">
-          <button type="button" data-drawer="fleet">
-            <span>▸ fleet</span><span id="fleetsummary" class="dim"></span>
-          </button>
-          <div class="body" hidden id="fleetbody"></div>
-        </div>
-      </div>
+    <section class="lanes" aria-label="Lanes">
+      <div class="lhead" aria-hidden="true"><span>State</span><span>Project / branch</span><span>Model</span><span>Activity · 1 hour</span>
+        <span class="r">Tokens · 5 min</span><span class="r">Agents</span><span>Machine · last seen</span></div>
+      <div id="cLanes" class="lanescroll" tabindex="0" role="region" aria-label="Lanes, one per session, scrollable"></div>
+      <div class="lfoot" id="lFoot"><span>—</span></div>
+    </section>
 
-      <div id="instrument">
-        <span id="instrumenttext">—</span>
-      </div>
-    </main>
+    <div class="head">
+      <h2>Machines</h2><span class="stamp demo-only">DEMO</span>
+      <span class="hint" id="machinesHint">—</span>
+      <button class="linkbtn" type="button" data-go="team">Team view →</button>
+    </div>
+    <section class="machines" id="machines" aria-label="Machines"></section>
+  </section>
 
-    <dialog id="helpdialog">
-      <div class="dtitle">
-        <span>Agent Console — what everything means</span>
-        <span class="dtabs">
-          <button type="button" class="dtab on" data-tab="terms">terms</button>
-          <button type="button" class="dtab" data-tab="keys">keys</button>
-        </span>
-      </div>
-      <!-- Definitions come from the SERVER, interpolated against the constants
-           that enforce them, so a tuned threshold cannot drift away from its
-           own explanation. See lib/glossary.js. -->
-      <div class="dbody" id="glossarybody"></div>
-      <div class="dbody" id="helpbody" hidden>
-        <dl>
-          <dt><kbd>j</kbd> / <kbd>k</kbd></dt>
-          <dd>move the roster cursor</dd>
-          <dt><kbd>space</kbd></dt>
-          <dd>expand the agent tree for the row under the cursor</dd>
-          <dt><kbd>g</kbd></dt>
-          <dd>jump to the top burner</dd>
-          <dt><kbd>/</kbd></dt>
-          <dd>filter by project, branch, model, session id or activity</dd>
-          <dt><kbd>c</kbd></dt>
-          <dd>show or fold the cold sessions</dd>
-          <dt><kbd>p</kbd> / <kbd>s</kbd> / <kbd>f</kbd></dt>
-          <dd>toggle the processes, shipped and fleet drawers</dd>
-          <dt><kbd>o</kbd> / <kbd>e</kbd></dt>
-          <dd>
-            toggle the projects list and the effort (token-to-shipped-work)
-            drawers. There is no sessions drawer: every session, on this machine
-            and declared from elsewhere, is a row in the table.
-          </dd>
-          <dt><kbd>t</kbd></dt>
-          <dd>
-            cycle the history period (hour · 24h · 3 days · everything recorded)
-          </dd>
-          <dt><kbd>n</kbd></dt>
-          <dd>
-            cycle the project scope, or press again to return to all projects
-          </dd>
-          <dt><kbd>u</kbd>, or click the burn figure</dt>
-          <dd>
-            swap which burn unit is the large one. Both are always on screen;
-            the figure itself provides the same action without a shortcut.
-            See <b>tok/min · tok/s</b> under terms.
-          </dd>
-          <dt><kbd>enter</kbd> / <kbd>space</kbd></dt>
-          <dd>
-            on the focused “remaining ▸” toggle in the project progress strip,
-            open or fold the remaining-work list. Clicking it does the same.
-          </dd>
-          <dt><kbd>esc</kbd></dt>
-          <dd>release the roster, so the row order can settle again</dd>
-          <dt><kbd>a</kbd></dt>
-          <dd>acknowledge all latched alarms</dd>
-          <dt><kbd>?</kbd></dt>
-          <dd>
-            this reference. Any underlined word on the screen opens it at that
-            term.
-          </dd>
-        </dl>
-      </div>
-      <div class="dactions">
-        <button type="button" id="helpclose">close</button>
-      </div>
-    </dialog>
+  <!-- ─────────────── TEAM ─────────────── -->
+  <section class="view" id="view-team" aria-labelledby="h-team" hidden>
+    <div class="head first">
+      <h2 id="h-team">Team</h2><span class="stamp demo-only">DEMO</span>
+      <span class="hint" id="teamHint">Every machine that reports here, and the people they belong to.</span>
+      <span class="seg big" id="periodSeg" role="group" aria-label="Period">
+        <button type="button" data-p="day" class="on" aria-pressed="true">24 hours</button><button type="button" data-p="week" aria-pressed="false">7 days</button>
+      </span>
+    </div>
+    <section class="totals" id="teamTotals" aria-label="Total across every machine"></section>
 
-    <script src="/units.js"></script>
-    <script src="/progressview.js"></script>
-    <script src="/boardview.js"></script>
-    <script src="/sessionrows.js"></script>
-    <script src="/app.js"></script>
-  </body>
+    <div class="head"><h2>People</h2><span class="hint">Machines with the same person roll up into one row.</span></div>
+    <div class="tablewrap"><table class="grid" id="peopleTable">
+      <caption class="visually-hidden">Usage per person</caption>
+      <thead><tr><th scope="col">Person</th><th scope="col">Machines</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r">Cache read</th><th scope="col" class="r">Cache write</th><th scope="col">Models</th><th scope="col" class="r">Est. cost</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+
+    <div class="head"><h2>Machines</h2><span class="hint">A machine that stops reporting keeps its last contact time; its silence is never counted as zero.</span></div>
+    <div class="tablewrap"><table class="grid" id="machineTable">
+      <caption class="visually-hidden">Usage per machine</caption>
+      <thead><tr><th scope="col">Machine</th><th scope="col">Person</th><th scope="col">Status</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r">Cache read</th><th scope="col" class="r">Cache write</th><th scope="col">Models</th><th scope="col" class="r">Est. cost</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+
+    <div class="head"><h2>Join links</h2><span class="hint">Single use, and they expire. Who joined, and when.</span></div>
+    <section class="invites" id="invites" aria-label="Join links"></section>
+  </section>
+
+  <!-- ─────────────── PROJECTS ─────────────── -->
+  <section class="view" id="view-projects" aria-labelledby="h-projects" hidden>
+    <div class="head first">
+      <h2 id="h-projects">Projects</h2><span class="stamp demo-only">DEMO</span>
+      <span class="hint">This machine only — read from its own transcripts and Git history, and never reported to anyone.</span>
+      <span class="seg big" id="projSeg" role="group" aria-label="Period">
+        <button type="button" data-p="24h" class="on" aria-pressed="true">24 hours</button><button type="button" data-p="3d" aria-pressed="false">3 days</button>
+      </span>
+    </div>
+    <section class="totals" id="projTotals" aria-label="Delivery evidence"></section>
+    <div class="tablewrap"><table class="grid" id="projTable">
+      <caption class="visually-hidden">Projects on this machine</caption>
+      <thead><tr><th scope="col">Project</th><th scope="col" class="r">Tokens</th><th scope="col" class="r">Est. cost</th><th scope="col" class="r">Sessions</th><th scope="col" class="r">Commits</th><th scope="col" class="r">Lines + / −</th><th scope="col" class="r">PRs merged</th><th scope="col">Branches</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <p class="footnote" id="projNote">Delivery evidence is what Git recorded, not a productivity score. Tokens measure usage, not value.</p>
+  </section>
+
+  </main>
+
+  <footer class="foot">
+    <span>Agent Console <b id="ver">—</b></span>
+    <span>Only counts, model names, times and salted hashes leave a machine — never a prompt, a reply, a file path or file contents.</span>
+    <span class="grow"></span>
+    <a href="https://github.com/SamSnead85/agent-console" target="_blank" rel="noopener">Source · MIT</a>
+    <a href="https://lockedinlabs.ai" target="_blank" rel="noopener">lockedinlabs.ai</a>
+  </footer>
+</div>
+
+<!-- ─────────────── ADD A MACHINE ─────────────── -->
+<dialog class="sheet" id="addDialog" aria-labelledby="addTitle">
+  <form id="addForm" method="dialog" class="step" data-step="form">
+    <header><h2 id="addTitle">Add a machine</h2><button type="button" class="x" data-close aria-label="Close">×</button></header>
+    <p class="say">Create a join link and send it to whoever owns the machine. They open it, run one command, and the machine starts reporting here. The link works once, for a short while.</p>
+    <label class="field"><span>Whose machine is it?</span>
+      <input id="fPerson" name="person" type="text" maxlength="40" autocomplete="off" placeholder="You, or a teammate's name or role" list="peopleList"></label>
+    <datalist id="peopleList"></datalist>
+    <label class="field"><span>What should it be called? <em>optional</em></span>
+      <input id="fMachine" name="machine" type="text" maxlength="40" autocomplete="off" placeholder="Laptop, Workstation, Build box…"></label>
+    <label class="field"><span>The link stays valid for</span>
+      <select id="fMinutes" name="minutes"><option value="30">30 minutes</option><option value="120">2 hours</option><option value="1440">24 hours</option></select></label>
+    <p class="warnline" id="loopbackWarn" hidden>This console listens on this machine only, so a link made now works only here. To add another computer, stop the console and start it again with <code>--listen 0.0.0.0</code>.</p>
+    <footer><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn primary" id="createBtn">Create join link</button></footer>
+  </form>
+
+  <div class="step" data-step="link" hidden>
+    <header><h2>Send this to them</h2><button type="button" class="x" data-close aria-label="Close">×</button></header>
+    <p class="say" id="linkSay">—</p>
+    <label class="field"><span>Join link <em>single use · masked on screen</em></span>
+      <span class="copyrow"><input id="linkField" type="password" readonly autocomplete="off" spellcheck="false" aria-describedby="linkExpiry"><button type="button" class="btn" id="copyLink">Copy link</button></span></label>
+    <div class="field"><span>Or they can run this in a terminal on that machine</span>
+      <span class="copyrow"><code class="cmd" id="cmdShown">—</code><button type="button" class="btn" id="copyCmd">Copy command</button></span></div>
+    <p class="fine" id="linkExpiry">—</p>
+    <p class="fine">Their machine needs Node.js 22 or newer (free from nodejs.org). Nothing else to install.</p>
+    <p class="waiting" id="joinStatus" role="status" aria-live="polite"><i></i>Waiting for the machine to join…</p>
+    <footer><button type="button" class="btn" id="anotherBtn">Another machine</button><button type="button" class="btn primary" data-close>Done</button></footer>
+  </div>
+</dialog>
+
+<dialog class="sheet small" id="revokeDialog" aria-labelledby="revokeTitle">
+  <div class="step">
+    <header><h2 id="revokeTitle">Remove this machine?</h2></header>
+    <p class="say" id="revokeSay">—</p>
+    <footer><button type="button" class="btn" data-close>Keep it</button><button type="button" class="btn danger" id="revokeGo">Remove</button></footer>
+  </div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="/console.js" defer></script>
+</body>
 </html>

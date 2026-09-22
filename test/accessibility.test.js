@@ -2,87 +2,103 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-const HTML = fs.readFileSync(
-  new URL("../public/index.html", import.meta.url),
-  "utf8",
-);
-const CSS = fs.readFileSync(
-  new URL("../public/app.css", import.meta.url),
-  "utf8",
-);
-const MANIFEST = JSON.parse(
-  fs.readFileSync(
-    new URL(
-      "../public/manifest.webmanifest",
-      import.meta.url,
-    ),
-    "utf8",
-  ),
-);
+const read = (file) => fs.readFileSync(new URL("../public/" + file, import.meta.url), "utf8");
+const HTML = read("index.html");
+const JOIN = read("join.html");
+const HOUSE = read("house.css");
+const CSS = read("console.css");
+const JS = read("console.js");
+const MANIFEST = JSON.parse(read("manifest.webmanifest"));
 
-function cssColor(name) {
-  const match = CSS.match(
-    new RegExp("--" + name + ":\\s*(#[0-9a-fA-F]{6})\\s*;", "u"),
-  );
-  assert.ok(match, "missing CSS color variable --" + name);
-  return match[1];
+/** The custom properties declared in the first block that follows `selector`. */
+function tokens(selector) {
+  const at = HOUSE.indexOf(selector);
+  assert.ok(at !== -1, "no block for " + selector);
+  const block = HOUSE.slice(at, HOUSE.indexOf("}", at));
+  const out = {};
+  for (const m of block.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})/gu)) out[m[1]] = m[2];
+  return out;
 }
 
 function luminance(hex) {
-  const channels = hex
-    .slice(1)
-    .match(/../gu)
+  const [r, g, b] = hex.slice(1).match(/../gu)
     .map((part) => Number.parseInt(part, 16) / 255)
-    .map((value) =>
-      value <= 0.04045
-        ? value / 12.92
-        : ((value + 0.055) / 1.055) ** 2.4,
-    );
-  return (
-    0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
-  );
+    .map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
+const contrast = (a, b) => {
+  const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+};
 
-function contrast(a, b) {
-  const first = luminance(a);
-  const second = luminance(b);
-  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
-}
-
-test("the Console exposes a semantic page and session table", () => {
+test("the console is a semantic page with named regions", () => {
   assert.match(HTML, /<html lang="en">/u);
   assert.match(HTML, /<main id="app">/u);
-  assert.match(HTML, /<h1 class="visually-hidden">Agent Console<\/h1>/u);
-  assert.match(HTML, /id="roster"[^>]*role="region"[^>]*aria-label="Sessions"/u);
-  assert.match(HTML, /<caption class="visually-hidden">/u);
-  assert.match(HTML, /id="latched"[^>]*aria-live="polite"/u);
-  assert.match(HTML, /id="psbar"[\s\S]*role="progressbar"/u);
-});
-
-test("keyboard, reduced-motion and target-size contracts stay visible in CSS", () => {
-  assert.match(CSS, /@media \(prefers-reduced-motion: reduce\)/u);
-  assert.match(CSS, /#filter:focus[\s\S]*outline:\s*1px solid var\(--sig\)/u);
-  assert.match(CSS, /#roster:focus-visible[\s\S]*outline:/u);
-  assert.match(CSS, /#glossarykey[\s\S]*width:\s*24px;[\s\S]*height:\s*24px;/u);
-  assert.match(
-    CSS,
-    /#period,[\s\S]*#project,[\s\S]*#filter,[\s\S]*min-height:\s*24px;/u,
-  );
-  assert.notEqual(MANIFEST.orientation, "landscape");
-});
-
-test("text states meet WCAG AA contrast on both Console grounds", () => {
-  const grounds = [cssColor("void"), cssColor("slate")];
-  for (const name of ["bone", "mute", "sig", "st-live", "st-idle", "st-warn", "st-dead"]) {
-    for (const ground of grounds) {
-      assert.ok(
-        contrast(cssColor(name), ground) >= 4.5,
-        `--${name} fails 4.5:1 against ${ground}`,
-      );
-    }
+  assert.match(HTML, /<h1 id="h-console">Agent Console<\/h1>/u);
+  assert.match(HTML, /<nav class="tabs" id="tabs" aria-label="Views">/u);
+  assert.match(HTML, /id="cLanes"[^>]*tabindex="0"[^>]*role="region"[^>]*aria-label="[^"]+"/u);
+  assert.match(HTML, /id="toast" role="status" aria-live="polite"/u);
+  assert.match(HTML, /id="joinStatus" role="status" aria-live="polite"/u);
+  for (const id of ["addDialog", "revokeDialog"]) {
+    assert.match(HTML, new RegExp(`<dialog class="sheet[^"]*" id="${id}" aria-labelledby="[^"]+"`, "u"));
   }
+  for (const table of ["peopleTable", "machineTable", "projTable"]) {
+    assert.match(HTML, new RegExp(`id="${table}"[\\s\\S]*?<caption class="visually-hidden">`, "u"), table + " has no caption");
+  }
+});
 
-  // The darkest token-class fill conveys quantitative area, so it must meet
-  // the 3:1 non-text contrast floor against the raised instrument ground.
-  assert.ok(contrast(cssColor("m-cr"), cssColor("slate")) >= 3);
+test("a join link is a credential: masked, never revealable, cleared when the sheet closes", () => {
+  assert.match(HTML, /<input id="linkField" type="password" readonly/u);
+  assert.doesNotMatch(HTML + JS, /\.type\s*=\s*["']text["']|setAttribute\(\s*["']type["']/u, "something can reveal the link");
+  assert.doesNotMatch(HTML, /(show|reveal)\s+(link|code|token)/iu);
+  // the command on screen carries the code masked; Copy puts the real one on the clipboard
+  assert.match(JS, /replace\(j\.code, "••••-••••"\)/u);
+  assert.match(JS, /addDialog\.addEventListener\("close", \(\) => clearSecret\(\)\)/u);
+  assert.match(read("join.js"), /replace\(code, "••••-••••"\)/u);
+});
+
+test("every surface that can show generated figures carries the DEMO stamp", () => {
+  for (const view of ["view-console", "view-team", "view-projects"]) {
+    const start = HTML.indexOf(`id="${view}"`);
+    const end = HTML.indexOf("</section>", HTML.indexOf("<h2", start));
+    assert.match(HTML.slice(start, end + 400), /class="stamp demo-only"/u, view + " has no DEMO stamp");
+  }
+  assert.match(HTML, /<span class="stamp demo-only"[^>]*>DEMO<\/span>/u, "the top bar has no DEMO stamp");
+  assert.match(JOIN, /class="stamp" id="demoStamp"/u);
+  assert.match(CSS, /body\[data-demo="false"\] \.demo-only \{ display: none; \}/u);
+});
+
+test("motion honours prefers-reduced-motion and runs on one loop", () => {
+  assert.match(HOUSE, /@media \(prefers-reduced-motion: reduce\)/u);
+  assert.match(JS, /matchMedia\("\(prefers-reduced-motion: reduce\)"\)/u);
+  assert.equal((JS.match(/requestAnimationFrame\(/gu) || []).length, 2, "one loop, scheduled from one place and started from one place");
+  assert.doesNotMatch(JS, /setInterval\(/u, "nothing moves on a shared interval");
+  assert.match(JS, /textAcc >= 0\.125/u, "text redraws at most eight times a second");
+});
+
+test("keyboard: focus is visible everywhere and the lanes can be scrolled from the keyboard", () => {
+  assert.match(HOUSE, /:focus-visible \{ outline: 2px solid var\(--lit\)/u);
+  assert.match(CSS, /\.lanescroll:focus-visible/u);
+  assert.notEqual(MANIFEST.orientation, "landscape");
+  assert.equal(MANIFEST.name, "Agent Console");
+});
+
+test("text meets WCAG AA contrast on every ground, in light and in dark", () => {
+  for (const [name, selector] of [["light", ":root {"], ["dark", ':root[data-theme="dark"] {']]) {
+    const t = tokens(selector);
+    for (const ink of ["ink", "ink2", "quiet", "good", "stop", "warn", "lit"]) {
+      for (const ground of ["void", "tile", "tile2", "band"]) {
+        assert.ok(t[ink] && t[ground], `${name}: --${ink} or --${ground} missing`);
+        assert.ok(contrast(t[ink], t[ground]) >= 4.5, `${name}: --${ink} ${t[ink]} fails 4.5:1 on --${ground} ${t[ground]}`);
+      }
+    }
+    // the cobalt primary button carries white text
+    assert.ok(contrast("#FFFFFF", t.cobalt) >= 4.5, `${name}: white on --cobalt fails 4.5:1`);
+  }
+});
+
+test("the dark theme is declared twice, so the toggle and the system agree", () => {
+  const system = tokens(':root:not([data-theme="light"]) {');
+  const toggled = tokens(':root[data-theme="dark"] {');
+  assert.deepEqual(system, toggled);
 });
