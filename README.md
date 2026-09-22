@@ -78,9 +78,14 @@ screen the link and its code stay masked; **Copy** puts them on the clipboard.
 
 | | macOS | Linux | Windows |
 | --- | --- | --- | --- |
-| The console, reading this computer | Yes — tested in CI | Yes — tested in CI | Expected to work; not yet tested in CI |
-| Joining and reporting to another computer's console | Yes — tested in CI | Yes — tested in CI | Expected to work; not yet tested in CI |
+| The console, reading this computer | Yes — tested in CI | Yes — tested in CI | Yes — the console, collector and demo are tested in CI |
+| Joining and reporting to another computer's console | Yes — tested in CI | Yes — tested in CI | Yes — tested in CI |
 | Projects view (Git evidence) | Yes, with `git` | Yes, with `git` | Expected to work with `git` installed; not yet tested |
+
+CI runs the whole suite on macOS and Linux (Node 22 and 24). On Windows it runs
+the hub, collector, join-by-link and reporting tests — including the
+multi-process privacy test — and the package smoke test; the older Projects
+view's tests are not yet run there.
 
 Windows: use PowerShell, and when Windows asks whether Node.js may accept
 connections on the machine running the console, allow it on private networks.
@@ -298,7 +303,8 @@ npm test               # the whole suite, including the multi-machine end-to-end
 npm run smoke:pack     # pack, install into a scratch prefix, start it in demo mode
 ```
 
-No dependencies to install. CI runs both on macOS and Linux, Node 22 and 24.
+No dependencies to install. CI runs both on macOS and Linux, Node 22 and 24,
+and the hub and reporter tests plus the smoke test on Windows.
 See [CONTRIBUTING.md](CONTRIBUTING.md), [CHANGELOG.md](CHANGELOG.md) and
 [docs/MEASUREMENTS.md](docs/MEASUREMENTS.md).
 

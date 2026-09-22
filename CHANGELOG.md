@@ -54,8 +54,9 @@ browser modules are removed; `/api`, `/api/history` and `<agent-console-panel>`
 still work.
 
 Limits: the reporter runs while its window is open (no background service is
-installed); Windows is expected to work but is not yet covered by CI; the hub
-serves plain HTTP, so use it on a network you trust or behind a VPN or tunnel.
+installed); on Windows, CI covers the hub, collector, joining and reporting but
+not yet the Projects view; the hub serves plain HTTP, so use it on a network you
+trust or behind a VPN or tunnel.
 
 ## 0.1.0 — 2026-09-20
 

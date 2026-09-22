@@ -1,7 +1,8 @@
 name: Windows
-# Informational: Windows is not yet a release target, so this job does not
-# block a merge. It runs the parts a Windows user touches first — the console,
-# joining by link and reporting — so the README can say honestly how they fare.
+# Runs the parts a Windows user touches first — the console, the collector,
+# joining by link and reporting, and the package smoke test — so the README can
+# say honestly what is tested there. The older Projects view's tests are not
+# run on Windows yet, so this job does not block a merge on its own.
 on:
   push:
   pull_request:
