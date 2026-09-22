@@ -1,146 +1,287 @@
 # Agent Console
 
-**See what your AI coding agents are doing—and what they consume.**
+**by [LockedIn Labs](https://lockedinlabs.ai)** · open source · MIT
 
-A local observability console for Claude Code and Codex. Keep it open beside
-an editor to watch sessions, subagent activity, models, token usage, estimated
-API costs, and delivery evidence across the projects on your machine.
+**Only counts, model ids, timestamps, and salted hashes of session and project
+identifiers leave a machine. No prompt, no response, no file path, no file
+content.** One allowlist in the code enforces that, and a test pushes
+real-shaped transcripts full of planted canaries through the real reporter and
+the real hub and checks every byte that crosses the wire. (There is one
+opt-in: `--share-project-names` also sends each project folder's *name* — never
+its path. It is off unless you pass it.)
 
-![Agent Console with synthetic demonstration data](docs/console-desktop.png)
+See what your AI coding agents are doing — on this computer and on every
+computer you connect: sessions, tokens, how much of it is cache reads and cache
+writes, which models, and what it would cost at list price.
 
-*The actual console, running in demo mode. Every value in this image is synthetic.*
+![Agent Console in demo mode, dark](docs/console-demo-dark.png)
 
-No account, API key, coordination protocol, or build step. Node's standard
-library handles collection and serving; the interface uses plain HTML, CSS,
-and JavaScript. **Zero runtime dependencies. MIT licensed.**
+*The console in demo mode. Every figure in this picture is generated.
+[The same screen in the light theme.](docs/console-demo-light.png)*
 
-## Install and open
+## Start here
 
-Requires **Node.js 18 or newer** and Git. A current Node LTS is recommended.
-macOS and Linux are the supported collection environments. On Windows,
-process telemetry is unavailable; Windows is not a verified release target.
+You need a Mac, a Linux machine or a Windows PC, and about two minutes.
 
-```sh
-git clone https://github.com/SamSnead85/agent-console.git
-cd agent-console
-node bin/agent-console.mjs --open
+1. **Install Node.js 22 or newer.** Get the LTS version from
+   [nodejs.org](https://nodejs.org). To check, open a terminal (*Terminal* on a
+   Mac, *PowerShell* on Windows) and type `node --version` — it should say
+   `v22` or higher.
+2. **Download Agent Console.** On the
+   [GitHub page](https://github.com/SamSnead85/agent-console), press the green
+   **Code** button, then **Download ZIP**, and unzip it. (Or, if you use git:
+   `git clone https://github.com/SamSnead85/agent-console.git`.)
+3. **Start it.** In a terminal, go into the folder you unzipped and run:
+
+   ```sh
+   node bin/agent-console.mjs --open
+   ```
+
+   Your browser opens the console at `http://127.0.0.1:6787`. Leave the
+   terminal window open; closing it (or pressing Ctrl+C) stops the console.
+
+Nothing to install beyond Node, no account, no build step, no dependencies.
+
+To look around before it reads anything of yours:
+`node bin/agent-console.mjs --demo --open` shows a synthetic team of five
+machines. Everything on that screen is stamped **DEMO**.
+
+### Add another computer
+
+A teammate's laptop, your second machine, a second user account on this one —
+each reports to the same console and they all add up.
+
+1. Start the console so other computers on your network can reach it:
+
+   ```sh
+   node bin/agent-console.mjs --listen 0.0.0.0 --open
+   ```
+
+   It prints a warning saying exactly what that opens up (see
+   [How the machines connect](#how-the-machines-connect)).
+2. In the console, press **Add a machine**. Say whose machine it is and what to
+   call it, press **Create join link**, then **Copy link** and send it to them.
+3. On the other computer, they open the link and follow its one step: paste a
+   single command into a terminal. It needs Node.js 22 or newer and nothing else
+   — it fetches Agent Console from *your* computer, not from the internet's
+   package registry.
+
+The machine appears on your console within seconds, and the console shows who
+joined and when. A join link works **once**, and only for 30 minutes. On the
+screen the link and its code stay masked; **Copy** puts them on the clipboard.
+
+![Add a machine: the join link, masked, and the one command](docs/console-demo-join-dark.png)
+
+![The Team view in demo mode, light](docs/console-demo-team-light.png)
+
+### What works where
+
+| | macOS | Linux | Windows |
+| --- | --- | --- | --- |
+| The console, reading this computer | Yes — tested in CI | Yes — tested in CI | Expected to work; not yet tested in CI |
+| Joining and reporting to another computer's console | Yes — tested in CI | Yes — tested in CI | Expected to work; not yet tested in CI |
+| Projects view (Git evidence) | Yes, with `git` | Yes, with `git` | Expected to work with `git` installed; not yet tested |
+
+Windows: use PowerShell, and when Windows asks whether Node.js may accept
+connections on the machine running the console, allow it on private networks.
+
+## What you see
+
+**Tokens · last 24 hours** — the total across every machine, the list-price
+estimate, the message count, and the split into **cache read**, **cache write**,
+**output** and **input**, each with its share of all tokens. (Cache read as a
+share of *input tokens only* — the other common reading — is in the cache-read
+tooltip and in the API, labelled as such.)
+
+**Tokens over time** — the last hour, day or week. Where a machine has stopped
+reporting, the chart says from when it is incomplete.
+
+**Burn · right now** — tokens per minute (or per second) over the last five
+minutes, the dollars per hour it implies, and each model's share and spend over
+the day, with real Anthropic and OpenAI marks.
+
+**Lanes** — one row per session: whether it is live, the project and branch, the
+model, its last hour of activity, tokens in the last five minutes, how many
+subagents it is running, and which machine it is on.
+
+**Machines** and **Team** — every machine and every person: tokens, share of the
+total, cache read and write shares, model split and cost, for 24 hours or
+7 days; every join link, who used it and when. Two machines with the same
+person roll up into one row.
+
+**Projects** — this computer only: tokens per project, and what Git recorded in
+the same period (commits, lines changed, pull requests merged). It is read on
+this computer and never sent anywhere.
+
+### What the numbers promise
+
+- **A machine that stops reporting is not zero.** It shows when it was last
+  heard from, its sessions show an unknown five-minute figure, and it is left out
+  of "right now" by name.
+- **Unknown is not zero.** A message that did not report a token class makes the
+  total a floor, and the screen says so. A model with no verified list price is
+  left out of the dollar figure — never priced at $0 — and the screen says how
+  many tokens that leaves out.
+- **Copied transcripts count once.** Record ids come from the transcript itself,
+  not from where the file sits, so the same session read on two machines is one
+  set of events.
+- **Dollars are estimates** at standard API list prices from a dated, offline
+  table (`lib/collector/prices.json`). They are not an invoice and not a
+  subscription charge. Tokens measure usage, not productivity.
+- **Demo is never mixed with measured data.** A console started with `--demo`
+  reads nothing, accepts no machine, and stamps DEMO on every view.
+
+## How the machines connect
+
+One computer runs the console — the **hub**. Every other computer runs a small
+**reporter** that reads *its own* Claude Code and Codex transcripts and sends the
+hub metadata every ten seconds.
+
+```
+  laptop ── reporter ──┐                        ┌── the console (this computer only)
+                       ├── POST /api/ingest ──> hub
+  workstation ─ reporter ┘   (device token)      └── reads its own transcripts too
 ```
 
-Your browser opens `http://127.0.0.1:6787`. Leave the terminal running; Ctrl+C
-stops the collector. You do not need to run `npm install` from this checkout.
+**What the network can reach.** By default the hub listens on `127.0.0.1` —
+this computer only. With `--listen 0.0.0.0` (or a specific address) other
+computers can reach exactly four things: the join page, the package the join
+command downloads, the join exchange (which needs a live, single-use code), and
+reporting (which needs a device token). **The console itself, its data, and
+every button on it — making links, removing machines — answer only on the
+computer running it**, whatever `--listen` says. To look at the console from
+elsewhere, tunnel to it: `ssh -L 6787:127.0.0.1:6787 you@hub-computer`, then
+open `http://127.0.0.1:6787`.
 
-For a globally installed command, use the tested GitHub release artifact:
+**Credentials.** A join link carries a single-use code that expires in 30
+minutes (`--invite-minutes` to change). The reporter spends it once and receives
+its own device token, which it keeps in a private file (mode 600) under
+`~/.agent-console/reporter/`. The token is never printed, never put in a URL and
+never shown on a screen; the hub stores only a SHA-256 verifier of it. **Remove**
+on the Team view revokes a machine at once — its reporter stops and says why —
+and what it already reported stays, marked as removed.
+
+**The wire.** On your own computer or a private network (`10.x`, `172.16–31.x`,
+`192.168.x`, `100.64–127.x` such as Tailscale, `*.local`) the reporter uses plain
+HTTP, and says so. Anywhere else it requires HTTPS unless you pass
+`--allow-http`. Use a network you trust, a VPN such as Tailscale or WireGuard,
+or an SSH tunnel.
+
+**Storage.** The hub keeps 8 days of usage (`--retention-days`) in
+`~/.agent-console/hub/` (`--state-dir`), as an append-only file of metadata
+records. Nothing leaves that directory.
+
+### The reporter
 
 ```sh
-npm install --global https://github.com/SamSnead85/agent-console/releases/download/v0.1.0/lockedinlabs-agent-console-0.1.0.tgz
-agent-console --open
+agent-console join <join link>          # enrol this computer, then keep reporting
+agent-console report                    # keep reporting after a restart (no new link)
+agent-console leave                     # forget this computer's enrolment
 ```
 
-This release is distributed through **GitHub**, not the npm registry. There is
-no native desktop installer yet. Download the source ZIP from GitHub if you
-prefer not to clone; extract it and run the same Node command inside the folder.
+Run from a download it is `node bin/agent-console.mjs join …`; run the way the
+join link suggests it is `npx --yes http://<hub>/agent-console-<version>.tgz join …`.
+Options: `--name` (what to call this computer), `--interval <seconds>`, `--once`,
+`--state-dir`, `--home`, `--claude-root`, `--codex-root`, `--allow-http`,
+`--share-project-names`, `--json`.
 
-To explore without reading any of your sessions:
+The reporter keeps going only while its window is open. To start it at login,
+add `agent-console report` to your system's startup items (launchd, systemd or
+Task Scheduler); this release does not install a background service for you.
+
+## Privacy, precisely
+
+What leaves a reporting computer, per usage event: the tool (`claude-code` or
+`codex`), the model id, the minute it happened, the four token counts, whether
+it was a subagent, and HMAC-SHA256 hashes of the session, its parent and the
+project directory, keyed by a salt the hub makes and shares only with the
+machines that join it. The machine's name is whatever the console's owner typed
+when making the link (or `--name` when joining). With `--share-project-names`,
+also the last part of each project folder's name, reduced to letters, digits and
+dashes.
+
+What never leaves: prompts, replies, thinking, tool input and output, file
+paths, file names, file contents, git branches, command lines, credentials.
+
+On the hub's own computer the console also shows local project names and
+branches — read from its own disk, shown only on loopback, never stored with
+the records and never sent anywhere.
+
+The proof is `test/hub-e2e.test.js`: synthetic transcripts in the tools' real
+formats, with canaries in every private field, go through a real reporter
+process and a real hub process; a relay records every request body, and the
+test checks the wire, the hub's files, the reporter's files and the console's
+own payload for every canary. The field-by-field contract is
+[docs/COLLECTOR-CONTRACT.md](docs/COLLECTOR-CONTRACT.md).
+
+## Troubleshooting
+
+**"Port 6787 is already in use."** Another console is probably running — open
+`http://127.0.0.1:6787`. Or start this one on another port:
+`node bin/agent-console.mjs --port 6788`.
+
+**The other computer cannot reach the console.** Check, in order: the console
+was started with `--listen 0.0.0.0`; both computers are on the same network
+(not a guest network); the address in the link is still this computer's address
+(it can change when you change networks — make a new link); and the firewall
+allows Node.js to accept connections — macOS asks the first time (choose
+*Allow*; or System Settings → Network → Firewall → Options), Windows asks the
+same (allow *Private networks*), and on Linux with `ufw`:
+`sudo ufw allow 6787/tcp`.
+
+**"This join code is not valid" or "has expired."** Each link works once, for
+30 minutes. Press **Add a machine** again and send the new link.
+
+**A machine shows "Silent since …".** Its reporter stopped: the window was
+closed, the computer slept, or it changed networks. On that computer run
+`agent-console report` (or the `npx … report` command from the join page) —
+no new link needed. If it says the hub no longer accepts it, it was removed:
+send it a new link.
+
+**A machine shows "Joined — waiting for its first report."** It has joined but
+its reporter has not delivered yet; if it stays that way, the reporter window
+was closed right after joining.
+
+**The numbers look low.** The console keeps 8 days, and the first start reads
+only transcripts written in that window. Claude Code and Codex must be writing
+their usual logs (`~/.claude/projects`, `~/.codex/sessions`); if yours live
+elsewhere, pass `--claude-root` / `--codex-root`.
+
+**`npx` or `node` is "not found".** Node.js is not installed, or the terminal
+was opened before it was — install it from nodejs.org and open a new terminal.
+
+## Options
 
 ```sh
-node bin/agent-console.mjs --demo --port 6790 --open
+node bin/agent-console.mjs --help          # the console
+node bin/agent-console.mjs join --help     # the reporter
 ```
 
-Demo mode uses an isolated synthetic data source: no transcript scans, process
-inspection, Git reads, outgoing requests, or history writes.
-
-## What you can see
-
-- **Sessions and subagents:** project, branch, model, recent activity, parent
-  session details, and child-agent usage. Expand a session to inspect its tree.
-- **Token composition:** input, output, cache creation, and cache reads as
-  distinct classes; rolling periods and project filters.
-- **Cost estimates:** model-specific Claude API rates, including Fable 5.1's
-  cache rate. Unpriced usage stays visible as unknown, not a free session.
-- **Activity over time:** token history, live burn, and recent baselines. Hover
-  a history bucket to inspect its token breakdown.
-- **Delivery evidence:** local commits, changed lines, and available pull
-  request evidence. These are observations, not productivity scores.
-- **Pressure signals:** unusually high burn, retries, compactions, quota
-  pressure, and stalled-session heuristics, with definitions in the `?` panel.
-
-The compact dark instrument-panel interface is the product. Search sessions,
-change the period/project, switch burn units, and expand details without leaving
-it. Your browser retains view preferences. [Phone screenshot](docs/console-mobile.png).
-
-## Understand the numbers
-
-| Reading | Meaning |
+| Console option | Default / purpose |
 | --- | --- |
-| Rolling headline | Claude usage in the selected period, on this machine's disk |
-| Claude session row | Local-calendar-day usage, including its recorded subagents |
-| Codex `Σ` row | Thread-lifetime counters; **excluded** from period totals |
-| Estimated dollars | Standard Claude API-equivalent token cost, **not** a subscription invoice |
-| Unpriced | No verified model rate; partial estimates do not include that usage |
-| Live / stalled | Derived from transcript activity and available process evidence |
+| `--open` | open the browser once it is listening |
+| `--port <n>` | `6787` |
+| `--listen <address>` | `127.0.0.1`; `0.0.0.0` accepts other computers (see above) |
+| `--demo` | a synthetic fleet; reads nothing, accepts no machine |
+| `--name <text>`, `--person <text>` | this computer's name and owner on the console (`This machine`, `You`) |
+| `--no-local` | do not read this computer (a hub on a server) |
+| `--state-dir <path>` | `~/.agent-console/hub` |
+| `--retention-days <n>` | `8` (1–90) |
+| `--invite-minutes <n>` | `30` |
+| `--claude-root`, `--codex-root` | where this computer's transcripts are |
+| `--json` | print launch details as JSON and keep running |
 
-A large cache-read share is not itself waste: long-running agents reuse context
-on successive requests. Input cache reuse and cache share of all tokens are
-different metrics. Neither measures engineering productivity.
+The Projects view keeps v0.1's options: `--repo`, `--home`, `--window-hours`,
+`--history-dir`, and the opt-in legacy panels `--github` and `--muster`.
+Environment equivalents use the `AGENT_CONSOLE_` prefix.
 
-**One machine today.** The console does not collect another laptop's logs or
-aggregate a team. Copied logs may carry history from elsewhere. Shared identity,
-origin tracking, cross-device deduplication, and team aggregation are future work.
+## Embedding
 
-Read [the measurement contract](docs/MEASUREMENTS.md) for sources, time windows,
-deduplication, and limits. No OpenAI cost table is included in this release.
-
-## Configure collection
-
-```sh
-# Faster display refresh; deeper transcript discovery
-agent-console --poll-ms 5000 --window-hours 168
-
-# Custom source directories (local or explicitly mounted)
-agent-console --claude-root /path/to/claude/projects --codex-root /path/to/codex/sessions
-
-# Scan another local home; keep derived history in a chosen directory
-agent-console --home /path/to/home --history-dir /path/to/private-history
-
-# Include local delivery evidence from a project
-agent-console --repo /path/to/project
-```
-
-| Option | Default / purpose |
-| --- | --- |
-| `--port` | `6787`; always binds `127.0.0.1` |
-| `--poll-ms` | `10000`; browser refresh interval |
-| `--window-hours` | `72`; transcript file discovery window |
-| `--home` | Current user's home |
-| `--claude-root` | `<home>/.claude/projects` |
-| `--codex-root` | `<home>/.codex/sessions` |
-| `--history-dir` | `~/.muster-console` (legacy state location retained) |
-| `--repo` | Current directory; no Git repository is required |
-| `--demo` | Isolated synthetic tour |
-| `--open` | Open the browser |
-| `--embed` | Exact allowed origins for embedding; off by default |
-| `--github` | Opt in to legacy GitHub checks; may contact GitHub |
-| `--muster` | Opt in to a legacy coordination ledger; may contact its Git remote |
-| `--no-muster` | Explicitly disable ledger access |
-| `--json` | Print launch metadata; keep the server running |
-
-Collection settings also accept `AGENT_CONSOLE_` environment variables:
-`PORT`, `POLL_MS`, `WINDOW_HOURS`, `HOME`, `CLAUDE_ROOT`, `CODEX_ROOT`,
-`HISTORY_DIR`, `REPO`, `EMBED`, `DEMO`, and `MUSTER`.
-Use `agent-console --help` for the full command reference.
-
-## Privacy and embedding
-
-The default console reads local session logs and serves them only on loopback.
-It sends no analytics. Known credential patterns are redacted before responses
-reach the browser, but session labels and activity can still be sensitive.
-Use demo mode for public screenshots and presentations.
-
-A dependency-free `<agent-console-panel>` can be embedded in another local
-application. Start with its exact origin explicitly allowed:
+A dependency-free `<agent-console-panel>` can show a compact reading inside
+another local application. Allow that application's exact origin:
 
 ```sh
-agent-console --embed http://localhost:3000
+node bin/agent-console.mjs --embed http://localhost:3000
 ```
 
 ```html
@@ -148,32 +289,24 @@ agent-console --embed http://localhost:3000
 <agent-console-panel src="http://127.0.0.1:6787" rows="5"></agent-console-panel>
 ```
 
-The panel uses Shadow DOM. Wildcard and `null` origins are refused; Host checks
-remain enforced. A hosted portal still needs a local collector and a carefully
-designed connection—it cannot read local logs by itself. See [security](SECURITY.md).
+Wildcard and `null` origins are refused. See [SECURITY.md](SECURITY.md).
 
-## Development and releases
+## Development
 
 ```sh
-npm test
-npm run smoke:pack
+npm test               # the whole suite, including the multi-machine end-to-end tests
+npm run smoke:pack     # pack, install into a scratch prefix, start it in demo mode
 ```
 
-The suite covers real local servers, usage parsing, duplicate records, privacy
-boundaries, history, and rendering models. The release smoke check packs,
-installs into an isolated prefix, and starts the installed application in demo
-mode. GitHub CI runs the suite and package smoke on macOS and Linux.
-
-See [contributing](CONTRIBUTING.md), [release notes](CHANGELOG.md), and the
-[roadmap](docs/ROADMAP.md). Improvements should preserve the console's compact
-visual character and explicit measurement boundaries.
+No dependencies to install. CI runs both on macOS and Linux, Node 22 and 24.
+See [CONTRIBUTING.md](CONTRIBUTING.md), [CHANGELOG.md](CHANGELOG.md) and
+[docs/MEASUREMENTS.md](docs/MEASUREMENTS.md).
 
 ## Origins and license
 
-Agent Console grew out of a local engineering dashboard and was extracted from
-[Muster](https://github.com/SamSnead85/muster). Observability is now the standalone
-product; orchestration is not required. Legacy coordination adapters are opt-in
-for existing users, not the onboarding path.
-
-MIT © 2026 LockedIn Labs. Redistribution authorization and source origins are
-recorded in [PROVENANCE.md](PROVENANCE.md).
+MIT © 2026 LockedIn Labs. The console began as a local engineering dashboard;
+the collector in `lib/collector/` is LockedIn Labs' own and is published here
+under the same licence. Redistribution authorization and source origins are in
+[PROVENANCE.md](PROVENANCE.md). IBM Plex is included under the SIL Open Font
+License 1.1 (`public/fonts/LICENSE-OFL.txt`). The Anthropic and OpenAI marks
+identify the models they make and belong to their owners.

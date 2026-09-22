@@ -1,15 +1,21 @@
 {
   "name": "Agent Console",
-  "short_name": "Console",
-  "description": "Local, read-only visibility into the AI coding sessions running on this machine.",
+  "short_name": "Agent Console",
+  "description": "Agent Console by LockedIn Labs: sessions, tokens, cache reads and writes, models and spend across every machine you connect.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone"],
-  "background_color": "#06080b",
-  "theme_color": "#06080b",
-  "categories": ["developertools", "productivity"],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
+  "background_color": "#04060A",
+  "theme_color": "#04060A",
+  "categories": [
+    "developertools",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "/icon-192.png",

@@ -2,12 +2,25 @@
 /*
  * The console's entry point.
  *
- * Deliberately thin: it resolves this package's own server and runs it in
- * THIS process rather than spawning a child. The version that shipped inside
- * the Muster CLI spawned one, which was right there — the CLI had its own
- * lifecycle to protect — and is wrong here, where there is nothing to protect
- * it from and a spawn only adds a process whose exit codes have to be
- * translated back.
+ * Deliberately thin. `join`, `report` and `leave` run the reporter — the small
+ * program another machine runs to show up on somebody's console. Anything
+ * else starts the console itself, in THIS process rather than a child: a
+ * spawn would only add a process whose exit codes have to be translated back.
  */
 
-import "../server.js";
+const [major] = process.versions.node.split(".").map(Number);
+if (major < 22) {
+  process.stderr.write(
+    "\n  Agent Console needs Node.js 22 or newer; this is " + process.version + ".\n" +
+      "  Install the current LTS from https://nodejs.org and run the same command again.\n\n",
+  );
+  process.exit(1);
+}
+
+const command = process.argv[2];
+if (command === "join" || command === "report" || command === "leave") {
+  const { main } = await import("../lib/reporter.js");
+  await main(command, process.argv.slice(3));
+} else {
+  await import("../server.js");
+}

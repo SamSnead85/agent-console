@@ -1,11 +1,20 @@
 #!/usr/bin/env node
 /**
- * The console — a glass cockpit for the AI coding sessions on this machine.
+ * The console — one view of the AI coding agents on this machine and on every
+ * machine that reports to it.
  *
  * Node standard library only: no npm dependency, no build step, nothing to
- * install. Binds 127.0.0.1 and exposes coordination-read-only telemetry. Ledger
- * refresh may contact the configured Git origin; the console never mutates a
- * process, session, repository, or remote coordination record.
+ * install. Two halves share this process:
+ *
+ *   the hub      reads this machine through the collector, accepts reports
+ *                from enrolled machines, and serves /api/console — the band,
+ *                the lanes, the machines and the people (lib/hub/).
+ *   the detail   the v0.1 scanner behind /api and /api/history, which reads
+ *                this machine's transcripts and Git history in full for the
+ *                Projects view. It runs only when that view asks.
+ *
+ * The console answers only on this machine. `--listen` lets other machines
+ * reach the join exchange and token-checked reporting, and nothing else.
  */
 
 import http from "node:http";
@@ -14,7 +23,13 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { BIND_ADDRESS, HELP, readConfig } from "./lib/config.js";
+import { HELP, readConfig } from "./lib/config.js";
+import { createRegistry as createHubRegistry } from "./lib/hub/registry.js";
+import { createStore } from "./lib/hub/store.js";
+import { createNames, startLocalCollection } from "./lib/hub/local.js";
+import { startDemo } from "./lib/hub/demo.js";
+import { createHubRoutes, isLocalRequest, isPublicPath, hubAddresses } from "./lib/hub/routes.js";
+import { defaultRoots } from "./lib/collector/collector.js";
 import {
   contentSecurityPolicy,
   corsHeaders,
@@ -61,6 +76,7 @@ import { createDemoHistory, createDemoSnapshot } from "./lib/demo.js";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(HERE, "public");
 const config = readConfig(process.argv.slice(2), process.env);
+const VERSION = JSON.parse(fs.readFileSync(path.join(HERE, "package.json"), "utf8")).version;
 
 if (config.help) {
   process.stdout.write(HELP);
@@ -71,12 +87,42 @@ if (config.help) {
 // who passed --embed expects a door; a typo that silently leaves the wall
 // intact is the same failure shape as a control that reports a pass it did
 // not earn.
-if (config.embedErrors.length) {
-  for (const problem of config.embedErrors) {
+if (config.embedErrors.length || config.listenErrors.length) {
+  for (const problem of [...config.embedErrors, ...config.listenErrors]) {
     process.stderr.write("\n  " + problem + "\n");
   }
   process.stderr.write("\n");
   process.exit(2);
+}
+
+// ---------------------------------------------------------------------------
+// The hub
+// ---------------------------------------------------------------------------
+
+const PRICES = JSON.parse(fs.readFileSync(path.join(HERE, "lib", "collector", "prices.json"), "utf8"));
+const hubRegistry = createHubRegistry({ dir: config.stateDir });
+const hubStore = createStore({ dir: config.stateDir, retentionMs: config.retentionDays * 86_400_000, prices: PRICES });
+if (!config.demo) hubStore.load();
+let hubNames = config.demo ? null : createNames(config.stateDir);
+let localCollection = null;
+if (config.demo) {
+  hubNames = startDemo({ registry: hubRegistry, store: hubStore }).names;
+} else if (config.local) {
+  const roots = defaultRoots(config.home);
+  roots[0].directory = config.claudeRoot;
+  roots[1].directory = config.codexRoot;
+  localCollection = startLocalCollection({
+    registry: hubRegistry, store: hubStore, names: hubNames, stateDir: config.stateDir, roots,
+    label: config.machineName, person: config.person,
+    onError: (error) => process.stderr.write("  this machine: " + String(error && error.message) + "\n"),
+  });
+}
+const hubRoutes = createHubRoutes({
+  config, registry: hubRegistry, store: hubStore, names: hubNames, local: localCollection,
+  version: VERSION, root: HERE,
+});
+if (!config.demo) {
+  process.on("exit", () => { try { hubRegistry.flush(); hubNames && hubNames.save(); } catch { /* exiting */ } });
 }
 
 const fleetSeries = createSeries();
@@ -327,6 +373,151 @@ async function build() {
   return result;
 }
 
+/**
+ * The v0.1 period history for this machine: tokens by project from its own
+ * transcripts, and delivery evidence from its own Git history. It is the
+ * detail behind the Projects view, and it never leaves this machine.
+ */
+async function historyPayload(period, project) {
+  // Like the main demo snapshot, history is a separate deterministic source,
+  // not a sanitized view of the operator's history or repository.
+  if (config.demo) return createDemoHistory({ period, project });
+  // The ordinary snapshot runs first so the history reflects the newest
+  // scan pass, and so session keys can be named from the live roster.
+  const snap = await snapshot();
+  const now = Date.now();
+  const sessionNames = new Map();
+  for (const row of snap.rows || []) {
+    if (row.vendor === "claude") sessionNames.set(row.key, row.project);
+  }
+  const history = assembleHistory(historyStore, {
+    now,
+    period,
+    sessionNames,
+    project,
+  });
+  let code = null;
+  try {
+    code = await gitStatsForPeriod(
+      gitStatsStore,
+      [OWN_REPO_DIR, ...lastCwds],
+      periodStart(period, now),
+    );
+  } catch (error) {
+    code = {
+      repos: [],
+      authors: [],
+      totals: { commits: 0, prsMerged: 0, added: 0, removed: 0 },
+      errors: [String(error && error.message)],
+    };
+  }
+  const registered = readRegistry(registry, now);
+  const projects = buildProjects({
+    projects: history.projects,
+    code,
+    rows: snap.rows || [],
+    period: history.period,
+    selected: project,
+  });
+  const attribution = buildAttribution({
+    code,
+    bySession: history.bySession,
+    rows: snap.rows || [],
+    registrations: registered.sessions,
+    period: history.period,
+  });
+  return {
+    ...history,
+    code,
+    projects,
+    attribution,
+    // The progress trend, scoped to the same period as everything else
+    // on this response. The banner's own copy is unscoped; this one
+    // answers "how far did the estimate move in the last 24 hours".
+    progress: progressSeries(progressHistory, {
+      fromMs: history.period.fromMs,
+      max: 300,
+    }),
+    instrument: {
+      priceTableDate: snap.instrument.priceTableDate,
+      priceTableExpiry: snap.instrument.priceTableExpiry,
+      priceTableExpired: snap.instrument.priceTableExpired,
+      priceTableWarning: snap.instrument.priceTableWarning,
+      estimateNote: snap.instrument.estimateNote,
+    },
+  };
+}
+
+/** The Projects view's shape: one row per project, with its Git evidence. */
+async function projectsPayload(period) {
+  if (config.demo) return demoProjects(period);
+  const history = await historyPayload(period, null);
+  const list = (history.projects && history.projects.projects) || [];
+  const totals = (history.code && history.code.totals) || { commits: 0, prsMerged: 0, added: 0, removed: 0 };
+  return {
+    demo: false,
+    period: history.period,
+    tokens: list.reduce((sum, x) => sum + (x.tokens || 0), 0),
+    sessions: list.reduce((sum, x) => sum + (x.sessions || 0), 0),
+    withRepo: list.filter((x) => x.repo).length,
+    totals,
+    projects: list.map((x) => ({
+      name: x.label || x.slug,
+      tokens: x.tokens || 0,
+      usd: typeof x.cost === "number" ? x.cost : null,
+      sessions: x.sessions || 0,
+      branches: x.branches || [],
+      repo: x.repo ? { name: x.repo.name, commits: x.repo.commits, added: x.repo.added, removed: x.repo.removed, prsMerged: x.repo.prsMerged ?? null } : null,
+    })),
+  };
+}
+
+/* The demo's own machine: the same projects its lanes show, with Git
+   figures that are as synthetic as everything else in demo mode. */
+const DEMO_GIT = {
+  "atlas-api": { commits: 14, added: 2480, removed: 612, prsMerged: 3 },
+  "atlas-web": { commits: 9, added: 1310, removed: 402, prsMerged: 2 },
+  "docs-site": { commits: 4, added: 540, removed: 96, prsMerged: 1 },
+};
+function demoProjects(period) {
+  const now = Date.now();
+  const span = period === "hour" ? 3600_000 : period === "3d" ? 3 * 86_400_000 : 86_400_000;
+  const local = hubRegistry.list().find((d) => d.local);
+  const byProject = new Map();
+  hubStore.eachBucket(now - span, now + 60_000, (minute, bucket) => {
+    if (!local || bucket.deviceId !== local.id) return;
+    const session = hubStore.sessions.get(bucket.sessionHash);
+    const top = session && session.isSubagent && hubStore.sessions.get(session.parentSessionHash) || session;
+    const name = top ? hubNames.project(top.projectHash) : null;
+    if (!name) return;
+    let p = byProject.get(name);
+    if (!p) { p = { name, tokens: 0, usd: 0, sessions: new Set(), branches: new Set() }; byProject.set(name, p); }
+    p.tokens += bucket.fresh + bucket.output + bucket.cacheWrite + bucket.cacheRead;
+    p.usd += bucket.usd;
+    p.sessions.add(top.sessionHash);
+    const branch = hubNames.branch(top.sessionHash);
+    if (branch) p.branches.add(branch);
+  });
+  const scale = period === "3d" ? 2.6 : period === "hour" ? 0.1 : 1;
+  const projects = [...byProject.values()].sort((a, b) => b.tokens - a.tokens).map((p) => {
+    const g = DEMO_GIT[p.name];
+    return {
+      name: p.name, tokens: p.tokens, usd: p.usd, sessions: p.sessions.size, branches: [...p.branches],
+      repo: g ? { name: p.name, commits: Math.round(g.commits * scale), added: Math.round(g.added * scale), removed: Math.round(g.removed * scale), prsMerged: Math.round(g.prsMerged * scale) } : null,
+    };
+  });
+  const sum = (key) => projects.reduce((a, p) => a + (p.repo ? p.repo[key] : 0), 0);
+  return {
+    demo: true,
+    period: { id: period, label: PERIODS[period].label },
+    tokens: projects.reduce((a, p) => a + p.tokens, 0),
+    sessions: projects.reduce((a, p) => a + p.sessions, 0),
+    withRepo: projects.filter((p) => p.repo).length,
+    totals: { commits: sum("commits"), added: sum("added"), removed: sum("removed"), prsMerged: sum("prsMerged") },
+    projects,
+  };
+}
+
 const MIN_REBUILD_MS = 1500;
 
 function snapshot() {
@@ -366,6 +557,8 @@ const TYPES = {
   ".png": "image/png",
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon",
+  ".woff2": "font/woff2",
+  ".txt": "text/plain; charset=utf-8",
 };
 
 function headers(type, origin) {
@@ -394,26 +587,39 @@ function hostAllowed(req) {
   return name === "localhost" || name === "127.0.0.1" || name === "::1";
 }
 
-function sendJson(res, status, body, origin) {
+function sendJson(res, status, body, origin, options = {}) {
   // Everything the browser receives passes through redaction first. Doing it
   // here rather than at each call site means a field added upstream is covered
-  // without anyone having to remember.
-  const { value, count, kinds } = redactDeep(body);
-  if (value && typeof value === "object") {
-    value.redaction = { count, kinds };
+  // without anyone having to remember. The two exceptions are answers that ARE
+  // a credential by design — a join code to this machine's own browser, and a
+  // device token to the machine that just spent a join code — and they opt out
+  // by name at their single call site in lib/hub/routes.js.
+  let text;
+  if (options.redact === false) {
+    text = JSON.stringify(body);
+  } else {
+    const { value, count, kinds } = redactDeep(body);
+    if (value && typeof value === "object") {
+      value.redaction = { count, kinds };
+    }
+    text = JSON.stringify(value);
   }
-  const text = JSON.stringify(value);
   res.writeHead(status, headers("application/json; charset=utf-8", origin));
   res.end(text);
 }
 
-function readBody(req) {
+function send(res, status, type, body, extra = {}, origin) {
+  res.writeHead(status, { ...headers(type, origin), ...extra });
+  res.end(body);
+}
+
+function readBody(req, limit = 64 * 1024) {
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];
     req.on("data", (chunk) => {
       size += chunk.length;
-      if (size > 64 * 1024) {
+      if (size > limit) {
         reject(new Error("body too large"));
         req.destroy();
         return;
@@ -452,7 +658,9 @@ function hasConsoleIntent(req) {
 }
 
 function serveStatic(req, res, urlPath, origin) {
-  const rel = urlPath === "/" ? "index.html" : urlPath.replace(/^\/+/u, "");
+  const rel = urlPath === "/" ? "index.html"
+    : urlPath === "/join" ? "join.html"
+    : urlPath.replace(/^\/+/u, "");
   const target = path.resolve(PUBLIC, rel);
   if (target !== PUBLIC && !target.startsWith(PUBLIC + path.sep)) {
     res.writeHead(403, headers("text/plain; charset=utf-8", origin));
@@ -486,13 +694,37 @@ function openBrowser(address) {
   else execFile("xdg-open", [address], () => {});
 }
 
-const server = http.createServer((req, res) => {
+function handleRequest(req, res) {
   // The request's own origin, kept for the response's CORS headers. It is a
   // claim the browser makes on the page's behalf and is never trusted for
   // anything but matching the operator's allowlist.
   const origin = req.headers.origin;
 
-  if (!hostAllowed(req)) {
+  const url = String(req.url || "/").split("?")[0];
+
+  // The four things another machine may reach when the hub listens on the
+  // network: the join page and its assets, the package, the join exchange and
+  // token-checked reporting. Everything else is behind the loopback wall below.
+  if (isPublicPath(url)) {
+    if (url.startsWith("/api/") || url.endsWith(".tgz")) {
+      hubRoutes(req, res, url, {
+        sendJson: (r, status, body, options) => sendJson(r, status, body, undefined, options),
+        readBody,
+        send: (r, status, type, body, extra) => send(r, status, type, body, extra),
+        port: config.port,
+      }).catch((error) => sendJson(res, 500, { ok: false, reason: String(error && error.message) }));
+      return;
+    }
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      res.writeHead(405, headers("text/plain; charset=utf-8"));
+      res.end("method not allowed\n");
+      return;
+    }
+    serveStatic(req, res, url, undefined);
+    return;
+  }
+
+  if (!hostAllowed(req) || !isLocalRequest(req)) {
     /* No origin is threaded here, deliberately. The Host pin is the outer
        wall — it is what stops a public page resolving its own name to
        127.0.0.1 and reading this server out of the victim's browser — and a
@@ -501,10 +733,9 @@ const server = http.createServer((req, res) => {
        way; the layering is the point, because the next person to add detail
        to this message should not have to rediscover it. */
     res.writeHead(421, headers("text/plain; charset=utf-8"));
-    res.end("this server answers only to a loopback host\n");
+    res.end("the console answers only on the machine it runs on\n");
     return;
   }
-  const url = String(req.url || "/").split("?")[0];
   const isApi = url === "/api" || url.startsWith("/api/");
 
   // A cross-origin GET carrying a custom header is preflighted. Answering it
@@ -530,6 +761,16 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (url.startsWith("/api/console") || url.startsWith("/api/invitations") || url.startsWith("/api/devices")) {
+    hubRoutes(req, res, url, {
+      sendJson: (r, status, body, options) => sendJson(r, status, body, origin, options),
+      readBody,
+      send: (r, status, type, body, extra) => send(r, status, type, body, extra, origin),
+      port: config.port,
+    }).catch((error) => sendJson(res, 500, { ok: false, reason: String(error && error.message) }, origin));
+    return;
+  }
+
   if (req.method === "GET" && url === "/api") {
     snapshot().then(
       (value) => sendJson(res, 200, value, origin),
@@ -538,7 +779,7 @@ const server = http.createServer((req, res) => {
     );
     return;
   }
-  if (req.method === "GET" && url === "/api/history") {
+  if (req.method === "GET" && (url === "/api/history" || url === "/api/projects")) {
     const query = new URLSearchParams(
       String(req.url || "").split("?")[1] || "",
     );
@@ -563,91 +804,11 @@ const server = http.createServer((req, res) => {
       );
       return;
     }
-    // Like the main demo snapshot, history is a separate deterministic source,
-    // not a sanitized view of the operator's history or repository.
-    if (config.demo) {
-      sendJson(
-        res,
-        200,
-        createDemoHistory({
-          period,
-          project,
-        }),
-        origin,
-      );
-      return;
-    }
-    // The ordinary snapshot runs first so the history reflects the newest
-    // scan pass, and so session keys can be named from the live roster.
-    snapshot().then(
-      async (snap) => {
-        const now = Date.now();
-        const sessionNames = new Map();
-        for (const row of snap.rows || []) {
-          if (row.vendor === "claude") sessionNames.set(row.key, row.project);
-        }
-        const history = assembleHistory(historyStore, {
-          now,
-          period,
-          sessionNames,
-          project,
-        });
-        let code = null;
-        try {
-          code = await gitStatsForPeriod(
-            gitStatsStore,
-            [OWN_REPO_DIR, ...lastCwds],
-            periodStart(period, now),
-          );
-        } catch (error) {
-          code = {
-            repos: [],
-            authors: [],
-            totals: { commits: 0, prsMerged: 0, added: 0, removed: 0 },
-            errors: [String(error && error.message)],
-          };
-        }
-        const registered = readRegistry(registry, now);
-        const projects = buildProjects({
-          projects: history.projects,
-          code,
-          rows: snap.rows || [],
-          period: history.period,
-          selected: project,
-        });
-        const attribution = buildAttribution({
-          code,
-          bySession: history.bySession,
-          rows: snap.rows || [],
-          registrations: registered.sessions,
-          period: history.period,
-        });
-        sendJson(
-          res,
-          200,
-          {
-            ...history,
-            code,
-            projects,
-            attribution,
-            // The progress trend, scoped to the same period as everything else
-            // on this response. The banner's own copy is unscoped; this one
-            // answers "how far did the estimate move in the last 24 hours".
-            progress: progressSeries(progressHistory, {
-              fromMs: history.period.fromMs,
-              max: 300,
-            }),
-            instrument: {
-              priceTableDate: snap.instrument.priceTableDate,
-              priceTableExpiry: snap.instrument.priceTableExpiry,
-              priceTableExpired: snap.instrument.priceTableExpired,
-              priceTableWarning: snap.instrument.priceTableWarning,
-              estimateNote: snap.instrument.estimateNote,
-            },
-          },
-          origin,
-        );
-      },
+    const answer = url === "/api/projects"
+      ? projectsPayload(period)
+      : historyPayload(period, project);
+    answer.then(
+      (value) => sendJson(res, 200, value, origin),
       (error) =>
         sendJson(res, 500, { error: String(error && error.message) }, origin),
     );
@@ -678,41 +839,56 @@ const server = http.createServer((req, res) => {
     return;
   }
   serveStatic(req, res, url, origin);
-});
+}
+
+const server = http.createServer(handleRequest);
 
 server.on("error", (error) => {
   if (error.code === "EADDRINUSE") {
     process.stderr.write(
-      "\n  port " +
-        config.port +
-        " is already in use on " +
-        BIND_ADDRESS +
-        ".\n  Another " + PRODUCT_NAME + " is probably already running; open http://localhost:" +
-        config.port +
-        "\n  or start this one with --port <n>.\n\n",
+      "\n  Port " + config.port + " is already in use.\n" +
+        "  Another " + PRODUCT_NAME + " is probably already running — open http://127.0.0.1:" + config.port + "\n" +
+        "  or start this one on another port:  node bin/agent-console.mjs --port " + (config.port + 1) + "\n\n",
     );
+    process.exit(1);
+  }
+  if (error.code === "EADDRNOTAVAIL") {
+    process.stderr.write("\n  This machine has no network address " + config.listen + ". Try --listen 0.0.0.0.\n\n");
     process.exit(1);
   }
   process.stderr.write("\n  server error: " + error.message + "\n\n");
   process.exit(1);
 });
 
-server.listen(config.port, BIND_ADDRESS, () => {
+server.listen(config.port, config.listen, () => {
   config.port = server.address().port;
+  // Bound to one network address, the process would not answer on loopback —
+  // and the console answers ONLY on loopback. A second listener on 127.0.0.1
+  // keeps the console reachable here. (0.0.0.0 already includes loopback.)
+  if (!["0.0.0.0", "::", "127.0.0.1", "::1", "localhost"].includes(config.listen)) {
+    http.createServer(handleRequest).on("error", (error) => {
+      process.stderr.write("\n  could not also listen on 127.0.0.1:" + config.port + " (" + error.code + "); the console will not open here.\n\n");
+    }).listen(config.port, "127.0.0.1");
+  }
   const address = "http://127.0.0.1:" + config.port;
+  const reach = hubAddresses(config.listen, config.port);
   if (config.json) {
     process.stdout.write(
       JSON.stringify({
         ok: true,
         dashboard: {
           name: PRODUCT_NAME,
+          version: VERSION,
           url: address,
-          host: BIND_ADDRESS,
+          host: config.listen,
           port: config.port,
           refreshMs: config.pollMs,
-          access: "loopback-only",
+          access: reach.network ? "console loopback-only; join and reporting open to the network" : "loopback-only",
+          joinUrls: reach.urls,
           demo: config.demo,
           readOnly: true,
+          local: Boolean(localCollection),
+          stateDir: config.stateDir,
           outbound: config.demo
             ? "disabled — deterministic in-memory demo"
             : networkPosture(),
@@ -720,43 +896,43 @@ server.listen(config.port, BIND_ADDRESS, () => {
       }) + "\n",
     );
   } else {
-    process.stdout.write(
-      "\n  " + productTitle() + "  ->  " +
-        address +
-        "\n  bound to " +
-        BIND_ADDRESS +
-        (config.demo
-          ? " · DEMO DATA · deterministic in-memory fixture\n"
-          : "") +
-        (config.demo
-          ? "  no transcript, process, repository, ledger, or history scans\n" +
-            "  outbound network disabled; alert acknowledgement is in-memory only\n\n"
-          : "  coordination read-only; process and session mutation routes are not exposed\n" +
-            "  network: " +
-            networkPosture() +
-            "\n  first scan reads recent local session logs and may refresh the coordination ledger\n\n"),
-    );
+    const lines = [
+      "",
+      "  " + productTitle() + "  ->  " + address,
+    ];
+    if (config.demo) {
+      lines.push("  DEMO · a synthetic fleet; nothing on this machine is read, and no machine can join");
+    } else {
+      lines.push(localCollection
+        ? "  reading this machine's Claude Code and Codex usage; data kept in " + config.stateDir
+        : "  not reading this machine (--no-local); data kept in " + config.stateDir);
+    }
+    if (reach.network) {
+      lines.push(
+        "",
+        "  WARNING  listening on " + config.listen + ":" + config.port + " — other machines on this network can reach",
+        "           the join page and the reporting endpoint. Only machines holding a join code or a",
+        "           device token get in, and the console itself still answers only on this machine.",
+        "           Traffic is plain HTTP: use a network you trust, a VPN such as Tailscale or",
+        "           WireGuard, or an SSH tunnel.",
+        "  Other machines join at  " + reach.urls.join("  ·  "),
+      );
+    } else if (!config.demo) {
+      lines.push("  this machine only — to connect other machines, restart with --listen 0.0.0.0");
+    }
+    lines.push("  Ctrl+C stops the console.", "");
+    process.stdout.write(lines.join("\n") + "\n");
   }
-  snapshot().then(
-    (value) => {
-      if (!config.json) {
-        process.stdout.write(
-          "  ready: " +
-            value.roster.headline +
-            " · " +
-            value.header.sessionCount +
-            " rows · " +
-            value.header.total.toLocaleString() +
-            " Claude tokens today · $" +
-            value.header.costTotal.toFixed(2) +
-            " estimated · scan " +
-            value.meta.scan.ms +
-            "ms\n\n",
-        );
-      }
-      if (config.open) openBrowser(address);
-    },
-    (error) =>
-      process.stderr.write("  first scan failed: " + error.message + "\n"),
-  );
+  // "ready" once this machine has been read the first time, so a person (or a
+  // test) opening the console sees figures rather than an empty first frame.
+  Promise.resolve(localCollection && localCollection.ready).then(() => {
+    if (!config.json) {
+      const machines = hubRegistry.list().length;
+      process.stdout.write(
+        "  ready: " + (config.demo ? "demo fleet" : machines + " machine" + (machines === 1 ? "" : "s")) +
+          " · " + hubStore.recordCount.toLocaleString("en-US") + " records in the last " + config.retentionDays + " days\n\n",
+      );
+    }
+    if (config.open) openBrowser(address);
+  });
 });

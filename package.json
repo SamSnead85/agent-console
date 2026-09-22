@@ -1,7 +1,7 @@
 {
   "name": "@lockedinlabs/agent-console",
-  "version": "0.1.0",
-  "description": "Local observability for Claude Code and Codex: sessions, subagents, token usage, model costs, and delivery evidence.",
+  "version": "0.2.0",
+  "description": "Agent Console by LockedIn Labs: one view of the AI coding agents on every machine you connect — sessions, tokens, cache reads and writes, models and spend. Zero dependencies.",
   "keywords": [
     "claude-code",
     "codex",
@@ -12,14 +12,17 @@
     "cost-tracking",
     "developer-tools",
     "cli",
-    "zero-dependencies"
+    "zero-dependencies",
+    "multi-machine",
+    "team",
+    "cache"
   ],
   "type": "module",
   "bin": {
     "agent-console": "./bin/agent-console.mjs"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "files": [
     "bin/",
@@ -27,7 +30,7 @@
     "public/",
     "server.js",
     "scripts/",
-    "docs/",
+    "docs/*.md",
     "PROVENANCE.md"
   ],
   "scripts": {
@@ -46,5 +49,6 @@
   "homepage": "https://github.com/SamSnead85/agent-console#readme",
   "bugs": {
     "url": "https://github.com/SamSnead85/agent-console/issues"
-  }
+  },
+  "author": "LockedIn Labs (https://lockedinlabs.ai)"
 }

@@ -46,3 +46,31 @@ REDISTRIBUTION AUTHORIZED: Sam Sweilem, 2026-09-20. This package may be redistri
 The owner instructed Codex to publish the current console as the open-source
 observability product, after the proprietary origin and MIT redistribution
 requirement had been disclosed in the same conversation.
+
+## The collector (0.2.0)
+
+`lib/collector/` — `collector.js`, `parsers.js`, `pricing.js`, `measurement.js`,
+`transport.js`, `prices.json` and their tests — is LockedIn Labs' own
+dependency-free console collector, written for its internal console and
+published in this package under the package's MIT licence on 2026-09-22. Its
+measurement rules (per-message high water, disjoint cache classes, per-model
+cache-read rates) were themselves derived from this package's 0.1.0 release.
+
+Adapted for the hub: delivery can be a function call (the hub reads its own
+machine in-process), collection can be bounded to a retention window, a
+delivered spool can be emptied, the device credential may come from the
+reporter's private state file, plain HTTP is accepted on private networks, and
+a receipt may count records outside the hub's window as `expired`. A hosted
+service's endpoints and its process-interruption channel were removed.
+
+`prices.json` rows name the vendor page each rate was read from and the date it
+was checked; they are standard list prices, not negotiated or subscription
+rates. The field-by-field contract is `docs/COLLECTOR-CONTRACT.md`.
+
+## Fonts and marks
+
+IBM Plex Sans and IBM Plex Mono (`public/fonts/`) are Copyright 2019 IBM Corp.
+and are included under the SIL Open Font License 1.1, whose text travels with
+them. The LockedIn Labs mark belongs to LockedIn Labs. The Anthropic and OpenAI
+marks are the vendors' own published marks, used only to identify their models.
+
