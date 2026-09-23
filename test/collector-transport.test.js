@@ -76,13 +76,16 @@ test("stops after bounded retries without exposing network error text", async ()
   assert.equal(attempts, 3);
 });
 
-test("honors numeric and dated Retry-After on 429 and 503 within the configured delay bound", async () => {
+test("honors numeric and dated Retry-After on 429 and 503 up to the Retry-After cap, not the short backoff", async () => {
   const now = Date.parse("2026-09-20T12:00:00Z");
   for (const [status, header, expected] of [
     [429, "3", 3000],
     [503, "Sun, 20 Sep 2026 12:00:02 GMT", 2000],
-    [429, "99", 4000],
-    [503, "Sun, 20 Sep 2026 12:01:00 GMT", 4000],
+    // A hub pacing a first sync names a real wait; cutting it to 4 s is what
+    // made a large backlog retry forever.
+    [429, "99", 99_000],
+    [503, "Sun, 20 Sep 2026 12:01:00 GMT", 60_000],
+    [429, "900", 120_000],
     [429, "Sun, 20 Sep 2026 11:59:00 GMT", 250],
     [503, "invalid", 250],
     [500, "3", 250],

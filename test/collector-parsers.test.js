@@ -165,7 +165,7 @@ test('redaction: records contain no raw identifiers; private state contains no p
   assert.doesNotMatch(JSON.stringify(updated.records), /SENTINEL_PRIVATE_DATA|\/private\/|response and command/);
   assert.doesNotMatch(JSON.stringify(updated.state), /\/private\/|response and command/);
   assert.deepEqual(Object.keys(updated.records[0]).sort(), ['id','tool','model','sessionHash','parentSessionHash',
-    'isSubagent','projectHash','reportingDevice','executionOrigin','at','fresh','output','cacheWrite','cacheRead','cacheWrite5m','cacheWrite1h','ttl','observed','measurement'].sort());
+    'isSubagent','projectHash','reportingDevice','executionOrigin','at','fresh','output','cacheWrite','cacheRead','cacheWrite5m','cacheWrite1h','ttl','observed','measurement','continuation'].sort());
 });
 
 test('copied transcripts have portable organization IDs and unchanged consumption on another reporting device', () => {

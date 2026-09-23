@@ -63,5 +63,10 @@ earlier reports still count. Record ids are keyed by the transcript's own
 session and message identity under the hub's organization salt, so a transcript
 copied to a second device is recognised and counted once. The reporting device
 is not proof of where the work ran; execution origin stays unknown unless a
-transcript names it. Device counts mean devices reporting — never seats or
+transcript names it. A device still sending a large backlog is shown as
+catching up, with how many of its records have arrived, and is excluded from
+"right now" until it has sent everything. Messages are counted once per API
+response: Claude Code writes one response over several transcript lines, and
+the extra records those lines produce are marked as continuations, not counted
+as messages (since 0.2.1). Device counts mean devices reporting — never seats or
 people. The full rules are in [COLLECTOR-CONTRACT.md](COLLECTOR-CONTRACT.md).

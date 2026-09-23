@@ -167,10 +167,14 @@ test("two machines join by link, report, roll up by person, and nothing private 
   }
   for (const b of wire.bodies.filter((x) => x.url === "/api/ingest")) {
     const envelope = JSON.parse(b.body);
-    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records"]);
+    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "backlog"]);
+    // How far a catch-up has got: two counts, nothing else.
+    assert.deepEqual(Object.keys(envelope.backlog), ["delivered", "total"]);
+    assert.ok(Number.isSafeInteger(envelope.backlog.delivered) && Number.isSafeInteger(envelope.backlog.total));
     for (const r of envelope.records) {
-      assert.deepEqual(Object.keys(r).sort(), ["at", "cacheRead", "cacheWrite", "cacheWrite1h", "cacheWrite5m", "engagement", "executionOrigin", "fresh",
+      assert.deepEqual(Object.keys(r).sort(), ["at", "cacheRead", "cacheWrite", "cacheWrite1h", "cacheWrite5m", "continuation", "engagement", "executionOrigin", "fresh",
         "id", "isSubagent", "measurement", "model", "observed", "output", "parentSessionHash", "projectHash", "reportingDevice", "sessionHash", "tool", "ttl"]);
+      assert.equal(typeof r.continuation, "boolean");
       assert.match(r.sessionHash, /^[0-9a-f]{64}$/u);
       assert.match(r.projectHash, /^[0-9a-f]{64}$/u);
       assert.equal(r.engagement, null, "a project name left without --share-project-names");

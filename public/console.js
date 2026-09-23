@@ -139,7 +139,9 @@
     const live = D.lanes.filter((l) => l.state === "live").length;
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
     const subagents = Math.max(0, D.day.sessions - D.laneCount);
+    const catching = D.devices.filter((d) => d.status === "catching-up").length;
     $("heroCounts").textContent = `${D.devices.length} machine${D.devices.length === 1 ? "" : "s"} · ${reporting} reporting · ` +
+      (catching ? `${catching} catching up · ` : "") +
       `${D.laneCount} session${D.laneCount === 1 ? "" : "s"} today · ${live} live` + (subagents ? ` · ${subagents} subagent${subagents === 1 ? "" : "s"}` : "");
     $("heroScope").textContent = D.hub.demo ? "Demonstration fleet" : D.hub.listen.network ? "Hub · this network" : "Hub · this machine";
     $("liveDot").classList.toggle("on", reporting > 0 && !paused);
@@ -165,7 +167,7 @@
       : "";
     $("cMix").setAttribute("aria-label", "Token composition: " + order.map((k) => `${CLASS_LABEL[k]} ${pct(sh[k])}`).join(", "));
     $("cClasses").innerHTML = order.map((k) =>
-      `<span title="${esc(CLASS_LABEL[k])} — ${pct(sh[k], 2)} of all tokens${k === "cacheRead" ? `; ${pct(sh.cacheHitOnInput, 1)} of input tokens` : ""}${D.day.unknown[k] ? `; ${D.day.unknown[k]} messages did not report this class` : ""}"><i class="sw ${k}"></i><span>${CLASS_LABEL[k]}</span><b>${fmt(t[k])}</b><em class="pc">${pct(sh[k])}</em></span>`).join("");
+      `<span title="${esc(CLASS_LABEL[k])} — ${pct(sh[k], 2)} of all tokens${k === "cacheRead" ? `; ${pct(sh.cacheHitOnInput, 1)} of input tokens` : ""}${D.day.unknown[k] ? `; ${D.day.unknown[k]} records did not report this class` : ""}"><i class="sw ${k}"></i><span>${CLASS_LABEL[k]}</span><b>${fmt(t[k])}</b><em class="pc">${pct(sh[k])}</em></span>`).join("");
 
     const silent = D.devices.filter((d) => d.status === "silent");
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
@@ -174,8 +176,10 @@
     else if (D.hub.demo) prov = `generated · ${D.devices.length} synthetic machines`;
     else prov = `reported by ${reporting} of ${D.devices.length} machine${D.devices.length === 1 ? "" : "s"}`;
     if (silent.length) prov += `<br><b>${esc(silent[0].label)} silent since ${hhmm(silent[0].lastContactAt)}</b>` + (silent.length > 1 ? ` and ${silent.length - 1} more` : "");
+    const catching = D.devices.filter((d) => d.status === "catching-up");
+    if (catching.length) prov += `<br><b>${esc(catching[0].label)} ${esc(catchUpText(catching[0]))}</b>` + (catching.length > 1 ? ` and ${catching.length - 1} more` : "") + " — incomplete until it has sent everything";
     const unknown = Math.max(...Object.values(D.day.unknown));
-    if (unknown) prov += ` · ${unknown} message${unknown === 1 ? "" : "s"} missing a class — a floor, not a total`;
+    if (unknown) prov += ` · ${unknown} record${unknown === 1 ? "" : "s"} missing a class — a floor, not a total`;
     $("cProv").innerHTML = prov;
     const flow = $("flowWrap");
     const empty = D.day.tokens.total === 0 && D.series["7d"].values.every((v) => v === 0);
@@ -183,7 +187,8 @@
     $("voidReason").textContent = D.devices.length === 0
       ? "No machine is connected yet. Nothing is estimated in its place."
       : D.hub.local && D.hub.local.enabled && !D.hub.local.firstRunComplete
-        ? "Reading this machine's transcripts for the first time…"
+        ? "Reading this machine's transcripts for the first time" + (D.hub.local.progress && D.hub.local.progress.filesTotal
+          ? ` · ${D.hub.local.progress.files.toLocaleString("en-US")} of ${D.hub.local.progress.filesTotal.toLocaleString("en-US")} files` : "…")
         : "No usage has been reported in the last seven days. Nothing is estimated in its place.";
   }
 
@@ -252,7 +257,9 @@
     const live = D.lanes.filter((l) => l.state === "live").length;
     const idle = D.lanes.filter((l) => l.state === "idle").length;
     const unavailable = D.lanes.filter((l) => l.state === "silent" || l.state === "revoked").length;
+    const catching = D.lanes.filter((l) => l.state === "catching-up").length;
     const parts = [`${D.laneCount} session${D.laneCount === 1 ? "" : "s"} in 24 h`, `${live} live`, `${idle} idle`];
+    if (catching) parts.push(`${catching} on machines still catching up${showUnavailable ? "" : " (hidden)"}`);
     if (unavailable) parts.push(`${unavailable} on silent machines${showUnavailable ? "" : " (hidden)"}`);
     const tail = D.hub.demo ? "DEMO · every figure here is generated" : "figures are what each machine reported · costs are list-price estimates";
     $("lFoot").innerHTML = parts.map((p) => `<span>${esc(p)}</span>`).join("") + `<span class="end">${esc(tail)}</span>`;
@@ -261,10 +268,11 @@
   function fillLane(row, l, now) {
     const demo = D.hub.demo;
     row.className = "lane " + l.state + (demo ? " sim" : "");
-    const word = l.state === "live" ? (demo ? "DEMO" : "LIVE") : l.state === "idle" ? "IDLE" : l.state === "revoked" ? "REMOVED" : "SILENT";
+    const word = l.state === "live" ? (demo ? "DEMO" : "LIVE") : l.state === "idle" ? "IDLE" : l.state === "revoked" ? "REMOVED" : l.state === "catching-up" ? "CATCHING UP" : "SILENT";
     row.querySelector(".st span").textContent = word;
     row.querySelector(".st").title = l.state === "live" ? "Reported within the last two minutes" + (demo ? " (generated)" : "")
       : l.state === "idle" ? "The machine is reporting; this session has not worked for a while"
+      : l.state === "catching-up" ? "The machine is still sending its backlog; what it is doing right now is not known yet"
       : "The machine stopped reporting; what it has done since is unknown";
     const b = row.querySelector(".pr b");
     b.textContent = l.project.name;
@@ -301,7 +309,8 @@
     ag.title = l.agents.total ? `${l.agents.live} subagents worked in the last five minutes, of ${l.agents.total} today` : "No subagents";
     const dv = row.querySelector(".dv");
     const who = l.device.person ? ` · ${esc(l.device.person)}` : "";
-    dv.innerHTML = `<b>${esc(l.device.label)}</b>${who} · ` + (l.state === "silent" || l.state === "revoked"
+    dv.innerHTML = `<b>${esc(l.device.label)}</b>${who} · ` + (l.state === "catching-up" ? "catching up"
+      : l.state === "silent" || l.state === "revoked"
       ? `silent since ${hhmm(l.device.lastContactAt || l.lastAt)}`
       : l.state === "live" ? "now" : ago(l.lastAt + 60_000, now));
   }
@@ -309,7 +318,17 @@
   const vendorOf = (model) => /^claude-/.test(model) ? "anthropic" : /^(gpt-|codex-|o\d)/.test(model) ? "openai" : null;
 
   // ── machines on the console ─────────────────────────────────────────
+  /** "catching up · 12,000 of 68,430 records" — never "Reporting · now" before the backlog is in. */
+  function catchUpText(d) {
+    const b = d.backlog;
+    return b ? `catching up · ${b.delivered.toLocaleString("en-US")} of ${b.total.toLocaleString("en-US")} records` : "catching up";
+  }
   function statusText(d, now) {
+    if (d.status === "catching-up") return catchUpText(d).replace(/^c/u, "C");
+    if (d.local && D.hub.local && D.hub.local.enabled && !D.hub.local.firstRunComplete) {
+      const p = D.hub.local.progress;
+      return "Reading its transcripts" + (p && p.filesTotal ? ` · ${p.files.toLocaleString("en-US")} of ${p.filesTotal.toLocaleString("en-US")} files` : "…");
+    }
     if (d.status === "reporting") return d.mode === "periodic" ? "Reporting hourly" : "Reporting · " + ago(d.lastContactAt, now);
     if (d.status === "silent") return `Silent since ${hhmm(d.lastContactAt)} · ${ago(d.lastContactAt, now)}`;
     if (d.status === "waiting") return "Joined — waiting for its first report";
@@ -442,8 +461,18 @@
     const excludedAll = D.devices.length > 0 && D.burn.reporting === 0;
     $("cBurn").innerHTML = excludedAll ? "—" : perSecond
       ? `${fmt(perMin / 60)}<span class="u">tok/s</span>` : `${fmt(perMin)}<span class="u">tok/min</span>`;
+    const bc = D.burn.cost || { status: "estimated", unpricedModels: [] };
+    const per = perSecond ? "/min" : "/hour";
+    const dollars = D.burn.usdPerMinute === null
+      ? "—" + per + " · unpriced"
+      : money(D.burn.usdPerMinute * (perSecond ? 1 : 60)) + per + (bc.status === "partial" ? " est. · partial" : " est.");
     $("cRate").textContent = excludedAll ? "no machine reporting right now"
-      : (perSecond ? fmt(perMin) + " per minute" : fmt(perMin / 60) + " per second") + " · " + money(D.burn.usdPerMinute * (perSecond ? 1 : 60)) + (perSecond ? "/min" : "/hour") + " est.";
+      : (perSecond ? fmt(perMin) + " per minute" : fmt(perMin / 60) + " per second") + " · " + dollars;
+    const names = bc.unpricedModels.join(", ");
+    const has = bc.unpricedModels.length === 1 ? "has" : "have";
+    $("cRate").title = bc.status === "unpriced" ? `${names} ${has} no verified list price, so no dollar rate is shown`
+      : bc.status === "partial" ? `${names} ${has} no verified list price; ${fmt(bc.unpricedTokensPerMinute)} tok/min are not in this figure`
+      : "Standard API list prices. Not an invoice.";
   }
 
   function frame(t) {
@@ -564,7 +593,7 @@
       [pct(total ? cr / total : null), "Cache read", "share of all tokens"],
       [pct(total ? cw / total : null), "Cache write", "share of all tokens"],
       [msgs.toLocaleString("en-US"), "Messages", whole ? `${whole.sessions} sessions` : "reported events"],
-      [`${reporting}<span class="u">/ ${D.devices.length}</span>`, "Machines reporting", D.people.length + " people"],
+      [`${reporting}<span class="u">/ ${D.devices.length}</span>`, "Machines reporting", D.people.length + " people" + (D.devices.some((d) => d.status === "catching-up") ? " · some still catching up" : "")],
     ].map(([v, l, s]) => `<div><div class="v">${v}</div><div class="l">${esc(l)}</div><div class="s">${esc(s)}</div></div>`).join("");
 
     $("peopleTable").tBodies[0].innerHTML = D.people.length ? D.people.map((p) => {

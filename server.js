@@ -29,6 +29,7 @@ import { createStore } from "./lib/hub/store.js";
 import { createNames, startLocalCollection } from "./lib/hub/local.js";
 import { startDemo } from "./lib/hub/demo.js";
 import { createHubRoutes, isLocalRequest, isPublicPath, hubAddresses } from "./lib/hub/routes.js";
+import { choosePort } from "./lib/hub/port.js";
 import { defaultRoots } from "./lib/collector/collector.js";
 import {
   contentSecurityPolicy,
@@ -94,6 +95,31 @@ if (config.embedErrors.length || config.listenErrors.length) {
   process.stderr.write("\n");
   process.exit(2);
 }
+
+// ---------------------------------------------------------------------------
+// The port, before anything opens a file
+// ---------------------------------------------------------------------------
+
+const portChoice = await choosePort({ port: config.port, host: config.listen, explicit: config.portExplicit, demo: config.demo });
+if (portChoice.action === "already-running") {
+  const url = "http://127.0.0.1:" + portChoice.port;
+  if (config.json) {
+    process.stdout.write(JSON.stringify({ ok: true, alreadyRunning: true, dashboard: { name: PRODUCT_NAME, version: portChoice.running.version, url, port: portChoice.port } }) + "\n");
+  } else {
+    process.stdout.write("\n  " + PRODUCT_NAME + " is already running at " + url + (config.open ? " — opening it." : " — open that address in your browser.") + "\n\n");
+  }
+  if (config.open) openBrowser(url);
+  process.exit(0);
+}
+if (portChoice.action === "busy") {
+  process.stderr.write(
+    "\n  Port " + config.port + " is already in use by another program.\n" +
+      "  Start the console on another port:  node bin/agent-console.mjs --port " + (config.port + 1) + "\n\n",
+  );
+  process.exit(1);
+}
+const movedFrom = portChoice.movedFrom ?? null;
+config.port = portChoice.port;
 
 // ---------------------------------------------------------------------------
 // The hub
@@ -900,6 +926,12 @@ server.listen(config.port, config.listen, () => {
       "",
       "  " + productTitle() + "  ->  " + address,
     ];
+    if (movedFrom !== null) {
+      lines.push("  port " + movedFrom + " is already in use, so this console is on port " + config.port + " instead");
+      if (reach.network && hubRegistry.list().some((d) => !d.local && !d.revokedAt)) {
+        lines.push("  machines that joined earlier report to port " + movedFrom + " and reach this console again once it runs there");
+      }
+    }
     if (config.demo) {
       lines.push("  DEMO · a synthetic fleet; nothing on this machine is read, and no machine can join");
     } else {
@@ -925,7 +957,28 @@ server.listen(config.port, config.listen, () => {
   }
   // "ready" once this machine has been read the first time, so a person (or a
   // test) opening the console sees figures rather than an empty first frame.
+  // A first read of months of transcripts can take a while: it prints how far
+  // it has got, and the browser opens after two seconds regardless — the
+  // console itself shows the same progress.
+  let opened = false;
+  const openOnce = () => { if (config.open && !opened) { opened = true; openBrowser(address); } };
+  const early = setTimeout(openOnce, 2000);
+  early.unref?.();
+  let progressTimer = null;
+  if (localCollection && !config.json) {
+    let lastLine = "";
+    progressTimer = setInterval(() => {
+      const p = localCollection.status.progress;
+      if (localCollection.status.firstRunComplete || !p || !p.filesTotal) return;
+      const line = "  reading this machine's transcripts · " + p.files.toLocaleString("en-US") + " of " +
+        p.filesTotal.toLocaleString("en-US") + " files · " + p.records.toLocaleString("en-US") + " records so far";
+      if (line !== lastLine) { lastLine = line; process.stdout.write(line + "\n"); }
+    }, 3000);
+    progressTimer.unref?.();
+  }
   Promise.resolve(localCollection && localCollection.ready).then(() => {
+    clearTimeout(early);
+    if (progressTimer) clearInterval(progressTimer);
     if (!config.json) {
       const machines = hubRegistry.list().length;
       process.stdout.write(
@@ -933,6 +986,6 @@ server.listen(config.port, config.listen, () => {
           " · " + hubStore.recordCount.toLocaleString("en-US") + " records in the last " + config.retentionDays + " days\n\n",
       );
     }
-    if (config.open) openBrowser(address);
+    openOnce();
   });
 });

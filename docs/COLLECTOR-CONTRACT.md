@@ -13,6 +13,7 @@ and is published here, with the collector, under this package's MIT licence.
   "v": 1,
   "device": { "id": "enrolled-device-id", "label": "Workstation" },
   "freshness": { "lastObservedAt": "2026-09-20T12:34:00.000Z", "lastSyncedAt": null, "mode": "periodic" },
+  "backlog": { "delivered": 500, "total": 68430 },
   "records": [
     {
       "id": "deterministic-record-hash",
@@ -34,6 +35,7 @@ and is published here, with the collector, under this package's MIT licence.
       "ttl": "split",
       "cacheRead": 250,
       "observed": true,
+      "continuation": false,
       "measurement": {
         "provenance": "deviceReported",
         "population": { "kind": "usageEvent", "recordId": "deterministic-record-hash", "sessionHash": "salted-session-hash" },
@@ -70,6 +72,7 @@ The record fields have these meanings:
 | `fresh`, `output`, `cacheWrite`, `cacheRead` | Disjoint token classes, each a nonnegative safe integer when reported, or `null` when unreported. Cached input must not also appear in fresh input. Unknown is never converted to zero. |
 | `cacheWrite5m`, `cacheWrite1h`, `ttl` | Lifetime components of `cacheWrite`, not extra tokens. `ttl: "split"` requires both components reported and their sum equal to `cacheWrite`. Total-only usage has null components and `ttl: "unknown"`. Unknown duration is a pricing assumption, not an observed five-minute write. |
 | `observed` | Legacy flag, always `true`: the collector found a local usage event. It is never an independent verification claim. |
+| `continuation` | `true` when an earlier record already counted this API message. Claude Code writes one response over several transcript lines; each line whose usage grew is its own record (so no token is lost), and only the first is a new message. Codex records are always `false`. Added in 0.2.1; a hub accepts records without it and counts each as a message. |
 | `measurement` | Required fixed descriptor for all token classes and the event's activity: `provenance: "deviceReported"`, population matching this `id` and `sessionHash`, event window matching minute-rounded `at`, and local-transcript source matching `tool`. Extra or conflicting fields are refused. |
 
 Ignore unrecognized transcript lines and fields. Do not forward them. Reject
@@ -94,6 +97,21 @@ length. A wholly invalid envelope may instead receive a generic 400 response;
 401/403 indicates invalid, expired or revoked enrollment authority; 413 is an
 oversized request; 429 may carry `Retry-After`. Neither successful ingestion nor
 a duplicate is evidence of billable spend.
+
+## Large uploads
+
+A machine joining with months of transcripts may have tens of thousands of
+records to send. The reporter sends them in batches of at most 500, one at a
+time, and **moves its cursor after every acknowledged batch**, so an upload
+that is paced or interrupted resumes where it stopped; a replayed batch is
+harmless because a known record id is a duplicate. The hub accepts 600 batches
+a minute per device (300,000 records); beyond that it answers 429 with
+`Retry-After`, which the reporter honours for up to two minutes per wait.
+
+The optional envelope field `backlog` — `{ delivered, total }`, two counts — says
+how far such an upload has got, this batch included. While `delivered <
+total` the console shows the machine as "catching up · N of M records", leaves
+it out of "right now" and never as fully reporting. Nothing else is in it.
 
 ## Enrollment and authorization
 
