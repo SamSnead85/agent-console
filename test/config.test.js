@@ -38,8 +38,8 @@ test("a join link lives at most an hour", () => {
 
 test("custom transcript roots are respected, and demo reads no home at all", () => {
   const roots = ["--claude-root", "/tmp/claude-source", "--codex-root", "/tmp/codex-source"];
-  assert.equal(readConfig(roots, {}).claudeRoot, "/tmp/claude-source");
-  assert.equal(readConfig(roots, {}).codexRoot, "/tmp/codex-source");
+  assert.equal(readConfig(roots, {}).claudeRoot, path.resolve("/tmp/claude-source"));
+  assert.equal(readConfig(roots, {}).codexRoot, path.resolve("/tmp/codex-source"));
   const demo = readConfig(["--demo", ...roots], {});
   assert.equal(demo.home, null);
   assert.equal(demo.claudeRoot, null);

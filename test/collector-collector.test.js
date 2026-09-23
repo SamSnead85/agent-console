@@ -64,8 +64,10 @@ test('redaction covers emitted records and persistent parser/cursor state', asyn
   assert.equal(record.engagement, null);
   assert.equal(record.observed, true);
   assert.equal(new Date(record.at).getUTCSeconds(), 0);
-  assert.equal((await fs.stat(path.join(data.directory, 'enrollment.json'))).mode & 0o777, 0o600);
-  assert.equal((await fs.stat(path.join(data.directory, 'cursor-v2.json'))).mode & 0o777, 0o600);
+  if (process.platform !== 'win32') {   // Windows has no POSIX modes
+    assert.equal((await fs.stat(path.join(data.directory, 'enrollment.json'))).mode & 0o777, 0o600);
+    assert.equal((await fs.stat(path.join(data.directory, 'cursor-v2.json'))).mode & 0o777, 0o600);
+  }
 });
 test('summary does not consume a delivery cursor; repeated IDs are deduplicated in totals', async t => {
   const data = await fixture(t), out = output();
