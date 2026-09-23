@@ -1,15 +1,13 @@
 <p align="center">
   <a href="https://lockedinlabs.ai">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/brand/mark-on-dark.svg">
-      <img src="docs/brand/mark-on-light.svg" alt="LockedIn Labs" width="72" height="72">
+      <source media="(prefers-color-scheme: dark)" srcset="docs/brand/lockup-on-dark.svg">
+      <img src="docs/brand/lockup-on-light.svg" alt="LockedIn Labs" width="360">
     </picture>
   </a>
 </p>
 
 <h1 align="center">Agent Console</h1>
-
-<p align="center"><b>by <a href="https://lockedinlabs.ai">LockedIn Labs</a></b></p>
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/SamSnead85/agent-console"></a>
@@ -47,25 +45,44 @@ You need a Mac, a Linux machine or a Windows PC, and about two minutes.
 2. **Start it.** Paste this into the terminal and press Return:
 
    ```sh
-   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.0/lockedinlabs-agent-console-0.2.0.tgz --open
+   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --open
    ```
 
-   It fetches this release from GitHub and your browser opens the console at
-   `http://127.0.0.1:6787`. Leave the terminal window open; closing it (or
+   That fetches Agent Console from this project's GitHub release (nothing to
+   download by hand) and opens it in your browser, normally at
+   `http://127.0.0.1:6787`. If that port is taken, the terminal prints the
+   address it used instead. Leave the terminal window open; closing it (or
    pressing Ctrl+C) stops the console. The same command starts it again.
 
+   The first start reads the Claude Code and Codex history already on this
+   computer. With months of it that can take a minute; the terminal counts the
+   files as it goes, and so does the console.
+
 **Or download it.** On the [GitHub page](https://github.com/SamSnead85/agent-console),
-press the green **Code** button, then **Download ZIP**, and unzip it. (Or, if
-you use git: `git clone https://github.com/SamSnead85/agent-console.git`.) In a
-terminal, go into the folder you unzipped and run:
+press the green **Code** button, then **Download ZIP**, and unzip it. You get a
+folder called `agent-console-main`. In a terminal, go into that folder and
+start the console:
 
 ```sh
+cd ~/Downloads/agent-console-main
 node bin/agent-console.mjs --open
 ```
 
-The rest of this page writes commands that way. If you used the one-line
-command, put `npx --yes <that release link>` where it says
-`node bin/agent-console.mjs`.
+On Windows (PowerShell) the first line is `cd $HOME\Downloads\agent-console-main`.
+If `node` then says it cannot find `bin/agent-console.mjs`, Windows unzipped
+the folder inside another one of the same name: run `cd agent-console-main`
+once more. (If you use git: `git clone https://github.com/SamSnead85/agent-console.git`,
+then `cd agent-console`.)
+
+**The .tgz on the release page.** The [releases page](https://github.com/SamSnead85/agent-console/releases/latest)
+lists a file named `lockedinlabs-agent-console-<version>.tgz`. It is the
+packaged console that the one-line command above fetches for you. You don't
+need to download or open it. *Source code (zip)* on the same page is that
+release's code, used the same way as Download ZIP (its folder is named
+`agent-console-<version>`).
+
+The rest of this page writes commands as `node bin/agent-console.mjs`. If you
+used the one-line command, put `npx --yes <that release link>` in its place.
 
 Nothing to install beyond Node, no account, no build step, no dependencies.
 
@@ -120,7 +137,7 @@ connections on the machine running the console, allow it on private networks.
 ## What you see
 
 **Tokens · last 24 hours** — the total across every machine, the list-price
-estimate, the message count, and the split into **cache read**, **cache write**,
+estimate, the number of messages (API responses, not transcript lines), and the split into **cache read**, **cache write**,
 **output** and **input**, each with its share of all tokens. (Cache read as a
 share of *input tokens only* — the other common reading — is in the cache-read
 tooltip and in the API, labelled as such.)
@@ -150,10 +167,15 @@ this computer and never sent anywhere.
 - **A machine that stops reporting is not zero.** It shows when it was last
   heard from, its sessions show an unknown five-minute figure, and it is left out
   of "right now" by name.
+- **A machine still sending its history is not complete.** A computer that
+  joins with months of transcripts shows "catching up · N of M records" until
+  everything has arrived, and is left out of "right now" until then. If its
+  upload is interrupted it carries on from where it stopped.
 - **Unknown is not zero.** A message that did not report a token class makes the
   total a floor, and the screen says so. A model with no verified list price is
   left out of the dollar figure — never priced at $0 — and the screen says how
-  many tokens that leaves out.
+  many tokens that leaves out. If everything in the burn window is unpriced,
+  the burn shows "—/hour · unpriced" rather than a dollar rate.
 - **Copied transcripts count once.** Record ids come from the transcript itself,
   not from where the file sits, so the same session read on two machines is one
   set of events.
@@ -248,9 +270,16 @@ own payload for every canary. The field-by-field contract is
 
 ## Troubleshooting
 
-**"Port 6787 is already in use."** Another console is probably running — open
-`http://127.0.0.1:6787`. Or start this one on another port:
-`node bin/agent-console.mjs --port 6788`.
+**The console opened on a port other than 6787.** Another program had 6787,
+so the console took the next free port and printed the address it used. If
+Agent Console itself is already running there, a second start says so and
+opens that one instead. A port you choose with `--port` is never changed: if
+it is busy you are told to pick another.
+
+**The reporter says "the hub is pacing uploads" or "catching up".** A computer
+joining with a lot of history sends it in batches, and the hub paces them. Leave
+the window open: every batch that arrived is kept, and the console shows the
+machine as "catching up · N of M records" until it is done.
 
 **The other computer cannot reach the console.** Check, in order: the console
 was started with `--listen 0.0.0.0`; both computers are on the same network

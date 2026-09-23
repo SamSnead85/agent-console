@@ -41,9 +41,11 @@ estimate cost offline, and they are not a quote or an invoice.
 ## LockedIn Labs' own assets
 
 The LockedIn Labs mark (`public/brand/mark.svg`, `public/favicon.svg`, the
-`public/icon-*.png` app icons, the symbol in `public/index.html`, and the
-README's light and dark versions in `docs/brand/`) and the screenshots in
-`docs/` are LockedIn Labs' own. The screenshots show demo mode,
+`public/icon-*.png` app icons and the symbol in `public/index.html`), the
+README's lockup (`docs/brand/lockup-on-light.svg` and `lockup-on-dark.svg`)
+and the screenshots in `docs/` are LockedIn Labs' own. The lockup's wordmark
+is IBM Plex Mono set as the console's header sets it, converted to outlines;
+the OFL allows artwork made with the fonts, and the outlines are not a font. The screenshots show demo mode,
 so every figure in them is generated. The MIT licence covers them along with
 the code. The LockedIn Labs name and mark still identify LockedIn Labs, so if
 you publish a modified version, please give it its own name and mark.

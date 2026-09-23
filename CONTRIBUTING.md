@@ -66,5 +66,5 @@ or background activity needs a stated reason.
 ## Pull requests
 
 Describe what changes for the person using the console and how you verified it,
-and add a line under **Unreleased** in [CHANGELOG.md](CHANGELOG.md). Contributions
+and add a line under the next version in [CHANGELOG.md](CHANGELOG.md). Contributions
 are accepted under the project's [MIT licence](LICENSE).

@@ -16,4 +16,4 @@
 
 ## Changelog
 
-- [ ] A line under **Unreleased** in `CHANGELOG.md`
+- [ ] A line under the next version in `CHANGELOG.md`

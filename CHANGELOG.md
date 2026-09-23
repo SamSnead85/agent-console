@@ -1,14 +1,57 @@
 # Changelog
 
-## Unreleased
+## 0.2.1 — not yet released
 
-Open-source completeness and LockedIn Labs branding.
+Fixes from a cold-install test that followed the README as a first-time user
+would (its figures matched an independent count of the raw logs to within
+0.044%), plus open-source completeness and LockedIn Labs branding.
 
-- **One-command start.** The README's first steps now start the console with a
-  single `npx` command that fetches the release from GitHub. Downloading the
-  ZIP still works as before.
+Fixed:
+
+- **A machine with a large history now finishes uploading.** The reporter moved
+  its cursor only after every batch of a delivery had succeeded; the hub paced
+  a 68,430-record first upload (429, wait 60 s), the reporter waited at most
+  4 s, gave up and started again from the first record, indefinitely. It now
+  keeps every acknowledged batch and resumes from there, honours `Retry-After`
+  (up to two minutes), and comes straight back when paced. The hub allows 600
+  batches a minute per machine (300,000 records) instead of 120.
+- **Honest status while a machine catches up.** The console showed such a
+  machine as "Reporting · now". It is now "Catching up · N of M records", left
+  out of "right now" by name, with its lanes' five-minute figure unknown, and the
+  figures are marked incomplete until it has sent everything. The reporter says
+  "catching up · sent N of M records" as it goes.
+- **The reporter says what actually went wrong.** "Cannot reach the hub" only
+  when nothing answered; otherwise "the hub is pacing uploads" or "the hub
+  answered with an error (HTTP 503)", with how many records are already safe.
+- **Messages count messages.** Claude Code writes one response over several
+  transcript lines, and the count was of records: 26% high overall, 64% for
+  Claude. Records now carry `continuation` (true when an earlier record already
+  counted that message), and the console counts only the first. Tokens were
+  never affected. Records from 0.2.0 reporters are still accepted and count as
+  before, so upgrade the console first; reporters that join through its link
+  get its version.
+- **No more "$0.00/hour est." for unpriced use.** When everything in the burn
+  window is on a model with no verified price, the burn reads "—/hour ·
+  unpriced"; when some is, "partial", with the models named.
+- **Port already in use.** If Agent Console is already running on the port,
+  starting it again says so and opens that one. If another program has the
+  default port, the console takes the next free one and prints the address it
+  used. A port given with `--port` is never changed.
+- **The first read shows progress.** Reading months of transcripts prints
+  "N of M files" in the terminal and on the console, and the browser opens
+  after two seconds instead of waiting for the whole read.
+
+Added:
+
+- **Claude Opus 5.5 pricing** ($4 input, $20 output, $5 / $8 cache writes,
+  $0.20 cache hits per million tokens), from Anthropic's published pricing page,
+  checked 2026-09-22.
 - **`agent-console --version`** (or `-v`) prints the version and exits. Before
   this, the flag was ignored and the console started.
+- **Easier start.** The README's first step is one `npx` command that fetches
+  the release from GitHub. The ZIP route names the folder to go into
+  (`agent-console-main`), including the nested folder Windows makes, and the
+  README explains the `.tgz` on the release page.
 - **Licences travel with the package.** `THIRD_PARTY_NOTICES.md` lists every
   bundled third-party asset (IBM Plex under the SIL OFL 1.1, the Anthropic and
   OpenAI marks drawn from Simple Icons) and is now in the npm package along
@@ -18,15 +61,20 @@ Open-source completeness and LockedIn Labs branding.
   CONTRIBUTING guide that spells out the privacy rule every change keeps, a
   SECURITY policy that points to GitHub's private vulnerability reporting, and
   issue and pull request templates.
-- **LockedIn Labs, consistently.** The README opens with the LockedIn Labs mark
-  (a light and a dark version, so it follows GitHub's theme), "Agent Console",
-  "by LockedIn Labs", badges and a one-line pitch, and closes with a line about
-  LockedIn Labs. The console and join-page footers read "© LockedIn Labs", the
-  installed app's name is "Agent Console · LockedIn Labs", the header wordmark
-  is written "LockedIn Labs" (the capitals are styling), and the reporter's
-  terminal banner names LockedIn Labs. The package keywords now include
-  `tokens`, `llm` and `usage`.
+- **LockedIn Labs, consistently.** The README opens with the full LockedIn Labs
+  lockup (the mark and the letterspaced wordmark as the console's header draws
+  them, outlined, in a light and a dark version so it follows GitHub's theme),
+  then "Agent Console", badges and a one-line pitch, and closes with a line
+  about LockedIn Labs. The console and join-page footers read "© LockedIn
+  Labs", the installed app's name is "Agent Console · LockedIn Labs", the
+  header wordmark is written "LockedIn Labs" (the capitals are styling), and the
+  reporter's terminal banner names LockedIn Labs. The package keywords now
+  include `tokens`, `llm` and `usage`.
 - The provenance record and a test fixture no longer name an individual.
+
+Wire format: the envelope gains an optional `backlog: { delivered, total }`
+and records gain `continuation`; both are counts or flags, nothing more. See
+[docs/COLLECTOR-CONTRACT.md](docs/COLLECTOR-CONTRACT.md).
 
 ## 0.2.0 — 2026-09-22
 
