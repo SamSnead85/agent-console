@@ -25,9 +25,8 @@ node --test test/hub-e2e.test.js  # one file
 npm run smoke:pack                # pack, install into a scratch prefix, start in demo mode
 ```
 
-Both must pass before a pull request is merged. CI runs them on macOS and Linux
-with Node 22 and 24. On Windows it runs the hub and reporter tests and the smoke
-test. A bug fix comes with a test that fails without it.
+Both must pass before a pull request is merged. CI runs them on macOS, Linux and
+Windows with Node 22 and 24. A bug fix comes with a test that fails without it.
 
 ## The privacy invariant
 
@@ -42,10 +41,14 @@ or credential.
   [docs/COLLECTOR-CONTRACT.md](docs/COLLECTOR-CONTRACT.md) and the canary checks
   in `test/hub-e2e.test.js` in the same pull request. Any new opt-in has to be
   off by default, like `--share-project-names`.
-- The console and every administrative action answer on loopback only. Don't
-  widen what `--listen` exposes.
-- The page loads nothing from another origin: no CDN, font service, analytics
-  or telemetry. `test/server.test.js` checks this.
+- The console and every administrative action stay on the loopback listener,
+  behind the sign-in cookie. The reporting port serves only the join page, the
+  join exchange and ingestion; don't add anything to it.
+  `test/security.test.js` holds each of these.
+- The pages load nothing from another origin: no CDN, font service, analytics
+  or telemetry. `test/security.test.js` checks this too.
+- The console never serves code. Every command it prints installs the package
+  from the GitHub release.
 - Fixtures are synthetic. Don't commit real transcripts, screenshots of real
   sessions, tokens, join codes, hostnames, usernames or customer data. Use
   `--demo` for screenshots.

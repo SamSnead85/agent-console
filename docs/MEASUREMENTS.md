@@ -1,72 +1,62 @@
-# Measurement contract
+# What the numbers mean
 
-## Sources and scope
+## Sources
 
-Claude: recursive JSONL transcripts in `~/.claude/projects`, with process/session
-associations in `~/.claude/sessions`. Codex: rollout JSONL in `~/.codex/sessions`.
-Collection is local and read-only. Discovery defaults to files modified within
-72 hours; source-root overrides do not imply cross-machine aggregation.
+Claude Code: the JSONL transcripts under `~/.claude/projects`. Codex: the
+rollout JSONL under `~/.codex/sessions`. Both are read locally and read-only,
+on each machine, by the collector (`lib/collector/`). Only the transcripts
+written inside the console's retention window (8 days by default) are read.
+The field-by-field rules are in [COLLECTOR-CONTRACT.md](COLLECTOR-CONTRACT.md).
 
-Claude response records are deduplicated within each file by message ID, using
-per-category high-water counters. Parent totals include subagent usage, so do
-not add parent and child totals again. Metadata journals are not agents.
-Deduplication across copied transcripts or machines is not implemented.
+## Tokens
 
-History uses five-minute buckets. Rolling periods include the first overlapping
-bucket, so the lower boundary can extend by less than five minutes. Claude
-session rows remain local-day scoped. Thinking tokens are already part of
-output; one-hour writes are already part of total cache writes.
+Four disjoint classes: **input** (fresh input, not from cache), **output**,
+**cache write** and **cache read**. Thinking tokens are already inside output;
+one-hour cache writes are already inside cache write. A class a tool did not
+report is unknown, not zero: the total is then a floor, and the screen says so.
 
-Codex counters are cumulative per thread. They are never added to Claude period
-totals or priced in this release. Fork replay handling exists for activity
-signals, but period attribution across resets and model changes needs further
-validation before a combined usage headline is appropriate.
+**Cache read share** is cache reads divided by all four classes. The other
+common reading, cache reads as a share of input only (cache read ÷ (cache read
++ cache write + input)), is in the cache-read tooltip and in the API, labelled
+as such. Neither is a benchmark, and a high share is not a waste score.
+
+**Messages** are API responses. Claude Code writes one response over several
+transcript lines; the lines after the first are marked as continuations and
+are not counted again. Their token increments are still counted, once.
+
+## Machines and copies
+
+Each machine reports what its own transcripts say, under its own device token.
+Record ids come from the transcript itself (session and message ids) under the
+console's shared salt, not from a path, so a transcript copied to a second
+machine is recognised and counted once, credited to the machine that sent it
+first. The reporting machine is not proof of where the work ran.
+
+A machine that stops reporting keeps its last contact time, its sessions show
+an unknown five-minute figure, and it is left out of "right now" by name. A
+machine still sending a large backlog is shown as "catching up · N of M
+records" and is also left out of "right now" until it has sent everything.
+Machine counts are machines reporting, never seats or people.
 
 ## Costs
 
-Rates checked September 20, 2026 against
-[Anthropic's published pricing](https://platform.claude.com/docs/en/about-claude/pricing).
-Standard API-equivalent USD per million tokens; not subscription charges,
-credits, taxes, negotiated rates, fast mode, geography premiums, or tool fees.
+Estimates at standard API list prices from an offline, dated table
+([`lib/collector/prices.json`](../lib/collector/prices.json)), for Claude and
+OpenAI models, so Claude Code and Codex use are both priced where a published
+rate exists. Each row names the vendor page it came from and when it was
+checked. A model without a verified rate, or a record missing a token class, is
+left out of the dollar figure and counted as unpriced: never priced at zero.
+Where some usage is unpriced, a figure is marked partial; where all of it is,
+the burn rate reads "unpriced" instead of a dollar amount.
 
-Fable 5.1 and Mythos 5.1: input $10, output $50, cache reads $0.25, five-minute
-writes $12.50, one-hour writes $20. Older Fable 5/Mythos 5 cache reads remain $1.
-The model-specific rate is intentional; a global 10% cache multiplier is wrong
-for 5.1. Unknown model IDs are unpriced. Mixed totals report a partial priced
-subtotal; unknown subagent costs are null rather than zero.
+The estimate cannot see subscriptions, negotiated rates, batch or fast mode,
+data-residency premiums, taxes or tool fees. It is not an invoice.
 
-A high cached-token share is not a waste score. Input reuse is cache reads /
-(cache reads + cache creation + fresh input). Cache share of all tokens includes
-output in the denominator. Neither is a universal industry benchmark.
+## Projects (this machine only)
 
-## Activity and evidence
-
-Subagent activity currently means its transcript changed within two minutes.
-This is not a vendor-confirmed execution state. Process evidence, recent usage,
-and heuristic stall/deadhead signals have different meanings; inspect `?` for
-their definitions. Silent thinking or waiting can resemble inactivity.
-
-Commits, lines, and pull-request evidence describe delivery activity. They do
-not prove business value, quality, or causality. Optional progress inputs are
-reported judgments, not independently measured completion percentages.
-
-## Coverage
-
-Missing logs, an offline device, unpriced usage, and unavailable process data
-must not be interpreted as zero activity or zero cost.
-
-Since 0.2.0 other computers can report to a hub. Each reporting device is
-enrolled with its own token and reports what its own transcripts say; the hub
-records when it last heard from each one. A device that stops reporting keeps
-its last contact time and is excluded, by name, from "right now" figures; its
-earlier reports still count. Record ids are keyed by the transcript's own
-session and message identity under the hub's organization salt, so a transcript
-copied to a second device is recognised and counted once. The reporting device
-is not proof of where the work ran; execution origin stays unknown unless a
-transcript names it. A device still sending a large backlog is shown as
-catching up, with how many of its records have arrived, and is excluded from
-"right now" until it has sent everything. Messages are counted once per API
-response: Claude Code writes one response over several transcript lines, and
-the extra records those lines produce are marked as continuations, not counted
-as messages (since 0.2.1). Device counts mean devices reporting — never seats or
-people. The full rules are in [COLLECTOR-CONTRACT.md](COLLECTOR-CONTRACT.md).
+Tokens, estimated cost, sessions and branches per project folder, from the
+console's own machine only, beside what that folder's local Git history
+recorded in the same period: commits, lines added and removed, and pull
+requests merged (counted from merge and squash-merge commit subjects). Git
+evidence describes delivery activity. It does not measure value, quality or
+causation, and tokens do not measure productivity.

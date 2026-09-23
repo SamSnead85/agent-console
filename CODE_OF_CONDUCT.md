@@ -36,7 +36,7 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders responsible for enforcement privately, through this repository's private reporting form: [Security → Report a vulnerability](https://github.com/SamSnead85/agent-console/security/advisories/new), with a title that begins "Conduct report". Only the maintainers can read it. Anything that does not need privacy can be raised in an [issue](https://github.com/SamSnead85/agent-console/issues). All complaints will be reviewed and investigated promptly and fairly.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders responsible for enforcement at conduct@lockedinlabs.ai. All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the reporter of any incident.
 

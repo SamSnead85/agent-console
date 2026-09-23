@@ -21,7 +21,7 @@ their own.
 
 ## Vendor marks
 
-| Mark | Where | Source of the drawing | Owner |
+| Mark | Where | Source of the drawing | Belongs to |
 | --- | --- | --- | --- |
 | Anthropic | `public/index.html` (`#mk-anthropic`) | [Simple Icons](https://simpleicons.org), CC0 1.0 | Anthropic |
 | OpenAI | `public/index.html` (`#mk-openai`) | [Simple Icons](https://simpleicons.org) 13.x, CC0 1.0 | OpenAI |
@@ -45,7 +45,9 @@ The LockedIn Labs mark (`public/brand/mark.svg`, `public/favicon.svg`, the
 README's lockup (`docs/brand/lockup-on-light.svg` and `lockup-on-dark.svg`)
 and the screenshots in `docs/` are LockedIn Labs' own. The lockup's wordmark
 is IBM Plex Mono set as the console's header sets it, converted to outlines;
-the OFL allows artwork made with the fonts, and the outlines are not a font. The screenshots show demo mode,
-so every figure in them is generated. The MIT licence covers them along with
-the code. The LockedIn Labs name and mark still identify LockedIn Labs, so if
-you publish a modified version, please give it its own name and mark.
+the OFL allows artwork made with the fonts, and outlines are not a font. The
+screenshots show demo mode, so every figure in them is generated.
+
+The MIT licence covers the code. It does not grant rights to the LockedIn Labs
+name or marks (see "Trademarks" in the README): a modified version needs its own
+name and mark.

@@ -2,79 +2,63 @@
 
 ## 0.2.1 — not yet released
 
-Fixes from a cold-install test that followed the README as a first-time user
-would (its figures matched an independent count of the raw logs to within
-0.044%), plus open-source completeness and LockedIn Labs branding.
+Safer by default, and the fixes from a first-time install.
 
-Fixed:
+**Security**
 
-- **A machine with a large history now finishes uploading.** The reporter moved
-  its cursor only after every batch of a delivery had succeeded; the hub paced
-  a 68,430-record first upload (429, wait 60 s), the reporter waited at most
-  4 s, gave up and started again from the first record, indefinitely. It now
-  keeps every acknowledged batch and resumes from there, honours `Retry-After`
-  (up to two minutes), and comes straight back when paced. The hub allows 600
-  batches a minute per machine (300,000 records) instead of 120.
-- **Honest status while a machine catches up.** The console showed such a
-  machine as "Reporting · now". It is now "Catching up · N of M records", left
-  out of "right now" by name, with its lanes' five-minute figure unknown, and the
-  figures are marked incomplete until it has sent everything. The reporter says
-  "catching up · sent N of M records" as it goes.
-- **The reporter says what actually went wrong.** "Cannot reach the hub" only
-  when nothing answered; otherwise "the hub is pacing uploads" or "the hub
-  answered with an error (HTTP 503)", with how many records are already safe.
-- **Messages count messages.** Claude Code writes one response over several
-  transcript lines, and the count was of records: 26% high overall, 64% for
-  Claude. Records now carry `continuation` (true when an earlier record already
-  counted that message), and the console counts only the first. Tokens were
-  never affected. Records from 0.2.0 reporters are still accepted and count as
-  before, so upgrade the console first; reporters that join through its link
-  get its version.
-- **No more "$0.00/hour est." for unpriced use.** When everything in the burn
-  window is on a model with no verified price, the burn reads "—/hour ·
-  unpriced"; when some is, "partial", with the models named.
-- **Port already in use.** If Agent Console is already running on the port,
-  starting it again says so and opens that one. If another program has the
-  default port, the console takes the next free one and prints the address it
-  used. A port given with `--port` is never changed.
-- **The first read shows progress.** Reading months of transcripts prints
-  "N of M files" in the terminal and on the console, and the browser opens
-  after two seconds instead of waiting for the whole read.
+- **Agent Console now comes only from its GitHub release.** The console no
+  longer serves the package to machines that join, and every command it prints
+  installs the release over HTTPS. From this release on, CI builds each release's
+  package with a published SHA-256 and a signed build attestation.
+- **Reports are encrypted and pinned.** Joining and reporting go over TLS to a
+  certificate the console makes for itself; the join link carries its
+  fingerprint, and the reporter talks to that certificate only.
+- **The console is signed in, and never on the network.** It listens on
+  127.0.0.1 on its own port and needs a sign-in cookie; `--open` and the
+  sign-in link printed at start set it. Other machines use a separate port
+  (normally 6788) that serves only joining and reporting, refuses callers
+  outside private networks unless `--allow-public`, and refuses proxied requests
+  to the console.
+- **Joining is harder to guess.** Links carry a 128-bit code that lives at most
+  an hour; attempts are counted before they are read.
+- **The console checks every record's exact shape**, keeps usage one file per
+  day, reads it back line by line, and limits each machine to 250,000 records a
+  day, so a bad or hostile reporter cannot stop it from starting.
+- **The reporter trusts nothing it is sent.** It checks every identifier a
+  console returns and strips control characters before printing. Project hashes
+  use a key only the reporting machine holds. Leaving out
+  `--share-project-names` stops names at once, and `leave` deletes everything
+  the enrolment left behind.
 
-Added:
+**Fixed**
 
-- **Claude Opus 5.5 pricing** ($4 input, $20 output, $5 / $8 cache writes,
-  $0.20 cache hits per million tokens), from Anthropic's published pricing page,
-  checked 2026-09-22.
-- **`agent-console --version`** (or `-v`) prints the version and exits. Before
-  this, the flag was ignored and the console started.
-- **Easier start.** The README's first step is one `npx` command that fetches
-  the release from GitHub. The ZIP route names the folder to go into
-  (`agent-console-main`), including the nested folder Windows makes, and the
-  README explains the `.tgz` on the release page.
-- **Licences travel with the package.** `THIRD_PARTY_NOTICES.md` lists every
-  bundled third-party asset (IBM Plex under the SIL OFL 1.1, the Anthropic and
-  OpenAI marks drawn from Simple Icons) and is now in the npm package along
-  with `CHANGELOG.md` and `SECURITY.md`. `public/fonts/LICENSE-OFL.txt` now
-  carries IBM Plex Mono's copyright notice as well as IBM Plex Sans'.
-- **Community files.** A Code of Conduct (Contributor Covenant 2.1), a tighter
-  CONTRIBUTING guide that spells out the privacy rule every change keeps, a
-  SECURITY policy that points to GitHub's private vulnerability reporting, and
-  issue and pull request templates.
-- **LockedIn Labs, consistently.** The README opens with the full LockedIn Labs
-  lockup (the mark and the letterspaced wordmark as the console's header draws
-  them, outlined, in a light and a dark version so it follows GitHub's theme),
-  then "Agent Console", badges and a one-line pitch, and closes with a line
-  about LockedIn Labs. The console and join-page footers read "© LockedIn
-  Labs", the installed app's name is "Agent Console · LockedIn Labs", the
-  header wordmark is written "LockedIn Labs" (the capitals are styling), and the
-  reporter's terminal banner names LockedIn Labs. The package keywords now
-  include `tokens`, `llm` and `usage`.
-- The provenance record and a test fixture no longer name an individual.
+- A machine with a large history now finishes uploading. It keeps every batch
+  the console accepted, resumes where it stopped, honours the console's pacing,
+  and shows "catching up · N of M records" meanwhile. The console no longer
+  shows it as "Reporting · now" until everything has arrived.
+- The reporter says what actually went wrong instead of always "cannot reach
+  the hub".
+- Messages count API responses, not transcript lines (the count was 64% high
+  for Claude). Tokens were never affected.
+- The burn rate shows "unpriced" instead of "$0.00/hour" for models without a
+  verified price.
+- A busy port: a second start points at the console already running; another
+  program on the default port moves the console to the next free one.
+- The first read of a long history shows its progress, and the browser opens
+  after two seconds.
 
-Wire format: the envelope gains an optional `backlog: { delivered, total }`
-and records gain `continuation`; both are counts or flags, nothing more. See
-[docs/COLLECTOR-CONTRACT.md](docs/COLLECTOR-CONTRACT.md).
+**Added**
+
+- Claude Opus 5.5 pricing, from Anthropic's published pricing page
+  (checked 2026-09-22).
+- `--version`, clearer install steps, the full LockedIn Labs lockup in the
+  README, and the community and licence files an open-source project needs.
+
+**Changed**
+
+- Machines that joined a 0.2.0 console join again with a new link.
+- The v0.1 detail endpoints (`/api`, `/api/history`) and the embeddable panel
+  are gone; the Projects view now reads the console's own data.
 
 ## 0.2.0 — 2026-09-22
 
@@ -102,7 +86,7 @@ every computer you connect, in LockedIn Labs' console design.
   hour of activity, five-minute tokens, subagents and machine. Show unavailable
   and Pause motion sit in the band's header. One animation loop, text redrawn at
   most eight times a second, `prefers-reduced-motion` honoured.
-- **Honest gaps.** A machine that stops reporting shows when it was last heard
+- **Gaps shown as gaps.** A machine that stops reporting shows when it was last heard
   from, is left out of "right now" by name, and its lanes read unknown rather
   than zero; the chart marks where it becomes incomplete. A missing token class
   makes a total a floor, and an unpriced model is excluded from dollars and named.
