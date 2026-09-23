@@ -1,68 +1,59 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import path from "node:path";
 
-import {
-  BIND_ADDRESS,
-  DEFAULT_PORT,
-  HELP,
-  readConfig,
-} from "../lib/config.js";
-
-test("process termination and HTTP ingest can never be enabled", () => {
-  const cases = [
-    [[], {}],
-    [["--allow-terminate"], {}],
-    [["--no-kill=false", "--no-ingest=false"], {}],
-    [[], { MUSTER_CONSOLE_ALLOW_TERMINATE: "1" }],
-    [[], { MUSTER_CONSOLE_NO_INGEST: "0" }],
-  ];
-  for (const [argv, env] of cases) {
-    const config = readConfig(argv, env);
-    assert.equal(config.killEnabled, false, JSON.stringify({ argv, env }));
-    assert.equal(config.ingestEnabled, false, JSON.stringify({ argv, env }));
-  }
-});
+import { BIND_ADDRESS, DEFAULT_PORT, help, readConfig } from "../lib/config.js";
+import { help as reporterHelp } from "../lib/reporter.js";
+import { invocation, releaseUrl } from "../lib/invocation.js";
 
 test("a boolean switch never swallows the argument that follows it", () => {
-  const config = readConfig(["--no-github", "--port", "7404"], {});
-  assert.equal(config.githubEnabled, false);
+  const config = readConfig(["--demo", "--port", "7404"], {});
+  assert.equal(config.demo, true);
   assert.equal(config.port, 7404);
 });
 
-test("retired mutation flags and routes are not advertised", () => {
-  assert.doesNotMatch(HELP, /allow-terminate|no-kill|no-ingest|api\/session/iu);
-});
-
-test("value-taking options still take their value", () => {
-  const config = readConfig(
-    ["--port", "7404", "--poll-ms", "2000", "--window-hours", "12"],
-    {},
-  );
+test("value-taking options take their value, in both spellings", () => {
+  const config = readConfig(["--port", "7404", "--poll-ms", "2000", "--retention-days=3"], {});
   assert.equal(config.port, 7404);
   assert.equal(config.pollMs, 2000);
-  assert.equal(config.windowMs, 12 * 3600 * 1000);
-  assert.equal(readConfig(["--poll-ms=2500"], {}).pollMs, 2500);
+  assert.equal(config.retentionDays, 3);
 });
 
-test("the bind address is a constant with no override", () => {
+test("the console is on 127.0.0.1; reporting sits on the next port unless told otherwise", () => {
   assert.equal(BIND_ADDRESS, "127.0.0.1");
-  assert.equal(readConfig(["--bind", "0.0.0.0"], {}).bind, undefined);
-  assert.equal(readConfig([], {}).port, DEFAULT_PORT);
+  const plain = readConfig([], {});
+  assert.equal(plain.port, DEFAULT_PORT);
+  assert.equal(plain.reportPort, DEFAULT_PORT + 1);
+  assert.equal(plain.listen, "127.0.0.1");
+  assert.equal(plain.allowPublic, false);
+  assert.equal(readConfig(["--port", "7000"], {}).reportPort, 7001);
+  assert.equal(readConfig(["--report-port", "7100"], {}).reportPort, 7100);
+  assert.deepEqual(readConfig(["--listen", "not-an-address"], {}).listenErrors.length, 1);
 });
 
-
-test("coordination is opt-in and can always be disabled", () => {
-  assert.equal(readConfig([], {}).musterEnabled, false);
-  assert.equal(readConfig(["--muster"], {}).musterEnabled, true);
-  assert.equal(readConfig([], { AGENT_CONSOLE_MUSTER: "1" }).musterEnabled, true);
-  assert.equal(readConfig(["--muster", "--no-muster"], {}).musterEnabled, false);
-  assert.equal(readConfig(["--demo", "--muster"], {}).musterEnabled, false);
+test("a join link lives at most an hour", () => {
+  assert.equal(readConfig(["--invite-minutes", "1440"], {}).inviteMinutes, 60);
+  assert.equal(readConfig(["--invite-minutes", "15"], {}).inviteMinutes, 15);
 });
 
-test("custom transcript roots are respected and demo ignores them", () => {
+test("custom transcript roots are respected, and demo reads no home at all", () => {
   const roots = ["--claude-root", "/tmp/claude-source", "--codex-root", "/tmp/codex-source"];
   assert.equal(readConfig(roots, {}).claudeRoot, "/tmp/claude-source");
   assert.equal(readConfig(roots, {}).codexRoot, "/tmp/codex-source");
-  assert.equal(readConfig([], {AGENT_CONSOLE_CLAUDE_ROOT: "/tmp/custom"}).claudeRoot, "/tmp/custom");
-  assert.notEqual(readConfig(["--demo", ...roots], {}).claudeRoot, "/tmp/claude-source");
+  const demo = readConfig(["--demo", ...roots], {});
+  assert.equal(demo.home, null);
+  assert.equal(demo.claudeRoot, null);
+  assert.equal(demo.stateDir, null);
+});
+
+test("every printed command runs this copy: never a bare name npx could resolve elsewhere", () => {
+  const fromNpx = invocation("0.2.1", "/home/dev/.npm/_npx/abc123/node_modules/@lockedinlabs/agent-console/bin/agent-console.mjs");
+  assert.equal(fromNpx, `npx --yes ${releaseUrl("0.2.1")}`);
+  assert.match(releaseUrl("0.2.1"), /^https:\/\/github\.com\/SamSnead85\/agent-console\/releases\/download\/v0\.2\.1\/lockedinlabs-agent-console-0\.2\.1\.tgz$/u);
+  const fromDownload = invocation("0.2.1", "/home/dev/agent-console-main/bin/agent-console.mjs");
+  assert.equal(fromDownload, `node "${path.resolve("/home/dev/agent-console-main/bin/agent-console.mjs")}"`);
+  for (const text of [help(fromDownload), reporterHelp(fromDownload), help(fromNpx), reporterHelp(fromNpx)]) {
+    assert.doesNotMatch(text, /npx\s+(--yes\s+)?agent-console\b/u);
+    assert.doesNotMatch(text, /^\s*agent-console\s/mu, "a bare command line");
+  }
 });

@@ -1,0 +1,46 @@
+name: Release asset
+# When a release is published, CI builds the package from the release's tag,
+# tests it, attaches it with its SHA-256, and records a signed build
+# provenance attestation for it. The one-line install and every join command
+# fetch exactly this file; nothing is built on anyone's own machine.
+on:
+  release:
+    types: [published]
+permissions:
+  contents: read
+jobs:
+  asset:
+    name: Build, attest and attach the package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - run: npm test
+      - run: npm run smoke:pack
+      - name: Pack
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version="${TAG#v}"
+          test "$(node -p "require('./package.json').version")" = "$version"
+          npm pack
+          sha256sum "lockedinlabs-agent-console-${version}.tgz" > SHA256SUMS
+          cat SHA256SUMS
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: lockedinlabs-agent-console-*.tgz
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" lockedinlabs-agent-console-*.tgz SHA256SUMS --clobber --repo "$GITHUB_REPOSITORY"

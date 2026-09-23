@@ -55,6 +55,11 @@
 
   <main id="app">
 
+  <section class="signin" id="signedOut" hidden aria-live="polite">
+    <h1>Sign in to this console</h1>
+    <p>The console only shows its figures to a browser that has signed in. Use the sign-in link the console printed in its terminal window when it started (it works once), or start it again with <code>--open</code> and it opens this page signed in.</p>
+  </section>
+
   <!-- ─────────────── CONSOLE ─────────────── -->
   <section class="view" id="view-console" aria-labelledby="h-console">
     <section class="hero">
@@ -198,7 +203,7 @@
     <label class="field"><span>What should it be called? <em>optional</em></span>
       <input id="fMachine" name="machine" type="text" maxlength="40" autocomplete="off" placeholder="Laptop, Workstation, Build box…"></label>
     <label class="field"><span>The link stays valid for</span>
-      <select id="fMinutes" name="minutes"><option value="30">30 minutes</option><option value="120">2 hours</option><option value="1440">24 hours</option></select></label>
+      <select id="fMinutes" name="minutes"><option value="15">15 minutes</option><option value="30" selected>30 minutes</option><option value="60">1 hour</option></select></label>
     <p class="warnline" id="loopbackWarn" hidden>This console listens on this machine only, so a link made now works only here. To add another computer, stop the console and start it again with <code>--listen 0.0.0.0</code>.</p>
     <footer><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn primary" id="createBtn">Create join link</button></footer>
   </form>
@@ -210,8 +215,10 @@
       <span class="copyrow"><input id="linkField" type="password" readonly autocomplete="off" spellcheck="false" aria-describedby="linkExpiry"><button type="button" class="btn" id="copyLink">Copy link</button></span></label>
     <div class="field"><span>Or they can run this in a terminal on that machine</span>
       <span class="copyrow"><code class="cmd" id="cmdShown">—</code><button type="button" class="btn" id="copyCmd">Copy command</button></span></div>
+    <div class="field"><span>No way to send a link? This is the same, typed by hand <em>short code · certificate fingerprint</em></span>
+      <span class="copyrow"><code class="cmd" id="typedShown">—</code><button type="button" class="btn" id="copyTyped">Copy</button></span></div>
     <p class="fine" id="linkExpiry">—</p>
-    <p class="fine">Their machine needs Node.js 22 or newer (free from nodejs.org). Nothing else to install.</p>
+    <p class="fine">Their machine needs Node.js 22 or newer (free from nodejs.org). The command installs Agent Console from its GitHub release over HTTPS; the join itself travels over TLS pinned to this console's certificate.</p>
     <p class="waiting" id="joinStatus" role="status" aria-live="polite"><i></i>Waiting for the machine to join…</p>
     <footer><button type="button" class="btn" id="anotherBtn">Another machine</button><button type="button" class="btn primary" data-close>Done</button></footer>
   </div>

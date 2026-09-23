@@ -10,8 +10,10 @@ import { eventMeasurement } from "../lib/collector/measurement.js";
 const TOKEN = "SENTINEL_DEVICE_CREDENTIAL";
 const URL = "https://example.invalid/api/ingest";
 const DEVICE = { id: "device-synthetic", label: "Synthetic workstation" };
-const record = (id = "record-1") => { const row = { id, tool: "codex", model: "synthetic-model", sessionHash: "hashed-session", parentSessionHash: null,
-  isSubagent: false, projectHash: "hashed-project", engagement: null, reportingDevice: DEVICE.id, executionOrigin: "unknown",
+/* Records carry salted hashes (64 hex characters); names here are hashed the same way. */
+const hid = (name) => /^[a-f0-9]{64}$/u.test(name) ? name : createHmac("sha256", "synthetic").update(String(name)).digest("hex");
+const record = (name = "record-1") => { const id = hid(name); const row = { id, tool: "codex", model: "synthetic-model", sessionHash: hid("hashed-session"), parentSessionHash: null,
+  isSubagent: false, projectHash: hid("hashed-project"), engagement: null, reportingDevice: DEVICE.id, executionOrigin: "unknown",
   at: "2026-09-20T12:00:00.000Z", fresh: 12,
   output: 7, cacheWrite: null, cacheWrite5m: null, cacheWrite1h: null, ttl: "unknown", cacheRead: 3, observed: true }; return { ...row, measurement: eventMeasurement(row) }; };
 const response = value => ({ status: 200, json: async () => value });
@@ -115,14 +117,14 @@ test("permanent refusals and redirects are not retried or read as bodies", async
 
 test("rejects malformed, incomplete, foreign and duplicate rejection receipts", async () => {
   for (const value of [null, {}, receipt(0), receipt(2), receipt(-1, 2), receipt(0.5, 0.5),
-    receipt(0, 0, [{ id: "foreign-record", because: "Unknown record" }]),
-    receipt(0, 0, [{ id: "record-1", because: TOKEN }]),
-    receipt(0, 0, [{ id: "record-1", because: "" }]),
+    receipt(0, 0, [{ id: hid("foreign-record"), because: "Unknown record" }]),
+    receipt(0, 0, [{ id: hid("record-1"), because: TOKEN }]),
+    receipt(0, 0, [{ id: hid("record-1"), because: "" }]),
     { ...receipt(1), privateBody: "SENTINEL_BODY" }]) {
     await assert.rejects(postRecords(URL, DEVICE, [record()], { token: TOKEN, fetch: async () => response(value) }), safeError);
   }
-  await assert.rejects(postRecords(URL, DEVICE, [record(), record("record-2")], {
-    token: TOKEN, fetch: async () => response(receipt(0, 0, [{ id: "record-1", because: "Invalid metadata" }, { id: "record-1", because: "Invalid metadata" }])),
+  await assert.rejects(postRecords(URL, DEVICE, [record(), record(hid("record-2"))], {
+    token: TOKEN, fetch: async () => response(receipt(0, 0, [{ id: hid("record-1"), because: "Invalid metadata" }, { id: hid("record-1"), because: "Invalid metadata" }])),
   }), safeError);
   await assert.rejects(postRecords(URL, DEVICE, [record()], {
     token: TOKEN, fetch: async () => ({ status: 200, json: async () => { throw new Error(TOKEN); } }),
@@ -130,7 +132,7 @@ test("rejects malformed, incomplete, foreign and duplicate rejection receipts", 
 });
 
 test("returns explicit rejections and preserves IDs for idempotent replay after a later batch fails", async () => {
-  const rejected = [{ id: "record-1", because: "Unrecognized engagement" }];
+  const rejected = [{ id: hid("record-1"), because: "Unrecognized engagement" }];
   assert.deepEqual(await postRecords(URL, DEVICE, [record()], { token: TOKEN, fetch: async () => response(receipt(0, 0, rejected)) }), delivered(0, 0, rejected));
   const records = Array.from({ length: 501 }, (_, index) => record(`record-${index}`));
   const before = JSON.stringify(records);
@@ -336,7 +338,7 @@ test("plain HTTP is accepted only on this machine or a private network, unless e
 });
 
 test("a hub receipt may account for records older than its retention window", async () => {
-  const rows = [record("record-1"), record("record-2"), record("record-3")];
+  const rows = [record(hid("record-1")), record(hid("record-2")), record(hid("record-3"))];
   assert.deepEqual(await postRecords(URL, DEVICE, rows, { token: TOKEN, fetch: async () => response({ accepted: 1, duplicate: 1, expired: 1, rejected: [] }) }), delivered(1, 1, [], 1));
   await assert.rejects(postRecords(URL, DEVICE, rows, { token: TOKEN, fetch: async () => response({ accepted: 1, duplicate: 1, expired: 2, rejected: [] }) }), safeError);
 });

@@ -23,7 +23,7 @@ self.addEventListener("fetch", (event) => {
     fetch(event.request).catch(
       () =>
         new Response(
-          "Agent Console is not running.\n\nStart it with: agent-console\n",
+          "Agent Console is not running.\n\nStart it again from a terminal, the same way you started it before.\n",
           {
             status: 503,
             headers: { "content-type": "text/plain; charset=utf-8" },

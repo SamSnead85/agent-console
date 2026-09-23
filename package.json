@@ -32,7 +32,6 @@
     "lib/",
     "public/",
     "server.js",
-    "scripts/",
     "docs/*.md",
     "PROVENANCE.md",
     "CHANGELOG.md",

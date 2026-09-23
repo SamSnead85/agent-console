@@ -22,7 +22,7 @@ import { failureReason } from "../lib/reporter.js";
 import { createRegistry } from "../lib/hub/registry.js";
 import { createStore } from "../lib/hub/store.js";
 import { buildConsole } from "../lib/hub/aggregate.js";
-import { createHubRoutes, INGEST_PER_MINUTE } from "../lib/hub/routes.js";
+import { createReportingHandler, INGEST_PER_MINUTE } from "../lib/hub/routes.js";
 import { eventMeasurement } from "../lib/collector/measurement.js";
 
 const PRICES = JSON.parse(await fs.readFile(new URL("../lib/collector/prices.json", import.meta.url), "utf8"));
@@ -163,30 +163,30 @@ function row(i, device, at) {
   return r;
 }
 
-function hubFor(now) {
+/** The reporting handler behind a real HTTP server (TLS is not what these tests are about). */
+async function hubFor(t, now) {
   const registry = createRegistry({ dir: null, now: () => now });
   const store = createStore({ dir: null, retentionMs: 8 * DAY, prices: PRICES, now: () => now });
-  const config = { demo: false, listen: "0.0.0.0", retentionDays: 8, inviteMinutes: 30 };
-  const handle = createHubRoutes({ config, registry, store, names: null, local: null, version: "0.0.0", root: process.cwd() });
+  const config = { demo: false, listen: "0.0.0.0", retentionDays: 8, inviteMinutes: 30, allowPublic: false };
+  const handle = createReportingHandler({ config, registry, store, version: "0.0.0", publicDir: process.cwd() });
+  const server = http.createServer((req, res) => { handle(req, res, { secure: true }); });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  t.after(() => server.close());
   const { code } = registry.invite({ person: "You", machine: "Laptop" });
   const { device, token } = registry.redeem(code);
   async function ingest(envelope) {
-    const answer = { status: 0, body: null, headers: {} };
-    const req = { method: "POST", headers: { authorization: "Bearer " + token, host: "192.168.1.20:6787" }, socket: { remoteAddress: "192.168.1.30" } };
-    const res = { setHeader: (k, v) => { answer.headers[k.toLowerCase()] = v; } };
-    await handle(req, res, "/api/ingest", {
-      readBody: async () => envelope,
-      sendJson: (_res, status, body) => { answer.status = status; answer.body = body; },
-      send: () => {}, port: 6787,
+    const r = await fetch(`http://127.0.0.1:${server.address().port}/api/ingest`, {
+      method: "POST", headers: { authorization: "Bearer " + token, "content-type": "application/json" }, body: JSON.stringify(envelope),
     });
-    return answer;
+    return { status: r.status, headers: { "retry-after": r.headers.get("retry-after") }, body: await r.json() };
   }
   return { registry, store, device, ingest };
 }
 
-test("the hub lets a first sync through, and paces beyond that with a named wait", async () => {
+test("the hub lets a first sync through, and paces beyond that with a named wait", async (t) => {
   const now = Date.UTC(2026, 8, 22, 12);
-  const { device, ingest } = hubFor(now);
+  const { device, ingest } = await hubFor(t, now);
   // 68,430 records is 137 batches: well inside one minute's allowance.
   assert.ok(Math.ceil(68_430 / 500) <= INGEST_PER_MINUTE);
   let last;
@@ -198,9 +198,9 @@ test("the hub lets a first sync through, and paces beyond that with a named wait
   assert.ok(Number(last.headers["retry-after"]) > 0, "a 429 says how long to wait");
 });
 
-test("a machine still sending its backlog is 'catching up · N of M', left out of right now, never 'Reporting'", async () => {
+test("a machine still sending its backlog is 'catching up · N of M', left out of right now, never 'Reporting'", async (t) => {
   const now = Date.UTC(2026, 8, 22, 12);
-  const { registry, store, device, ingest } = hubFor(now);
+  const { registry, store, device, ingest } = await hubFor(t, now);
   const envelope = (records, backlog) => ({ v: 1, device: { id: device.id, label: device.label },
     freshness: { lastObservedAt: null, lastSyncedAt: null, mode: "live" }, records, backlog });
   const first = await ingest(envelope([row(1, device.id, now - 60_000)], { delivered: 12_000, total: 68_430 }));

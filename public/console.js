@@ -3,7 +3,7 @@
  *
  * DATA. Everything on this page comes from /api/console, which the hub
  * computes from what machines actually reported (or, in demo mode, from a
- * synthetic fleet — and then every surface says DEMO). Nothing here invents a
+ * synthetic team — and then every surface says DEMO). Nothing here invents a
  * figure: the page only formats, eases and draws what it was given.
  *
  * MOTION. One requestAnimationFrame loop drives every moving thing, and each
@@ -18,7 +18,7 @@
  * asks what a number means. prefers-reduced-motion keeps every state change
  * and drops the travel.
  *
- * HONESTY. An unknown reading is drawn as a hatched void with its reason,
+ * GAPS. An unknown reading is drawn as a hatched void with its reason,
  * never a zero. A machine that stopped reporting shows when it stopped. Cost
  * is a list-price estimate and says when it is partial.
  */
@@ -86,7 +86,10 @@
     if (paused) return;
     try {
       const response = await fetch("/api/console", { headers: HEADERS, cache: "no-store" });
+      if (response.status === 401) { signedOut(); return; }
       if (!response.ok) throw new Error(String(response.status));
+      document.body.classList.remove("signed-out");
+      $("signedOut").hidden = true;
       D = await response.json();
       receivedAt = performance.now();
       offline = false;
@@ -96,7 +99,8 @@
       offline = true;
       document.body.classList.add("offline");
     } finally {
-      if (!paused) pollTimer = setTimeout(poll, POLL_MS);
+      // Signed out, there is nothing to poll for until the sign-in link reloads the page.
+      if (!paused && !document.body.classList.contains("signed-out")) pollTimer = setTimeout(poll, POLL_MS);
     }
   }
 
@@ -106,7 +110,7 @@
     $("ver").textContent = "v" + D.hub.version + (D.hub.demo ? " · demo" : "");
     const net = D.hub.listen.network;
     $("reach").classList.toggle("network", net);
-    $("reachText").textContent = D.hub.demo ? "Synthetic fleet" : net ? "Accepting machines on this network" : "This machine only";
+    $("reachText").textContent = D.hub.demo ? "Synthetic team" : net ? "Accepting machines on this network" : "This machine only";
     $("reach").title = D.hub.demo ? "Demo mode: nothing is read and no machine can join."
       : net ? "Other machines can join at " + D.hub.urls.join(", ") + ". The console itself answers only here."
       : "Only this machine can reach this console. Start it with --listen 0.0.0.0 to add other computers.";
@@ -143,7 +147,7 @@
     $("heroCounts").textContent = `${D.devices.length} machine${D.devices.length === 1 ? "" : "s"} · ${reporting} reporting · ` +
       (catching ? `${catching} catching up · ` : "") +
       `${D.laneCount} session${D.laneCount === 1 ? "" : "s"} today · ${live} live` + (subagents ? ` · ${subagents} subagent${subagents === 1 ? "" : "s"}` : "");
-    $("heroScope").textContent = D.hub.demo ? "Demonstration fleet" : D.hub.listen.network ? "Hub · this network" : "Hub · this machine";
+    $("heroScope").textContent = D.hub.demo ? "Demonstration team" : D.hub.listen.network ? "Hub · this network" : "Hub · this machine";
     $("liveDot").classList.toggle("on", reporting > 0 && !paused);
   }
 
@@ -688,9 +692,16 @@
     }
   }
 
+  /* Every console request needs the sign-in cookie. Without it the page says
+     how to get one instead of showing an empty console. */
+  function signedOut() {
+    document.body.classList.add("signed-out");
+    $("signedOut").hidden = false;
+  }
+
   // ── add a machine ───────────────────────────────────────────────────
   const addDialog = $("addDialog");
-  let pending = null;   // { id, link, npx }
+  let pending = null;   // { id, link, command, typed }
   function step(name) {
     for (const s of addDialog.querySelectorAll(".step")) s.hidden = s.dataset.step !== name;
   }
@@ -711,7 +722,8 @@
     // on the page once the sheet is closed.
     $("linkField").value = "";
     $("cmdShown").textContent = "—";
-    if (pending) { pending.link = null; pending.npx = null; }
+    $("typedShown").textContent = "—";
+    if (pending) { pending.link = null; pending.command = null; pending.typed = null; }
   }
   $("anotherBtn").addEventListener("click", () => { clearSecret(); pending = null; openAdd(); });
   $("addForm").addEventListener("submit", async (ev) => {
@@ -724,15 +736,17 @@
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.reason || "The link could not be made.");
-      pending = { id: j.invitation.id, link: j.link, npx: j.npx };
+      pending = { id: j.invitation.id, link: j.link, command: j.command, typed: j.typed };
       $("linkField").value = j.link;
-      // The command is shown with the code masked; Copy puts the real one on the clipboard.
-      $("cmdShown").textContent = j.npx.replace(j.code, "••••-••••");
+      // Commands are shown with their codes masked; Copy puts the real one on the clipboard.
+      const secret = j.link.slice(j.link.indexOf("#") + 1, j.link.lastIndexOf("."));
+      $("cmdShown").textContent = j.command.replace(secret, "••••••••");
+      $("typedShown").textContent = j.typed.replace(j.code, "••••-••••");
       const who = [j.invitation.person, j.invitation.machine].filter(Boolean).join("'s ").replace(/'s$/, "") || "them";
       $("linkSay").innerHTML = j.demo
         ? "This is a demonstration console, so this link cannot actually be used. On a real console, the steps are exactly these."
         : j.network
-          ? `Send the link to ${esc(who)} by any message. On their computer they open it and follow one step, or run the command below. They must be on the same network as this machine.`
+          ? `Send the link to ${esc(who)} by any message. On their computer they open it and follow one step, or run the command below. They must be on the same network as this machine. Agent Console itself comes from its GitHub release, never from this machine.`
           : `This console listens on this machine only, so the link works only here — for example for a second account on this computer. To add another computer, restart with <code>--listen 0.0.0.0</code>.`;
       $("linkExpiry").textContent = `Works once. Expires at ${hhmm(j.invitation.expiresAt)}.`;
       const status = $("joinStatus");
@@ -752,7 +766,8 @@
     catch { toast("Copying is blocked in this browser. Select the command and copy it by hand."); }
   }
   $("copyLink").addEventListener("click", () => pending && pending.link && copy(pending.link, "Join link copied. It works once."));
-  $("copyCmd").addEventListener("click", () => pending && pending.npx && copy(pending.npx, "Command copied."));
+  $("copyCmd").addEventListener("click", () => pending && pending.command && copy(pending.command, "Command copied."));
+  $("copyTyped").addEventListener("click", () => pending && pending.typed && copy(pending.typed, "Command copied."));
   function watchJoin() {
     if (!pending || !addDialog.open) return;
     const inv = D.invitations.find((i) => i.id === pending.id);
