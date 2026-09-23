@@ -5,9 +5,12 @@
   "keywords": [
     "claude-code",
     "codex",
-    "ai-coding-agents",
+    "tokens",
     "observability",
+    "llm",
+    "usage",
     "dashboard",
+    "ai-coding-agents",
     "token-usage",
     "cost-tracking",
     "developer-tools",
@@ -31,7 +34,10 @@
     "server.js",
     "scripts/",
     "docs/*.md",
-    "PROVENANCE.md"
+    "PROVENANCE.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "scripts": {
     "start": "node bin/agent-console.mjs",

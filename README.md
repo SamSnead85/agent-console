@@ -1,6 +1,32 @@
-# Agent Console
+<p align="center">
+  <a href="https://lockedinlabs.ai">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/brand/mark-on-dark.svg">
+      <img src="docs/brand/mark-on-light.svg" alt="LockedIn Labs" width="72" height="72">
+    </picture>
+  </a>
+</p>
 
-**by [LockedIn Labs](https://lockedinlabs.ai)** · open source · MIT
+<h1 align="center">Agent Console</h1>
+
+<p align="center"><b>by <a href="https://lockedinlabs.ai">LockedIn Labs</a></b></p>
+
+<p align="center">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/SamSnead85/agent-console"></a>
+  <a href="https://github.com/SamSnead85/agent-console/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/SamSnead85/agent-console"></a>
+  <a href="https://nodejs.org"><img alt="Node.js 22 or newer" src="https://img.shields.io/badge/node-%3E%3D22-339933"></a>
+  <a href="https://github.com/SamSnead85/agent-console/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/SamSnead85/agent-console/ci.yml?branch=main&label=CI"></a>
+</p>
+
+<p align="center">
+  See what your AI coding agents use (sessions, tokens, cache reads and writes,
+  models and list-price cost) on this computer and every computer you connect.
+</p>
+
+![Agent Console in demo mode, dark](docs/console-demo-dark.png)
+
+*The console in demo mode. Every figure in this picture is generated.
+[The same screen in the light theme.](docs/console-demo-light.png)*
 
 **Only counts, model ids, timestamps, and salted hashes of session and project
 identifiers leave a machine. No prompt, no response, no file path, no file
@@ -10,15 +36,6 @@ the real hub and checks every byte that crosses the wire. (There is one
 opt-in: `--share-project-names` also sends each project folder's *name* — never
 its path. It is off unless you pass it.)
 
-See what your AI coding agents are doing — on this computer and on every
-computer you connect: sessions, tokens, how much of it is cache reads and cache
-writes, which models, and what it would cost at list price.
-
-![Agent Console in demo mode, dark](docs/console-demo-dark.png)
-
-*The console in demo mode. Every figure in this picture is generated.
-[The same screen in the light theme.](docs/console-demo-light.png)*
-
 ## Start here
 
 You need a Mac, a Linux machine or a Windows PC, and about two minutes.
@@ -27,18 +44,28 @@ You need a Mac, a Linux machine or a Windows PC, and about two minutes.
    [nodejs.org](https://nodejs.org). To check, open a terminal (*Terminal* on a
    Mac, *PowerShell* on Windows) and type `node --version` — it should say
    `v22` or higher.
-2. **Download Agent Console.** On the
-   [GitHub page](https://github.com/SamSnead85/agent-console), press the green
-   **Code** button, then **Download ZIP**, and unzip it. (Or, if you use git:
-   `git clone https://github.com/SamSnead85/agent-console.git`.)
-3. **Start it.** In a terminal, go into the folder you unzipped and run:
+2. **Start it.** Paste this into the terminal and press Return:
 
    ```sh
-   node bin/agent-console.mjs --open
+   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.0/lockedinlabs-agent-console-0.2.0.tgz --open
    ```
 
-   Your browser opens the console at `http://127.0.0.1:6787`. Leave the
-   terminal window open; closing it (or pressing Ctrl+C) stops the console.
+   It fetches this release from GitHub and your browser opens the console at
+   `http://127.0.0.1:6787`. Leave the terminal window open; closing it (or
+   pressing Ctrl+C) stops the console. The same command starts it again.
+
+**Or download it.** On the [GitHub page](https://github.com/SamSnead85/agent-console),
+press the green **Code** button, then **Download ZIP**, and unzip it. (Or, if
+you use git: `git clone https://github.com/SamSnead85/agent-console.git`.) In a
+terminal, go into the folder you unzipped and run:
+
+```sh
+node bin/agent-console.mjs --open
+```
+
+The rest of this page writes commands that way. If you used the one-line
+command, put `npx --yes <that release link>` where it says
+`node bin/agent-console.mjs`.
 
 Nothing to install beyond Node, no account, no build step, no dependencies.
 
@@ -305,8 +332,10 @@ npm run smoke:pack     # pack, install into a scratch prefix, start it in demo m
 
 No dependencies to install. CI runs both on macOS and Linux, Node 22 and 24,
 and the hub and reporter tests plus the smoke test on Windows.
-See [CONTRIBUTING.md](CONTRIBUTING.md), [CHANGELOG.md](CHANGELOG.md) and
-[docs/MEASUREMENTS.md](docs/MEASUREMENTS.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) (including the privacy rule every change
+keeps), [CHANGELOG.md](CHANGELOG.md) and [docs/MEASUREMENTS.md](docs/MEASUREMENTS.md).
+Report security problems privately, as [SECURITY.md](SECURITY.md) describes.
+Everyone taking part agrees to the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Origins and license
 
@@ -315,4 +344,9 @@ the collector in `lib/collector/` is LockedIn Labs' own and is published here
 under the same licence. Redistribution authorization and source origins are in
 [PROVENANCE.md](PROVENANCE.md). IBM Plex is included under the SIL Open Font
 License 1.1 (`public/fonts/LICENSE-OFL.txt`). The Anthropic and OpenAI marks
-identify the models they make and belong to their owners.
+identify the models they make and belong to their owners. Every bundled
+third-party asset is listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## About LockedIn Labs
+
+Agent Console is built and maintained by [LockedIn Labs](https://lockedinlabs.ai).

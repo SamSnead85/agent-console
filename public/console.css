@@ -41,7 +41,7 @@ body[data-demo="false"] .demo-only { display: none; }
   background: linear-gradient(90deg, var(--tile2) 0%, color-mix(in srgb, var(--tile2) 92%, transparent) 30%, color-mix(in srgb, var(--tile2) 30%, transparent) 62%, transparent 85%); }
 .hero-copy, .hero-id { z-index: 2; }
 .hero .by { margin: calc(4px * var(--k)) 0 0; font: 400 calc(11.5px * var(--k)) var(--sans); color: var(--quiet); }
-.word { font: 500 calc(11px * var(--k)) var(--mono); letter-spacing: .24em; }
+.word { font: 500 calc(11px * var(--k)) var(--mono); letter-spacing: .24em; text-transform: uppercase; }
 .word b { font-weight: 500; color: var(--ink); }
 .word span { color: var(--quiet); }
 .hero-copy { position: relative; padding: 0 calc(34px * var(--k)) calc(20px * var(--k)); display: flex; flex-wrap: wrap; align-items: baseline; column-gap: calc(12px * var(--k)); }

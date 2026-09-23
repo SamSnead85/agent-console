@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+Open-source completeness and LockedIn Labs branding.
+
+- **One-command start.** The README's first steps now start the console with a
+  single `npx` command that fetches the release from GitHub. Downloading the
+  ZIP still works as before.
+- **`agent-console --version`** (or `-v`) prints the version and exits. Before
+  this, the flag was ignored and the console started.
+- **Licences travel with the package.** `THIRD_PARTY_NOTICES.md` lists every
+  bundled third-party asset (IBM Plex under the SIL OFL 1.1, the Anthropic and
+  OpenAI marks drawn from Simple Icons) and is now in the npm package along
+  with `CHANGELOG.md` and `SECURITY.md`. `public/fonts/LICENSE-OFL.txt` now
+  carries IBM Plex Mono's copyright notice as well as IBM Plex Sans'.
+- **Community files.** A Code of Conduct (Contributor Covenant 2.1), a tighter
+  CONTRIBUTING guide that spells out the privacy rule every change keeps, a
+  SECURITY policy that points to GitHub's private vulnerability reporting, and
+  issue and pull request templates.
+- **LockedIn Labs, consistently.** The README opens with the LockedIn Labs mark
+  (a light and a dark version, so it follows GitHub's theme), "Agent Console",
+  "by LockedIn Labs", badges and a one-line pitch, and closes with a line about
+  LockedIn Labs. The console and join-page footers read "© LockedIn Labs", the
+  installed app's name is "Agent Console · LockedIn Labs", the header wordmark
+  is written "LockedIn Labs" (the capitals are styling), and the reporter's
+  terminal banner names LockedIn Labs. The package keywords now include
+  `tokens`, `llm` and `usage`.
+
 ## 0.2.0 — 2026-09-22
 
 Many machines, one console. Agent Console now shows the AI coding agents on

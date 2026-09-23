@@ -9,6 +9,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import zlib from "node:zlib";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import { packageFiles, packageTarball } from "../lib/hub/package.js";
@@ -48,6 +49,37 @@ test("the hub hands out exactly the package: everything a reporter needs, nothin
   }
   assert.deepEqual(JSON.parse(files.get("package/package.json")), JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")));
   assert.equal(packageFiles(ROOT).length, files.size);
+});
+
+test("every copy of the package carries its licences", () => {
+  const files = untar(zlib.gunzipSync(packageTarball(ROOT)));
+  for (const needed of ["package/LICENSE", "package/THIRD_PARTY_NOTICES.md", "package/public/fonts/LICENSE-OFL.txt"]) {
+    assert.ok(files.has(needed), needed + " is missing from the tarball");
+  }
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
+  assert.ok(manifest.files.includes("THIRD_PARTY_NOTICES.md"), "npm pack would leave the notices out");
+  const ofl = files.get("package/public/fonts/LICENSE-OFL.txt").toString("utf8");
+  assert.match(ofl, /IBM Plex Sans: Copyright 2019 IBM Corp\./u);
+  assert.match(ofl, /IBM Plex Mono: Copyright 2017 IBM Corp\./u);
+  assert.match(ofl, /SIL OPEN FONT LICENSE Version 1\.1/u);
+});
+
+test("the README's one-command install names this version's release", () => {
+  // Bumping the version fails here until the README's link is bumped with it.
+  const { version } = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
+  const readme = fs.readFileSync(path.join(ROOT, "README.md"), "utf8");
+  const links = [...readme.matchAll(/releases\/download\/v([^/\s]+)\/lockedinlabs-agent-console-([^\s]+?)\.tgz/gu)];
+  assert.ok(links.length > 0, "the README has no one-command install");
+  for (const [, tag, file] of links) assert.deepEqual([tag, file], [version, version]);
+});
+
+test("--version prints the package version and starts nothing", () => {
+  const { version } = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
+  for (const flag of ["--version", "-v"]) {
+    const run = spawnSync(process.execPath, [path.join(ROOT, "bin", "agent-console.mjs"), flag], { encoding: "utf8", timeout: 10_000 });
+    assert.equal(run.status, 0, run.stderr);
+    assert.equal(run.stdout, "agent-console " + version + "\n");
+  }
 });
 
 test("a join link is read however it arrives", () => {

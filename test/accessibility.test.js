@@ -80,7 +80,8 @@ test("keyboard: focus is visible everywhere and the lanes can be scrolled from t
   assert.match(HOUSE, /:focus-visible \{ outline: 2px solid var\(--lit\)/u);
   assert.match(CSS, /\.lanescroll:focus-visible/u);
   assert.notEqual(MANIFEST.orientation, "landscape");
-  assert.equal(MANIFEST.name, "Agent Console");
+  assert.equal(MANIFEST.name, "Agent Console · LockedIn Labs");
+  assert.equal(MANIFEST.short_name, "Agent Console");
 });
 
 test("text meets WCAG AA contrast on every ground, in light and in dark", () => {
