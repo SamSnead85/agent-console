@@ -50,8 +50,8 @@ function runNpm(args, options) {
  * show the operator what to write, that template sits at the start of a line
  * like any other, and the first version of this check was satisfied by the
  * documentation of itself. A placeholder opens with `<`, a recorded decision
- * names a person, so the two are told apart by the one character that cannot
- * appear in a real answer.
+ * names who authorized it, so the two are told apart by the one character
+ * that cannot appear in a real answer.
  */
 function assertRedistributable(installedPackage) {
   const provenance = path.join(installedPackage, 'PROVENANCE.md');

@@ -129,7 +129,7 @@ test("a registration carrying a session id is joined, never counted twice", () =
           agents: { live: 0, total: 0 },
           total: 0,
           at: NOW,
-          author: "Sam Sweilem",
+          author: "Dana Example",
         },
       ],
     },
@@ -140,7 +140,7 @@ test("a registration carrying a session id is joined, never counted twice", () =
   assert.deepEqual(entry.sources, ["observed", "registered"]);
   assert.equal(entry.joinedBy, "session id");
   // A declaration adds what the scan cannot know and overwrites nothing measured.
-  assert.equal(entry.author, "Sam Sweilem");
+  assert.equal(entry.author, "Dana Example");
   assert.equal(entry.tokens, 1000, "a declaration overwrote a measured figure");
 });
 

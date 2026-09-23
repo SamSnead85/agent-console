@@ -26,6 +26,7 @@ Open-source completeness and LockedIn Labs branding.
   is written "LockedIn Labs" (the capitals are styling), and the reporter's
   terminal banner names LockedIn Labs. The package keywords now include
   `tokens`, `llm` and `usage`.
+- The provenance record and a test fixture no longer name an individual.
 
 ## 0.2.0 — 2026-09-22
 

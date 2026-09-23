@@ -1,6 +1,6 @@
 # Provenance
 
-This console was recovered from LockedIn Labs' `SprintLoop-FDE/fleet-dashboard`
+This console was recovered from a private LockedIn Labs repository
 at commit `fca5fca39fc27dd462606605c117027798924a56`, built across these source
 commits:
 
@@ -41,7 +41,7 @@ is the owner's to give.
 
 ## Recorded decision
 
-REDISTRIBUTION AUTHORIZED: Sam Sweilem, 2026-09-20. This package may be redistributed under its MIT licence.
+REDISTRIBUTION AUTHORIZED: LockedIn Labs, 2026-09-20. This package may be redistributed under its MIT licence.
 
 The owner instructed Codex to publish the current console as the open-source
 observability product, after the proprietary origin and MIT redistribution
