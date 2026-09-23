@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest something Agent Console should show or do.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Say what you're trying to learn or do, not only the feature you have in mind. That makes it easier to find the right answer.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you're trying to do
+      description: The question you want the console to answer, or the task it gets in the way of.
+      placeholder: I want to know which machine used most of this week's cache writes, but …
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would help
+      description: How it could work, from the user's side.
+    validations:
+      required: true
+  - type: dropdown
+    id: data
+    attributes:
+      label: Does it need anything new to leave a machine?
+      description: Today only counts, model ids, minute timestamps and salted hashes leave a machine. Anything more would need a strong reason and an opt-in.
+      options:
+        - "No: it uses what the console already has"
+        - "Yes: it needs more data sent between machines"
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do today instead

@@ -25,7 +25,7 @@
 
   <section class="privacy" aria-labelledby="privacyTitle">
     <h2 id="privacyTitle" class="lab">What leaves this computer</h2>
-    <p><b>Only</b> token counts, model names, times, and salted hashes of session and project identifiers.</p>
+    <p><b>Only</b> token counts, model names, times, and hashes of session and project identifiers.</p>
     <p><b>Never</b> a prompt, a reply, a file path, or the contents of a file. The rule is enforced in code, and a test proves it.</p>
   </section>
 
@@ -40,16 +40,16 @@
     <li>
       <b>Paste this into the terminal and press Return.</b>
       <span class="copyrow"><code class="cmd" id="cmd">—</code><button type="button" class="btn primary" id="copyBtn">Copy</button></span>
-      <span class="fine">The code in it (shown masked) works once and expires soon. It fetches Agent Console from that computer, not from a public registry, and starts reporting.</span>
+      <span class="fine">The code in it (shown masked) works once and expires within the hour. The command installs Agent Console <span class="verv">…</span> from its GitHub release over HTTPS — check that it starts with <code>npx --yes https://github.com/SamSnead85/agent-console/releases/download/</code>. To check the file itself, compare it with the SHA-256 on <a id="releasePage" href="https://github.com/SamSnead85/agent-console/releases" target="_blank" rel="noopener">its release page</a>. It then joins over TLS, accepting only the certificate named in your link.</span>
     </li>
     <li>
       <b>Leave that window open.</b>
-      <span>This computer appears on the console within a few seconds. Closing the window stops reporting; <code>npx --yes <span class="tgzv">…</span> report</code> starts it again, no new link needed.</span>
+      <span>This computer appears on the console within a few seconds. Closing the window stops reporting; <code class="restart">…</code> starts it again, no new link needed.</span>
     </li>
   </ol>
   <p class="fine" id="status" role="status" aria-live="polite"></p>
   <textarea id="clip" aria-hidden="true" tabindex="-1" readonly></textarea>
-  <footer>Agent Console <span id="ver"></span> · open source, MIT · <a href="https://lockedinlabs.ai" target="_blank" rel="noopener">lockedinlabs.ai</a></footer>
+  <footer>Agent Console <span id="ver"></span> · open source, MIT · <a href="https://lockedinlabs.ai" target="_blank" rel="noopener" title="lockedinlabs.ai">© LockedIn Labs</a></footer>
 </main>
 <script src="/join.js" defer></script>
 </body>

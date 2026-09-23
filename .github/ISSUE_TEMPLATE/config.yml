@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/SamSnead85/agent-console/security/advisories/new
+    about: Report it privately. Only the maintainers can read it.
+  - name: Setup help (troubleshooting guide)
+    url: https://github.com/SamSnead85/agent-console#troubleshooting
+    about: Port in use, a computer that can't connect, expired join links, numbers that look low.

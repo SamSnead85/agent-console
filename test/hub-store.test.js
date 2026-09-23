@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
 
-import { createStore } from "../lib/hub/store.js";
+import { createStore, DEVICE_DAILY_RECORDS } from "../lib/hub/store.js";
 import { createRegistry } from "../lib/hub/registry.js";
 import { buildConsole, deviceStatus } from "../lib/hub/aggregate.js";
 import { eventMeasurement } from "../lib/collector/measurement.js";
@@ -57,19 +57,52 @@ test("records outside the window are accounted for as expired, not stored", (t) 
   assert.equal(store.recordCount, 1);
 });
 
-test("the file survives a restart, and a mostly-expired file is compacted", (t) => {
+test("records survive a restart in one file per day, and a day past retention is deleted whole", (t) => {
   const dir = scratch(t);
   let now = Date.UTC(2026, 8, 22, 12);
   const a = createStore({ dir, retentionMs: 2 * DAY, prices: PRICES, now: () => now });
   a.ingest("dev_a", [1, 2, 3, 4].map((i) => record({ id: i, device: "dev_a", session: 1, at: now - i * 60_000 })));
-  if (process.platform !== "win32") assert.equal(fs.statSync(path.join(dir, "records.ndjson")).mode & 0o777, 0o600);  // Windows has no POSIX modes
+  const today = path.join(dir, "records-2026-09-22.ndjson");
+  if (process.platform !== "win32") assert.equal(fs.statSync(today).mode & 0o777, 0o600);  // Windows has no POSIX modes
   const b = createStore({ dir, retentionMs: 2 * DAY, prices: PRICES, now: () => now });
   assert.deepEqual(b.load(), { loaded: 4, expired: 0, damaged: 0 });
   assert.deepEqual(b.ingest("dev_a", [record({ id: 1, device: "dev_a", session: 1, at: now - 60_000 })]).duplicate, 1);
-  now += 3 * DAY;
+  now += 4 * DAY;
   const c = createStore({ dir, retentionMs: 2 * DAY, prices: PRICES, now: () => now });
-  assert.equal(c.load().expired, 4);
-  assert.equal(fs.readFileSync(path.join(dir, "records.ndjson"), "utf8"), "", "four expired lines were compacted away");
+  c.load();
+  assert.equal(c.recordCount, 0);
+  assert.equal(fs.existsSync(today), false, "the expired day's file was deleted");
+});
+
+test("a damaged or hostile file cannot stop the hub from starting", (t) => {
+  const dir = scratch(t);
+  const now = Date.UTC(2026, 8, 22, 12);
+  const good = record({ id: 1, device: "dev_a", session: 1, at: now - 60_000 });
+  const lines = [
+    JSON.stringify(good),
+    "{not json",
+    JSON.stringify({ ...record({ id: 2, device: "dev_a", session: 1, at: now - 60_000 }), sessionHash: "__proto__" }),
+    JSON.stringify({ ...record({ id: 3, device: "dev_a", session: 1, at: now - 60_000 }), model: "<script>alert(1)</script>" }),
+    "x".repeat(40 * 1024),
+    JSON.stringify(record({ id: 4, device: "dev_a", session: 1, at: now - 120_000 })),
+  ];
+  // The 0.2.0 single file: read line by line, what is valid moves to today's file.
+  fs.writeFileSync(path.join(dir, "records.ndjson"), lines.join("\n") + "\n");
+  const store = createStore({ dir, retentionMs: 8 * DAY, prices: PRICES, now: () => now });
+  const tally = store.load();
+  assert.equal(tally.loaded, 2);
+  assert.equal(tally.damaged, 3, "unparseable, a non-hash and markup as a model are skipped; an over-long line is dropped unread");
+  assert.equal(fs.existsSync(path.join(dir, "records.ndjson")), false);
+  assert.equal(fs.readFileSync(path.join(dir, "records-2026-09-22.ndjson"), "utf8").trim().split("\n").length, 2);
+});
+
+test("one machine can add only its daily allowance; the hub's own machine is not limited", (t) => {
+  const now = Date.UTC(2026, 8, 22, 12);
+  const store = createStore({ dir: null, retentionMs: 8 * DAY, prices: PRICES, now: () => now });
+  assert.equal(store.quotaLeft("dev_a"), DEVICE_DAILY_RECORDS);
+  store.ingest("dev_a", [1, 2, 3].map((i) => record({ id: i, device: "dev_a", session: 1, at: now - i * 60_000 })));
+  assert.equal(store.quotaLeft("dev_a"), DEVICE_DAILY_RECORDS - 3);
+  assert.equal(store.quotaLeft("dev_b"), DEVICE_DAILY_RECORDS);
 });
 
 test("an unreported class is a floor, not a zero, and an unpriced model is never priced at zero", (t) => {

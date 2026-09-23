@@ -124,6 +124,22 @@
       }
     },
     {
+      "model": "claude-opus-5-5",
+      "status": "verified",
+      "verifiedOn": "2026-09-22",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "cacheWriteBasis": "5m-assumed",
+      "assumptions": [],
+      "usdPerMillion": {
+        "fresh": 4,
+        "output": 20,
+        "cacheWrite": 5,
+        "cacheWrite5m": 5,
+        "cacheWrite1h": 8,
+        "cacheRead": 0.2
+      }
+    },
+    {
       "model": "claude-sonnet-4-6",
       "status": "verified",
       "verifiedOn": "2026-09-20",

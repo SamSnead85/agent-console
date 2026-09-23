@@ -123,9 +123,18 @@ test("a missing public token rate is distinct from a known zero usage class", ()
   assert.equal(priceRecord(record({ model: "gpt-5.5", cacheWrite: null }), prices).reason, "unknown-token-class");
 });
 
+test("Claude Opus 5.5 is priced from Anthropic's published page: $4 in, $20 out, $5/$8 writes, $0.20 hits", () => {
+  const row = prices.rows.find((r) => r.model === "claude-opus-5-5");
+  assert.equal(row.source, "https://platform.claude.com/docs/en/about-claude/pricing");
+  assert.equal(row.verifiedOn, "2026-09-22");
+  const million = record({ model: "claude-opus-5-5", fresh: 1_000_000, output: 1_000_000, cacheRead: 1_000_000, cacheWrite: 1_000_000,
+    ttl: "split", cacheWrite5m: 500_000, cacheWrite1h: 500_000 });
+  assert.equal(priceRecord(million, prices).usd, 4 + 20 + 0.2 + 2.5 + 4);
+});
+
 test("the complete checked local model inventory has one explicit price standing per id", () => {
   const inventory = [
-    "claude-fable-5", "claude-fable-5-1", "claude-haiku-4-5-20251001", "claude-opus-4-6", "claude-opus-4-7", "claude-opus-4-8", "claude-opus-5", "claude-sonnet-4-6", "claude-sonnet-5",
+    "claude-fable-5", "claude-fable-5-1", "claude-haiku-4-5-20251001", "claude-opus-4-6", "claude-opus-4-7", "claude-opus-4-8", "claude-opus-5", "claude-opus-5-5", "claude-sonnet-4-6", "claude-sonnet-5",
     "codex-auto-review", "gpt-5.2", "gpt-5.3-codex-spark", "gpt-5.4", "gpt-5.4-mini", "gpt-5.5", "gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-6-astra", "gpt-reserve",
   ];
   assert.deepEqual(prices.rows.map(row => row.model).sort(), inventory.sort());

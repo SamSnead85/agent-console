@@ -7,7 +7,7 @@ import {
   redactAndClip,
   MARK_RE,
 } from "../lib/redact.js";
-import { SECRETS } from "./helpers.js";
+import { SECRETS } from "./fixtures/secrets.js";
 
 const shapes = [
   [
@@ -226,11 +226,11 @@ test("ordinary text is left alone", () => {
   const clean = [
     "Bash: git log --since=midnight --pretty=format:%h",
     "Read: apps/web/src/app/page.tsx",
-    "Edit: docs/product/truth-and-status.md",
-    "feat(fleet): add the burn band",
+    "Edit: docs/guide.md",
+    "feat(console): add the burn band",
     "a 1.5-billion-token thread lifetime",
     "claude-opus-5",
-    "/Users/someone/Projects/thing",
+    "/home/dev/projects/thing",
   ];
   for (const line of clean) {
     const { text, kinds } = redactText(line);

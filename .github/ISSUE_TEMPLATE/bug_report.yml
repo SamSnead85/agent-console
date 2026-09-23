@@ -1,0 +1,87 @@
+name: Bug report
+description: Something in Agent Console is wrong, missing or confusing.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Issues are public.** Don't paste prompts, transcripts, file paths, join links or codes, device tokens, or screenshots of real sessions. Start the console with `--demo` if you need a screenshot.
+        A security problem goes to [a private report](https://github.com/SamSnead85/agent-console/security/advisories/new), not here.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead.
+      placeholder: I started the console with --listen 0.0.0.0 and made a join link. On the laptop the join command said …
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. node bin/agent-console.mjs --demo --open
+        2. Press Add a machine
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Agent Console version
+      description: "The console's footer shows it, and so does `node bin/agent-console.mjs --version`."
+      placeholder: v0.2.1
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How you got it
+      options:
+        - One command (npx with the release link)
+        - Downloaded ZIP or git clone
+        - Through a join link (reporter)
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      multiple: true
+      options:
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      description: "The output of `node --version`."
+      placeholder: v22.12.0
+    validations:
+      required: true
+  - type: dropdown
+    id: role
+    attributes:
+      label: Which part
+      options:
+        - The console (the computer running it)
+        - A reporter (a computer that joined another console)
+        - Both
+        - Not sure
+  - type: textarea
+    id: output
+    attributes:
+      label: Terminal output
+      description: Copy the terminal text around the problem. Remove anything private first.
+      render: text
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: This report contains no prompts, transcripts, file paths, join codes, tokens or customer data.
+          required: true

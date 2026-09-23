@@ -3,17 +3,20 @@
  *
  * One hub process and several reporter processes, each with its own home
  * directory of real-shaped synthetic transcripts and its own state directory,
- * talking HTTP exactly as they would across a network. Every byte a reporter
- * sends passes through a recording relay, so the privacy promise is checked
- * against what actually went over the wire — not against a function's return
- * value.
+ * talking to each other exactly as they would across a network: over TLS,
+ * pinned to the hub's certificate. Every request a reporter sends passes
+ * through a recording relay that holds the hub's own certificate (read from
+ * the hub's state directory, as only a test can), so the privacy promise is
+ * checked against the plaintext of what actually went over the wire.
  */
 
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import http from "node:http";
+import https from "node:https";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
@@ -43,29 +46,44 @@ function run(args, { env = {}, timeoutMs = 30_000 } = {}) {
   });
 }
 
+/** Starts a hub; resolves with its ports, fingerprint and a signed-in cookie. */
 function startHub(args) {
-  const child = spawn(process.execPath, [BIN, ...args], { stdio: ["ignore", "pipe", "pipe"] });
+  const child = spawn(process.execPath, [BIN, "--json", "--port", "0", ...args], { stdio: ["ignore", "pipe", "pipe"] });
   let out = "";
   child.stdout.on("data", (c) => { out += c; });
   child.stderr.on("data", (c) => { out += c; });
   const ready = new Promise((resolve, reject) => {
-    const timer = setInterval(() => { if (out.includes("ready:")) { clearInterval(timer); resolve(out); } }, 50);
+    const timer = setInterval(async () => {
+      if (!out.includes("\n")) return;
+      clearInterval(timer);
+      try {
+        const meta = JSON.parse(out.split("\n")[0]).dashboard;
+        const login = await fetch(meta.signIn, { redirect: "manual" });
+        resolve({ ...meta, cookie: login.headers.get("set-cookie").split(";")[0] });
+      } catch (error) { reject(error); }
+    }, 50);
     child.on("exit", (code) => { clearInterval(timer); reject(new Error("hub exited " + code + ": " + out)); });
   });
   return { child, ready, output: () => out };
 }
 
-/** A relay in front of the hub that keeps a copy of every request body. */
-function relay(targetPort) {
+/**
+ * A relay in front of the hub's reporting port that keeps the plaintext of
+ * every request. It presents the hub's own certificate, so a reporter that
+ * pins that certificate talks through it unchanged.
+ */
+function relay(hub, stateDir) {
   const bodies = [];
-  const server = http.createServer((req, res) => {
+  const cert = fs.readFileSync(path.join(stateDir, "tls-cert.pem"));
+  const key = fs.readFileSync(path.join(stateDir, "tls-key.pem"));
+  const server = https.createServer({ cert, key }, (req, res) => {
     const chunks = [];
     req.on("data", (c) => chunks.push(c));
     req.on("end", () => {
       const body = Buffer.concat(chunks);
       bodies.push({ url: req.url, body: body.toString("utf8"), authorization: req.headers.authorization || "" });
-      const upstream = http.request({ host: "127.0.0.1", port: targetPort, method: req.method, path: req.url,
-        headers: { ...req.headers, host: "127.0.0.1:" + targetPort } }, (up) => {
+      const upstream = https.request({ host: "127.0.0.1", port: hub.reportPort, method: req.method, path: req.url, ca: cert,
+        checkServerIdentity: () => undefined, headers: req.headers }, (up) => {
         res.writeHead(up.statusCode, up.headers);
         up.pipe(res);
       });
@@ -76,20 +94,23 @@ function relay(targetPort) {
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve({ server, port: server.address().port, bodies })));
 }
 
-async function invite(port, person, machine) {
-  const r = await fetch(`http://127.0.0.1:${port}/api/invitations`, {
-    method: "POST", headers: { ...INTENT, "content-type": "application/json" },
+async function invite(hub, person, machine) {
+  const r = await fetch(`${hub.url}/api/invitations`, {
+    method: "POST", headers: { ...INTENT, cookie: hub.cookie, "content-type": "application/json" },
     body: JSON.stringify({ person, machine, minutes: 30 }),
   });
   assert.equal(r.status, 200);
   return r.json();
 }
 
-async function consoleView(port) {
-  const r = await fetch(`http://127.0.0.1:${port}/api/console`, { headers: INTENT });
+async function consoleView(hub) {
+  const r = await fetch(`${hub.url}/api/console`, { headers: { ...INTENT, cookie: hub.cookie } });
   assert.equal(r.status, 200);
   return r.json();
 }
+
+/** The same link, pointed at another port (the relay). */
+const through = (link, port) => link.replace(/:\d+\/join#/u, `:${port}/join#`);
 
 function readTree(dir) {
   let text = "";
@@ -111,20 +132,20 @@ test("two machines join by link, report, roll up by person, and nothing private 
     claude: [{ sessionId: "cccccccc-0000-4000-8000-000000000001", cwd: "/srv/canary-secret-project-dir", model: "claude-opus-5", start: now - 10 * 60_000, turns: 3, seed: 3 }],
   });
 
-  const port = await freePort();
   const hubState = path.join(root, "hub");
-  const hub = startHub(["--no-local", "--port", String(port), "--state-dir", hubState]);
-  t.after(() => hub.child.kill("SIGKILL"));
-  await hub.ready;
-  const wire = await relay(port);
+  const started = startHub(["--no-local", "--state-dir", hubState]);
+  t.after(() => started.child.kill("SIGKILL"));
+  const hub = await started.ready;
+  const wire = await relay(hub, hubState);
   t.after(() => wire.server.close());
 
-  // The owner makes two links; each machine runs the command it was sent,
+  // The console makes two links; each machine runs the command it was sent,
   // pointed at the relay so every byte it sends is kept.
-  const a = await invite(port, "You", "Laptop");
-  const b = await invite(port, "Platform engineer", "Workstation");
-  assert.match(a.npx, /^npx --yes http:\/\/127\.0\.0\.1:\d+\/agent-console-\d+\.\d+\.\d+\.tgz join http:\/\/127\.0\.0\.1:\d+ [2-9A-Z]{4}-[2-9A-Z]{4}$/u);
-  const via = (inv) => `http://127.0.0.1:${wire.port}/join#${inv.code}`;
+  const a = await invite(hub, "You", "Laptop");
+  const b = await invite(hub, "Platform engineer", "Workstation");
+  // The command installs from the GitHub release, never from the hub.
+  assert.match(a.command, /^npx --yes https:\/\/github\.com\/SamSnead85\/agent-console\/releases\/download\/v\d+\.\d+\.\d+\/lockedinlabs-agent-console-\d+\.\d+\.\d+\.tgz join "http:\/\/127\.0\.0\.1:\d+\/join#[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}"$/u);
+  const via = (inv) => through(inv.link, wire.port);
 
   const joinA = await run(["join", via(a), "--once", "--json", "--home", laptop, "--state-dir", path.join(root, "laptop-state")]);
   assert.equal(joinA.code, 0, joinA.out + joinA.err);
@@ -139,7 +160,7 @@ test("two machines join by link, report, roll up by person, and nothing private 
   assert.notEqual(again.code, 0);
   assert.match(again.err, /not valid/u);
 
-  const view = await consoleView(port);
+  const view = await consoleView(hub);
   assert.equal(view.devices.length, 2);
   for (const d of view.devices) {
     assert.equal(d.status, "reporting", d.label + " is not reporting");
@@ -167,16 +188,25 @@ test("two machines join by link, report, roll up by person, and nothing private 
   }
   for (const b of wire.bodies.filter((x) => x.url === "/api/ingest")) {
     const envelope = JSON.parse(b.body);
-    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records"]);
+    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "backlog"]);
+    // How far a catch-up has got: two counts, nothing else.
+    assert.deepEqual(Object.keys(envelope.backlog), ["delivered", "total"]);
+    assert.ok(Number.isSafeInteger(envelope.backlog.delivered) && Number.isSafeInteger(envelope.backlog.total));
     for (const r of envelope.records) {
-      assert.deepEqual(Object.keys(r).sort(), ["at", "cacheRead", "cacheWrite", "cacheWrite1h", "cacheWrite5m", "engagement", "executionOrigin", "fresh",
+      assert.deepEqual(Object.keys(r).sort(), ["at", "cacheRead", "cacheWrite", "cacheWrite1h", "cacheWrite5m", "continuation", "engagement", "executionOrigin", "fresh",
         "id", "isSubagent", "measurement", "model", "observed", "output", "parentSessionHash", "projectHash", "reportingDevice", "sessionHash", "tool", "ttl"]);
+      assert.equal(typeof r.continuation, "boolean");
       assert.match(r.sessionHash, /^[0-9a-f]{64}$/u);
       assert.match(r.projectHash, /^[0-9a-f]{64}$/u);
       assert.equal(r.engagement, null, "a project name left without --share-project-names");
       assert.match(r.at, /:00\.000Z$/u, "a time finer than a minute left the machine");
     }
   }
+  // Project hashes use each reporter's own key, not the salt the hub holds, so
+  // the hub cannot confirm a guess of a folder path against them.
+  const orgSalt = Buffer.from(JSON.parse(fs.readFileSync(path.join(root, "laptop-state", "credentials.json"), "utf8")).orgSalt, "base64url");
+  const guess = crypto.createHmac("sha256", orgSalt).update("project|/home/dev/canary-secret-project-dir").digest("hex");
+  assert.ok(!sent.includes(guess), "a project hash the hub could reverse by guessing the path");
   // The long-lived token went to the reporter once, and never into a URL or a file the hub keeps.
   const token = JSON.parse(fs.readFileSync(path.join(root, "laptop-state", "credentials.json"), "utf8")).token;
   assert.ok(!stored.includes(token));
@@ -186,12 +216,12 @@ test("two machines join by link, report, roll up by person, and nothing private 
 
   // Removing a machine stops it at once, and the reporter says so.
   const laptopId = view.devices.find((d) => d.label === "Laptop").id;
-  const removed = await fetch(`http://127.0.0.1:${port}/api/devices/${laptopId}/revoke`, { method: "POST", headers: INTENT });
+  const removed = await fetch(`${hub.url}/api/devices/${laptopId}/revoke`, { method: "POST", headers: { ...INTENT, cookie: hub.cookie } });
   assert.equal(removed.status, 200);
   const refused = await run(["report", "--once", "--json", "--home", laptop, "--state-dir", path.join(root, "laptop-state")]);
   assert.equal(refused.code, 3);
   assert.match(refused.out, /"event":"revoked"/u);
-  const after = await consoleView(port);
+  const after = await consoleView(hub);
   assert.equal(after.devices.find((d) => d.id === laptopId).status, "revoked");
   assert.ok(after.devices.find((d) => d.id === laptopId).day.tokens.total > 0, "what it reported before removal stays");
 });
@@ -204,17 +234,15 @@ test("one person's copied transcripts on two machines are counted once", async (
   const second = path.join(root, "two");
   fs.cpSync(first, second, { recursive: true });
 
-  const port = await freePort();
-  const hub = startHub(["--no-local", "--port", String(port), "--state-dir", path.join(root, "hub")]);
-  t.after(() => hub.child.kill("SIGKILL"));
-  await hub.ready;
-  const base = `http://127.0.0.1:${port}`;
+  const started = startHub(["--no-local", "--state-dir", path.join(root, "hub")]);
+  t.after(() => started.child.kill("SIGKILL"));
+  const hub = await started.ready;
   for (const [home, machine] of [[first, "Laptop"], [second, "Desktop"]]) {
-    const inv = await invite(port, "You", machine);
-    const r = await run(["join", `${base}/join#${inv.code}`, "--once", "--home", home, "--state-dir", path.join(root, machine + "-state")]);
+    const inv = await invite(hub, "You", machine);
+    const r = await run(["join", inv.link, "--once", "--home", home, "--state-dir", path.join(root, machine + "-state")]);
     assert.equal(r.code, 0, r.out + r.err);
   }
-  const view = await consoleView(port);
+  const view = await consoleView(hub);
   const [laptop, desktop] = ["Laptop", "Desktop"].map((l) => view.devices.find((d) => d.label === l));
   assert.ok(laptop.day.tokens.total > 0);
   assert.equal(desktop.day.tokens.total, 0, "the copy added nothing");
@@ -229,13 +257,12 @@ test("--share-project-names sends a folder's name — and still nothing else", a
   const home = writeHome(path.join(root, "home"), {
     claude: [{ sessionId: "eeeeeeee-0000-4000-8000-000000000001", cwd: "/home/dev/canary-secret-project-dir", start: Date.now() - 10 * 60_000, turns: 2 }],
   });
-  const port = await freePort();
-  const hub = startHub(["--no-local", "--port", String(port), "--state-dir", path.join(root, "hub")]);
-  t.after(() => hub.child.kill("SIGKILL"));
-  await hub.ready;
-  const inv = await invite(port, "You", "Laptop");
+  const started = startHub(["--no-local", "--state-dir", path.join(root, "hub")]);
+  t.after(() => started.child.kill("SIGKILL"));
+  const hub = await started.ready;
+  const inv = await invite(hub, "You", "Laptop");
   const state = path.join(root, "state");
-  const joined = await run(["join", `http://127.0.0.1:${port}/join#${inv.code}`, "--once", "--share-project-names", "--home", home, "--state-dir", state]);
+  const joined = await run(["join", inv.link, "--once", "--share-project-names", "--home", home, "--state-dir", state]);
   assert.equal(joined.code, 0, joined.out + joined.err);
   // labels apply from the next record on
   fs.appendFileSync(path.join(home, ".claude", "projects", "-home-dev-canary-secret-project-dir", "eeeeeeee-0000-4000-8000-000000000001.jsonl"),
@@ -243,7 +270,7 @@ test("--share-project-names sends a folder's name — and still nothing else", a
       .replaceAll("eeeeeeee-0000-4000-8000-000000000001-", "eeeeeeee-0000-4000-8000-000000000001-again-").replaceAll("msg_", "msg_again_"));
   const resumed = await run(["report", "--once", "--share-project-names", "--home", home, "--state-dir", state]);
   assert.equal(resumed.code, 0, resumed.out + resumed.err);
-  const view = await consoleView(port);
+  const view = await consoleView(hub);
   const lane = view.lanes[0];
   assert.deepEqual(lane.project, { name: "canary-secret-project-dir", source: "label" });
   const shown = JSON.stringify(view);
@@ -251,38 +278,32 @@ test("--share-project-names sends a folder's name — and still nothing else", a
   assert.ok(!shown.includes("/home/dev"), "a path left the machine");
 });
 
-test("the network sees only the join page, the package, the join exchange and token-checked reporting", async (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-wall-"));
+test("--share-project-names stops at once when it is left off, and leave deletes everything", async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-optout-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  const port = await freePort();
-  const hub = startHub(["--no-local", "--port", String(port), "--state-dir", path.join(root, "hub")]);
-  t.after(() => hub.child.kill("SIGKILL"));
-  await hub.ready;
-  // A request that claims another Host is what a page on another origin (or
-  // another machine) produces; the console must refuse it, the join path must not.
-  const as = (p, init = {}) => new Promise((resolve) => {
-    const req = http.request({ host: "127.0.0.1", port, path: p, method: init.method || "GET",
-      headers: { host: "192.168.1.20:" + port, ...(init.headers || {}) } }, (res) => {
-      let body = ""; res.on("data", (c) => { body += c; }); res.on("end", () => resolve({ status: res.statusCode, body }));
-    });
-    req.end(init.body);
-  });
-  for (const p of ["/", "/api/console", "/api", "/api/history", "/console.js"]) {
-    assert.equal((await as(p, { headers: INTENT })).status, 421, p + " answered a foreign host");
-  }
-  assert.equal((await as("/api/invitations", { method: "POST", headers: INTENT, body: "{}" })).status, 421);
-  for (const p of ["/join", "/join.js", "/house.css", "/api/join/info"]) assert.equal((await as(p)).status, 200, p);
-  const version = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
-  const tgz = await as(`/agent-console-${version}.tgz`);
-  assert.equal(tgz.status, 200);
-  assert.equal((await as("/agent-console-0.0.1.tgz")).status, 404, "a version this hub does not serve");
-  assert.equal((await as("/api/ingest", { method: "POST", headers: { authorization: "Bearer acd_" + "x".repeat(43) }, body: "{}" })).status, 401);
-  // guessing codes is rate limited
-  let limited = false;
-  for (let i = 0; i < 12; i += 1) {
-    const r = await as("/api/join", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: "AAAA-AAAA" }) });
-    if (r.status === 429) { limited = true; break; }
-    assert.equal(r.status, 404);
-  }
-  assert.ok(limited, "ten wrong codes did not slow the guesser down");
+  const cwd = "/home/dev/canary-secret-project-dir";
+  const home = writeHome(path.join(root, "home"), { claude: [{ sessionId: "ffffffff-0000-4000-8000-000000000001", cwd, start: Date.now() - 10 * 60_000, turns: 2 }] });
+  const hubState = path.join(root, "hub");
+  const started = startHub(["--no-local", "--state-dir", hubState]);
+  t.after(() => started.child.kill("SIGKILL"));
+  const hub = await started.ready;
+  const wire = await relay(hub, hubState);
+  t.after(() => wire.server.close());
+  const inv = await invite(hub, "You", "Laptop");
+  const state = path.join(root, "state");
+  assert.equal((await run(["join", through(inv.link, wire.port), "--once", "--share-project-names", "--home", home, "--state-dir", state])).code, 0);
+  wire.bodies.length = 0;
+  // More work in the same project, then a run WITHOUT the flag.
+  writeHome(home, { claude: [{ sessionId: "ffffffff-0000-4000-8000-000000000002", cwd, start: Date.now() - 2 * 60_000, turns: 2 }] });
+  const plain = await run(["report", "--once", "--json", "--home", home, "--state-dir", state]);
+  assert.equal(plain.code, 0, plain.out + plain.err);
+  const sent = wire.bodies.filter((b) => b.url === "/api/ingest").flatMap((b) => JSON.parse(b.body).records);
+  assert.ok(sent.length > 0);
+  assert.ok(sent.every((r) => r.engagement === null), "a name went out after the opt-in was turned off");
+  assert.ok(!wire.bodies.some((b) => b.body.includes("canary-secret-project-dir")));
+
+  const left = await run(["leave", "--state-dir", state]);
+  assert.equal(left.code, 0);
+  const remaining = fs.existsSync(state) ? fs.readdirSync(state, { recursive: true }) : [];
+  assert.deepEqual(remaining, [], "leave left files behind: " + remaining.join(", "));
 });

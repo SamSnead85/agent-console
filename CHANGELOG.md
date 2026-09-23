@@ -1,5 +1,65 @@
 # Changelog
 
+## 0.2.1 — not yet released
+
+Safer by default, and the fixes from a first-time install.
+
+**Security**
+
+- **Agent Console now comes only from its GitHub release.** The console no
+  longer serves the package to machines that join, and every command it prints
+  installs the release over HTTPS. From this release on, CI builds each release's
+  package with a published SHA-256 and a signed build attestation.
+- **Reports are encrypted and pinned.** Joining and reporting go over TLS to a
+  certificate the console makes for itself; the join link carries its
+  fingerprint, and the reporter talks to that certificate only.
+- **The console is signed in, and never on the network.** It listens on
+  127.0.0.1 on its own port and needs a sign-in cookie; `--open` and the
+  sign-in link printed at start set it. Other machines use a separate port
+  (normally 6788) that serves only joining and reporting, refuses callers
+  outside private networks unless `--allow-public`, and refuses proxied requests
+  to the console.
+- **Joining is harder to guess.** Links carry a 128-bit code that lives at most
+  an hour; attempts are counted before they are read.
+- **The console checks every record's exact shape**, keeps usage one file per
+  day, reads it back line by line, and limits each machine to 250,000 records a
+  day, so a bad or hostile reporter cannot stop it from starting.
+- **The reporter trusts nothing it is sent.** It checks every identifier a
+  console returns and strips control characters before printing. Project hashes
+  use a key only the reporting machine holds. Leaving out
+  `--share-project-names` stops names at once, and `leave` deletes everything
+  the enrolment left behind.
+
+**Fixed**
+
+- A machine with a large history now finishes uploading. It keeps every batch
+  the console accepted, resumes where it stopped, honours the console's pacing,
+  and shows "catching up · N of M records" meanwhile. The console no longer
+  shows it as "Reporting · now" until everything has arrived.
+- The reporter says what actually went wrong instead of always "cannot reach
+  the hub".
+- Messages count API responses, not transcript lines (the count was 64% high
+  for Claude). Tokens were never affected.
+- The burn rate shows "unpriced" instead of "$0.00/hour" for models without a
+  verified price.
+- A busy port: a second start points at the console already running; another
+  program on the default port moves the console to the next free one.
+- The first read of a long history shows its progress, and the browser opens
+  after two seconds.
+
+**Added**
+
+- Claude Opus 5.5 pricing, from Anthropic's published pricing page
+  (checked 2026-09-22).
+- `--version`, clearer install steps, the full LockedIn Labs lockup in the
+  README, and the community and licence files an open-source project needs.
+
+**Changed**
+
+- Machines that joined a 0.2.0 console join again with a new link.
+- The v0.1 detail endpoints (`/api`, `/api/history`) and the embeddable panel
+  are gone; the Projects view now reads the console's own data.
+
 ## 0.2.0 — 2026-09-22
 
 Many machines, one console. Agent Console now shows the AI coding agents on
@@ -26,7 +86,7 @@ every computer you connect, in LockedIn Labs' console design.
   hour of activity, five-minute tokens, subagents and machine. Show unavailable
   and Pause motion sit in the band's header. One animation loop, text redrawn at
   most eight times a second, `prefers-reduced-motion` honoured.
-- **Honest gaps.** A machine that stops reporting shows when it was last heard
+- **Gaps shown as gaps.** A machine that stops reporting shows when it was last heard
   from, is left out of "right now" by name, and its lanes read unknown rather
   than zero; the chart marks where it becomes incomplete. A missing token class
   makes a total a floor, and an unpriced model is excluded from dollars and named.

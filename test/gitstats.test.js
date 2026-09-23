@@ -68,7 +68,7 @@ test("parseNumstat sums text changes and skips binary rows", () => {
 });
 
 test("period stats from a real repository: merged PRs and lines are period-scoped", async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "fleet-gitstats-"));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "gitstats-"));
   run(root, ["init", "-q"]);
   const file = path.join(root, "a.txt");
   const now = Date.now();
@@ -102,7 +102,7 @@ test("period stats from a real repository: merged PRs and lines are period-scope
   assert.equal(all.totals.added, 4 + 3);
 
   // A directory that is not a repository is reported absent, not fatal.
-  const empty = fs.mkdtempSync(path.join(os.tmpdir(), "fleet-norepo-"));
+  const empty = fs.mkdtempSync(path.join(os.tmpdir(), "gitstats-norepo-"));
   const none = await gitStatsForPeriod(createGitStatsStore(), [empty], null);
   assert.equal(none.repos.length, 0);
 

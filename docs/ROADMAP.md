@@ -1,17 +1,18 @@
 # Direction
 
-The console is the product: fast to start, no account, read-only collection,
-metadata only, and a dense screen that tells the truth about gaps.
+Agent Console is one screen for the AI coding agents on every machine you
+connect: fast to start, no account, read-only collection, metadata only.
 
-Shipped in 0.2.0: many machines reporting to one hub, joined by single-use
-links; per-person and per-machine views; copied-transcript deduplication.
+In 0.2.1: machines join by single-use link and report over TLS pinned to the
+console's certificate; the console is signed in and never on the network; per
+person and per machine views; copied transcripts counted once; large first
+uploads resume where they stopped; CI on macOS, Linux and Windows.
 
-Next candidates, none of them implemented yet:
+Candidates for later, none of them started:
 
 1. A background service for the reporter (launchd, systemd, Task Scheduler) so
    reporting survives a restart without a terminal window.
-2. HTTPS on the hub without a separate proxy, and Windows in CI.
-3. Codex period attribution and pricing for more models as vendors publish
-   rates; the price table stays dated and offline.
-4. Project and label management from the console, rather than per machine.
-5. Signed installers and in-place updates.
+2. Prices for more models as vendors publish rates; the table stays dated and
+   offline.
+3. Choosing which projects a machine shares by name, from the console.
+4. Signed installers and in-place updates.

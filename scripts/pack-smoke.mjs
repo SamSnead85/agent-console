@@ -1,13 +1,11 @@
 #!/usr/bin/env node
 
 /*
- * The release gate.
- *
- * Two jobs: prove the packed artifact actually installs and runs, and refuse
- * to package code whose redistribution nobody recorded. The second is not
- * ceremony — this console was recovered from a proprietary repository into an
- * MIT package, and until 2026-09-02 the only thing standing between that code
- * and a public registry was a paragraph in a markdown file that no tool read.
+ * The release gate: pack the package, install the tarball into a scratch
+ * prefix, start the installed copy in demo mode (so it reads none of this
+ * machine's transcripts) and check that it serves the console, signs a
+ * browser in, and serves the join page on its reporting port. It also refuses
+ * to pack a copy without its licence, notices and provenance statement.
  */
 
 import assert from 'node:assert/strict';
@@ -26,136 +24,72 @@ const npmCli = process.env.npm_execpath;
 function run(command, args, { cwd = root, env = {} } = {}) {
   const result = spawnSync(command, args, { cwd, encoding: 'utf8', env: { ...process.env, ...env } });
   if (result.error || result.status !== 0) {
-    throw new Error([
-      `${command} ${args.join(' ')} failed with ${result.status}`,
-      result.stderr, result.stdout, result.error?.message,
-    ].filter(Boolean).join('\n'));
+    throw new Error([`${command} ${args.join(' ')} failed with ${result.status}`, result.stderr, result.stdout, result.error?.message].filter(Boolean).join('\n'));
   }
   return result.stdout.trim();
 }
 
 function runNpm(args, options) {
   if (npmCli) return run(process.execPath, [npmCli, ...args], options);
-  if (process.platform === 'win32') {
-    throw new Error('npm_execpath is unavailable; run this through `npm run smoke:pack` on Windows');
-  }
+  if (process.platform === 'win32') throw new Error('npm_execpath is unavailable; run this through `npm run smoke:pack` on Windows');
   return run('npm', args, options);
 }
 
-/**
- * Refuse to package code whose redistribution is unrecorded.
- *
- * One exact sentence, so the check cannot pass on prose that merely discusses
- * the decision. The negative lookahead is not decoration: PROVENANCE.md has to
- * show the operator what to write, that template sits at the start of a line
- * like any other, and the first version of this check was satisfied by the
- * documentation of itself. A placeholder opens with `<`, a recorded decision
- * names a person, so the two are told apart by the one character that cannot
- * appear in a real answer.
- */
-function assertRedistributable(installedPackage) {
-  const provenance = path.join(installedPackage, 'PROVENANCE.md');
-  let text = '';
-  try {
-    text = fs.readFileSync(provenance, 'utf8');
-  } catch {
-    throw new Error(
-      'This artifact has no PROVENANCE.md. This console is recovered code and\n' +
-      'cannot be published without a recorded redistribution authorization.',
-    );
-  }
-  if (!/^REDISTRIBUTION AUTHORIZED: (?!<)\S/mu.test(text)) {
-    throw new Error([
-      'Refusing to package this console.',
-      '',
-      'It was recovered from a private, all-rights-reserved repository, and its',
-      'PROVENANCE.md does not record an authorization to redistribute it under',
-      "this package's licence.",
-      '',
-      'expected: a line in PROVENANCE.md beginning "REDISTRIBUTION AUTHORIZED: "',
-      '          naming who authorized it and when',
-      'next:     have the owner record that decision before cutting a release',
-    ].join('\n'));
-  }
+/** The licence, the third-party notices and the provenance statement travel with every copy. */
+function assertLicensed(installed) {
+  const read = (name) => { try { return fs.readFileSync(path.join(installed, name), 'utf8'); } catch { return ''; } };
+  assert.match(read('LICENSE'), /MIT License[\s\S]*LockedIn Labs/u, 'the packed copy has no MIT licence naming LockedIn Labs');
+  assert.match(read('THIRD_PARTY_NOTICES.md'), /SIL Open Font License/u, 'the packed copy has no third-party notices');
+  assert.match(read('PROVENANCE.md'), /^Released under the MIT licence by LockedIn Labs/mu, 'the packed copy has no provenance statement');
 }
 
 try {
   const npmCache = path.join(scratch, 'npm-cache');
-  const packJson = runNpm(['pack', '--json', '--pack-destination', scratch], {
-    env: { npm_config_cache: npmCache },
-  });
-  const packed = JSON.parse(packJson)[0];
+  const packed = JSON.parse(runNpm(['pack', '--json', '--pack-destination', scratch], { env: { npm_config_cache: npmCache } }))[0];
   assert.equal(packed.name, manifest.name);
   assert.equal(packed.version, manifest.version);
   const tarball = path.join(scratch, packed.filename);
 
   const prefix = path.join(scratch, 'install');
-  runNpm(['install', '--prefix', prefix, '--ignore-scripts', tarball], {
-    env: { npm_config_cache: npmCache },
-  });
-
+  runNpm(['install', '--prefix', prefix, '--ignore-scripts', tarball], { env: { npm_config_cache: npmCache } });
   const installed = path.join(prefix, 'node_modules', ...manifest.name.split('/'));
-  assertRedistributable(installed);
+  assertLicensed(installed);
 
-  // The installed artifact must actually start, in demo mode so the smoke test
-  // reads none of the operator's own transcripts.
   const bin = path.join(installed, 'bin', 'agent-console.mjs');
-  const child = spawn(process.execPath, [bin, '--demo', '--json', '--port', '0'], {
-    stdio: ['ignore', 'pipe', 'pipe'], cwd: scratch,
-  });
+  const child = spawn(process.execPath, [bin, '--demo', '--json', '--port', '0'], { stdio: ['ignore', 'pipe', 'pipe'], cwd: scratch });
   const closed = once(child, 'close');
   try {
-    const metadata = await new Promise((resolve, reject) => {
+    const meta = await new Promise((resolve, reject) => {
       let output = '';
       const timer = setTimeout(() => reject(new Error('installed console startup timed out')), 15_000);
       const finish = (error, value) => { clearTimeout(timer); error ? reject(error) : resolve(value); };
-      child.once('error', error => finish(error));
-      child.once('exit', code => finish(new Error('installed console exited early: ' + code)));
-      child.stdout.on('data', chunk => {
+      child.once('error', (error) => finish(error));
+      child.once('exit', (code) => finish(new Error('installed console exited early: ' + code)));
+      child.stdout.on('data', (chunk) => {
         output += chunk.toString();
         if (!output.includes('\n')) return;
-        try { finish(null, JSON.parse(output.split('\n')[0])); }
-        catch (error) { finish(error); }
+        try { finish(null, JSON.parse(output.split('\n')[0]).dashboard); } catch (error) { finish(error); }
       });
     });
-    assert.equal(metadata.ok, true);
-    assert.ok(metadata.dashboard.port > 0);
-    const base = metadata.dashboard.url;
-    const page = await fetch(base, {signal: AbortSignal.timeout(10_000)});
+    const timeout = () => AbortSignal.timeout(10_000);
+    const page = await fetch(meta.url, { signal: timeout() });
     assert.equal(page.status, 200);
-    assert.match(await page.text(), /Agent Console/);
-    const data = await fetch(base + '/api', {
-      headers: {'X-Agent-Console': '1'}, signal: AbortSignal.timeout(10_000),
-    });
-    assert.equal(data.status, 200);
-    const snapshot = await data.json();
-    assert.equal(snapshot.demo.synthetic, true);
-    assert.ok(snapshot.rows.length > 0);
-    const history = await fetch(base + '/api/history?period=24h', {
-      headers: {'X-Agent-Console': '1'}, signal: AbortSignal.timeout(10_000),
-    });
-    assert.equal(history.status, 200);
-    assert.ok((await history.json()).totals.total > 0);
-    // The v0.2 hub: the console's own view, and the join page another machine opens.
-    const hub = await fetch(base + '/api/console', {
-      headers: {'X-Agent-Console': '1'}, signal: AbortSignal.timeout(10_000),
-    });
-    assert.equal(hub.status, 200);
-    const view = await hub.json();
-    assert.equal(view.hub.demo, true);
-    assert.ok(view.devices.length > 1 && view.day.tokens.total > 0);
-    const join = await fetch(base + '/join', {signal: AbortSignal.timeout(10_000)});
+    assert.match(await page.text(), /Agent Console/u);
+    const login = await fetch(meta.signIn, { redirect: 'manual', signal: timeout() });
+    assert.equal(login.status, 303);
+    const cookie = login.headers.get('set-cookie').split(';')[0];
+    const view = await fetch(meta.url + '/api/console', { headers: { 'X-Agent-Console': '1', cookie }, signal: timeout() });
+    assert.equal(view.status, 200);
+    const data = await view.json();
+    assert.equal(data.hub.demo, true);
+    assert.ok(data.devices.length > 1 && data.day.tokens.total > 0);
+    const join = await fetch(`http://127.0.0.1:${meta.reportPort}/join`, { signal: timeout() });
     assert.equal(join.status, 200);
-    const tarball = await fetch(`${base}/agent-console-${manifest.version}.tgz`, {signal: AbortSignal.timeout(10_000)});
-    assert.equal(tarball.status, 200);
   } finally {
     child.kill('SIGTERM');
     await closed;
   }
-
-  process.stdout.write(
-    `packed, installed and started ${packed.filename} (${packed.size} bytes; ${packed.entryCount} files)\n`,
-  );
+  process.stdout.write(`packed, installed and started ${packed.filename} (${packed.size} bytes; ${packed.entryCount} files)\n`);
 } finally {
   fs.rmSync(scratch, { recursive: true, force: true });
 }

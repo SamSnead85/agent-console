@@ -1,38 +1,41 @@
 /*
- * The join page. It runs on the teammate's computer, from a link the console's
- * owner sent. The code is in the link's #fragment, which a browser never sends
- * to a server, so it reaches nothing but this page — and this page only puts it
- * into the one command the teammate copies. On screen it stays masked.
+ * The join page. It runs on the teammate's computer, from a link sent from the
+ * console: http://<console>:<port>/join#<code>.<fingerprint>. The fragment
+ * never leaves the browser, so the code reaches nothing but this page, and
+ * this page only puts the whole link into the one command the teammate copies.
+ * On screen the code stays masked.
+ *
+ * The command installs Agent Console from its GitHub release, never from the
+ * console that served this page, and the reporter then checks the console's
+ * certificate against the fingerprint in the link before it sends anything.
  */
 (() => {
   "use strict";
   const $ = (id) => document.getElementById(id);
-  const CODE = /^[2-9A-HJKMNP-TV-Z]{4}-[2-9A-HJKMNP-TV-Z]{4}$/;
-  const raw = decodeURIComponent((location.hash || "").slice(1)).toUpperCase().replace(/\s/g, "");
-  const code = CODE.test(raw) ? raw : /^[2-9A-HJKMNP-TV-Z]{8}$/.test(raw) ? raw.slice(0, 4) + "-" + raw.slice(4) : null;
-  const base = location.origin;
-  let tarball = `${base}/agent-console.tgz`;
-  let command = code ? `npx --yes ${tarball} join ${base} ${code}` : null;
+  const REPO = "https://github.com/SamSnead85/agent-console";
+  const [code, fingerprint] = decodeURIComponent((location.hash || "").slice(1)).split(".");
+  const valid = /^[A-Za-z0-9_-]{22}$/.test(code || "") && /^[A-Za-z0-9_-]{43}$/.test(fingerprint || "");
+  const link = location.href;
+  let command = null;
 
   $("hubName").textContent = location.host;
-  for (const el of document.querySelectorAll(".hubv")) el.textContent = base;
-  if (!code) {
+  if (!valid) {
     $("noCode").hidden = false;
     $("cmd").textContent = "—";
     $("copyBtn").disabled = true;
-  } else {
-    $("cmd").textContent = command.replace(code, "••••-••••");
   }
 
   fetch("/api/join/info").then((r) => r.json()).then((info) => {
-    $("ver").textContent = "v" + info.version;
-    // the versioned name, so npx never runs a copy cached from an older hub
-    tarball = `${base}/agent-console-${info.version}.tgz`;
-    if (code) {
-      command = `npx --yes ${tarball} join ${base} ${code}`;
-      $("cmd").textContent = command.replace(code, "••••-••••");
+    const version = String(info.version || "").replace(/[^0-9.]/g, "");
+    const asset = `${REPO}/releases/download/v${version}/lockedinlabs-agent-console-${version}.tgz`;
+    $("ver").textContent = "v" + version;
+    for (const el of document.querySelectorAll(".verv")) el.textContent = version;
+    $("releasePage").href = `${REPO}/releases/tag/v${version}`;
+    for (const el of document.querySelectorAll(".restart")) el.textContent = `npx --yes ${asset} report`;
+    if (valid) {
+      command = `npx --yes ${asset} join "${link}"`;
+      $("cmd").textContent = command.replace(code, "••••••••");
     }
-    for (const el of document.querySelectorAll(".tgzv")) el.textContent = tarball;
     if (info.demo) { $("demoStamp").hidden = false; $("demoNote").hidden = false; }
   }).catch(() => { $("status").textContent = "That console is not answering right now. Check you are on the same network, then reload."; });
 
@@ -49,7 +52,7 @@
       try { ok = document.execCommand("copy"); } catch { ok = false; }
       area.value = "";
     }
-    $("status").textContent = ok ? "Copied. Paste it into the terminal and press Return." : "Copying is blocked here. Type the command instead — ask for the code if you need it.";
+    $("status").textContent = ok ? "Copied. Paste it into the terminal and press Return." : "Copying is blocked here. Ask whoever sent the link for the command instead.";
     $("copyBtn").textContent = ok ? "Copied" : "Copy";
   });
 })();

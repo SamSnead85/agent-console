@@ -8,56 +8,56 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import zlib from "node:zlib";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { packageFiles, packageTarball } from "../lib/hub/package.js";
 import { parseJoinTarget, projectLabel } from "../lib/reporter.js";
 import { runOnce } from "../lib/collector/collector.js";
 import { readConfig } from "../lib/config.js";
-import { hubAddresses, isLocalRequest, isPublicPath } from "../lib/hub/routes.js";
+import { hubAddresses, isLocalRequest } from "../lib/hub/routes.js";
 import { claudeSession } from "./fixtures/transcripts.js";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-function untar(buffer) {
-  const files = new Map();
-  for (let at = 0; at + 512 <= buffer.length;) {
-    const header = buffer.subarray(at, at + 512);
-    if (header.every((b) => b === 0)) break;
-    const name = header.subarray(0, 100).toString("utf8").replace(/\0.*$/su, "");
-    const prefix = header.subarray(345, 500).toString("utf8").replace(/\0.*$/su, "");
-    const size = Number.parseInt(header.subarray(124, 136).toString("ascii").replace(/\0.*$/su, "").trim(), 8);
-    let sum = 0;
-    for (let i = 0; i < 512; i += 1) sum += i >= 148 && i < 156 ? 32 : header[i];
-    assert.equal(sum, Number.parseInt(header.subarray(148, 156).toString("ascii"), 8), "header checksum for " + name);
-    files.set(prefix ? prefix + "/" + name : name, buffer.subarray(at + 512, at + 512 + size));
-    at += 512 + Math.ceil(size / 512) * 512;
+test("every copy of the package carries its licences", () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
+  for (const needed of ["THIRD_PARTY_NOTICES.md", "SECURITY.md", "CHANGELOG.md", "public/"]) {
+    assert.ok(manifest.files.includes(needed), "npm pack would leave out " + needed);
   }
-  return files;
-}
-
-test("the hub hands out exactly the package: everything a reporter needs, nothing private", () => {
-  const files = untar(zlib.gunzipSync(packageTarball(ROOT)));
-  for (const needed of ["package/package.json", "package/bin/agent-console.mjs", "package/lib/reporter.js", "package/lib/collector/collector.js", "package/lib/collector/prices.json", "package/LICENSE"]) {
-    assert.ok(files.has(needed), needed + " is missing from the tarball");
-  }
-  for (const name of files.keys()) {
-    assert.match(name, /^package\//u);
-    assert.doesNotMatch(name, /(^|\/)(test|\.git|node_modules)\/|\.png$/u, name + " should not be handed out");
-  }
-  assert.deepEqual(JSON.parse(files.get("package/package.json")), JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")));
-  assert.equal(packageFiles(ROOT).length, files.size);
+  const ofl = fs.readFileSync(path.join(ROOT, "public", "fonts", "LICENSE-OFL.txt"), "utf8");
+  assert.match(ofl, /IBM Plex Sans: Copyright 2019 IBM Corp\./u);
+  assert.match(ofl, /IBM Plex Mono: Copyright 2017 IBM Corp\./u);
+  assert.match(ofl, /SIL OPEN FONT LICENSE Version 1\.1/u);
 });
 
-test("a join link is read however it arrives", () => {
-  const want = { hub: "http://192.168.1.20:6787", code: "K7Q2-9XMA" };
-  assert.deepEqual(parseJoinTarget("http://192.168.1.20:6787/join#K7Q2-9XMA"), want);
-  assert.deepEqual(parseJoinTarget("http://192.168.1.20:6787/join#k7q29xma"), want);
-  assert.deepEqual(parseJoinTarget("http://192.168.1.20:6787", "K7Q2-9XMA"), want);
-  assert.deepEqual(parseJoinTarget("192.168.1.20:6787", "k7q2 9xma"), want);
-  assert.deepEqual(parseJoinTarget("http://192.168.1.20:6787/join?code=K7Q2-9XMA"), want);
-  assert.throws(() => parseJoinTarget("http://192.168.1.20:6787/join"), /missing or mistyped/u);
+test("the README's one-command install names this version's release", () => {
+  // Bumping the version fails here until the README's link is bumped with it.
+  const { version } = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
+  const readme = fs.readFileSync(path.join(ROOT, "README.md"), "utf8");
+  const links = [...readme.matchAll(/releases\/download\/v([^/\s]+)\/lockedinlabs-agent-console-([^\s]+?)\.tgz/gu)];
+  assert.ok(links.length > 0, "the README has no one-command install");
+  for (const [, tag, file] of links) assert.deepEqual([tag, file], [version, version]);
+});
+
+test("--version prints the package version and starts nothing", () => {
+  const { version } = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
+  for (const flag of ["--version", "-v"]) {
+    const run = spawnSync(process.execPath, [path.join(ROOT, "bin", "agent-console.mjs"), flag], { encoding: "utf8", timeout: 10_000 });
+    assert.equal(run.status, 0, run.stderr);
+    assert.equal(run.stdout, "agent-console " + version + "\n");
+  }
+});
+
+test("a join link carries the code and the certificate to pin; a typed code needs the fingerprint", () => {
+  const code = "A".repeat(21) + "b";
+  const fp = "Z".repeat(42) + "9";
+  const want = { hub: "https://192.168.1.20:6788", code, fingerprint: fp };
+  assert.deepEqual(parseJoinTarget(`http://192.168.1.20:6788/join#${code}.${fp}`), want);
+  assert.deepEqual(parseJoinTarget("192.168.1.20:6788", "k7q2 9xma", fp), { ...want, code: "K7Q2-9XMA" });
+  assert.equal(parseJoinTarget(`http://[fd00::20]:6788/join#${code}.${fp}`).hub, "https://[fd00::20]:6788");
+  assert.throws(() => parseJoinTarget("http://192.168.1.20:6788/join"), /missing or mistyped/u);
+  assert.throws(() => parseJoinTarget(`http://192.168.1.20:6788/join#${code}`), /no certificate fingerprint/u, "a link without the pin is refused");
+  assert.throws(() => parseJoinTarget("192.168.1.20:6788", "K7Q2-9XMA"), /no certificate fingerprint/u);
   assert.throws(() => parseJoinTarget(), /Paste the join link/u);
 });
 
@@ -122,6 +122,4 @@ test("--listen takes an address, and the console never answers a foreign host", 
   assert.equal(isLocalRequest(req("localhost:6787", "::1")), true);
   assert.equal(isLocalRequest(req("192.168.1.20:6787", "127.0.0.1")), false, "a rebinding page");
   assert.equal(isLocalRequest(req("127.0.0.1:6787", "192.168.1.30")), false, "another machine");
-  for (const p of ["/join", "/api/join", "/api/ingest", "/agent-console-0.2.0.tgz", "/fonts/x.woff2"]) assert.equal(isPublicPath(p), true, p);
-  for (const p of ["/", "/api/console", "/api/invitations", "/api", "/console.js", "/agent-console-evil.tgz"]) assert.equal(isPublicPath(p), false, p);
 });

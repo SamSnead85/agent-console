@@ -10,8 +10,10 @@ import { eventMeasurement } from "../lib/collector/measurement.js";
 const TOKEN = "SENTINEL_DEVICE_CREDENTIAL";
 const URL = "https://example.invalid/api/ingest";
 const DEVICE = { id: "device-synthetic", label: "Synthetic workstation" };
-const record = (id = "record-1") => { const row = { id, tool: "codex", model: "synthetic-model", sessionHash: "hashed-session", parentSessionHash: null,
-  isSubagent: false, projectHash: "hashed-project", engagement: null, reportingDevice: DEVICE.id, executionOrigin: "unknown",
+/* Records carry salted hashes (64 hex characters); names here are hashed the same way. */
+const hid = (name) => /^[a-f0-9]{64}$/u.test(name) ? name : createHmac("sha256", "synthetic").update(String(name)).digest("hex");
+const record = (name = "record-1") => { const id = hid(name); const row = { id, tool: "codex", model: "synthetic-model", sessionHash: hid("hashed-session"), parentSessionHash: null,
+  isSubagent: false, projectHash: hid("hashed-project"), engagement: null, reportingDevice: DEVICE.id, executionOrigin: "unknown",
   at: "2026-09-20T12:00:00.000Z", fresh: 12,
   output: 7, cacheWrite: null, cacheWrite5m: null, cacheWrite1h: null, ttl: "unknown", cacheRead: 3, observed: true }; return { ...row, measurement: eventMeasurement(row) }; };
 const response = value => ({ status: 200, json: async () => value });
@@ -76,13 +78,16 @@ test("stops after bounded retries without exposing network error text", async ()
   assert.equal(attempts, 3);
 });
 
-test("honors numeric and dated Retry-After on 429 and 503 within the configured delay bound", async () => {
+test("honors numeric and dated Retry-After on 429 and 503 up to the Retry-After cap, not the short backoff", async () => {
   const now = Date.parse("2026-09-20T12:00:00Z");
   for (const [status, header, expected] of [
     [429, "3", 3000],
     [503, "Sun, 20 Sep 2026 12:00:02 GMT", 2000],
-    [429, "99", 4000],
-    [503, "Sun, 20 Sep 2026 12:01:00 GMT", 4000],
+    // A hub pacing a first sync names a real wait; cutting it to 4 s is what
+    // made a large backlog retry forever.
+    [429, "99", 99_000],
+    [503, "Sun, 20 Sep 2026 12:01:00 GMT", 60_000],
+    [429, "900", 120_000],
     [429, "Sun, 20 Sep 2026 11:59:00 GMT", 250],
     [503, "invalid", 250],
     [500, "3", 250],
@@ -112,14 +117,14 @@ test("permanent refusals and redirects are not retried or read as bodies", async
 
 test("rejects malformed, incomplete, foreign and duplicate rejection receipts", async () => {
   for (const value of [null, {}, receipt(0), receipt(2), receipt(-1, 2), receipt(0.5, 0.5),
-    receipt(0, 0, [{ id: "foreign-record", because: "Unknown record" }]),
-    receipt(0, 0, [{ id: "record-1", because: TOKEN }]),
-    receipt(0, 0, [{ id: "record-1", because: "" }]),
+    receipt(0, 0, [{ id: hid("foreign-record"), because: "Unknown record" }]),
+    receipt(0, 0, [{ id: hid("record-1"), because: TOKEN }]),
+    receipt(0, 0, [{ id: hid("record-1"), because: "" }]),
     { ...receipt(1), privateBody: "SENTINEL_BODY" }]) {
     await assert.rejects(postRecords(URL, DEVICE, [record()], { token: TOKEN, fetch: async () => response(value) }), safeError);
   }
-  await assert.rejects(postRecords(URL, DEVICE, [record(), record("record-2")], {
-    token: TOKEN, fetch: async () => response(receipt(0, 0, [{ id: "record-1", because: "Invalid metadata" }, { id: "record-1", because: "Invalid metadata" }])),
+  await assert.rejects(postRecords(URL, DEVICE, [record(), record(hid("record-2"))], {
+    token: TOKEN, fetch: async () => response(receipt(0, 0, [{ id: hid("record-1"), because: "Invalid metadata" }, { id: hid("record-1"), because: "Invalid metadata" }])),
   }), safeError);
   await assert.rejects(postRecords(URL, DEVICE, [record()], {
     token: TOKEN, fetch: async () => ({ status: 200, json: async () => { throw new Error(TOKEN); } }),
@@ -127,7 +132,7 @@ test("rejects malformed, incomplete, foreign and duplicate rejection receipts", 
 });
 
 test("returns explicit rejections and preserves IDs for idempotent replay after a later batch fails", async () => {
-  const rejected = [{ id: "record-1", because: "Unrecognized engagement" }];
+  const rejected = [{ id: hid("record-1"), because: "Unrecognized engagement" }];
   assert.deepEqual(await postRecords(URL, DEVICE, [record()], { token: TOKEN, fetch: async () => response(receipt(0, 0, rejected)) }), delivered(0, 0, rejected));
   const records = Array.from({ length: 501 }, (_, index) => record(`record-${index}`));
   const before = JSON.stringify(records);
@@ -333,7 +338,7 @@ test("plain HTTP is accepted only on this machine or a private network, unless e
 });
 
 test("a hub receipt may account for records older than its retention window", async () => {
-  const rows = [record("record-1"), record("record-2"), record("record-3")];
+  const rows = [record(hid("record-1")), record(hid("record-2")), record(hid("record-3"))];
   assert.deepEqual(await postRecords(URL, DEVICE, rows, { token: TOKEN, fetch: async () => response({ accepted: 1, duplicate: 1, expired: 1, rejected: [] }) }), delivered(1, 1, [], 1));
   await assert.rejects(postRecords(URL, DEVICE, rows, { token: TOKEN, fetch: async () => response({ accepted: 1, duplicate: 1, expired: 2, rejected: [] }) }), safeError);
 });

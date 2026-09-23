@@ -1,13 +1,16 @@
 {
   "name": "@lockedinlabs/agent-console",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Agent Console by LockedIn Labs: one view of the AI coding agents on every machine you connect — sessions, tokens, cache reads and writes, models and spend. Zero dependencies.",
   "keywords": [
     "claude-code",
     "codex",
-    "ai-coding-agents",
+    "tokens",
     "observability",
+    "llm",
+    "usage",
     "dashboard",
+    "ai-coding-agents",
     "token-usage",
     "cost-tracking",
     "developer-tools",
@@ -29,9 +32,11 @@
     "lib/",
     "public/",
     "server.js",
-    "scripts/",
     "docs/*.md",
-    "PROVENANCE.md"
+    "PROVENANCE.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "scripts": {
     "start": "node bin/agent-console.mjs",

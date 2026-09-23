@@ -51,10 +51,11 @@ test("a join link is a credential: masked, never revealable, cleared when the sh
   assert.match(HTML, /<input id="linkField" type="password" readonly/u);
   assert.doesNotMatch(HTML + JS, /\.type\s*=\s*["']text["']|setAttribute\(\s*["']type["']/u, "something can reveal the link");
   assert.doesNotMatch(HTML, /(show|reveal)\s+(link|code|token)/iu);
-  // the command on screen carries the code masked; Copy puts the real one on the clipboard
-  assert.match(JS, /replace\(j\.code, "••••-••••"\)/u);
+  // the commands on screen carry their codes masked; Copy puts the real ones on the clipboard
+  assert.match(JS, /j\.command\.replace\(secret, "••••••••"\)/u);
+  assert.match(JS, /j\.typed\.replace\(j\.code, "••••-••••"\)/u);
   assert.match(JS, /addDialog\.addEventListener\("close", \(\) => clearSecret\(\)\)/u);
-  assert.match(read("join.js"), /replace\(code, "••••-••••"\)/u);
+  assert.match(read("join.js"), /command\.replace\(code, "••••••••"\)/u);
 });
 
 test("every surface that can show generated figures carries the DEMO stamp", () => {
@@ -80,7 +81,8 @@ test("keyboard: focus is visible everywhere and the lanes can be scrolled from t
   assert.match(HOUSE, /:focus-visible \{ outline: 2px solid var\(--lit\)/u);
   assert.match(CSS, /\.lanescroll:focus-visible/u);
   assert.notEqual(MANIFEST.orientation, "landscape");
-  assert.equal(MANIFEST.name, "Agent Console");
+  assert.equal(MANIFEST.name, "Agent Console · LockedIn Labs");
+  assert.equal(MANIFEST.short_name, "Agent Console");
 });
 
 test("text meets WCAG AA contrast on every ground, in light and in dark", () => {
