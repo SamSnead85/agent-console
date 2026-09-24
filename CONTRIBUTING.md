@@ -5,6 +5,19 @@ Thanks for helping. Agent Console is maintained by
 [Code of Conduct](CODE_OF_CONDUCT.md). Report security problems privately, as
 [SECURITY.md](SECURITY.md) describes, and never in an issue.
 
+The bar every change meets is in [docs/PRINCIPLES.md](docs/PRINCIPLES.md):
+one command to run, zero runtime dependencies, fast and cheap when idle,
+visible in `--demo`, no telemetry, a privacy canary for everything that leaves
+a machine, numbers that reconcile, accessible, and green on Linux, macOS and
+Windows. CI checks each of those it can.
+
+## Where to start
+
+Issues labelled [`good first issue`](https://github.com/SamSnead85/agent-console/labels/good%20first%20issue)
+are small, self-contained and described well enough to start without asking.
+Each says which file to look at and how to know it works. Comment on one to
+take it, so two people don't do the same work.
+
 ## Setup
 
 You need Node.js 22 or newer and Git. Nothing else gets installed, because the
@@ -27,6 +40,13 @@ npm run smoke:pack                # pack, install into a scratch prefix, start i
 
 Both must pass before a pull request is merged. CI runs them on macOS, Linux and
 Windows with Node 22 and 24. A bug fix comes with a test that fails without it.
+
+CI also checks what a pull request publishes, since this repository is public:
+no secrets, no personal paths, private email addresses or machine names, and
+no image metadata, in the files, in every commit, and in the title and
+description. A pull request that changes what people run adds a line to
+`CHANGELOG.md`, and one that changes the interface retakes its screenshots from
+`--demo` or says they still match.
 
 ## The privacy invariant
 

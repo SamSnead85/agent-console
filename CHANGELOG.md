@@ -2,6 +2,12 @@
 
 ## Unreleased — accounting you can reconcile
 
+- **[docs/PRINCIPLES.md](docs/PRINCIPLES.md)**: the bar every change meets,
+  and where CI checks it. New checks: the README's install line is run
+  against the published release; every console option is started in
+  `--demo`; a pull request that changes what people run adds a changelog line,
+  and one that changes the interface retakes or confirms its screenshots.
+  SECURITY.md now says how quickly a report is answered and fixed.
 - **[docs/accounting.md](docs/accounting.md)** defines one token event, what
   is counted once (streaming, re-written lines, retries, resumed sessions,
   compaction, subagents, copies), Codex's cumulative counters, classes and
@@ -10,6 +16,15 @@
 - **A conformance suite**, `@lockedinlabs/agent-console/conformance`: synthetic
   logs for five machines and two people, exact expected totals summed from
   ground truth, and the collector's own output for other receivers to replay.
+- **Faster, and nearly free when idle.** On a month of heavy history (a
+  million transcript lines), the first read takes half the time and half the
+  memory, and the console keeps answering while it runs. An idle console used
+  a quarter of a CPU core and rewrote tens of megabytes every five seconds;
+  it now uses under 3% and writes nothing. Unchanged transcripts are not
+  reopened, the cursor no longer grows with history, and lines no record
+  reads are not parsed. Every record is byte for byte the same. A benchmark
+  on synthetic history (`bench/`) and a budget CI enforces are in
+  [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
 - **Fixed: a streamed Claude response is dated by its first line.** Its later
   increments were dated by their own lines, so a response that crossed a
   window edge was split across two windows.

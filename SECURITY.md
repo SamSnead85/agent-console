@@ -13,6 +13,20 @@ system and Node.js version, and a reproduction that uses synthetic data. Never
 include real transcripts, device tokens, join links or codes, credentials or
 customer data. `--demo` is useful for reproductions and screenshots.
 
+## What happens after you report
+
+| Step | Within |
+| --- | --- |
+| We confirm we have your report | 3 business days |
+| We tell you whether we can reproduce it, and how severe we think it is | 7 days |
+| A fixed release for a critical or high-severity issue | 30 days |
+| A fixed release for anything else | 90 days |
+
+We keep you updated in the advisory until it is fixed, credit you in the
+release notes unless you would rather we didn't, and publish the advisory
+when the fixed release is out. If a fix will take longer than these times, we
+say why in the advisory and agree a disclosure date with you.
+
 ## Supported versions
 
 Fixes go into the latest release. Older releases are not patched, so upgrade to
