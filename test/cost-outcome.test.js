@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import { costPerOutcome } from '@lockedinlabs/agent-console/analysis';
 import fs from 'node:fs';
 import { createRegistry } from '../lib/hub/registry.js';
-import { createStore } from '../lib/hub/store.js';
+import { createStore, MINUTE } from '../lib/hub/store.js';
 import { startDemo } from '../lib/hub/demo.js';
 import { projectsPayload } from '../lib/hub/projects.js';
+import { accountingReport } from '../lib/hub/accounting.js';
 
 test('shared cost ratios use only fully priced spend and positive local outcome counts', () => {
   const result = costPerOutcome({ usd: 12, pricedMessages: 6, unpricedMessages: 0, commits: 3, defaultMerges: 2 });
@@ -21,11 +22,21 @@ test('synthetic Projects payload uses the shared ratios and projects no Git path
   const store = createStore({ retentionMs: 8 * 86_400_000, prices });
   const registry = createRegistry();
   const names = startDemo({ store, registry }).names;
-  const payload = await projectsPayload({ store, registry, names, period: '24h', demo: true });
+  const now = Date.now();
+  const payload = await projectsPayload({ store, registry, names, period: '24h', demo: true, now });
   assert.ok(payload.projects.some((project) => project.costPerOutcome.perCommitUsd !== null));
   for (const project of payload.projects) {
     assert.deepEqual(Object.keys(project.costPerOutcome).sort(),
       ['defaultMerges', 'perCommitUsd', 'perDefaultMergeUsd', 'status']);
     assert.ok(!JSON.stringify(project.costPerOutcome).includes('CANARY-PRIVATE-COMMAND'));
   }
+  const minuteNow = Math.floor(now / MINUTE) * MINUTE;
+  const report = accountingReport({ store, registry, from: minuteNow - 24 * 3_600_000 + MINUTE,
+    to: minuteNow + MINUTE, prices });
+  const local = registry.list().find((device) => device.local);
+  assert.equal(payload.projects.reduce((sum, project) => sum + project.tokens, 0), report.devices[local.id].total);
+  assert.ok(Math.abs(payload.projects.reduce((sum, project) => sum + (project.usd ?? 0), 0)
+    - report.devices[local.id].usd) < 1e-9, 'project ratio numerators reconcile with accounting');
+  assert.ok(payload.projects.some((project) => project.repo
+    && project.repo.prsMerged !== project.repo.defaultMerges), 'demo integration counts are distinct');
 });

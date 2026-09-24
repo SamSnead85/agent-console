@@ -716,7 +716,7 @@
         <td class="num">${esc((x.branches || []).slice(0, 3).join(", ") || "—")}</td></tr>`).join("")
         : `<tr><td colspan="11">No project on this machine has transcripts in this period.</td></tr>`;
       $("projNote").textContent = (p.demo ? "DEMO — synthetic projects and Git figures. " : "") +
-        "Spend per outcome is spend in the window of the work, not attribution. Default merges count local default-branch integration commits. A dash means no eligible count, verified price or local default-branch ref. None of this leaves this machine.";
+        "Spend per outcome is spend in the window of the work, not attribution. This is not a productivity score. Tokens measure usage, not value. Default merges count local default-branch integration commits. A dash means no eligible count, verified price or local default-branch ref. None of this leaves this machine.";
     } catch (error) {
       body.innerHTML = `<tr><td colspan="11">This machine's projects could not be read: ${esc(error.message)}</td></tr>`;
     }
