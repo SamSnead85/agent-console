@@ -339,7 +339,8 @@
       (samples.length ? `<p>Recent responses · input tokens</p><ol>${samples.map((s) => `<li>${hhmm(s.at)} · ${fmt(s.tokens)}</li>`).join("")}</ol>` : "") +
       `<p>Cache signals · ${breaks.length ? breaks.length + " recent" : "none in retained readings"}</p>` +
       (breaks.length ? `<ol>${breaks.map((b) => `<li>${hhmm(b.at)} · ${b.kind === "idle-gap" ?
-        `idle gap (${b.gapMinutes} min)` : "possible prefix rewrite"} · extra write cost ${b.estimatedExtraUsd == null ?
+        `idle gap past cache lifetime (${b.gapMinutes} min)` : b.kind === "lifetime-unknown" ?
+          `cache lifetime unknown (${b.gapMinutes} min gap)` : "possible prefix rewrite"} · extra write cost ${b.estimatedExtraUsd == null ?
           "unpriced" : b.estimatedExtraUsd > 0 && b.estimatedExtraUsd < 0.005 ? "&lt; $0.01 est." : money(b.estimatedExtraUsd) + " est."}</li>`).join("")}</ol>` : "") +
       `<p>Signals are inferred from token counts and minute timestamps; they cannot prove the cause of a cache write. Extra cost compares observed writes with a hypothetical cache read at offline list prices (table v${esc(c?.priceTable?.version ?? "?")}, checked ${esc(c?.priceTable?.checkedOn ?? "unknown")}).</p>`;
     $("contextDialog").showModal();

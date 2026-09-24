@@ -57,6 +57,9 @@ try {
   assert.match(run(process.execPath, ['--input-type=module', '-e',
     "import { ANALYSIS_VERSION, contextHealth } from '@lockedinlabs/agent-console/analysis'; console.log(ANALYSIS_VERSION, contextHealth([], null).status)"],
     { cwd: prefix }), /^1 unknown$/u, 'packed analysis subpath is unavailable');
+  assert.match(run(process.execPath, ['--input-type=module', '-e',
+    "import { suite } from '@lockedinlabs/agent-console/conformance'; console.log(suite)"],
+    { cwd: prefix }), /^1\.0\.0$/u, 'packed conformance subpath is unavailable');
 
   const bin = path.join(installed, 'bin', 'agent-console.mjs');
   const child = spawn(process.execPath, [bin, '--demo', '--json', '--port', '0'], { stdio: ['ignore', 'pipe', 'pipe'], cwd: scratch });

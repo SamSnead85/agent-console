@@ -24,3 +24,16 @@ test('mid-session rewrite remains a possible signal and unknown prices stay unkn
   assert.equal(health.breaks[0].estimatedExtraUsd, null);
   assert.equal(contextHealth([], prices).status, 'unknown');
 });
+
+test('a one-hour write does not expire across a twenty-minute idle gap', () => {
+  const first = { ...sample(0, 60_000, 50_000, 10_000), cacheWrite5m: 0, cacheWrite1h: 10_000 };
+  const within = { ...sample(20, 70_000, 0, 500), cacheWrite5m: 500, cacheWrite1h: 0 };
+  const after = { ...sample(61, 70_000, 0, 500), cacheWrite5m: 500, cacheWrite1h: 0 };
+  assert.equal(contextHealth([first, within], prices).breaks[0]?.kind, undefined);
+  assert.equal(contextHealth([first, after], prices).breaks[0].kind, 'idle-gap');
+});
+
+test('an unsplit prior cache write reports unknown lifetime instead of expiry', () => {
+  const first = { ...sample(0, 60_000, 50_000, 10_000), cacheWrite5m: null, cacheWrite1h: null };
+  assert.equal(contextHealth([first, sample(20, 70_000, 0, 500)], prices).breaks[0].kind, 'lifetime-unknown');
+});

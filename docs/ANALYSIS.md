@@ -19,8 +19,11 @@ plain data; the core never reads transcripts itself.
 The result has `status` (`unknown`, `normal`, or `bloated`), `latest` tokens,
 `growth` relative to the first retained reading, up to 16 count-only samples,
 up to 8 possible cache `breaks`, and `priceTable` version/check date. A break
-is an `idle-gap` after five minutes or a `possible-prefix-rewrite` when a large
-write follows a drop in cache reads. `estimatedExtraUsd` compares that write
+is an `idle-gap` only when the gap exceeds the previous write's known lifetime:
+five minutes for a 5-minute-only write, one hour for a 1-hour-only write.
+Mixed or unsplit writes produce `lifetime-unknown` after five minutes; a large
+write within the known lifetime is a `possible-prefix-rewrite`. These are
+signals, not proof of expiration or a rewrite. `estimatedExtraUsd` compares that write
 with a hypothetical cache read at the verified rate. It is `null` when the
 model has no verified price. An empty sample list returns `unknown` with null
 readings and price metadata.

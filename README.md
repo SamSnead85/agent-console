@@ -167,10 +167,11 @@ readings, growth, and possible cache breaks. A session is flagged when a
 reading reaches 160,000 input tokens, or when it reaches 80,000 and doubles
 from the first retained reading. The hub keeps at most 128 recent readings per
 session. Streaming continuation rows are excluded, so some responses without
-a complete first reading cannot be shown. A gap longer than five minutes
-followed by a new cache write and falling cache reads is marked an idle-gap
-signal; a large write within that interval is marked a possible prefix
-rewrite. The logs do not prove the cause. Extra cost is an estimate of the
+a complete first reading cannot be shown. A gap past the previous write's
+known lifetime (five minutes or one hour), followed by a new cache write and
+falling cache reads, is marked an idle-gap signal. With an unknown lifetime,
+the drill-down says so; a large write within a known lifetime is marked a
+possible prefix rewrite. The logs do not prove the cause. Extra cost is an estimate of the
 observed cache write over a hypothetical cache read, using the offline price
 table version and check date shown in the drill-down. Unpriced estimates stay
 unknown. In `--demo`, the existing docs-site lane includes a synthetic break.
