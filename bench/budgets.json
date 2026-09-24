@@ -1,0 +1,22 @@
+{
+  "about": "Operation budgets for bench/check.mjs. Counted, not timed, so they hold on any machine. Measured on the synthetic history from bench/generate.mjs (fixed seed and clock); each budget is the measurement plus headroom. docs/PERFORMANCE.md explains each one.",
+  "sizes": [
+    20000,
+    100000
+  ],
+  "sessions": 60,
+  "budgets": {
+    "first.bytesReadPerSourceByte": 1.35,
+    "first.writesPerThousandRecords": 2,
+    "first.jsonParsesPerLine": 1.15,
+    "idle.bytesRead": 131072,
+    "idle.bytesWritten": 1024,
+    "idle.opens": 20,
+    "idle.growthRatio": 1.5,
+    "fiveNewLines.bytesRead": 262144,
+    "fiveNewLines.bytesWritten": 393216,
+    "cursorBytes": 262144,
+    "consoleBytes": 65536,
+    "storeLoad.ratioToParse": 6.5
+  }
+}
