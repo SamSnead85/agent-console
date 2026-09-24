@@ -26,6 +26,10 @@ if (command === "--version" || command === "-v" || command === "version") {
 } else if (command === "join" || command === "report" || command === "leave") {
   const { main } = await import("../lib/reporter.js");
   await main(command, process.argv.slice(3));
+} else if (command === "policy") {
+  const { mainPolicy } = await import('../lib/policy/cli.js');
+  try { mainPolicy(process.argv.slice(3)); }
+  catch (error) { process.stderr.write('Agent Console policy: ' + error.message + '\n'); process.exitCode = 1; }
 } else {
   await import("../server.js");
 }
