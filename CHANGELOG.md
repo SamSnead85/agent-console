@@ -36,6 +36,21 @@
 - The hub keeps 5-minute, 1-hour and unknown-lifetime cache writes apart, and
   `lib/hub/accounting.js` reports exact totals for any whole-minute window by
   team, person, machine, model, session and session tree.
+- **A public-safety gate on every push and pull request.** gitleaks checks each
+  new commit and the tree. `npm run check:public` refuses absolute home paths,
+  private email addresses, machine network names, credential shapes, image
+  metadata, and names on a private denylist that CI reads from a repository
+  secret, in files, in every line a commit added, in commit identities and in
+  a pull request's title and body. It reports where and which rule, never the
+  text. `scripts/public-safety/strip-images.mjs` removes image metadata without
+  re-encoding.
+- **The privacy canary covers everything that leaves a machine**: whole
+  requests (path and headers as well as body), every answer the hub sends
+  back, every read the console serves, and the hub's own transcripts, which
+  must never leave through the reporting port. A new GET route that the
+  canary does not read fails the suite.
+- **Fixed: about one generated certificate in 256 was invalid,** so a hub could
+  fail to start at random.
 
 ## 0.2.1 — not yet released
 

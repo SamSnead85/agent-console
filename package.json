@@ -47,7 +47,8 @@
     "start": "node bin/agent-console.mjs",
     "test": "node scripts/test.mjs",
     "pack:check": "npm pack --dry-run --json",
-    "smoke:pack": "node scripts/pack-smoke.mjs"
+    "smoke:pack": "node scripts/pack-smoke.mjs",
+    "check:public": "node scripts/public-safety/check.mjs"
   },
   "license": "MIT",
   "dependencies": {},
