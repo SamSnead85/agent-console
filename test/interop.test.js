@@ -51,6 +51,7 @@ test('raw OTLP and gateway labels are projected to counts, model ids, times and 
   assert.ok(!JSON.stringify(gateway).includes('canary-private'));
   const kong = parseGatewayMetrics('kong', 'ai_llm_tokens_total{ai_model="claude-sonnet-5",token_type="completion_tokens"} 19', Date.now(), hash);
   assert.equal(kong[0].kind, 'output');
+  assert.deepEqual(parseGatewayMetrics('kong', 'ai_llm_tokens_total{ai_model="claude-sonnet-5",token_type="cache_read_input_tokens"} 19', Date.now(), hash), []);
   const cumulative = otlp([point('input', 4)]);
   cumulative.resourceMetrics[0].scopeMetrics[0].metrics[0].sum.aggregationTemporality = 2;
   assert.deepEqual(parseOtlpMetrics(cumulative, Date.now(), hash), []);
@@ -69,25 +70,33 @@ test('opt-in local receiver accepts only projected metric fields and keeps them 
     const timer = setInterval(() => {
       if (!output.includes('\n')) return;
       clearInterval(timer);
-      try { clearTimeout(deadline); resolve(JSON.parse(output.split('\n')[0]).dashboard); } catch (error) { reject(error); }
+      try { clearTimeout(deadline); resolve(JSON.parse(output.split('\n').find((line) => line.trim().startsWith('{'))).dashboard); } catch (error) { reject(error); }
     }, 25);
     const deadline = setTimeout(() => { clearInterval(timer); reject(new Error(output || 'startup timeout')); }, 10_000);
     child.once('exit', (code) => { clearTimeout(deadline); clearInterval(timer); reject(new Error(`exited ${code}: ${output}`)); });
   });
   const base = meta.url;
+  const key = fs.readFileSync(path.join(root, 'state', 'admin.key'), 'utf8').trim();
+  const authorization = { authorization: `Bearer ${key}` };
   const login = await fetch(meta.signIn, { redirect: 'manual' });
   const cookie = login.headers.get('set-cookie').split(';')[0];
   const denied = await fetch(base + '/v1/metrics', { method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify(otlp([point('input', 13)])) });
   assert.equal(denied.status, 403);
-  const accepted = await fetch(base + '/v1/metrics', { method: 'POST', headers: {
+  const deniedWithoutKey = await fetch(base + '/v1/metrics', { method: 'POST', headers: {
     'content-type': 'application/json', 'x-agent-console-interop': '1',
+  }, body: JSON.stringify(otlp([point('input', 13)])) });
+  assert.equal(deniedWithoutKey.status, 403);
+  assert.equal((await fetch(base + '/metrics')).status, 403);
+  assert.equal((await fetch(base + '/metrics', { headers: { authorization: 'Bearer incorrect' } })).status, 403);
+  const accepted = await fetch(base + '/v1/metrics', { method: 'POST', headers: {
+    'content-type': 'application/json', 'x-agent-console-interop': '1', ...authorization,
   }, body: JSON.stringify(otlp([point('input', 13, [
     { key: 'repository.path', value: { stringValue: '/canary-private-path' } },
   ])])) });
   assert.equal(accepted.status, 200);
   const gateway = await fetch(base + '/ingest/gateway/kong', { method: 'POST', headers: {
-    'content-type': 'text/plain', 'x-agent-console-interop': '1',
+    'content-type': 'text/plain', 'x-agent-console-interop': '1', ...authorization,
   }, body: 'ai_llm_tokens_total{ai_model="claude-sonnet-5",token_type="prompt_tokens",consumer="canary-private-consumer"} 90' });
   assert.equal(gateway.status, 200);
   const view = await fetch(base + '/api/console', { headers: { 'x-agent-console': '1', cookie } });
@@ -96,7 +105,7 @@ test('opt-in local receiver accepts only projected metric fields and keeps them 
   const data = JSON.parse(shown);
   assert.equal(data.interop.otel.tokens.total, 13);
   assert.equal(data.interop.kong.tokens.total, 90);
-  const metrics = await (await fetch(base + '/metrics')).text();
+  const metrics = await (await fetch(base + '/metrics', { headers: authorization })).text();
   assert.match(metrics, /agent_console_interop_tokens\{source="otel",kind="input"\} 13/u);
   assert.ok(!metrics.includes('canary-private') && !metrics.includes('claude-sonnet-5'));
   const report = await fetch(`http://127.0.0.1:${meta.reportPort}/metrics`);

@@ -34,6 +34,12 @@ second port, which serves only the join page, the join exchange and
 token-checked reporting. Nothing of the console is on it, whatever `--listen`
 says.
 
+When `--interop` is enabled, its loopback `/metrics` and telemetry ingest
+paths use the private `admin.key` as a Bearer credential instead of a browser
+cookie. Ingest also requires `X-Agent-Console-Interop: 1` and rejects browser
+`Origin` headers. These paths are disabled without `--interop` and never
+appear on the reporting listener.
+
 **Signing in.** The console makes a random key on first start (`admin.key` in
 its state directory, mode 600). A single-use sign-in link, printed at start and
 opened by `--open`, sets an HttpOnly, SameSite=Strict cookie derived from that
