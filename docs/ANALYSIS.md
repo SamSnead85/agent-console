@@ -30,3 +30,13 @@ readings and price metadata.
 
 These are signals from counts, not proof of a changed prefix or a complete
 accounting of all request costs. The caller decides how to render them.
+
+## `costPerOutcome(input)`
+
+Input is `{ usd, pricedMessages, unpricedMessages, commits, defaultMerges }`:
+only counts and a local estimated amount. The result contains price coverage
+status, estimated spend per commit, estimated spend per default-branch
+integration, and the counted integrations. Ratios are `null` when any usage
+was unpriced, the denominator is zero or unavailable, or no usage was
+observed. The caller must label these ratios as **spend in the window of the
+work**: they correlate two totals in one window, not cost caused by a commit.

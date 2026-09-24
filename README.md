@@ -203,6 +203,16 @@ person roll up into one row.
 the same period (commits, lines changed, pull requests merged). It is read on
 this computer and never sent anywhere.
 
+**Spend in the window of the work**: Projects also shows estimated spend per
+local commit and per integration into a locally known default branch. The
+denominator is Git evidence in the selected 24-hour or 3-day window; the
+numerator is this machine's usage estimate in that same window. These are
+correlations, not attribution to a commit or a merge. Squash subjects with a
+pull-request number and merge commits on the default branch count as
+integrations. A missing default-branch ref, zero outcomes or any unpriced
+usage leaves the ratio unknown, shown as a dash. No GitHub token or network
+request is involved. The synthetic team includes demonstration ratios.
+
 ### What the numbers promise
 
 - **A machine that stops reporting is not zero.** It shows when it was last

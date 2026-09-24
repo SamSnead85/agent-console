@@ -690,7 +690,7 @@
   });
   async function loadProjects() {
     const body = $("projTable").tBodies[0];
-    body.innerHTML = `<tr><td colspan="8">Reading this machine…</td></tr>`;
+    body.innerHTML = `<tr><td colspan="11">Reading this machine…</td></tr>`;
     try {
       const r = await fetch("/api/projects?period=" + projPeriod, { headers: HEADERS });
       const p = await r.json();
@@ -710,12 +710,15 @@
         <td class="num r">${x.repo ? x.repo.commits : "—"}</td>
         <td class="num r">${x.repo ? `+${x.repo.added.toLocaleString("en-US")} / −${x.repo.removed.toLocaleString("en-US")}` : "—"}</td>
         <td class="num r">${x.repo && x.repo.prsMerged !== null ? x.repo.prsMerged : "—"}</td>
+        <td class="num r">${x.costPerOutcome.defaultMerges === null ? "—" : x.costPerOutcome.defaultMerges}</td>
+        <td class="num r" title="Spend in the work window per local commit, not attribution">${x.costPerOutcome.perCommitUsd === null ? "—" : money(x.costPerOutcome.perCommitUsd) + " est."}</td>
+        <td class="num r" title="Spend in the work window per local default-branch integration, not attribution">${x.costPerOutcome.perDefaultMergeUsd === null ? "—" : money(x.costPerOutcome.perDefaultMergeUsd) + " est."}</td>
         <td class="num">${esc((x.branches || []).slice(0, 3).join(", ") || "—")}</td></tr>`).join("")
-        : `<tr><td colspan="8">No project on this machine has transcripts in this period.</td></tr>`;
+        : `<tr><td colspan="11">No project on this machine has transcripts in this period.</td></tr>`;
       $("projNote").textContent = (p.demo ? "DEMO — synthetic projects and Git figures. " : "") +
-        "Delivery evidence is what Git recorded, not a productivity score. Tokens measure usage, not value. None of this leaves this machine.";
+        "Spend per outcome is spend in the window of the work, not attribution. Default merges count local default-branch integration commits. A dash means no eligible count, verified price or local default-branch ref. None of this leaves this machine.";
     } catch (error) {
-      body.innerHTML = `<tr><td colspan="8">This machine's projects could not be read: ${esc(error.message)}</td></tr>`;
+      body.innerHTML = `<tr><td colspan="11">This machine's projects could not be read: ${esc(error.message)}</td></tr>`;
     }
   }
 

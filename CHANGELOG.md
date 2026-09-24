@@ -5,6 +5,8 @@
 - Added per-session context weight and cache health signals in the existing
   Lanes view, with a dated list-price estimate for possible cache breaks.
   The signals describe observed usage patterns, not a proven cache cause.
+- Added same-window estimated spend per local commit and per default-branch
+  integration in Projects, labelled as correlation rather than attribution.
 
 ## Unreleased — accounting you can reconcile
 
