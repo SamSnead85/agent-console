@@ -21,6 +21,9 @@
     "cache"
   ],
   "type": "module",
+  "exports": {
+    "./analysis": "./lib/analysis/index.js"
+  },
   "bin": {
     "agent-console": "./bin/agent-console.mjs"
   },

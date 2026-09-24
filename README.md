@@ -175,6 +175,24 @@ observed cache write over a hypothetical cache read, using the offline price
 table version and check date shown in the drill-down. Unpriced estimates stay
 unknown. In `--demo`, the existing docs-site lane includes a synthetic break.
 
+### Shared analysis core
+
+The dependency-free analysis functions are available to other Node.js consumers
+through the versioned `@lockedinlabs/agent-console/analysis` subpath:
+
+```js
+import { ANALYSIS_VERSION, contextHealth } from '@lockedinlabs/agent-console/analysis';
+const health = contextHealth(samples, prices);
+```
+
+`ANALYSIS_VERSION` is 1. `contextHealth` accepts only plain usage data:
+`samples` contains timestamps, token counts and model IDs; `prices` contains
+offline model rates, table version and check date. It returns a plain object
+with context weight, growth, possible cache breaks and estimated extra cost.
+No transcript text, paths, names or credentials enter the core. The console
+uses this same subpath. See [the API contract](docs/ANALYSIS.md) for fields
+and unknown-value behavior.
+
 **Machines** and **Team**: every machine and every person: tokens, share of the
 total, cache read and write shares, model split and cost, for 24 hours or
 7 days; every join link, who used it and when. Two machines with the same
