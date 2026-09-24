@@ -172,6 +172,7 @@ test("two machines join by link, report, roll up by person, and nothing private 
   assert.ok(view.day.shares.cacheRead > 0.5 && view.day.shares.cacheWrite > 0);
   assert.ok(view.day.models.some((m) => m.model === "gpt-5.6-sol") && view.day.models.some((m) => m.model === "claude-opus-5"));
   assert.equal(view.invitations.filter((i) => i.state === "joined").length, 2, "the console shows who joined");
+  assert.equal(view.interop, null, 'optional telemetry is off for an ordinary hub');
   for (const lane of view.lanes) {
     assert.deepEqual(Object.keys(lane.context).sort(), ["breaks", "growth", "latest", "priceTable", "samples", "status"]);
     for (const sample of lane.context.samples) {

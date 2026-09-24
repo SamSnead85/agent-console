@@ -1,0 +1,32 @@
+{
+  "title": "Agent Console · local token sources",
+  "uid": "agent-console-local-tokens",
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": { "list": [
+    { "name": "DS_PROMETHEUS", "type": "datasource", "query": "prometheus", "current": {} }
+  ] },
+  "panels": [
+    {
+      "id": 1, "title": "Transcript tokens · rolling 24 hours", "type": "timeseries",
+      "datasource": "${DS_PROMETHEUS}", "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+      "targets": [{ "expr": "agent_console_transcript_tokens_last_24h", "legendFormat": "{{kind}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    },
+    {
+      "id": 2, "title": "Claude Code OpenTelemetry · rolling 24 hours", "type": "timeseries",
+      "datasource": "${DS_PROMETHEUS}", "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [{ "expr": "agent_console_interop_tokens{source=\"otel\"}", "legendFormat": "{{kind}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    },
+    {
+      "id": 3, "title": "Gateway token counters · cumulative snapshots", "type": "timeseries",
+      "datasource": "${DS_PROMETHEUS}", "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [{ "expr": "agent_console_interop_tokens{source=~\"kong|litellm\"}", "legendFormat": "{{source}} · {{kind}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    }
+  ]
+}

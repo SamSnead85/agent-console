@@ -128,12 +128,23 @@
     paintClasses();
     paintModels();
     paintLanes();
+    paintInterop();
     paintMachines();
     setChartGoal();
     paintWeek();
     if (view === "team") paintTeam();
     watchJoin();
     if (reducedMotion.matches || paused) { paintText(); drawChart(); }
+  }
+
+  function paintInterop() {
+    const data = D.interop || {};
+    const sources = [['otel', 'Claude Code OpenTelemetry · 24 h'], ['kong', 'Kong · cumulative'], ['litellm', 'LiteLLM · cumulative']];
+    $('interopPanel').hidden = !D.hub.demo && !D.hub.interop;
+    $('interopRows').innerHTML = sources.map(([key, label]) => {
+      const item = data[key];
+      return `<div class="interop-row"><span>${label}</span><b>${item?.available ? fmt(item.tokens.total) + ' tokens' : 'No reading yet'}</b>${item?.available ? `<small>${hhmm(item.receivedAt)}${D.hub.demo ? ' · DEMO' : ''}</small>` : ''}</div>`;
+    }).join('');
   }
 
   // ── hero ─────────────────────────────────────────────────────────────

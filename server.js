@@ -34,6 +34,7 @@ import { createAdmin, readAdminSecret } from "./lib/hub/admin.js";
 import { hubCertificate } from "./lib/hub/tls.js";
 import { defaultRoots } from "./lib/collector/collector.js";
 import { createGitStatsStore } from "./lib/gitstats.js";
+import { createInteropStore } from './lib/interop/ingest.js';
 import { PRODUCT_NAME, productTitle } from "./lib/brand.js";
 import { invocation } from "./lib/invocation.js";
 
@@ -143,6 +144,7 @@ const consoleHandler = createConsoleHandler({
   config, registry, store, names, local, admin, version: VERSION, publicDir: PUBLIC,
   reporting: reportingInfo,
   git: config.demo ? null : createGitStatsStore(),
+  interop: config.interop && !config.demo ? createInteropStore() : null,
 });
 const reportingHandler = createReportingHandler({
   config, registry, store, version: VERSION, publicDir: PUBLIC, onChange: () => consoleHandler.invalidate(),

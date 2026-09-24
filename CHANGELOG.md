@@ -5,6 +5,8 @@
 - Added per-session context weight and cache health signals in the existing
   Lanes view, with a dated list-price estimate for possible cache breaks.
   The signals describe observed usage patterns, not a proven cache cause.
+- Added opt-in local Prometheus metrics and separate Claude Code OpenTelemetry
+  and AI-gateway token readings, with a Grafana dashboard.
 
 ## Unreleased — accounting you can reconcile
 
