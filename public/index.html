@@ -121,7 +121,7 @@
 
     <section class="lanes" aria-label="Lanes">
       <div class="lhead" aria-hidden="true"><span>State</span><span>Project / branch</span><span>Model</span><span>Activity · 1 hour</span>
-        <span class="r">Tokens · 5 min</span><span class="r">Agents</span><span>Machine · last seen</span></div>
+        <span class="r">Tokens · 5 min</span><span class="r">Agents</span><span>Context</span><span>Machine · last seen</span></div>
       <div id="cLanes" class="lanescroll" tabindex="0" role="region" aria-label="Lanes, one per session, scrollable"></div>
       <div class="lfoot" id="lFoot"><span>—</span></div>
     </section>
@@ -229,6 +229,14 @@
     <header><h2 id="revokeTitle">Remove this machine?</h2></header>
     <p class="say" id="revokeSay">—</p>
     <footer><button type="button" class="btn" data-close>Keep it</button><button type="button" class="btn danger" id="revokeGo">Remove</button></footer>
+  </div>
+</dialog>
+
+<dialog class="sheet small" id="contextDialog" aria-labelledby="contextTitle">
+  <div class="step">
+    <header><h2 id="contextTitle">Session context</h2><button type="button" class="x" data-close aria-label="Close">×</button></header>
+    <div id="contextDetails" class="context-details"></div>
+    <footer><button type="button" class="btn" data-close>Close</button></footer>
   </div>
 </dialog>
 

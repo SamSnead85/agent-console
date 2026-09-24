@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 — draft
+
+- Added per-session context weight and cache health signals in the existing
+  Lanes view, with a dated list-price estimate for possible cache breaks.
+  The signals describe observed usage patterns, not a proven cache cause.
+
 ## Unreleased — accounting you can reconcile
 
 - **[docs/accounting.md](docs/accounting.md)** defines one token event, what
