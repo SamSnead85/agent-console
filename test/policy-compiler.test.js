@@ -54,6 +54,10 @@ test('diff is read-only; apply compiles native files; remove restores exact sett
   const switchResult = invoke({ hook_event_name: 'PreModelSwitch', agent_id: 'synthetic-agent', to_model: 'claude-sonnet-5' });
   assert.deepEqual(JSON.parse(switchResult.stdout).hookSpecificOutput,
     { hookEventName: 'PreModelSwitch', permissionDecision: 'deny', permissionDecisionReason: 'Agent Console policy: model_switch_in_task' });
+  const escalation = invoke({ hook_event_name: 'PreToolUse', tool_name: 'Agent', tool_input: {
+    subagent_type: 'agent-console-escalation', model: 'opus', prompt: 'synthetic escalation',
+  } });
+  assert.equal(escalation.stdout, '');
   const log = fs.readFileSync(path.join(root, '.agent-console', 'policy',
     createHash('sha256').update(fs.realpathSync(root)).digest('hex'), 'decisions.ndjson'), 'utf8');
   assert.ok(!log.includes('git push') && !log.includes(root));
