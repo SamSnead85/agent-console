@@ -135,7 +135,7 @@ test("Claude Opus 5.5 is priced from Anthropic's published page: $4 in, $20 out,
 test("the complete checked local model inventory has one explicit price standing per id", () => {
   const inventory = [
     "claude-fable-5", "claude-fable-5-1", "claude-haiku-4-5-20251001", "claude-opus-4-6", "claude-opus-4-7", "claude-opus-4-8", "claude-opus-5", "claude-opus-5-5", "claude-sonnet-4-6", "claude-sonnet-5",
-    "codex-auto-review", "gpt-5.2", "gpt-5.3-codex-spark", "gpt-5.4", "gpt-5.4-mini", "gpt-5.5", "gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-6-astra", "gpt-reserve",
+    "codex-auto-review", "gpt-5.2", "gpt-5.3-codex-spark", "gpt-5.4", "gpt-5.4-mini", "gpt-5.5", "gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-6-astra", "gpt-6-sol", "gpt-reserve",
   ];
   assert.deepEqual(prices.rows.map(row => row.model).sort(), inventory.sort());
   assert.deepEqual(prices.rows.filter(row => row.status === "unpriced").map(row => row.model).sort(), ["codex-auto-review", "gpt-5.3-codex-spark", "gpt-reserve"]);

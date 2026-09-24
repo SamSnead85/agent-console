@@ -356,6 +356,25 @@
       }
     },
     {
+      "model": "gpt-6-sol",
+      "status": "verified",
+      "verifiedOn": "2026-09-24",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "cacheWriteBasis": "published-standard",
+      "assumptions": [
+        "Standard global API rates are used; actual service tier and purchasing terms are not observed.",
+        "Short-context pricing is assumed; per-request context size is not reported."
+      ],
+      "usdPerMillion": {
+        "fresh": 2,
+        "output": 10,
+        "cacheWrite": 2.5,
+        "cacheWrite5m": null,
+        "cacheWrite1h": null,
+        "cacheRead": 0.2
+      }
+    },
+    {
       "model": "gpt-reserve",
       "status": "unpriced",
       "verifiedOn": "2026-09-20",
