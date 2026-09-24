@@ -27,7 +27,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createHmac } from "node:crypto";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, "..", "..");
@@ -182,7 +182,7 @@ function assistantLines(base, event, { outputs = [event.usage.output], stepSecon
     const block = blocks[index % blocks.length];
     const content = block === "thinking" ? [{ type: "thinking", thinking: CANARY.reply, signature: "c2lnbmF0dXJl" }]
       : block === "text" ? [{ type: "text", text: CANARY.reply }]
-      : [{ type: "tool_use", id: `toolu_conf_${event.id}_${index}`, name: "Edit", input: { file_path: path.join(base.cwd, "src", CANARY.file), new_string: CANARY.reply } }];
+      : [{ type: "tool_use", id: `toolu_conf_${event.id}_${index}`, name: "Edit", input: { file_path: path.posix.join(base.cwd, "src", CANARY.file), new_string: CANARY.reply } }];
     return {
       parentUuid: null, ...base, type: "assistant", uuid: lineUuid(), requestId: `req_conf_${event.id.toLowerCase()}`,
       timestamp: index === 0 && timestamp ? timestamp : plus(event.at, index * stepSeconds),
@@ -456,7 +456,7 @@ function buildManifest() {
 
 /** Runs this package's collector for each delivery and returns what it sent. */
 export async function collectDeliveries({ fixtureRoot = HERE, manifest = buildManifest(), scratch = null } = {}) {
-  const { runOnce } = await import(path.join(REPO, "lib", "collector", "collector.js"));
+  const { runOnce } = await import(pathToFileURL(path.join(REPO, "lib", "collector", "collector.js")).href);
   const base = scratch ?? fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-conformance-"));
   const states = new Map();
   const deliveries = [];
