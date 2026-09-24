@@ -1,0 +1,3361 @@
+{
+ "suite": "1.0.0",
+ "collector": "@lockedinlabs/agent-console lib/collector",
+ "note": "Exactly what the collector sent at each delivery step, in order. A receiver replays these to check its own accounting against expected.json.",
+ "deliveries": [
+  {
+   "step": 1,
+   "device": "personA-studio",
+   "deviceId": "dev_personA-studio01",
+   "records": [
+    {
+     "id": "1cb0b1286aa5c7cec176650b37effbec689e898ef562623705fed57ccf3fe315",
+     "tool": "claude-code",
+     "model": "claude-sonnet-5",
+     "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
+     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:05:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 2,
+     "output": 150,
+     "cacheWrite": 3000,
+     "cacheRead": 0,
+     "cacheWrite5m": 3000,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "1cb0b1286aa5c7cec176650b37effbec689e898ef562623705fed57ccf3fe315",
+       "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:05:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "e084345a73440160f273974fb6726200b71a3c32d509181ee4854cfed5cf0e3b",
+     "tool": "claude-code",
+     "model": "claude-sonnet-5",
+     "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
+     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:05:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 1,
+     "output": 30,
+     "cacheWrite": 100,
+     "cacheRead": 3000,
+     "cacheWrite5m": 100,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "e084345a73440160f273974fb6726200b71a3c32d509181ee4854cfed5cf0e3b",
+       "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:05:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "c0460e199906afdc48446e163e4e26057f0bb10e216effcf4d4f4d68b682f7e9",
+     "tool": "claude-code",
+     "model": "claude-sonnet-5",
+     "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
+     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:05:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 230,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "c0460e199906afdc48446e163e4e26057f0bb10e216effcf4d4f4d68b682f7e9",
+       "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:05:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "69bf1acc2959d66f7114bf59ddc7736526eb1c48ba619a59e3ecda7abed83230",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "a6b16a71df949693887ee87e30c49aef2d4aeb4b144416162435ca0e3829b1d3",
+     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:06:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 6,
+     "output": 500,
+     "cacheWrite": 7000,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 7000,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "69bf1acc2959d66f7114bf59ddc7736526eb1c48ba619a59e3ecda7abed83230",
+       "sessionHash": "a6b16a71df949693887ee87e30c49aef2d4aeb4b144416162435ca0e3829b1d3"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:06:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 12,
+     "output": 340,
+     "cacheWrite": 24000,
+     "cacheRead": 0,
+     "cacheWrite5m": 20000,
+     "cacheWrite1h": 4000,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 3,
+     "output": 7,
+     "cacheWrite": 500,
+     "cacheRead": 24000,
+     "cacheWrite5m": 500,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 113,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 290,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:02:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 5,
+     "output": 90,
+     "cacheWrite": 300,
+     "cacheRead": 24500,
+     "cacheWrite5m": 300,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:02:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:03:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 4,
+     "output": 60,
+     "cacheWrite": 200,
+     "cacheRead": 24800,
+     "cacheWrite5m": 200,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:03:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:10:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 9,
+     "output": 800,
+     "cacheWrite": 8000,
+     "cacheRead": 0,
+     "cacheWrite5m": 6000,
+     "cacheWrite1h": 2000,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:10:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "876bd6afa34fd073d05d94e464b850486bcab158e04a42abc10e51e8d73bd809",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T11:00:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 10,
+     "output": 200,
+     "cacheWrite": 1500,
+     "cacheRead": 1000,
+     "cacheWrite5m": 1500,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "876bd6afa34fd073d05d94e464b850486bcab158e04a42abc10e51e8d73bd809",
+       "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T11:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "4181fd27abe09a1c0c9d6bd5528b9ec1669c0aa768653c2cec3b950d037065e8",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T11:01:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 2,
+     "output": 50,
+     "cacheWrite": 400,
+     "cacheRead": 2500,
+     "cacheWrite5m": 400,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "4181fd27abe09a1c0c9d6bd5528b9ec1669c0aa768653c2cec3b950d037065e8",
+       "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T11:01:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "fd20c99ead4064c3f6637a0c0cac432c3c74733f48660caca61993827b94d0f0",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T11:01:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 100,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "fd20c99ead4064c3f6637a0c0cac432c3c74733f48660caca61993827b94d0f0",
+       "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T11:01:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "03984beb1398af3a989e46600fc4a4b40951e39036c474aabfa747ee3575c894",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "0ba6d71c086461b68ec3257e89e14c49f5d813a2df3bdedc7e3fd3510ce2af57",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T13:00:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 7,
+     "output": 330,
+     "cacheWrite": 800,
+     "cacheRead": 2900,
+     "cacheWrite5m": 800,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "03984beb1398af3a989e46600fc4a4b40951e39036c474aabfa747ee3575c894",
+       "sessionHash": "0ba6d71c086461b68ec3257e89e14c49f5d813a2df3bdedc7e3fd3510ce2af57"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T13:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "a2e1644903a504b5927ec15430d3deefb0c4bde5496ba83e6f259009ead1cd98",
+     "tool": "codex",
+     "model": "gpt-5.6-sol",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:00:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 800,
+     "output": 50,
+     "cacheWrite": 200,
+     "cacheRead": 0,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "a2e1644903a504b5927ec15430d3deefb0c4bde5496ba83e6f259009ead1cd98",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "dfed71ef682a655ca25320cf8b7f6fc92b56f0f5eb97ce8d5d360798a2aafa16",
+     "tool": "codex",
+     "model": "gpt-5.6-sol",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:02:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 400,
+     "output": 80,
+     "cacheWrite": 100,
+     "cacheRead": 1000,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "dfed71ef682a655ca25320cf8b7f6fc92b56f0f5eb97ce8d5d360798a2aafa16",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:02:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "c99dd45d2903ee787f4e64c5a5df6b6074e4f8af3eecae9f4bee9ff4a5050573",
+     "tool": "codex",
+     "model": "gpt-5.5",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:04:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 100,
+     "output": 60,
+     "cacheWrite": 0,
+     "cacheRead": 700,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "c99dd45d2903ee787f4e64c5a5df6b6074e4f8af3eecae9f4bee9ff4a5050573",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:04:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "e69c28e8e5b586b61f2e00bc7a0a6fc03b05215c5e6a0926f1a343d9a49b7638",
+     "tool": "codex",
+     "model": "gpt-5.5",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:30:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 200,
+     "output": 40,
+     "cacheWrite": 0,
+     "cacheRead": 400,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "e69c28e8e5b586b61f2e00bc7a0a6fc03b05215c5e6a0926f1a343d9a49b7638",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:30:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "26e982e947e91595549d0a841b87690bffc5b9557cd12dd38ec4bd3511961581",
+     "tool": "codex",
+     "model": "gpt-5.5",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:31:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 300,
+     "output": 60,
+     "cacheWrite": 0,
+     "cacheRead": 500,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "26e982e947e91595549d0a841b87690bffc5b9557cd12dd38ec4bd3511961581",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:31:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "18cca99d3f87e8b24501210fe075404a0c8a7800e5a1e659916cc712568f1b32",
+     "tool": "codex",
+     "model": "gpt-5.6-sol",
+     "sessionHash": "d33b184624defe1e5dba6c0f18d157d7cec44812019c0ab00d086572d90b4598",
+     "parentSessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:10:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 600,
+     "output": 70,
+     "cacheWrite": 300,
+     "cacheRead": 0,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "18cca99d3f87e8b24501210fe075404a0c8a7800e5a1e659916cc712568f1b32",
+       "sessionHash": "d33b184624defe1e5dba6c0f18d157d7cec44812019c0ab00d086572d90b4598"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:10:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "c04e0625dc2aef32e9b8d87e3e23f83dbf763cda2057d39f4f396c022808db66",
+     "tool": "codex",
+     "model": "gpt-5.6-sol",
+     "sessionHash": "d33b184624defe1e5dba6c0f18d157d7cec44812019c0ab00d086572d90b4598",
+     "parentSessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:11:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 300,
+     "output": 80,
+     "cacheWrite": 100,
+     "cacheRead": 800,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "c04e0625dc2aef32e9b8d87e3e23f83dbf763cda2057d39f4f396c022808db66",
+       "sessionHash": "d33b184624defe1e5dba6c0f18d157d7cec44812019c0ab00d086572d90b4598"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:11:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "step": 2,
+   "device": "personA-laptop",
+   "deviceId": "dev_personA-laptop01",
+   "records": [
+    {
+     "id": "8bf051ff365cd0a078fe9231f509a0a7d3f667a0a1b718fd042d9688101c9999",
+     "tool": "claude-code",
+     "model": "claude-fable-5-1",
+     "sessionHash": "22dece1cd2d699d6f52b91b4a4c09fd0dcdfb5bb7059cdbd42bc5cd0f2e9d4f9",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "ae6e1849f6116304dcb83a570186fafaa88b70deadb16a23e59c757fd4c8f382",
+     "engagement": null,
+     "at": "2026-09-20T16:00:00.000Z",
+     "reportingDevice": "dev_personA-laptop01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 20,
+     "output": 700,
+     "cacheWrite": 10000,
+     "cacheRead": 0,
+     "cacheWrite5m": 10000,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "8bf051ff365cd0a078fe9231f509a0a7d3f667a0a1b718fd042d9688101c9999",
+       "sessionHash": "22dece1cd2d699d6f52b91b4a4c09fd0dcdfb5bb7059cdbd42bc5cd0f2e9d4f9"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T16:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "2979b85ce480637a91fc720c351a8e636ec5ed16f941456d64fc1767a12263eb",
+     "tool": "claude-code",
+     "model": "claude-fable-5-1",
+     "sessionHash": "22dece1cd2d699d6f52b91b4a4c09fd0dcdfb5bb7059cdbd42bc5cd0f2e9d4f9",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "ae6e1849f6116304dcb83a570186fafaa88b70deadb16a23e59c757fd4c8f382",
+     "engagement": null,
+     "at": "2026-09-20T16:02:00.000Z",
+     "reportingDevice": "dev_personA-laptop01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 3,
+     "output": 90,
+     "cacheWrite": 50,
+     "cacheRead": 10000,
+     "cacheWrite5m": 50,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "2979b85ce480637a91fc720c351a8e636ec5ed16f941456d64fc1767a12263eb",
+       "sessionHash": "22dece1cd2d699d6f52b91b4a4c09fd0dcdfb5bb7059cdbd42bc5cd0f2e9d4f9"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T16:02:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "da2c593a84335c7e8846c6a5b490546a99296027831bf7acdb9f9e0b5dd57750",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "ae6e1849f6116304dcb83a570186fafaa88b70deadb16a23e59c757fd4c8f382",
+     "engagement": null,
+     "at": "2026-09-19T22:00:00.000Z",
+     "reportingDevice": "dev_personA-laptop01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 4,
+     "output": 40,
+     "cacheWrite": 1000,
+     "cacheRead": 0,
+     "cacheWrite5m": 1000,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "da2c593a84335c7e8846c6a5b490546a99296027831bf7acdb9f9e0b5dd57750",
+       "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-19T22:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "a4255eb6b45cb18576eae98d197d28fbea5d337943934a572ece39e6332979f4",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "ae6e1849f6116304dcb83a570186fafaa88b70deadb16a23e59c757fd4c8f382",
+     "engagement": null,
+     "at": "2026-09-19T23:59:00.000Z",
+     "reportingDevice": "dev_personA-laptop01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 5,
+     "output": 3,
+     "cacheWrite": 200,
+     "cacheRead": 1000,
+     "cacheWrite5m": 200,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "a4255eb6b45cb18576eae98d197d28fbea5d337943934a572ece39e6332979f4",
+       "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-19T23:59:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "d1ec7267c3a0f930402187bce48f37c64cc71ce534798c43eafc5eb707caa5a6",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "ae6e1849f6116304dcb83a570186fafaa88b70deadb16a23e59c757fd4c8f382",
+     "engagement": null,
+     "at": "2026-09-19T23:59:00.000Z",
+     "reportingDevice": "dev_personA-laptop01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 247,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "d1ec7267c3a0f930402187bce48f37c64cc71ce534798c43eafc5eb707caa5a6",
+       "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-19T23:59:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "db4a6754de49b43544382f84faa87b79ef05fc3ec2c1b0cb5c8e640d8ffea09a",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "ae6e1849f6116304dcb83a570186fafaa88b70deadb16a23e59c757fd4c8f382",
+     "engagement": null,
+     "at": "2026-09-20T03:30:00.000Z",
+     "reportingDevice": "dev_personA-laptop01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 7,
+     "output": 77,
+     "cacheWrite": 70,
+     "cacheRead": 1300,
+     "cacheWrite5m": 70,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "db4a6754de49b43544382f84faa87b79ef05fc3ec2c1b0cb5c8e640d8ffea09a",
+       "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T03:30:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "5b14796da1a4d4666c622469543299637153354c99875a25a5a4b0a20443c348",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "ae6e1849f6116304dcb83a570186fafaa88b70deadb16a23e59c757fd4c8f382",
+     "engagement": null,
+     "at": "2026-09-21T00:00:00.000Z",
+     "reportingDevice": "dev_personA-laptop01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 6,
+     "output": 60,
+     "cacheWrite": 0,
+     "cacheRead": 1200,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "5b14796da1a4d4666c622469543299637153354c99875a25a5a4b0a20443c348",
+       "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-21T00:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-laptop01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 12,
+     "output": 340,
+     "cacheWrite": 24000,
+     "cacheRead": 0,
+     "cacheWrite5m": 20000,
+     "cacheWrite1h": 4000,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-laptop01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 3,
+     "output": 7,
+     "cacheWrite": 500,
+     "cacheRead": 24000,
+     "cacheWrite5m": 500,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-laptop01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 113,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-laptop01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 290,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:02:00.000Z",
+     "reportingDevice": "dev_personA-laptop01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 5,
+     "output": 90,
+     "cacheWrite": 300,
+     "cacheRead": 24500,
+     "cacheWrite5m": 300,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:02:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:03:00.000Z",
+     "reportingDevice": "dev_personA-laptop01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 4,
+     "output": 60,
+     "cacheWrite": 200,
+     "cacheRead": 24800,
+     "cacheWrite5m": 200,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:03:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:10:00.000Z",
+     "reportingDevice": "dev_personA-laptop01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 9,
+     "output": 800,
+     "cacheWrite": 8000,
+     "cacheRead": 0,
+     "cacheWrite5m": 6000,
+     "cacheWrite1h": 2000,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:10:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "step": 3,
+   "device": "personA-studio",
+   "deviceId": "dev_personA-studio01",
+   "records": [
+    {
+     "id": "1cb0b1286aa5c7cec176650b37effbec689e898ef562623705fed57ccf3fe315",
+     "tool": "claude-code",
+     "model": "claude-sonnet-5",
+     "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
+     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:05:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 2,
+     "output": 150,
+     "cacheWrite": 3000,
+     "cacheRead": 0,
+     "cacheWrite5m": 3000,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "1cb0b1286aa5c7cec176650b37effbec689e898ef562623705fed57ccf3fe315",
+       "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:05:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "e084345a73440160f273974fb6726200b71a3c32d509181ee4854cfed5cf0e3b",
+     "tool": "claude-code",
+     "model": "claude-sonnet-5",
+     "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
+     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:05:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 1,
+     "output": 30,
+     "cacheWrite": 100,
+     "cacheRead": 3000,
+     "cacheWrite5m": 100,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "e084345a73440160f273974fb6726200b71a3c32d509181ee4854cfed5cf0e3b",
+       "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:05:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "c0460e199906afdc48446e163e4e26057f0bb10e216effcf4d4f4d68b682f7e9",
+     "tool": "claude-code",
+     "model": "claude-sonnet-5",
+     "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
+     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:05:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 230,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "c0460e199906afdc48446e163e4e26057f0bb10e216effcf4d4f4d68b682f7e9",
+       "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:05:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "69bf1acc2959d66f7114bf59ddc7736526eb1c48ba619a59e3ecda7abed83230",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "a6b16a71df949693887ee87e30c49aef2d4aeb4b144416162435ca0e3829b1d3",
+     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:06:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 6,
+     "output": 500,
+     "cacheWrite": 7000,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 7000,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "69bf1acc2959d66f7114bf59ddc7736526eb1c48ba619a59e3ecda7abed83230",
+       "sessionHash": "a6b16a71df949693887ee87e30c49aef2d4aeb4b144416162435ca0e3829b1d3"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:06:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 12,
+     "output": 340,
+     "cacheWrite": 24000,
+     "cacheRead": 0,
+     "cacheWrite5m": 20000,
+     "cacheWrite1h": 4000,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 3,
+     "output": 7,
+     "cacheWrite": 500,
+     "cacheRead": 24000,
+     "cacheWrite5m": 500,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 113,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 290,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:02:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 5,
+     "output": 90,
+     "cacheWrite": 300,
+     "cacheRead": 24500,
+     "cacheWrite5m": 300,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:02:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:03:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 4,
+     "output": 60,
+     "cacheWrite": 200,
+     "cacheRead": 24800,
+     "cacheWrite5m": 200,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:03:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:10:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 9,
+     "output": 800,
+     "cacheWrite": 8000,
+     "cacheRead": 0,
+     "cacheWrite5m": 6000,
+     "cacheWrite1h": 2000,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:10:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "876bd6afa34fd073d05d94e464b850486bcab158e04a42abc10e51e8d73bd809",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T11:00:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 10,
+     "output": 200,
+     "cacheWrite": 1500,
+     "cacheRead": 1000,
+     "cacheWrite5m": 1500,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "876bd6afa34fd073d05d94e464b850486bcab158e04a42abc10e51e8d73bd809",
+       "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T11:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "4181fd27abe09a1c0c9d6bd5528b9ec1669c0aa768653c2cec3b950d037065e8",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T11:01:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 2,
+     "output": 50,
+     "cacheWrite": 400,
+     "cacheRead": 2500,
+     "cacheWrite5m": 400,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "4181fd27abe09a1c0c9d6bd5528b9ec1669c0aa768653c2cec3b950d037065e8",
+       "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T11:01:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "fd20c99ead4064c3f6637a0c0cac432c3c74733f48660caca61993827b94d0f0",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T11:01:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 100,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "fd20c99ead4064c3f6637a0c0cac432c3c74733f48660caca61993827b94d0f0",
+       "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T11:01:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "03984beb1398af3a989e46600fc4a4b40951e39036c474aabfa747ee3575c894",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "0ba6d71c086461b68ec3257e89e14c49f5d813a2df3bdedc7e3fd3510ce2af57",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T13:00:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 7,
+     "output": 330,
+     "cacheWrite": 800,
+     "cacheRead": 2900,
+     "cacheWrite5m": 800,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "03984beb1398af3a989e46600fc4a4b40951e39036c474aabfa747ee3575c894",
+       "sessionHash": "0ba6d71c086461b68ec3257e89e14c49f5d813a2df3bdedc7e3fd3510ce2af57"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T13:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "a2e1644903a504b5927ec15430d3deefb0c4bde5496ba83e6f259009ead1cd98",
+     "tool": "codex",
+     "model": "gpt-5.6-sol",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:00:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 800,
+     "output": 50,
+     "cacheWrite": 200,
+     "cacheRead": 0,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "a2e1644903a504b5927ec15430d3deefb0c4bde5496ba83e6f259009ead1cd98",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "dfed71ef682a655ca25320cf8b7f6fc92b56f0f5eb97ce8d5d360798a2aafa16",
+     "tool": "codex",
+     "model": "gpt-5.6-sol",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:02:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 400,
+     "output": 80,
+     "cacheWrite": 100,
+     "cacheRead": 1000,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "dfed71ef682a655ca25320cf8b7f6fc92b56f0f5eb97ce8d5d360798a2aafa16",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:02:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "c99dd45d2903ee787f4e64c5a5df6b6074e4f8af3eecae9f4bee9ff4a5050573",
+     "tool": "codex",
+     "model": "gpt-5.5",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:04:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 100,
+     "output": 60,
+     "cacheWrite": 0,
+     "cacheRead": 700,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "c99dd45d2903ee787f4e64c5a5df6b6074e4f8af3eecae9f4bee9ff4a5050573",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:04:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "e69c28e8e5b586b61f2e00bc7a0a6fc03b05215c5e6a0926f1a343d9a49b7638",
+     "tool": "codex",
+     "model": "gpt-5.5",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:30:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 200,
+     "output": 40,
+     "cacheWrite": 0,
+     "cacheRead": 400,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "e69c28e8e5b586b61f2e00bc7a0a6fc03b05215c5e6a0926f1a343d9a49b7638",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:30:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "26e982e947e91595549d0a841b87690bffc5b9557cd12dd38ec4bd3511961581",
+     "tool": "codex",
+     "model": "gpt-5.5",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:31:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 300,
+     "output": 60,
+     "cacheWrite": 0,
+     "cacheRead": 500,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "26e982e947e91595549d0a841b87690bffc5b9557cd12dd38ec4bd3511961581",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:31:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "18cca99d3f87e8b24501210fe075404a0c8a7800e5a1e659916cc712568f1b32",
+     "tool": "codex",
+     "model": "gpt-5.6-sol",
+     "sessionHash": "d33b184624defe1e5dba6c0f18d157d7cec44812019c0ab00d086572d90b4598",
+     "parentSessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:10:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 600,
+     "output": 70,
+     "cacheWrite": 300,
+     "cacheRead": 0,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "18cca99d3f87e8b24501210fe075404a0c8a7800e5a1e659916cc712568f1b32",
+       "sessionHash": "d33b184624defe1e5dba6c0f18d157d7cec44812019c0ab00d086572d90b4598"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:10:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "c04e0625dc2aef32e9b8d87e3e23f83dbf763cda2057d39f4f396c022808db66",
+     "tool": "codex",
+     "model": "gpt-5.6-sol",
+     "sessionHash": "d33b184624defe1e5dba6c0f18d157d7cec44812019c0ab00d086572d90b4598",
+     "parentSessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:11:00.000Z",
+     "reportingDevice": "dev_personA-studio01",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 300,
+     "output": 80,
+     "cacheWrite": 100,
+     "cacheRead": 800,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "c04e0625dc2aef32e9b8d87e3e23f83dbf763cda2057d39f4f396c022808db66",
+       "sessionHash": "d33b184624defe1e5dba6c0f18d157d7cec44812019c0ab00d086572d90b4598"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:11:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "step": 4,
+   "device": "sharedbox-userB",
+   "deviceId": "dev_sharedbox-userB1",
+   "records": [
+    {
+     "id": "3d05bc364b498fd1a7f956170931299d3e71f9536e0b46307a4c2c13c6fa912a",
+     "tool": "claude-code",
+     "model": "claude-sonnet-5",
+     "sessionHash": "1531b0d86129f133f587cb5c649d251bab2c0a4084495a70bafaf02be3c2a998",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T18:00:00.000Z",
+     "reportingDevice": "dev_sharedbox-userB1",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 11,
+     "output": 210,
+     "cacheWrite": 900,
+     "cacheRead": 0,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "3d05bc364b498fd1a7f956170931299d3e71f9536e0b46307a4c2c13c6fa912a",
+       "sessionHash": "1531b0d86129f133f587cb5c649d251bab2c0a4084495a70bafaf02be3c2a998"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T18:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "19f67466010d3dc5acc9c124ffbf756229458266e1eb73fdd73837144ce62776",
+     "tool": "claude-code",
+     "model": "claude-sonnet-5",
+     "sessionHash": "1531b0d86129f133f587cb5c649d251bab2c0a4084495a70bafaf02be3c2a998",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T18:01:00.000Z",
+     "reportingDevice": "dev_sharedbox-userB1",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 2,
+     "output": 40,
+     "cacheWrite": 30,
+     "cacheRead": 900,
+     "cacheWrite5m": 30,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "19f67466010d3dc5acc9c124ffbf756229458266e1eb73fdd73837144ce62776",
+       "sessionHash": "1531b0d86129f133f587cb5c649d251bab2c0a4084495a70bafaf02be3c2a998"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T18:01:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "b655d021b6a936645dfcbae47ceca82a3ad4c9108b3c1925fdde24e1a7084ba7",
+     "tool": "codex",
+     "model": "gpt-5.6-sol",
+     "sessionHash": "d471b6ab9a2796a0697517ab652a38b35d421efe5da6709aceb69cc8d69c0dc6",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T18:30:00.000Z",
+     "reportingDevice": "dev_sharedbox-userB1",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 400,
+     "output": 20,
+     "cacheWrite": 100,
+     "cacheRead": 0,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "b655d021b6a936645dfcbae47ceca82a3ad4c9108b3c1925fdde24e1a7084ba7",
+       "sessionHash": "d471b6ab9a2796a0697517ab652a38b35d421efe5da6709aceb69cc8d69c0dc6"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T18:30:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "06ec2a773d3a6e97c5a39d575260f520a75f63f2f7793a1e12999be1c700e12f",
+     "tool": "codex",
+     "model": "gpt-5.6-sol",
+     "sessionHash": "d471b6ab9a2796a0697517ab652a38b35d421efe5da6709aceb69cc8d69c0dc6",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T18:31:00.000Z",
+     "reportingDevice": "dev_sharedbox-userB1",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 250,
+     "output": 40,
+     "cacheWrite": 0,
+     "cacheRead": 450,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "06ec2a773d3a6e97c5a39d575260f520a75f63f2f7793a1e12999be1c700e12f",
+       "sessionHash": "d471b6ab9a2796a0697517ab652a38b35d421efe5da6709aceb69cc8d69c0dc6"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T18:31:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "step": 5,
+   "device": "sharedbox-build",
+   "deviceId": "dev_sharedbox-build1",
+   "records": [
+    {
+     "id": "f2dc0b6d7f285aaaaf62d1b714799ed9ccfb38ef9f52f5ff644a6b0de6e0f817",
+     "tool": "claude-code",
+     "model": "claude-haiku-4-5-20251001",
+     "sessionHash": "2faacce92ab4a5d8e7ef2513b780aebda4b843d8173b39068ff156753a44e0ee",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "c11fd928d4681f43b31e913c06848e277af0ee0824a9eaeaf27feb8165e909e2",
+     "engagement": null,
+     "at": "2026-09-20T20:00:00.000Z",
+     "reportingDevice": "dev_sharedbox-build1",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 30,
+     "output": 400,
+     "cacheWrite": 2000,
+     "cacheRead": 0,
+     "cacheWrite5m": 2000,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "f2dc0b6d7f285aaaaf62d1b714799ed9ccfb38ef9f52f5ff644a6b0de6e0f817",
+       "sessionHash": "2faacce92ab4a5d8e7ef2513b780aebda4b843d8173b39068ff156753a44e0ee"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T20:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "e00e27ae79fd142f274d3a690485ea1d6016b552f3d2833319d6ed6a9fcf89e3",
+     "tool": "claude-code",
+     "model": "claude-haiku-4-5-20251001",
+     "sessionHash": "2faacce92ab4a5d8e7ef2513b780aebda4b843d8173b39068ff156753a44e0ee",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "c11fd928d4681f43b31e913c06848e277af0ee0824a9eaeaf27feb8165e909e2",
+     "engagement": null,
+     "at": "2026-09-20T20:00:00.000Z",
+     "reportingDevice": "dev_sharedbox-build1",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 1,
+     "output": 20,
+     "cacheWrite": 0,
+     "cacheRead": 2000,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "e00e27ae79fd142f274d3a690485ea1d6016b552f3d2833319d6ed6a9fcf89e3",
+       "sessionHash": "2faacce92ab4a5d8e7ef2513b780aebda4b843d8173b39068ff156753a44e0ee"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T20:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "step": 6,
+   "device": "personA-studio-rejoined",
+   "deviceId": "dev_personA-studio02",
+   "records": [
+    {
+     "id": "1cb0b1286aa5c7cec176650b37effbec689e898ef562623705fed57ccf3fe315",
+     "tool": "claude-code",
+     "model": "claude-sonnet-5",
+     "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
+     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:05:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 2,
+     "output": 150,
+     "cacheWrite": 3000,
+     "cacheRead": 0,
+     "cacheWrite5m": 3000,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "1cb0b1286aa5c7cec176650b37effbec689e898ef562623705fed57ccf3fe315",
+       "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:05:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "e084345a73440160f273974fb6726200b71a3c32d509181ee4854cfed5cf0e3b",
+     "tool": "claude-code",
+     "model": "claude-sonnet-5",
+     "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
+     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:05:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 1,
+     "output": 30,
+     "cacheWrite": 100,
+     "cacheRead": 3000,
+     "cacheWrite5m": 100,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "e084345a73440160f273974fb6726200b71a3c32d509181ee4854cfed5cf0e3b",
+       "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:05:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "c0460e199906afdc48446e163e4e26057f0bb10e216effcf4d4f4d68b682f7e9",
+     "tool": "claude-code",
+     "model": "claude-sonnet-5",
+     "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
+     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:05:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 230,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "c0460e199906afdc48446e163e4e26057f0bb10e216effcf4d4f4d68b682f7e9",
+       "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:05:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "69bf1acc2959d66f7114bf59ddc7736526eb1c48ba619a59e3ecda7abed83230",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "a6b16a71df949693887ee87e30c49aef2d4aeb4b144416162435ca0e3829b1d3",
+     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:06:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 6,
+     "output": 500,
+     "cacheWrite": 7000,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 7000,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "69bf1acc2959d66f7114bf59ddc7736526eb1c48ba619a59e3ecda7abed83230",
+       "sessionHash": "a6b16a71df949693887ee87e30c49aef2d4aeb4b144416162435ca0e3829b1d3"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:06:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 12,
+     "output": 340,
+     "cacheWrite": 24000,
+     "cacheRead": 0,
+     "cacheWrite5m": 20000,
+     "cacheWrite1h": 4000,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 3,
+     "output": 7,
+     "cacheWrite": 500,
+     "cacheRead": 24000,
+     "cacheWrite5m": 500,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 113,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:00:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 290,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:02:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 5,
+     "output": 90,
+     "cacheWrite": 300,
+     "cacheRead": 24500,
+     "cacheWrite5m": 300,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:02:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:03:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 4,
+     "output": 60,
+     "cacheWrite": 200,
+     "cacheRead": 24800,
+     "cacheWrite5m": 200,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:03:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T09:10:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 9,
+     "output": 800,
+     "cacheWrite": 8000,
+     "cacheRead": 0,
+     "cacheWrite5m": 6000,
+     "cacheWrite1h": 2000,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T09:10:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "876bd6afa34fd073d05d94e464b850486bcab158e04a42abc10e51e8d73bd809",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T11:00:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 10,
+     "output": 200,
+     "cacheWrite": 1500,
+     "cacheRead": 1000,
+     "cacheWrite5m": 1500,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "876bd6afa34fd073d05d94e464b850486bcab158e04a42abc10e51e8d73bd809",
+       "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T11:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "4181fd27abe09a1c0c9d6bd5528b9ec1669c0aa768653c2cec3b950d037065e8",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T11:01:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 2,
+     "output": 50,
+     "cacheWrite": 400,
+     "cacheRead": 2500,
+     "cacheWrite5m": 400,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "4181fd27abe09a1c0c9d6bd5528b9ec1669c0aa768653c2cec3b950d037065e8",
+       "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T11:01:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "fd20c99ead4064c3f6637a0c0cac432c3c74733f48660caca61993827b94d0f0",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T11:01:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": true,
+     "fresh": 0,
+     "output": 100,
+     "cacheWrite": 0,
+     "cacheRead": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "fd20c99ead4064c3f6637a0c0cac432c3c74733f48660caca61993827b94d0f0",
+       "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T11:01:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "03984beb1398af3a989e46600fc4a4b40951e39036c474aabfa747ee3575c894",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "0ba6d71c086461b68ec3257e89e14c49f5d813a2df3bdedc7e3fd3510ce2af57",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T13:00:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 7,
+     "output": 330,
+     "cacheWrite": 800,
+     "cacheRead": 2900,
+     "cacheWrite5m": 800,
+     "cacheWrite1h": 0,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "03984beb1398af3a989e46600fc4a4b40951e39036c474aabfa747ee3575c894",
+       "sessionHash": "0ba6d71c086461b68ec3257e89e14c49f5d813a2df3bdedc7e3fd3510ce2af57"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T13:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    },
+    {
+     "id": "a2e1644903a504b5927ec15430d3deefb0c4bde5496ba83e6f259009ead1cd98",
+     "tool": "codex",
+     "model": "gpt-5.6-sol",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:00:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 800,
+     "output": 50,
+     "cacheWrite": 200,
+     "cacheRead": 0,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "a2e1644903a504b5927ec15430d3deefb0c4bde5496ba83e6f259009ead1cd98",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "dfed71ef682a655ca25320cf8b7f6fc92b56f0f5eb97ce8d5d360798a2aafa16",
+     "tool": "codex",
+     "model": "gpt-5.6-sol",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:02:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 400,
+     "output": 80,
+     "cacheWrite": 100,
+     "cacheRead": 1000,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "dfed71ef682a655ca25320cf8b7f6fc92b56f0f5eb97ce8d5d360798a2aafa16",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:02:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "c99dd45d2903ee787f4e64c5a5df6b6074e4f8af3eecae9f4bee9ff4a5050573",
+     "tool": "codex",
+     "model": "gpt-5.5",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:04:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 100,
+     "output": 60,
+     "cacheWrite": 0,
+     "cacheRead": 700,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "c99dd45d2903ee787f4e64c5a5df6b6074e4f8af3eecae9f4bee9ff4a5050573",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:04:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "e69c28e8e5b586b61f2e00bc7a0a6fc03b05215c5e6a0926f1a343d9a49b7638",
+     "tool": "codex",
+     "model": "gpt-5.5",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:30:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 200,
+     "output": 40,
+     "cacheWrite": 0,
+     "cacheRead": 400,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "e69c28e8e5b586b61f2e00bc7a0a6fc03b05215c5e6a0926f1a343d9a49b7638",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:30:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "26e982e947e91595549d0a841b87690bffc5b9557cd12dd38ec4bd3511961581",
+     "tool": "codex",
+     "model": "gpt-5.5",
+     "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:31:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 300,
+     "output": 60,
+     "cacheWrite": 0,
+     "cacheRead": 500,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "26e982e947e91595549d0a841b87690bffc5b9557cd12dd38ec4bd3511961581",
+       "sessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:31:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "18cca99d3f87e8b24501210fe075404a0c8a7800e5a1e659916cc712568f1b32",
+     "tool": "codex",
+     "model": "gpt-5.6-sol",
+     "sessionHash": "d33b184624defe1e5dba6c0f18d157d7cec44812019c0ab00d086572d90b4598",
+     "parentSessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:10:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 600,
+     "output": 70,
+     "cacheWrite": 300,
+     "cacheRead": 0,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "18cca99d3f87e8b24501210fe075404a0c8a7800e5a1e659916cc712568f1b32",
+       "sessionHash": "d33b184624defe1e5dba6c0f18d157d7cec44812019c0ab00d086572d90b4598"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:10:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "c04e0625dc2aef32e9b8d87e3e23f83dbf763cda2057d39f4f396c022808db66",
+     "tool": "codex",
+     "model": "gpt-5.6-sol",
+     "sessionHash": "d33b184624defe1e5dba6c0f18d157d7cec44812019c0ab00d086572d90b4598",
+     "parentSessionHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+     "isSubagent": true,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T14:11:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "unknown",
+     "continuation": false,
+     "fresh": 300,
+     "output": 80,
+     "cacheWrite": 100,
+     "cacheRead": 800,
+     "cacheWrite5m": null,
+     "cacheWrite1h": null,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "c04e0625dc2aef32e9b8d87e3e23f83dbf763cda2057d39f4f396c022808db66",
+       "sessionHash": "d33b184624defe1e5dba6c0f18d157d7cec44812019c0ab00d086572d90b4598"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T14:11:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "codex"
+      }
+     }
+    },
+    {
+     "id": "2e71b8f4920eec7a07d02b22d0bc7e1979359b2e9ccfa283211f91882a3e51f5",
+     "tool": "claude-code",
+     "model": "claude-opus-5-5",
+     "sessionHash": "6243ca525fa994e4d382f00d8cea810cc65d97b32b94a7d4f55292b718c002f4",
+     "parentSessionHash": null,
+     "isSubagent": false,
+     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
+     "engagement": null,
+     "at": "2026-09-20T22:00:00.000Z",
+     "reportingDevice": "dev_personA-studio02",
+     "executionOrigin": "unknown",
+     "ttl": "split",
+     "continuation": false,
+     "fresh": 8,
+     "output": 180,
+     "cacheWrite": 1000,
+     "cacheRead": 0,
+     "cacheWrite5m": 900,
+     "cacheWrite1h": 100,
+     "observed": true,
+     "measurement": {
+      "provenance": "deviceReported",
+      "population": {
+       "kind": "usageEvent",
+       "recordId": "2e71b8f4920eec7a07d02b22d0bc7e1979359b2e9ccfa283211f91882a3e51f5",
+       "sessionHash": "6243ca525fa994e4d382f00d8cea810cc65d97b32b94a7d4f55292b718c002f4"
+      },
+      "window": {
+       "kind": "event",
+       "at": "2026-09-20T22:00:00.000Z"
+      },
+      "source": {
+       "kind": "localTranscript",
+       "tool": "claude-code"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "step": 7,
+   "device": "personA-laptop",
+   "deviceId": "dev_personA-laptop01",
+   "records": []
+  }
+ ]
+}

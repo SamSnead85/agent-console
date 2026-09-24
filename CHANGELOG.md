@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased — accounting you can reconcile
+
+- **[docs/accounting.md](docs/accounting.md)** defines one token event, what
+  is counted once (streaming, re-written lines, retries, resumed sessions,
+  compaction, subagents, copies), Codex's cumulative counters, classes and
+  cache lifetimes, models, windows and time zones, who a session belongs to,
+  team roll-up and cost.
+- **A conformance suite**, `@lockedinlabs/agent-console/conformance`: synthetic
+  logs for five machines and two people, exact expected totals summed from
+  ground truth, and the collector's own output for other receivers to replay.
+- **Fixed: a streamed Claude response is dated by its first line.** Its later
+  increments were dated by their own lines, so a response that crossed a
+  window edge was split across two windows.
+- **Fixed: a Codex counter that restarts is counted.** The restarting request,
+  including every forked child's first own request, was dropped as coverage
+  debt.
+- **Fixed: "last 24 hours" is exactly the last 1,440 minutes.** The console's
+  day included one extra minute and any record dated ahead of the hub's clock.
+- The hub keeps 5-minute, 1-hour and unknown-lifetime cache writes apart, and
+  `lib/hub/accounting.js` reports exact totals for any whole-minute window by
+  team, person, machine, model, session and session tree.
+
 ## 0.2.1 — not yet released
 
 Safer by default, and the fixes from a first-time install.

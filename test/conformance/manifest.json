@@ -1,0 +1,118 @@
+{
+ "suite": "1.0.0",
+ "spec": "docs/accounting.md",
+ "organization": {
+  "id": "org_conformance0001",
+  "orgSalt": "KioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKio",
+  "note": "Synthetic. Record ids are HMAC-SHA256(orgSalt, `${tool}|${sessionId}|${messageId}`); session hashes HMAC-SHA256(orgSalt, `session|${label}`)."
+ },
+ "window": {
+  "from": "2026-09-20T00:00:00.000Z",
+  "to": "2026-09-21T00:00:00.000Z",
+  "timeZone": "UTC",
+  "halfOpen": true
+ },
+ "team": "Platform team",
+ "devices": {
+  "personA-studio": {
+   "id": "dev_personA-studio01",
+   "label": "Studio (person A)",
+   "person": "Person A"
+  },
+  "personA-laptop": {
+   "id": "dev_personA-laptop01",
+   "label": "Laptop (person A)",
+   "person": "Person A"
+  },
+  "sharedbox-userB": {
+   "id": "dev_sharedbox-userB1",
+   "label": "Shared build box, account B",
+   "person": "Person B"
+  },
+  "sharedbox-build": {
+   "id": "dev_sharedbox-build1",
+   "label": "Shared build box, build account",
+   "person": null
+  },
+  "personA-studio-rejoined": {
+   "id": "dev_personA-studio02",
+   "label": "Studio (person A), joined again",
+   "person": "Person A"
+  }
+ },
+ "deliveries": [
+  {
+   "step": 1,
+   "device": "personA-studio",
+   "state": "studio",
+   "roots": [
+    "logs/personA-studio"
+   ],
+   "why": "first report from the studio"
+  },
+  {
+   "step": 2,
+   "device": "personA-laptop",
+   "state": "laptop",
+   "roots": [
+    "logs/personA-laptop"
+   ],
+   "why": "the laptop, which holds a synced copy of a studio session"
+  },
+  {
+   "step": 3,
+   "device": "personA-studio",
+   "state": "studio-cursor-lost",
+   "roots": [
+    "logs/personA-studio"
+   ],
+   "why": "the studio lost its cursor and re-reports everything"
+  },
+  {
+   "step": 4,
+   "device": "sharedbox-userB",
+   "state": "userB",
+   "roots": [
+    "logs/sharedbox-userB"
+   ],
+   "why": "person B's account on the shared build box"
+  },
+  {
+   "step": 5,
+   "device": "sharedbox-build",
+   "state": "build",
+   "roots": [
+    "logs/sharedbox-build"
+   ],
+   "why": "the shared build account, enrolled to nobody"
+  },
+  {
+   "step": 6,
+   "device": "personA-studio-rejoined",
+   "state": "studio-rejoined",
+   "roots": [
+    "logs/personA-studio",
+    "logs/personA-studio-later"
+   ],
+   "why": "the studio joined again under a new device id and re-reads its history, plus new work"
+  },
+  {
+   "step": 7,
+   "device": "personA-laptop",
+   "state": "laptop",
+   "roots": [
+    "logs/personA-laptop"
+   ],
+   "why": "the laptop reports again with its cursor intact: nothing new"
+  }
+ ],
+ "canaries": [
+  "CANARY-PROMPT-conformance-5c1e",
+  "CANARY-REPLY-conformance-88d0",
+  "canary_conformance_file.ts",
+  "/work/canary-secret-project-dir",
+  "/Users/persona/work/canary-secret-project-dir",
+  "canary-private-branch-conformance",
+  "CANARY-COMPACT-SUMMARY-conformance-7a2f"
+ ]
+}

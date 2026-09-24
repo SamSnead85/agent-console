@@ -1,0 +1,1957 @@
+{
+ "suite": "1.0.0",
+ "spec": "docs/accounting.md",
+ "units": "tokens; usd is a standard API-list-price estimate from the pinned price table, never an invoice",
+ "priceTable": {
+  "file": "lib/collector/prices.json",
+  "basis": "standard-global-api-equivalent",
+  "inventoryCheckedOn": "2026-09-20",
+  "rows": {
+   "claude-fable-5-1": {
+    "fresh": 10,
+    "output": 50,
+    "cacheWrite": 12.5,
+    "cacheWrite5m": 12.5,
+    "cacheWrite1h": 20,
+    "cacheRead": 0.25
+   },
+   "claude-haiku-4-5-20251001": {
+    "fresh": 1,
+    "output": 5,
+    "cacheWrite": 1.25,
+    "cacheWrite5m": 1.25,
+    "cacheWrite1h": 2,
+    "cacheRead": 0.1
+   },
+   "claude-opus-5-5": {
+    "fresh": 4,
+    "output": 20,
+    "cacheWrite": 5,
+    "cacheWrite5m": 5,
+    "cacheWrite1h": 8,
+    "cacheRead": 0.2
+   },
+   "claude-sonnet-5": {
+    "fresh": 2,
+    "output": 10,
+    "cacheWrite": 2.5,
+    "cacheWrite5m": 2.5,
+    "cacheWrite1h": 4,
+    "cacheRead": 0.2
+   },
+   "gpt-5.5": {
+    "fresh": 5,
+    "output": 30,
+    "cacheWrite": null,
+    "cacheWrite5m": null,
+    "cacheWrite1h": null,
+    "cacheRead": 0.5
+   },
+   "gpt-5.6-sol": {
+    "fresh": 4,
+    "output": 20,
+    "cacheWrite": 5,
+    "cacheWrite5m": null,
+    "cacheWrite1h": null,
+    "cacheRead": 0.4
+   }
+  }
+ },
+ "team": "Platform team",
+ "window": {
+  "from": "2026-09-20T00:00:00.000Z",
+  "to": "2026-09-21T00:00:00.000Z",
+  "events": [
+   "E01",
+   "E02",
+   "E03",
+   "E04",
+   "E05",
+   "E06",
+   "E07",
+   "E08",
+   "E09",
+   "E10",
+   "E11",
+   "E12",
+   "E13",
+   "E14",
+   "E15",
+   "E16",
+   "E17",
+   "E18",
+   "E19",
+   "E20",
+   "E24",
+   "E25",
+   "E26",
+   "E27",
+   "E28",
+   "E29",
+   "E30",
+   "E31"
+  ],
+  "team": {
+   "total": 170400,
+   "fresh": 3493,
+   "output": 5507,
+   "cacheRead": 100750,
+   "cacheWrite": 60650,
+   "cacheWrite5m": 45850,
+   "cacheWrite1h": 13100,
+   "cacheWriteUnknownTtl": 1700,
+   "messages": 28,
+   "usd": 0.558855,
+   "usdExact": "0.55885500"
+  },
+  "people": {
+   "Person A": {
+    "total": 162596,
+    "fresh": 2799,
+    "output": 4777,
+    "cacheRead": 97400,
+    "cacheWrite": 57620,
+    "cacheWrite5m": 43820,
+    "cacheWrite1h": 13100,
+    "cacheWriteUnknownTtl": 700,
+    "messages": 22,
+    "usd": 0.544513,
+    "usdExact": "0.54451300"
+   },
+   "Person B": {
+    "total": 3353,
+    "fresh": 663,
+    "output": 310,
+    "cacheRead": 1350,
+    "cacheWrite": 1030,
+    "cacheWrite5m": 30,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 1000,
+    "messages": 4,
+    "usd": 0.009511,
+    "usdExact": "0.00951100"
+   },
+   "Unassigned": {
+    "total": 4451,
+    "fresh": 31,
+    "output": 420,
+    "cacheRead": 2000,
+    "cacheWrite": 2000,
+    "cacheWrite5m": 2000,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 2,
+    "usd": 0.004831,
+    "usdExact": "0.00483100"
+   }
+  },
+  "devices": {
+   "dev_personA-laptop01": {
+    "total": 22317,
+    "fresh": 30,
+    "output": 867,
+    "cacheRead": 11300,
+    "cacheWrite": 10120,
+    "cacheWrite5m": 10120,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 3,
+    "usd": 0.170033,
+    "usdExact": "0.17003300"
+   },
+   "dev_personA-studio01": {
+    "total": 139091,
+    "fresh": 2761,
+    "output": 3730,
+    "cacheRead": 86100,
+    "cacheWrite": 46500,
+    "cacheWrite5m": 32800,
+    "cacheWrite1h": 13000,
+    "cacheWriteUnknownTtl": 700,
+    "messages": 18,
+    "usd": 0.365548,
+    "usdExact": "0.36554800"
+   },
+   "dev_personA-studio02": {
+    "total": 1188,
+    "fresh": 8,
+    "output": 180,
+    "cacheRead": 0,
+    "cacheWrite": 1000,
+    "cacheWrite5m": 900,
+    "cacheWrite1h": 100,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 1,
+    "usd": 0.008932,
+    "usdExact": "0.00893200"
+   },
+   "dev_sharedbox-build1": {
+    "total": 4451,
+    "fresh": 31,
+    "output": 420,
+    "cacheRead": 2000,
+    "cacheWrite": 2000,
+    "cacheWrite5m": 2000,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 2,
+    "usd": 0.004831,
+    "usdExact": "0.00483100"
+   },
+   "dev_sharedbox-userB1": {
+    "total": 3353,
+    "fresh": 663,
+    "output": 310,
+    "cacheRead": 1350,
+    "cacheWrite": 1030,
+    "cacheWrite5m": 30,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 1000,
+    "messages": 4,
+    "usd": 0.009511,
+    "usdExact": "0.00951100"
+   }
+  },
+  "models": {
+   "claude-fable-5-1": {
+    "total": 20863,
+    "fresh": 23,
+    "output": 790,
+    "cacheRead": 10000,
+    "cacheWrite": 10050,
+    "cacheWrite5m": 10050,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 2,
+    "usd": 0.167855,
+    "usdExact": "0.16785500"
+   },
+   "claude-haiku-4-5-20251001": {
+    "total": 4451,
+    "fresh": 31,
+    "output": 420,
+    "cacheRead": 2000,
+    "cacheWrite": 2000,
+    "cacheWrite5m": 2000,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 2,
+    "usd": 0.004831,
+    "usdExact": "0.00483100"
+   },
+   "claude-opus-5-5": {
+    "total": 127980,
+    "fresh": 73,
+    "output": 3137,
+    "cacheRead": 81000,
+    "cacheWrite": 43770,
+    "cacheWrite5m": 30670,
+    "cacheWrite1h": 13100,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 11,
+    "usd": 0.337382,
+    "usdExact": "0.33738200"
+   },
+   "claude-sonnet-5": {
+    "total": 8606,
+    "fresh": 16,
+    "output": 660,
+    "cacheRead": 3900,
+    "cacheWrite": 4030,
+    "cacheWrite5m": 3130,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 900,
+    "messages": 4,
+    "usd": 0.017487,
+    "usdExact": "0.01748700"
+   },
+   "gpt-5.5": {
+    "total": 2360,
+    "fresh": 600,
+    "output": 160,
+    "cacheRead": 1600,
+    "cacheWrite": 0,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 3,
+    "usd": 0.0086,
+    "usdExact": "0.00860000"
+   },
+   "gpt-5.6-sol": {
+    "total": 6140,
+    "fresh": 2750,
+    "output": 340,
+    "cacheRead": 2250,
+    "cacheWrite": 800,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 800,
+    "messages": 6,
+    "usd": 0.0227,
+    "usdExact": "0.02270000"
+   }
+  },
+  "sessions": {
+   "claude-code:c0000001-0000-4000-8000-000000000001": {
+    "total": 108033,
+    "fresh": 33,
+    "output": 1700,
+    "cacheRead": 73300,
+    "cacheWrite": 33000,
+    "cacheWrite5m": 27000,
+    "cacheWrite1h": 6000,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 5,
+    "usd": 0.231792,
+    "usdExact": "0.23179200"
+   },
+   "claude-code:c0000001-0000-4000-8000-000000000001:agent:a1": {
+    "total": 6513,
+    "fresh": 3,
+    "output": 410,
+    "cacheRead": 3000,
+    "cacheWrite": 3100,
+    "cacheWrite5m": 3100,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 2,
+    "usd": 0.012456,
+    "usdExact": "0.01245600"
+   },
+   "claude-code:c0000001-0000-4000-8000-000000000001:agent:a2": {
+    "total": 7506,
+    "fresh": 6,
+    "output": 500,
+    "cacheRead": 0,
+    "cacheWrite": 7000,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 7000,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 1,
+    "usd": 0.066024,
+    "usdExact": "0.06602400"
+   },
+   "claude-code:c0000002-0000-4000-8000-000000000002": {
+    "total": 5762,
+    "fresh": 12,
+    "output": 350,
+    "cacheRead": 3500,
+    "cacheWrite": 1900,
+    "cacheWrite5m": 1900,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 2,
+    "usd": 0.017248,
+    "usdExact": "0.01724800"
+   },
+   "claude-code:c0000004-0000-4000-8000-000000000004": {
+    "total": 20863,
+    "fresh": 23,
+    "output": 790,
+    "cacheRead": 10000,
+    "cacheWrite": 10050,
+    "cacheWrite5m": 10050,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 2,
+    "usd": 0.167855,
+    "usdExact": "0.16785500"
+   },
+   "claude-code:c0000005-0000-4000-8000-000000000005": {
+    "total": 1454,
+    "fresh": 7,
+    "output": 77,
+    "cacheRead": 1300,
+    "cacheWrite": 70,
+    "cacheWrite5m": 70,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 1,
+    "usd": 0.002178,
+    "usdExact": "0.00217800"
+   },
+   "claude-code:c0000006-0000-4000-8000-000000000006": {
+    "total": 2093,
+    "fresh": 13,
+    "output": 250,
+    "cacheRead": 900,
+    "cacheWrite": 930,
+    "cacheWrite5m": 30,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 900,
+    "messages": 2,
+    "usd": 0.005031,
+    "usdExact": "0.00503100"
+   },
+   "claude-code:c0000008-0000-4000-8000-000000000008": {
+    "total": 4451,
+    "fresh": 31,
+    "output": 420,
+    "cacheRead": 2000,
+    "cacheWrite": 2000,
+    "cacheWrite5m": 2000,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 2,
+    "usd": 0.004831,
+    "usdExact": "0.00483100"
+   },
+   "claude-code:c0000009-0000-4000-8000-000000000009": {
+    "total": 1188,
+    "fresh": 8,
+    "output": 180,
+    "cacheRead": 0,
+    "cacheWrite": 1000,
+    "cacheWrite5m": 900,
+    "cacheWrite1h": 100,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 1,
+    "usd": 0.008932,
+    "usdExact": "0.00893200"
+   },
+   "claude-code:c0000012-0000-4000-8000-000000000012": {
+    "total": 4037,
+    "fresh": 7,
+    "output": 330,
+    "cacheRead": 2900,
+    "cacheWrite": 800,
+    "cacheWrite5m": 800,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 1,
+    "usd": 0.011208,
+    "usdExact": "0.01120800"
+   },
+   "codex:d0000003-0000-4000-8000-000000000003": {
+    "total": 4990,
+    "fresh": 1800,
+    "output": 290,
+    "cacheRead": 2600,
+    "cacheWrite": 300,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 300,
+    "messages": 5,
+    "usd": 0.0179,
+    "usdExact": "0.01790000"
+   },
+   "codex:d0000007-0000-4000-8000-000000000007": {
+    "total": 1260,
+    "fresh": 650,
+    "output": 60,
+    "cacheRead": 450,
+    "cacheWrite": 100,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 100,
+    "messages": 2,
+    "usd": 0.00448,
+    "usdExact": "0.00448000"
+   },
+   "codex:d0000033-0000-4000-8000-000000000033": {
+    "total": 2250,
+    "fresh": 900,
+    "output": 150,
+    "cacheRead": 800,
+    "cacheWrite": 400,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 400,
+    "messages": 2,
+    "usd": 0.00892,
+    "usdExact": "0.00892000"
+   }
+  },
+  "sessionTrees": {
+   "claude-code:c0000001-0000-4000-8000-000000000001": {
+    "total": 122052,
+    "fresh": 42,
+    "output": 2610,
+    "cacheRead": 76300,
+    "cacheWrite": 43100,
+    "cacheWrite5m": 30100,
+    "cacheWrite1h": 13000,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 8,
+    "usd": 0.310272,
+    "usdExact": "0.31027200"
+   },
+   "claude-code:c0000002-0000-4000-8000-000000000002": {
+    "total": 5762,
+    "fresh": 12,
+    "output": 350,
+    "cacheRead": 3500,
+    "cacheWrite": 1900,
+    "cacheWrite5m": 1900,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 2,
+    "usd": 0.017248,
+    "usdExact": "0.01724800"
+   },
+   "claude-code:c0000004-0000-4000-8000-000000000004": {
+    "total": 20863,
+    "fresh": 23,
+    "output": 790,
+    "cacheRead": 10000,
+    "cacheWrite": 10050,
+    "cacheWrite5m": 10050,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 2,
+    "usd": 0.167855,
+    "usdExact": "0.16785500"
+   },
+   "claude-code:c0000005-0000-4000-8000-000000000005": {
+    "total": 1454,
+    "fresh": 7,
+    "output": 77,
+    "cacheRead": 1300,
+    "cacheWrite": 70,
+    "cacheWrite5m": 70,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 1,
+    "usd": 0.002178,
+    "usdExact": "0.00217800"
+   },
+   "claude-code:c0000006-0000-4000-8000-000000000006": {
+    "total": 2093,
+    "fresh": 13,
+    "output": 250,
+    "cacheRead": 900,
+    "cacheWrite": 930,
+    "cacheWrite5m": 30,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 900,
+    "messages": 2,
+    "usd": 0.005031,
+    "usdExact": "0.00503100"
+   },
+   "claude-code:c0000008-0000-4000-8000-000000000008": {
+    "total": 4451,
+    "fresh": 31,
+    "output": 420,
+    "cacheRead": 2000,
+    "cacheWrite": 2000,
+    "cacheWrite5m": 2000,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 2,
+    "usd": 0.004831,
+    "usdExact": "0.00483100"
+   },
+   "claude-code:c0000009-0000-4000-8000-000000000009": {
+    "total": 1188,
+    "fresh": 8,
+    "output": 180,
+    "cacheRead": 0,
+    "cacheWrite": 1000,
+    "cacheWrite5m": 900,
+    "cacheWrite1h": 100,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 1,
+    "usd": 0.008932,
+    "usdExact": "0.00893200"
+   },
+   "claude-code:c0000012-0000-4000-8000-000000000012": {
+    "total": 4037,
+    "fresh": 7,
+    "output": 330,
+    "cacheRead": 2900,
+    "cacheWrite": 800,
+    "cacheWrite5m": 800,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 1,
+    "usd": 0.011208,
+    "usdExact": "0.01120800"
+   },
+   "codex:d0000003-0000-4000-8000-000000000003": {
+    "total": 7240,
+    "fresh": 2700,
+    "output": 440,
+    "cacheRead": 3400,
+    "cacheWrite": 700,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 700,
+    "messages": 7,
+    "usd": 0.02682,
+    "usdExact": "0.02682000"
+   },
+   "codex:d0000007-0000-4000-8000-000000000007": {
+    "total": 1260,
+    "fresh": 650,
+    "output": 60,
+    "cacheRead": 450,
+    "cacheWrite": 100,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 100,
+    "messages": 2,
+    "usd": 0.00448,
+    "usdExact": "0.00448000"
+   }
+  }
+ },
+ "windows": [
+  {
+   "from": "2026-09-20T00:00:00.000Z",
+   "to": "2026-09-20T12:00:00.000Z",
+   "events": [
+    "E01",
+    "E02",
+    "E03",
+    "E04",
+    "E05",
+    "E06",
+    "E07",
+    "E08",
+    "E09",
+    "E10",
+    "E24"
+   ],
+   "team": {
+    "total": 129268,
+    "fresh": 61,
+    "output": 3037,
+    "cacheRead": 81100,
+    "cacheWrite": 45070,
+    "cacheWrite5m": 32070,
+    "cacheWrite1h": 13000,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 11,
+    "usd": 0.329698,
+    "usdExact": "0.32969800"
+   },
+   "people": {
+    "Person A": {
+     "total": 129268,
+     "fresh": 61,
+     "output": 3037,
+     "cacheRead": 81100,
+     "cacheWrite": 45070,
+     "cacheWrite5m": 32070,
+     "cacheWrite1h": 13000,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 11,
+     "usd": 0.329698,
+     "usdExact": "0.32969800"
+    }
+   },
+   "devices": {
+    "dev_personA-laptop01": {
+     "total": 1454,
+     "fresh": 7,
+     "output": 77,
+     "cacheRead": 1300,
+     "cacheWrite": 70,
+     "cacheWrite5m": 70,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 1,
+     "usd": 0.002178,
+     "usdExact": "0.00217800"
+    },
+    "dev_personA-studio01": {
+     "total": 127814,
+     "fresh": 54,
+     "output": 2960,
+     "cacheRead": 79800,
+     "cacheWrite": 45000,
+     "cacheWrite5m": 32000,
+     "cacheWrite1h": 13000,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 10,
+     "usd": 0.32752,
+     "usdExact": "0.32752000"
+    }
+   },
+   "models": {
+    "claude-opus-5-5": {
+     "total": 122755,
+     "fresh": 58,
+     "output": 2627,
+     "cacheRead": 78100,
+     "cacheWrite": 41970,
+     "cacheWrite5m": 28970,
+     "cacheWrite1h": 13000,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 9,
+     "usd": 0.317242,
+     "usdExact": "0.31724200"
+    },
+    "claude-sonnet-5": {
+     "total": 6513,
+     "fresh": 3,
+     "output": 410,
+     "cacheRead": 3000,
+     "cacheWrite": 3100,
+     "cacheWrite5m": 3100,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "usd": 0.012456,
+     "usdExact": "0.01245600"
+    }
+   },
+   "sessions": {
+    "claude-code:c0000001-0000-4000-8000-000000000001": {
+     "total": 108033,
+     "fresh": 33,
+     "output": 1700,
+     "cacheRead": 73300,
+     "cacheWrite": 33000,
+     "cacheWrite5m": 27000,
+     "cacheWrite1h": 6000,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 5,
+     "usd": 0.231792,
+     "usdExact": "0.23179200"
+    },
+    "claude-code:c0000001-0000-4000-8000-000000000001:agent:a1": {
+     "total": 6513,
+     "fresh": 3,
+     "output": 410,
+     "cacheRead": 3000,
+     "cacheWrite": 3100,
+     "cacheWrite5m": 3100,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "usd": 0.012456,
+     "usdExact": "0.01245600"
+    },
+    "claude-code:c0000001-0000-4000-8000-000000000001:agent:a2": {
+     "total": 7506,
+     "fresh": 6,
+     "output": 500,
+     "cacheRead": 0,
+     "cacheWrite": 7000,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 7000,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 1,
+     "usd": 0.066024,
+     "usdExact": "0.06602400"
+    },
+    "claude-code:c0000002-0000-4000-8000-000000000002": {
+     "total": 5762,
+     "fresh": 12,
+     "output": 350,
+     "cacheRead": 3500,
+     "cacheWrite": 1900,
+     "cacheWrite5m": 1900,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "usd": 0.017248,
+     "usdExact": "0.01724800"
+    },
+    "claude-code:c0000005-0000-4000-8000-000000000005": {
+     "total": 1454,
+     "fresh": 7,
+     "output": 77,
+     "cacheRead": 1300,
+     "cacheWrite": 70,
+     "cacheWrite5m": 70,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 1,
+     "usd": 0.002178,
+     "usdExact": "0.00217800"
+    }
+   },
+   "sessionTrees": {
+    "claude-code:c0000001-0000-4000-8000-000000000001": {
+     "total": 122052,
+     "fresh": 42,
+     "output": 2610,
+     "cacheRead": 76300,
+     "cacheWrite": 43100,
+     "cacheWrite5m": 30100,
+     "cacheWrite1h": 13000,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 8,
+     "usd": 0.310272,
+     "usdExact": "0.31027200"
+    },
+    "claude-code:c0000002-0000-4000-8000-000000000002": {
+     "total": 5762,
+     "fresh": 12,
+     "output": 350,
+     "cacheRead": 3500,
+     "cacheWrite": 1900,
+     "cacheWrite5m": 1900,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "usd": 0.017248,
+     "usdExact": "0.01724800"
+    },
+    "claude-code:c0000005-0000-4000-8000-000000000005": {
+     "total": 1454,
+     "fresh": 7,
+     "output": 77,
+     "cacheRead": 1300,
+     "cacheWrite": 70,
+     "cacheWrite5m": 70,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 1,
+     "usd": 0.002178,
+     "usdExact": "0.00217800"
+    }
+   }
+  },
+  {
+   "from": "2026-09-20T12:00:00.000Z",
+   "to": "2026-09-21T00:00:00.000Z",
+   "events": [
+    "E11",
+    "E12",
+    "E13",
+    "E14",
+    "E15",
+    "E16",
+    "E17",
+    "E18",
+    "E19",
+    "E20",
+    "E25",
+    "E26",
+    "E27",
+    "E28",
+    "E29",
+    "E30",
+    "E31"
+   ],
+   "team": {
+    "total": 41132,
+    "fresh": 3432,
+    "output": 2470,
+    "cacheRead": 19650,
+    "cacheWrite": 15580,
+    "cacheWrite5m": 13780,
+    "cacheWrite1h": 100,
+    "cacheWriteUnknownTtl": 1700,
+    "messages": 17,
+    "usd": 0.229157,
+    "usdExact": "0.22915700"
+   },
+   "people": {
+    "Person A": {
+     "total": 33328,
+     "fresh": 2738,
+     "output": 1740,
+     "cacheRead": 16300,
+     "cacheWrite": 12550,
+     "cacheWrite5m": 11750,
+     "cacheWrite1h": 100,
+     "cacheWriteUnknownTtl": 700,
+     "messages": 11,
+     "usd": 0.214815,
+     "usdExact": "0.21481500"
+    },
+    "Person B": {
+     "total": 3353,
+     "fresh": 663,
+     "output": 310,
+     "cacheRead": 1350,
+     "cacheWrite": 1030,
+     "cacheWrite5m": 30,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 1000,
+     "messages": 4,
+     "usd": 0.009511,
+     "usdExact": "0.00951100"
+    },
+    "Unassigned": {
+     "total": 4451,
+     "fresh": 31,
+     "output": 420,
+     "cacheRead": 2000,
+     "cacheWrite": 2000,
+     "cacheWrite5m": 2000,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "usd": 0.004831,
+     "usdExact": "0.00483100"
+    }
+   },
+   "devices": {
+    "dev_personA-laptop01": {
+     "total": 20863,
+     "fresh": 23,
+     "output": 790,
+     "cacheRead": 10000,
+     "cacheWrite": 10050,
+     "cacheWrite5m": 10050,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "usd": 0.167855,
+     "usdExact": "0.16785500"
+    },
+    "dev_personA-studio01": {
+     "total": 11277,
+     "fresh": 2707,
+     "output": 770,
+     "cacheRead": 6300,
+     "cacheWrite": 1500,
+     "cacheWrite5m": 800,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 700,
+     "messages": 8,
+     "usd": 0.038028,
+     "usdExact": "0.03802800"
+    },
+    "dev_personA-studio02": {
+     "total": 1188,
+     "fresh": 8,
+     "output": 180,
+     "cacheRead": 0,
+     "cacheWrite": 1000,
+     "cacheWrite5m": 900,
+     "cacheWrite1h": 100,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 1,
+     "usd": 0.008932,
+     "usdExact": "0.00893200"
+    },
+    "dev_sharedbox-build1": {
+     "total": 4451,
+     "fresh": 31,
+     "output": 420,
+     "cacheRead": 2000,
+     "cacheWrite": 2000,
+     "cacheWrite5m": 2000,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "usd": 0.004831,
+     "usdExact": "0.00483100"
+    },
+    "dev_sharedbox-userB1": {
+     "total": 3353,
+     "fresh": 663,
+     "output": 310,
+     "cacheRead": 1350,
+     "cacheWrite": 1030,
+     "cacheWrite5m": 30,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 1000,
+     "messages": 4,
+     "usd": 0.009511,
+     "usdExact": "0.00951100"
+    }
+   },
+   "models": {
+    "claude-fable-5-1": {
+     "total": 20863,
+     "fresh": 23,
+     "output": 790,
+     "cacheRead": 10000,
+     "cacheWrite": 10050,
+     "cacheWrite5m": 10050,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "usd": 0.167855,
+     "usdExact": "0.16785500"
+    },
+    "claude-haiku-4-5-20251001": {
+     "total": 4451,
+     "fresh": 31,
+     "output": 420,
+     "cacheRead": 2000,
+     "cacheWrite": 2000,
+     "cacheWrite5m": 2000,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "usd": 0.004831,
+     "usdExact": "0.00483100"
+    },
+    "claude-opus-5-5": {
+     "total": 5225,
+     "fresh": 15,
+     "output": 510,
+     "cacheRead": 2900,
+     "cacheWrite": 1800,
+     "cacheWrite5m": 1700,
+     "cacheWrite1h": 100,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "usd": 0.02014,
+     "usdExact": "0.02014000"
+    },
+    "claude-sonnet-5": {
+     "total": 2093,
+     "fresh": 13,
+     "output": 250,
+     "cacheRead": 900,
+     "cacheWrite": 930,
+     "cacheWrite5m": 30,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 900,
+     "messages": 2,
+     "usd": 0.005031,
+     "usdExact": "0.00503100"
+    },
+    "gpt-5.5": {
+     "total": 2360,
+     "fresh": 600,
+     "output": 160,
+     "cacheRead": 1600,
+     "cacheWrite": 0,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 3,
+     "usd": 0.0086,
+     "usdExact": "0.00860000"
+    },
+    "gpt-5.6-sol": {
+     "total": 6140,
+     "fresh": 2750,
+     "output": 340,
+     "cacheRead": 2250,
+     "cacheWrite": 800,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 800,
+     "messages": 6,
+     "usd": 0.0227,
+     "usdExact": "0.02270000"
+    }
+   },
+   "sessions": {
+    "claude-code:c0000004-0000-4000-8000-000000000004": {
+     "total": 20863,
+     "fresh": 23,
+     "output": 790,
+     "cacheRead": 10000,
+     "cacheWrite": 10050,
+     "cacheWrite5m": 10050,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "usd": 0.167855,
+     "usdExact": "0.16785500"
+    },
+    "claude-code:c0000006-0000-4000-8000-000000000006": {
+     "total": 2093,
+     "fresh": 13,
+     "output": 250,
+     "cacheRead": 900,
+     "cacheWrite": 930,
+     "cacheWrite5m": 30,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 900,
+     "messages": 2,
+     "usd": 0.005031,
+     "usdExact": "0.00503100"
+    },
+    "claude-code:c0000008-0000-4000-8000-000000000008": {
+     "total": 4451,
+     "fresh": 31,
+     "output": 420,
+     "cacheRead": 2000,
+     "cacheWrite": 2000,
+     "cacheWrite5m": 2000,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "usd": 0.004831,
+     "usdExact": "0.00483100"
+    },
+    "claude-code:c0000009-0000-4000-8000-000000000009": {
+     "total": 1188,
+     "fresh": 8,
+     "output": 180,
+     "cacheRead": 0,
+     "cacheWrite": 1000,
+     "cacheWrite5m": 900,
+     "cacheWrite1h": 100,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 1,
+     "usd": 0.008932,
+     "usdExact": "0.00893200"
+    },
+    "claude-code:c0000012-0000-4000-8000-000000000012": {
+     "total": 4037,
+     "fresh": 7,
+     "output": 330,
+     "cacheRead": 2900,
+     "cacheWrite": 800,
+     "cacheWrite5m": 800,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 1,
+     "usd": 0.011208,
+     "usdExact": "0.01120800"
+    },
+    "codex:d0000003-0000-4000-8000-000000000003": {
+     "total": 4990,
+     "fresh": 1800,
+     "output": 290,
+     "cacheRead": 2600,
+     "cacheWrite": 300,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 300,
+     "messages": 5,
+     "usd": 0.0179,
+     "usdExact": "0.01790000"
+    },
+    "codex:d0000007-0000-4000-8000-000000000007": {
+     "total": 1260,
+     "fresh": 650,
+     "output": 60,
+     "cacheRead": 450,
+     "cacheWrite": 100,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 100,
+     "messages": 2,
+     "usd": 0.00448,
+     "usdExact": "0.00448000"
+    },
+    "codex:d0000033-0000-4000-8000-000000000033": {
+     "total": 2250,
+     "fresh": 900,
+     "output": 150,
+     "cacheRead": 800,
+     "cacheWrite": 400,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 400,
+     "messages": 2,
+     "usd": 0.00892,
+     "usdExact": "0.00892000"
+    }
+   },
+   "sessionTrees": {
+    "claude-code:c0000004-0000-4000-8000-000000000004": {
+     "total": 20863,
+     "fresh": 23,
+     "output": 790,
+     "cacheRead": 10000,
+     "cacheWrite": 10050,
+     "cacheWrite5m": 10050,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "usd": 0.167855,
+     "usdExact": "0.16785500"
+    },
+    "claude-code:c0000006-0000-4000-8000-000000000006": {
+     "total": 2093,
+     "fresh": 13,
+     "output": 250,
+     "cacheRead": 900,
+     "cacheWrite": 930,
+     "cacheWrite5m": 30,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 900,
+     "messages": 2,
+     "usd": 0.005031,
+     "usdExact": "0.00503100"
+    },
+    "claude-code:c0000008-0000-4000-8000-000000000008": {
+     "total": 4451,
+     "fresh": 31,
+     "output": 420,
+     "cacheRead": 2000,
+     "cacheWrite": 2000,
+     "cacheWrite5m": 2000,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "usd": 0.004831,
+     "usdExact": "0.00483100"
+    },
+    "claude-code:c0000009-0000-4000-8000-000000000009": {
+     "total": 1188,
+     "fresh": 8,
+     "output": 180,
+     "cacheRead": 0,
+     "cacheWrite": 1000,
+     "cacheWrite5m": 900,
+     "cacheWrite1h": 100,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 1,
+     "usd": 0.008932,
+     "usdExact": "0.00893200"
+    },
+    "claude-code:c0000012-0000-4000-8000-000000000012": {
+     "total": 4037,
+     "fresh": 7,
+     "output": 330,
+     "cacheRead": 2900,
+     "cacheWrite": 800,
+     "cacheWrite5m": 800,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 1,
+     "usd": 0.011208,
+     "usdExact": "0.01120800"
+    },
+    "codex:d0000003-0000-4000-8000-000000000003": {
+     "total": 7240,
+     "fresh": 2700,
+     "output": 440,
+     "cacheRead": 3400,
+     "cacheWrite": 700,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 700,
+     "messages": 7,
+     "usd": 0.02682,
+     "usdExact": "0.02682000"
+    },
+    "codex:d0000007-0000-4000-8000-000000000007": {
+     "total": 1260,
+     "fresh": 650,
+     "output": 60,
+     "cacheRead": 450,
+     "cacheWrite": 100,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 100,
+     "messages": 2,
+     "usd": 0.00448,
+     "usdExact": "0.00448000"
+    }
+   }
+  }
+ ],
+ "days": {
+  "UTC": {
+   "2026-09-19": {
+    "total": 2499,
+    "fresh": 9,
+    "output": 290,
+    "cacheRead": 1000,
+    "cacheWrite": 1200,
+    "cacheWrite5m": 1200,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 2,
+    "usd": 0.012036,
+    "usdExact": "0.01203600"
+   },
+   "2026-09-20": {
+    "total": 170400,
+    "fresh": 3493,
+    "output": 5507,
+    "cacheRead": 100750,
+    "cacheWrite": 60650,
+    "cacheWrite5m": 45850,
+    "cacheWrite1h": 13100,
+    "cacheWriteUnknownTtl": 1700,
+    "messages": 28,
+    "usd": 0.558855,
+    "usdExact": "0.55885500"
+   },
+   "2026-09-21": {
+    "total": 1266,
+    "fresh": 6,
+    "output": 60,
+    "cacheRead": 1200,
+    "cacheWrite": 0,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 1,
+    "usd": 0.001464,
+    "usdExact": "0.00146400"
+   }
+  },
+  "America/New_York": {
+   "2026-09-19": {
+    "total": 3953,
+    "fresh": 16,
+    "output": 367,
+    "cacheRead": 2300,
+    "cacheWrite": 1270,
+    "cacheWrite5m": 1270,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 3,
+    "usd": 0.014214,
+    "usdExact": "0.01421400"
+   },
+   "2026-09-20": {
+    "total": 170212,
+    "fresh": 3492,
+    "output": 5490,
+    "cacheRead": 100650,
+    "cacheWrite": 60580,
+    "cacheWrite5m": 45780,
+    "cacheWrite1h": 13100,
+    "cacheWriteUnknownTtl": 1700,
+    "messages": 28,
+    "usd": 0.558141,
+    "usdExact": "0.55814100"
+   }
+  }
+ },
+ "sessions": {
+  "claude-code:c0000001-0000-4000-8000-000000000001": {
+   "hash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+   "parent": null,
+   "parentHash": null,
+   "root": "claude-code:c0000001-0000-4000-8000-000000000001",
+   "tool": "claude-code",
+   "device": "dev_personA-studio01",
+   "person": "Person A",
+   "exercises": "orchestrator: streaming, a re-written line, an API error and its retry, compaction"
+  },
+  "claude-code:c0000001-0000-4000-8000-000000000001:agent:a1": {
+   "hash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
+   "parent": "claude-code:c0000001-0000-4000-8000-000000000001",
+   "parentHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+   "root": "claude-code:c0000001-0000-4000-8000-000000000001",
+   "tool": "claude-code",
+   "device": "dev_personA-studio01",
+   "person": "Person A",
+   "exercises": "subagent sidechain"
+  },
+  "claude-code:c0000001-0000-4000-8000-000000000001:agent:a2": {
+   "hash": "a6b16a71df949693887ee87e30c49aef2d4aeb4b144416162435ca0e3829b1d3",
+   "parent": "claude-code:c0000001-0000-4000-8000-000000000001",
+   "parentHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
+   "root": "claude-code:c0000001-0000-4000-8000-000000000001",
+   "tool": "claude-code",
+   "device": "dev_personA-studio01",
+   "person": "Person A",
+   "exercises": "subagent sidechain, one-hour cache writes"
+  },
+  "claude-code:c0000002-0000-4000-8000-000000000002": {
+   "hash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
+   "parent": null,
+   "parentHash": null,
+   "root": "claude-code:c0000002-0000-4000-8000-000000000002",
+   "tool": "claude-code",
+   "device": "dev_personA-studio01",
+   "person": "Person A",
+   "exercises": "a session later resumed into a new file"
+  },
+  "claude-code:c0000012-0000-4000-8000-000000000012": {
+   "hash": "0ba6d71c086461b68ec3257e89e14c49f5d813a2df3bdedc7e3fd3510ce2af57",
+   "parent": null,
+   "parentHash": null,
+   "root": "claude-code:c0000012-0000-4000-8000-000000000012",
+   "tool": "claude-code",
+   "device": "dev_personA-studio01",
+   "person": "Person A",
+   "exercises": "the resumed conversation: copied history plus new work"
+  },
+  "codex:d0000003-0000-4000-8000-000000000003": {
+   "hash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+   "parent": null,
+   "parentHash": null,
+   "root": "codex:d0000003-0000-4000-8000-000000000003",
+   "tool": "codex",
+   "device": "dev_personA-studio01",
+   "person": "Person A",
+   "exercises": "cumulative counters: repeat, model switch, restart"
+  },
+  "codex:d0000033-0000-4000-8000-000000000033": {
+   "hash": "d33b184624defe1e5dba6c0f18d157d7cec44812019c0ab00d086572d90b4598",
+   "parent": "codex:d0000003-0000-4000-8000-000000000003",
+   "parentHash": "e5bac746245eb3602ca7235e996a23be1c19297b6012577d107cb91e6bb47ced",
+   "root": "codex:d0000003-0000-4000-8000-000000000003",
+   "tool": "codex",
+   "device": "dev_personA-studio01",
+   "person": "Person A",
+   "exercises": "forked child: inherited history replayed before its boundary"
+  },
+  "claude-code:c0000004-0000-4000-8000-000000000004": {
+   "hash": "22dece1cd2d699d6f52b91b4a4c09fd0dcdfb5bb7059cdbd42bc5cd0f2e9d4f9",
+   "parent": null,
+   "parentHash": null,
+   "root": "claude-code:c0000004-0000-4000-8000-000000000004",
+   "tool": "claude-code",
+   "device": "dev_personA-laptop01",
+   "person": "Person A",
+   "exercises": "second machine; a timestamp written with an offset"
+  },
+  "claude-code:c0000005-0000-4000-8000-000000000005": {
+   "hash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd",
+   "parent": null,
+   "parentHash": null,
+   "root": "claude-code:c0000005-0000-4000-8000-000000000005",
+   "tool": "claude-code",
+   "device": "dev_personA-laptop01",
+   "person": "Person A",
+   "exercises": "window edges: before, straddling the start, exactly at the end"
+  },
+  "claude-code:c0000006-0000-4000-8000-000000000006": {
+   "hash": "1531b0d86129f133f587cb5c649d251bab2c0a4084495a70bafaf02be3c2a998",
+   "parent": null,
+   "parentHash": null,
+   "root": "claude-code:c0000006-0000-4000-8000-000000000006",
+   "tool": "claude-code",
+   "device": "dev_sharedbox-userB1",
+   "person": "Person B",
+   "exercises": "unknown cache-write lifetime"
+  },
+  "codex:d0000007-0000-4000-8000-000000000007": {
+   "hash": "d471b6ab9a2796a0697517ab652a38b35d421efe5da6709aceb69cc8d69c0dc6",
+   "parent": null,
+   "parentHash": null,
+   "root": "codex:d0000007-0000-4000-8000-000000000007",
+   "tool": "codex",
+   "device": "dev_sharedbox-userB1",
+   "person": "Person B",
+   "exercises": "an event without an ordinal"
+  },
+  "claude-code:c0000008-0000-4000-8000-000000000008": {
+   "hash": "2faacce92ab4a5d8e7ef2513b780aebda4b843d8173b39068ff156753a44e0ee",
+   "parent": null,
+   "parentHash": null,
+   "root": "claude-code:c0000008-0000-4000-8000-000000000008",
+   "tool": "claude-code",
+   "device": "dev_sharedbox-build1",
+   "person": "Unassigned",
+   "exercises": "shared account enrolled to nobody"
+  },
+  "claude-code:c0000009-0000-4000-8000-000000000009": {
+   "hash": "6243ca525fa994e4d382f00d8cea810cc65d97b32b94a7d4f55292b718c002f4",
+   "parent": null,
+   "parentHash": null,
+   "root": "claude-code:c0000009-0000-4000-8000-000000000009",
+   "tool": "claude-code",
+   "device": "dev_personA-studio02",
+   "person": "Person A",
+   "exercises": "new work after joining again"
+  }
+ },
+ "events": [
+  {
+   "id": "E01",
+   "session": "claude-code:c0000001-0000-4000-8000-000000000001",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-20T09:00:05.000Z",
+   "minute": "2026-09-20T09:00:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 12,
+    "output": 340,
+    "cacheRead": 0,
+    "cacheWrite5m": 20000,
+    "cacheWrite1h": 4000,
+    "cacheWriteUnknownTtl": 0
+   }
+  },
+  {
+   "id": "E02",
+   "session": "claude-code:c0000001-0000-4000-8000-000000000001",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-20T09:00:50.000Z",
+   "minute": "2026-09-20T09:00:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 3,
+    "output": 410,
+    "cacheRead": 24000,
+    "cacheWrite5m": 500,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "note": "streamed over three lines across a minute boundary"
+  },
+  {
+   "id": "E03",
+   "session": "claude-code:c0000001-0000-4000-8000-000000000001",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-20T09:02:10.000Z",
+   "minute": "2026-09-20T09:02:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 5,
+    "output": 90,
+    "cacheRead": 24500,
+    "cacheWrite5m": 300,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "note": "its line is written twice with the same uuid"
+  },
+  {
+   "id": "E04",
+   "session": "claude-code:c0000001-0000-4000-8000-000000000001",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-20T09:03:20.000Z",
+   "minute": "2026-09-20T09:03:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 4,
+    "output": 60,
+    "cacheRead": 24800,
+    "cacheWrite5m": 200,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "note": "the retry that succeeded after a synthetic API-error line"
+  },
+  {
+   "id": "E05",
+   "session": "claude-code:c0000001-0000-4000-8000-000000000001",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-20T09:10:30.000Z",
+   "minute": "2026-09-20T09:10:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 9,
+    "output": 800,
+    "cacheRead": 0,
+    "cacheWrite5m": 6000,
+    "cacheWrite1h": 2000,
+    "cacheWriteUnknownTtl": 0
+   },
+   "note": "first response after compaction"
+  },
+  {
+   "id": "E06",
+   "session": "claude-code:c0000001-0000-4000-8000-000000000001:agent:a1",
+   "model": "claude-sonnet-5",
+   "at": "2026-09-20T09:05:00.000Z",
+   "minute": "2026-09-20T09:05:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 2,
+    "output": 150,
+    "cacheRead": 0,
+    "cacheWrite5m": 3000,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   }
+  },
+  {
+   "id": "E07",
+   "session": "claude-code:c0000001-0000-4000-8000-000000000001:agent:a1",
+   "model": "claude-sonnet-5",
+   "at": "2026-09-20T09:05:40.000Z",
+   "minute": "2026-09-20T09:05:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 1,
+    "output": 260,
+    "cacheRead": 3000,
+    "cacheWrite5m": 100,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "note": "streamed over two lines"
+  },
+  {
+   "id": "E08",
+   "session": "claude-code:c0000001-0000-4000-8000-000000000001:agent:a2",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-20T09:06:00.000Z",
+   "minute": "2026-09-20T09:06:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 6,
+    "output": 500,
+    "cacheRead": 0,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 7000,
+    "cacheWriteUnknownTtl": 0
+   }
+  },
+  {
+   "id": "E09",
+   "session": "claude-code:c0000002-0000-4000-8000-000000000002",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-20T11:00:00.000Z",
+   "minute": "2026-09-20T11:00:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 10,
+    "output": 200,
+    "cacheRead": 1000,
+    "cacheWrite5m": 1500,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   }
+  },
+  {
+   "id": "E10",
+   "session": "claude-code:c0000002-0000-4000-8000-000000000002",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-20T11:01:00.000Z",
+   "minute": "2026-09-20T11:01:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 2,
+    "output": 150,
+    "cacheRead": 2500,
+    "cacheWrite5m": 400,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "note": "streamed over two lines; both copied into the resumed file"
+  },
+  {
+   "id": "E11",
+   "session": "claude-code:c0000012-0000-4000-8000-000000000012",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-20T13:00:00.000Z",
+   "minute": "2026-09-20T13:00:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 7,
+    "output": 330,
+    "cacheRead": 2900,
+    "cacheWrite5m": 800,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   }
+  },
+  {
+   "id": "E12",
+   "session": "codex:d0000003-0000-4000-8000-000000000003",
+   "model": "gpt-5.6-sol",
+   "at": "2026-09-20T14:00:20.000Z",
+   "minute": "2026-09-20T14:00:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 800,
+    "output": 50,
+    "cacheRead": 0,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 200
+   }
+  },
+  {
+   "id": "E13",
+   "session": "codex:d0000003-0000-4000-8000-000000000003",
+   "model": "gpt-5.6-sol",
+   "at": "2026-09-20T14:02:00.000Z",
+   "minute": "2026-09-20T14:02:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 400,
+    "output": 80,
+    "cacheRead": 1000,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 100
+   },
+   "note": "after a repeated, unchanged cumulative total"
+  },
+  {
+   "id": "E14",
+   "session": "codex:d0000003-0000-4000-8000-000000000003",
+   "model": "gpt-5.5",
+   "at": "2026-09-20T14:04:00.000Z",
+   "minute": "2026-09-20T14:04:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 100,
+    "output": 60,
+    "cacheRead": 700,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "note": "after turn_context switched the model"
+  },
+  {
+   "id": "E15",
+   "session": "codex:d0000003-0000-4000-8000-000000000003",
+   "model": "gpt-5.5",
+   "at": "2026-09-20T14:30:00.000Z",
+   "minute": "2026-09-20T14:30:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 200,
+    "output": 40,
+    "cacheRead": 400,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "note": "the counter restarted from zero"
+  },
+  {
+   "id": "E16",
+   "session": "codex:d0000003-0000-4000-8000-000000000003",
+   "model": "gpt-5.5",
+   "at": "2026-09-20T14:31:00.000Z",
+   "minute": "2026-09-20T14:31:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 300,
+    "output": 60,
+    "cacheRead": 500,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   }
+  },
+  {
+   "id": "E17",
+   "session": "codex:d0000033-0000-4000-8000-000000000033",
+   "model": "gpt-5.6-sol",
+   "at": "2026-09-20T14:10:20.000Z",
+   "minute": "2026-09-20T14:10:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 600,
+    "output": 70,
+    "cacheRead": 0,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 300
+   },
+   "note": "the child's first own request; its counter starts below the inherited one"
+  },
+  {
+   "id": "E18",
+   "session": "codex:d0000033-0000-4000-8000-000000000033",
+   "model": "gpt-5.6-sol",
+   "at": "2026-09-20T14:11:00.000Z",
+   "minute": "2026-09-20T14:11:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 300,
+    "output": 80,
+    "cacheRead": 800,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 100
+   }
+  },
+  {
+   "id": "E19",
+   "session": "claude-code:c0000004-0000-4000-8000-000000000004",
+   "model": "claude-fable-5-1",
+   "at": "2026-09-20T16:00:00.000Z",
+   "minute": "2026-09-20T16:00:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 20,
+    "output": 700,
+    "cacheRead": 0,
+    "cacheWrite5m": 10000,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "note": "timestamp written as 12:00 at -04:00"
+  },
+  {
+   "id": "E20",
+   "session": "claude-code:c0000004-0000-4000-8000-000000000004",
+   "model": "claude-fable-5-1",
+   "at": "2026-09-20T16:02:00.000Z",
+   "minute": "2026-09-20T16:02:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 3,
+    "output": 90,
+    "cacheRead": 10000,
+    "cacheWrite5m": 50,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   }
+  },
+  {
+   "id": "E21",
+   "session": "claude-code:c0000005-0000-4000-8000-000000000005",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-19T22:00:00.000Z",
+   "minute": "2026-09-19T22:00:00.000Z",
+   "inWindow": false,
+   "usage": {
+    "fresh": 4,
+    "output": 40,
+    "cacheRead": 0,
+    "cacheWrite5m": 1000,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "note": "before the window"
+  },
+  {
+   "id": "E22",
+   "session": "claude-code:c0000005-0000-4000-8000-000000000005",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-19T23:59:30.000Z",
+   "minute": "2026-09-19T23:59:00.000Z",
+   "inWindow": false,
+   "usage": {
+    "fresh": 5,
+    "output": 250,
+    "cacheRead": 1000,
+    "cacheWrite5m": 200,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "note": "begins before the window, its last line lands inside: wholly before"
+  },
+  {
+   "id": "E23",
+   "session": "claude-code:c0000005-0000-4000-8000-000000000005",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-21T00:00:00.000Z",
+   "minute": "2026-09-21T00:00:00.000Z",
+   "inWindow": false,
+   "usage": {
+    "fresh": 6,
+    "output": 60,
+    "cacheRead": 1200,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "note": "exactly at the window end: outside (half-open)"
+  },
+  {
+   "id": "E24",
+   "session": "claude-code:c0000005-0000-4000-8000-000000000005",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-20T03:30:00.000Z",
+   "minute": "2026-09-20T03:30:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 7,
+    "output": 77,
+    "cacheRead": 1300,
+    "cacheWrite5m": 70,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "note": "inside the UTC day, on the previous New York day"
+  },
+  {
+   "id": "E25",
+   "session": "claude-code:c0000006-0000-4000-8000-000000000006",
+   "model": "claude-sonnet-5",
+   "at": "2026-09-20T18:00:00.000Z",
+   "minute": "2026-09-20T18:00:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 11,
+    "output": 210,
+    "cacheRead": 0,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 900
+   },
+   "note": "cache write reported without its lifetime split"
+  },
+  {
+   "id": "E26",
+   "session": "claude-code:c0000006-0000-4000-8000-000000000006",
+   "model": "claude-sonnet-5",
+   "at": "2026-09-20T18:01:00.000Z",
+   "minute": "2026-09-20T18:01:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 2,
+    "output": 40,
+    "cacheRead": 900,
+    "cacheWrite5m": 30,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   }
+  },
+  {
+   "id": "E27",
+   "session": "codex:d0000007-0000-4000-8000-000000000007",
+   "model": "gpt-5.6-sol",
+   "at": "2026-09-20T18:30:00.000Z",
+   "minute": "2026-09-20T18:30:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 400,
+    "output": 20,
+    "cacheRead": 0,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 100
+   }
+  },
+  {
+   "id": "E28",
+   "session": "codex:d0000007-0000-4000-8000-000000000007",
+   "model": "gpt-5.6-sol",
+   "at": "2026-09-20T18:31:00.000Z",
+   "minute": "2026-09-20T18:31:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 250,
+    "output": 40,
+    "cacheRead": 450,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "note": "token_count without an ordinal"
+  },
+  {
+   "id": "E29",
+   "session": "claude-code:c0000008-0000-4000-8000-000000000008",
+   "model": "claude-haiku-4-5-20251001",
+   "at": "2026-09-20T20:00:00.000Z",
+   "minute": "2026-09-20T20:00:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 30,
+    "output": 400,
+    "cacheRead": 0,
+    "cacheWrite5m": 2000,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   }
+  },
+  {
+   "id": "E30",
+   "session": "claude-code:c0000008-0000-4000-8000-000000000008",
+   "model": "claude-haiku-4-5-20251001",
+   "at": "2026-09-20T20:00:40.000Z",
+   "minute": "2026-09-20T20:00:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 1,
+    "output": 20,
+    "cacheRead": 2000,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   }
+  },
+  {
+   "id": "E31",
+   "session": "claude-code:c0000009-0000-4000-8000-000000000009",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-20T22:00:00.000Z",
+   "minute": "2026-09-20T22:00:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 8,
+    "output": 180,
+    "cacheRead": 0,
+    "cacheWrite5m": 900,
+    "cacheWrite1h": 100,
+    "cacheWriteUnknownTtl": 0
+   }
+  }
+ ],
+ "invariants": [
+  "team == sum(people) == sum(devices) == sum(models) == sum(sessions) == sum(sessionTrees)",
+  "windows[0] + windows[1] == window",
+  "total == fresh + output + cacheRead + cacheWrite; cacheWrite == cacheWrite5m + cacheWrite1h + cacheWriteUnknownTtl",
+  "every delivery after the first copy of an event adds nothing"
+ ]
+}
