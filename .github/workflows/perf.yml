@@ -1,0 +1,24 @@
+name: Performance budget
+# The first read costs about one read of the history; after that, a pass
+# costs what changed, not what exists. bench/check.mjs holds the counts that
+# say so (bytes read and written, files opened, lines parsed, sizes kept) to
+# bench/budgets.json, on synthetic history it generates. Counts, not times,
+# so the runner's speed cannot decide the result. See docs/PERFORMANCE.md.
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  budget:
+    name: Performance budget
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - run: node --expose-gc bench/check.mjs

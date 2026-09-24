@@ -17,22 +17,40 @@
 </p>
 
 <p align="center">
-  See what your AI coding agents use (sessions, tokens, cache reads and writes,
-  models and list-price cost) on this computer and every computer you connect.
+  <b>Fleet accounting for Claude Code and Codex.</b><br>
+  Every session's tokens, cache reads and writes, models and list-price cost,
+  on this computer and on every computer you connect, in one local console.
 </p>
 
 ![Agent Console in demo mode, dark](docs/console-demo-dark.png)
 
-*The console in demo mode. Every figure in this picture is generated.
+*Captured from `--demo`. Every figure in it is generated and stamped DEMO.
 [The same screen in the light theme.](docs/console-demo-light.png)*
 
-**Only counts, model ids, timestamps, and salted hashes of session and project
-identifiers leave a machine. No prompt, no response, no file path, no file
-content.** One allowlist in the code enforces that, and a test pushes
-real-shaped transcripts full of planted canaries through the real reporter and
-the real hub and checks every byte that crosses the wire. (There is one
-opt-in: `--share-project-names` also sends each project folder's *name* — never
-its path. It is off unless you pass it.)
+```sh
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --open
+```
+
+You need Node.js 22 or newer. There is no account to create, nothing else to
+install and no build step. The command fetches the packaged console from this
+project's GitHub release, reads the Claude Code and Codex history already on
+this computer, and opens the console in your browser, signed in, normally at
+`http://127.0.0.1:6787`. To look around first without reading anything of
+yours, add `--demo` before `--open`.
+
+**In the first thirty seconds you see:** the last 24 hours of tokens, split
+into cache read, cache write, output and input; their list-price estimate;
+burn right now, in tokens per minute and dollars per hour; one lane per
+session with its model, its subagents and its last hour of activity; and every
+machine and person reporting, each with a share of the total.
+
+**Nothing leaves a machine but counts.** Only model ids, minute timestamps,
+token counts and salted hashes, and never a prompt, a reply, a file path or a
+file's contents. A test pushes transcripts full of planted canaries through
+the real reporter and the real hub and checks every byte that crosses the wire.
+The console itself sends nothing anywhere: no telemetry, no update check, no
+account. (One opt-in, `--share-project-names`, also sends each project
+folder's *name*, never its path. It is off unless you pass it.)
 
 ## Start here
 
