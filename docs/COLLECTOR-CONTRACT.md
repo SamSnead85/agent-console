@@ -57,7 +57,7 @@ and nothing else; it does not upload conversations.
 | `engagement` | `null`, unless the reporter was run with `--share-project-names`: then the project folder's last name, reduced to `[a-z][a-z0-9-]{1,47}`. Never a path. Records spooled while the option was on are sent with `null` once it is off. |
 | `reportingDevice` | The enrolled machine that sent the record; must equal the envelope's device. |
 | `executionOrigin` | Always `unknown` unless a transcript names where it ran (then a salted hash). |
-| `at` | Event time, rounded down to the UTC minute. |
+| `at` | Event time, rounded down to the UTC minute: the minute the API response began. Every increment of one response carries the minute of its first transcript line ([accounting.md](accounting.md) §2). |
 | `fresh`, `output`, `cacheWrite`, `cacheRead` | Disjoint token classes: non-negative integers, or `null` when the tool did not report the class. Unknown is never turned into zero. |
 | `cacheWrite5m`, `cacheWrite1h`, `ttl` | The cache-write split by lifetime when the tool reports it (`ttl: "split"`, and they sum to `cacheWrite`), otherwise `null` and `ttl: "unknown"`. They are parts of `cacheWrite`, not extra tokens. |
 | `observed` | Always `true`. |
@@ -132,16 +132,21 @@ but never lose one, and never makes up a new id for a retry.
 `output_tokens`, `cache_creation_input_tokens` and `cache_read_input_tokens`,
 plus the cache-write split in `usage.cache_creation`. Several lines can repeat
 the same `message.id` with growing usage; the collector emits per-message
-increments and nothing for an identical repeat. A subagent is identified by
+increments, all dated by the response's first line, and nothing for an
+identical repeat. A subagent is identified by
 `isSidechain` and `agentId` within its `sessionId`.
 
 **Codex.** The first `session_meta` identifies the session and its parent.
 `token_count` events carry cumulative `total_token_usage`; successive values
 become deltas, and fresh input is the input delta minus the cache-read and
 cache-write deltas (null if a part is missing). A forked session's replayed
-prefix, before `subagent_history_start_ordinal`, is not counted again; a fork
-without that boundary and a counter that goes backwards are reported as
-coverage debt rather than guessed.
+prefix, before `subagent_history_start_ordinal`, is not counted again. A
+counter that goes backwards restarted from zero: when the event's own
+`last_token_usage` equals the new total in every class, that total is the
+event's usage (this is also how a forked child's first own request looks after
+its inherited history). A fork without that boundary, and a drop that
+`last_token_usage` does not explain, are reported as coverage debt rather than
+guessed. The full rules are in [accounting.md](accounting.md).
 
 ## Prices
 

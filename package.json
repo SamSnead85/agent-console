@@ -21,6 +21,10 @@
     "cache"
   ],
   "type": "module",
+  "exports": {
+    "./conformance": "./test/conformance/index.js",
+    "./package.json": "./package.json"
+  },
   "bin": {
     "agent-console": "./bin/agent-console.mjs"
   },
@@ -33,6 +37,7 @@
     "public/",
     "server.js",
     "docs/*.md",
+    "test/conformance/",
     "PROVENANCE.md",
     "CHANGELOG.md",
     "SECURITY.md",

@@ -1,0 +1,3 @@
+# The conformance suite is compared byte for byte, here and by receivers that
+# vendor it; never convert its line endings on checkout.
+test/conformance/** -text

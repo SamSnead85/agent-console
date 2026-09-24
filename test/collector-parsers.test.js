@@ -294,3 +294,35 @@ test('Codex timestamp fallback is intrinsic and changing usage at the same unseq
   assert.deepEqual(changed.records, []);
   assert.equal(changed.state.coverageDebt.ambiguousEventIdentity, 1);
 });
+
+test('a streamed Claude response is dated by its first line, even when later lines cross a minute or window edge', () => {
+  const at = (timestamp, output) => assistant({ ...usage, output_tokens: output }, { timestamp, uuid: `line-${output}` });
+  const first = call('claude-code', at('2026-09-19T23:59:30.000Z', 3));
+  const later = call('claude-code', at('2026-09-20T00:00:20.000Z', 250), first.state);
+  assert.equal(first.records[0].at, '2026-09-19T23:59:00.000Z');
+  assert.equal(later.records[0].at, '2026-09-19T23:59:00.000Z', 'the increment moved to the minute its line was written');
+  assert.equal(later.records[0].output, 247);
+  assert.equal(later.records[0].continuation, true);
+});
+
+test('a Codex counter that restarts from zero counts the restarting request; an unexplained drop stays unmeasured', () => {
+  const withLast = (total, last) => ({ type: 'event_msg', timestamp: stamp, payload: { type: 'token_count', info: { total_token_usage: total, last_token_usage: last } } });
+  const first = call('codex', withLast(counters, counters));
+  const restart = { input_tokens: 600, output_tokens: 40, cached_input_tokens: 400, cache_write_input_tokens: 0 };
+  const restarted = call('codex', withLast(restart, restart), first.state, 100);
+  assert.deepEqual(['fresh', 'output', 'cacheRead', 'cacheWrite'].map(k => restarted.records[0][k]), [200, 40, 400, 0]);
+  assert.equal(restarted.state.coverageDebt?.counterReset, undefined);
+  const rollback = call('codex', withLast({ ...restart, input_tokens: 300, cached_input_tokens: 100 }, { input_tokens: 50, output_tokens: 1, cached_input_tokens: 0, cache_write_input_tokens: 0 }), restarted.state, 200);
+  assert.deepEqual(rollback.records, []);
+  assert.equal(rollback.state.coverageDebt.counterReset, 1);
+});
+
+test("a forked Codex child's first own request is counted although its counter starts below the inherited one", () => {
+  const withLast = (total, last = total) => ({ type: 'event_msg', timestamp: stamp, payload: { type: 'token_count', info: { total_token_usage: total, last_token_usage: last } } });
+  const meta = call('codex', { type: 'session_meta', payload: { id: 'child', parent_thread_id: 'parent', forked_from_id: 'parent', subagent_history_start_ordinal: 150 } });
+  const inherited = call('codex', withLast({ input_tokens: 2500, output_tokens: 130, cached_input_tokens: 1000, cache_write_input_tokens: 300 }), meta.state, 100);
+  assert.deepEqual(inherited.records, []);
+  const own = { input_tokens: 900, output_tokens: 70, cached_input_tokens: 0, cache_write_input_tokens: 300 };
+  const first = call('codex', withLast(own), inherited.state, 200);
+  assert.deepEqual(['fresh', 'output', 'cacheRead', 'cacheWrite'].map(k => first.records[0][k]), [600, 70, 0, 300]);
+});

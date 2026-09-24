@@ -193,7 +193,9 @@ this computer and never sent anywhere.
 - **Demo is never mixed with measured data.** A console started with `--demo`
   reads nothing, accepts no machine, and stamps DEMO on every view.
 
-The full definitions are in [docs/MEASUREMENTS.md](docs/MEASUREMENTS.md).
+The full definitions are in [docs/MEASUREMENTS.md](docs/MEASUREMENTS.md). The
+accounting rules for people, teams, models and sessions, and the conformance
+suite that checks them to the token, are in [docs/accounting.md](docs/accounting.md).
 
 ## How the machines connect
 
