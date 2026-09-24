@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 — draft
+
+- Added per-session context weight and cache health signals in the existing
+  Lanes view, with a dated list-price estimate for possible cache breaks.
+  The signals describe observed usage patterns, not a proven cache cause.
+
 ## 0.2.1 — not yet released
 
 Safer by default, and the fixes from a first-time install.
