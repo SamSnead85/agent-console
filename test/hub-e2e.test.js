@@ -173,6 +173,12 @@ test("two machines join by link, report, roll up by person, and nothing private 
   assert.ok(view.day.models.some((m) => m.model === "gpt-5.6-sol") && view.day.models.some((m) => m.model === "claude-opus-5"));
   assert.equal(view.invitations.filter((i) => i.state === "joined").length, 2, "the console shows who joined");
   for (const lane of view.lanes) {
+    assert.ok(Array.isArray(lane.agentTree) && lane.agentTree.length > 0);
+    for (const agent of lane.agentTree) {
+      assert.deepEqual(Object.keys(agent).sort(), ["depth", "durationMinutes", "model", "outcome", "parentSessionHash", "rootSessionHash", "sessionHash", "tokens"]);
+      assert.ok(["succeeded", "failed", "unknown"].includes(agent.outcome));
+      assert.ok(agent.tokens === null || Number.isSafeInteger(agent.tokens));
+    }
     assert.deepEqual(Object.keys(lane.context).sort(), ["breaks", "growth", "latest", "priceTable", "samples", "status"]);
     for (const sample of lane.context.samples) {
       assert.deepEqual(Object.keys(sample).sort(), ["at", "tokens"]);

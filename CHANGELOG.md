@@ -5,6 +5,9 @@
 - Added per-session context weight and cache health signals in the existing
   Lanes view, with a dated list-price estimate for possible cache breaks.
   The signals describe observed usage patterns, not a proven cache cause.
+- Added an expandable parent and subagent tree in each lane, showing each
+  agent's model, observed tokens and duration, and an honest unknown outcome
+  when the reporter has no result event.
 
 ## Unreleased — accounting you can reconcile
 

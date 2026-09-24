@@ -173,6 +173,14 @@ body[data-demo="false"] .demo-only { display: none; }
 .lane .fm u.dn { color: var(--quiet); }
 .lane .fm.unk { color: var(--quiet); }
 .lane .ag { font: 400 calc(10px * var(--k)) var(--mono); color: var(--quiet); }
+.lane .ag button { border: 0; background: none; color: inherit; font: inherit; padding: 2px 0; cursor: pointer; }
+.lane .ag button:hover, .lane .ag button:focus-visible { color: var(--lit); text-decoration: underline; }
+.lane .ag button:disabled { cursor: default; text-decoration: none; }
+.agent-tree[hidden] { display: none; }
+.agent-tree { padding: 5px calc(30px * var(--k)) 9px calc(34px * var(--k)); border-bottom: 1px solid var(--hair2); background: var(--tile); }
+.agent-node { display: grid; grid-template-columns: 110px minmax(100px, 1fr) 120px 100px minmax(160px, 1fr); gap: 12px; padding: 7px 8px 7px calc(8px + var(--depth) * 12px); border-left: 1px solid var(--hair); color: var(--ink2); font: 400 10px/1.4 var(--mono); }
+.agent-node + .agent-node { border-top: 1px solid var(--hair2); }
+.agent-node span:first-child { color: var(--quiet); }
 .lane .cx button { border: 0; background: none; color: var(--ink2); font: 400 calc(10px * var(--k)) var(--mono); padding: 2px 0; cursor: pointer; white-space: nowrap; }
 .lane .cx button:hover, .lane .cx button:focus-visible { color: var(--lit); text-decoration: underline; }
 .lane .cx.bloated button { color: var(--warn); }
@@ -365,8 +373,11 @@ dialog.sheet[open] { animation: sheetin .2s var(--spring); }
   .console { grid-template-columns: 1fr; }
   .console > .col, .console > .col:first-child, .console > .col.flow { padding: 14px 16px; border-right: 0; border-top: 1px solid var(--hair2); }
   .lanes { overflow-x: auto; }
-  .lhead, .lane { grid-template-columns: 62px 168px 84px 78px 90px; padding: 0 16px; gap: 10px; min-width: 566px; }
-  .lhead span:nth-child(3), .lhead span:nth-child(6), .lhead span:nth-child(8), .lane .md, .lane .ag, .lane .dv { display: none; }
+  .agent-tree { min-width: 0; width: calc(100vw - 32px); padding: 8px 16px; }
+  .agent-node { grid-template-columns: 1fr 1fr; gap: 4px 10px; padding: 9px 4px 9px calc(4px + var(--depth) * 10px); }
+  .agent-node span:last-child { grid-column: 1 / -1; }
+  .lhead, .lane { grid-template-columns: 62px 168px 84px 78px 52px 90px; padding: 0 16px; gap: 10px; min-width: 654px; }
+  .lhead span:nth-child(3), .lhead span:nth-child(8), .lane .md, .lane .dv { display: none; }
   .lfoot { padding: 6px 16px; }
   .totals { grid-template-columns: repeat(2, 1fr); }
   .invite { grid-template-columns: 1fr; gap: 4px; }
