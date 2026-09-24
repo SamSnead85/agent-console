@@ -175,7 +175,7 @@ test("two machines join by link, report, roll up by person, and nothing private 
   for (const lane of view.lanes) {
     assert.ok(Array.isArray(lane.agentTree) && lane.agentTree.length > 0);
     for (const agent of lane.agentTree) {
-      assert.deepEqual(Object.keys(agent).sort(), ["depth", "durationMinutes", "model", "outcome", "parentSessionHash", "rootSessionHash", "sessionHash", "tokens"]);
+      assert.deepEqual(Object.keys(agent).sort(), ["depth", "durationMinutes", "model", "modelLabel", "outcome", "parentSessionHash", "rootSessionHash", "sessionHash", "tokens"]);
       assert.ok(["succeeded", "failed", "unknown"].includes(agent.outcome));
       assert.ok(agent.tokens === null || Number.isSafeInteger(agent.tokens));
     }

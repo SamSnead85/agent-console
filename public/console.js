@@ -54,6 +54,8 @@
     if (h < 36) return h + " h ago";
     return Math.round(h / 24) + " days ago";
   };
+  const observedSpan = (minutes) => minutes == null ? "Span unavailable" : minutes < 60
+    ? `${minutes} m observed` : `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60} m` : ""} observed`;
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const TOOL = { "claude-code": "Claude Code", codex: "Codex" };
   const CLASS_LABEL = { cacheRead: "cache read", cacheWrite: "cache write", output: "output", fresh: "input" };
@@ -329,7 +331,7 @@
     agButton.textContent = l.agents.total ? `${l.agents.live}/${l.agents.total}` : "—";
     agButton.disabled = !l.agents.total;
     agButton.title = l.agents.total ? `${l.agents.live} subagents worked in the last five minutes, of ${l.agents.total} today. Open the agent tree.` : "No subagents";
-    row._tree.innerHTML = (l.agentTree || []).map((agent, index) => `<div class="agent-node" style="--depth:${Math.min(agent.depth, 8)}"><span>${index === 0 ? 'Orchestrator' : '↳ Subagent'}</span><span>${esc(agent.model)}</span><span>${agent.tokens == null ? 'Tokens unavailable' : fmt(agent.tokens) + ' tokens · 24 h'}</span><span>${agent.durationMinutes == null ? 'Span unavailable' : agent.durationMinutes + ' min observed'}</span><span>Outcome ${esc(agent.outcome)}${agent.outcome === 'unknown' ? ' · no result recorded' : ''}</span></div>`).join('');
+    row._tree.innerHTML = (l.agentTree || []).map((agent, index) => `<div class="agent-node" style="--depth:${Math.min(agent.depth, 8)}"><span>${index === 0 ? 'Orchestrator' : '↳ Subagent'}</span><span class="agent-model">${vendorMark(vendorOf(agent.model))}${esc(agent.modelLabel)}</span><span>${agent.tokens == null ? 'Tokens unavailable' : fmt(agent.tokens) + ' tokens · 24 h'}</span><span>${observedSpan(agent.durationMinutes)}${agent.outcome === 'unknown' ? '' : ` · ${esc(agent.outcome)}`}</span></div>`).join('');
     const cx = row.querySelector(".cx");
     cx.classList.toggle("bloated", l.context?.status === "bloated");
     cx.querySelector("button").textContent = l.context?.latest === null || l.context?.latest === undefined

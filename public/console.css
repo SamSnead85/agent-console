@@ -178,7 +178,9 @@ body[data-demo="false"] .demo-only { display: none; }
 .lane .ag button:disabled { cursor: default; text-decoration: none; }
 .agent-tree[hidden] { display: none; }
 .agent-tree { padding: 5px calc(30px * var(--k)) 9px calc(34px * var(--k)); border-bottom: 1px solid var(--hair2); background: var(--tile); }
-.agent-node { display: grid; grid-template-columns: 110px minmax(100px, 1fr) 120px 100px minmax(160px, 1fr); gap: 12px; padding: 7px 8px 7px calc(8px + var(--depth) * 12px); border-left: 1px solid var(--hair); color: var(--ink2); font: 400 10px/1.4 var(--mono); }
+.agent-node { display: grid; grid-template-columns: 100px minmax(110px, 1fr) 120px minmax(130px, 1fr); gap: 10px; padding: 7px 8px 7px calc(8px + var(--depth) * 12px); border-left: 1px solid var(--hair); color: var(--ink2); font: 400 10px/1.4 var(--mono); }
+.agent-model { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.agent-model svg, .agent-model i { width: 11px; height: 11px; flex: none; }
 .agent-node + .agent-node { border-top: 1px solid var(--hair2); }
 .agent-node span:first-child { color: var(--quiet); }
 .lane .cx button { border: 0; background: none; color: var(--ink2); font: 400 calc(10px * var(--k)) var(--mono); padding: 2px 0; cursor: pointer; white-space: nowrap; }
