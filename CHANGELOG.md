@@ -1,13 +1,34 @@
 # Changelog
 
-## Unreleased — accounting you can reconcile
+## 0.2.2 — 2026-09-24
 
-- **[docs/PRINCIPLES.md](docs/PRINCIPLES.md)**: the bar every change meets,
-  and where CI checks it. New checks: the README's install line is run
-  against the published release; every console option is started in
-  `--demo`; a pull request that changes what people run adds a changelog line,
-  and one that changes the interface retakes or confirms its screenshots.
-  SECURITY.md now says how quickly a report is answered and fixed.
+Security fixes, accounting you can reconcile, and a console that is nearly
+free when idle. Upgrade from 0.2.1: this release fixes three security issues,
+described in advisory
+[GHSA-grq6-4rfv-hxhj](https://github.com/SamSnead85/agent-console/security/advisories/GHSA-grq6-4rfv-hxhj).
+
+**Security**
+
+- **The join page checks the whole link before it offers a command.** It
+  rebuilds the link from the parts it checked and puts it in single quotes, and
+  gives no command for a link it cannot vouch for. The console's commands use
+  single quotes too, and the reporter accepts a link with the quotes that
+  cmd.exe passes through.
+- **Add a machine leads with the command to send.** It is built on the
+  console's own computer; the link, which opens a page served over plain HTTP,
+  is the alternative. `SECURITY.md` explains the choice.
+- **A second start never sends the console's key.** It proves it can read the
+  key instead, and prints a sign-in link or opens the browser only for a
+  console that proved it holds the same key. Something else answering on the
+  port is told nothing, and the second start says so.
+- **Each browser has its own session.** Sessions are random, last 30 days and
+  end with the new **Sign out**; the console keeps only a verifier of each, and
+  a new key ends them all. Each console's cookie has a name of its own, so
+  signing in to one console on a computer no longer signs you out of another.
+  Everyone signs in once more after upgrading.
+
+**Accounting**
+
 - **[docs/accounting.md](docs/accounting.md)** defines one token event, what
   is counted once (streaming, re-written lines, retries, resumed sessions,
   compaction, subagents, copies), Codex's cumulative counters, classes and
@@ -16,15 +37,6 @@
 - **A conformance suite**, `@lockedinlabs/agent-console/conformance`: synthetic
   logs for five machines and two people, exact expected totals summed from
   ground truth, and the collector's own output for other receivers to replay.
-- **Faster, and nearly free when idle.** On a month of heavy history (a
-  million transcript lines), the first read takes half the time and half the
-  memory, and the console keeps answering while it runs. An idle console used
-  a quarter of a CPU core and rewrote tens of megabytes every five seconds;
-  it now uses under 3% and writes nothing. Unchanged transcripts are not
-  reopened, the cursor no longer grows with history, and lines no record
-  reads are not parsed. Every record is byte for byte the same. A benchmark
-  on synthetic history (`bench/`) and a budget CI enforces are in
-  [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
 - **Fixed: a streamed Claude response is dated by its first line.** Its later
   increments were dated by their own lines, so a response that crossed a
   window edge was split across two windows.
@@ -36,6 +48,27 @@
 - The hub keeps 5-minute, 1-hour and unknown-lifetime cache writes apart, and
   `lib/hub/accounting.js` reports exact totals for any whole-minute window by
   team, person, machine, model, session and session tree.
+
+**Performance**
+
+- **Faster, and nearly free when idle.** On a month of heavy history (a
+  million transcript lines), the first read takes half the time and half the
+  memory, and the console keeps answering while it runs. An idle console used
+  a quarter of a CPU core and rewrote tens of megabytes every five seconds;
+  it now uses under 3% and writes nothing. Unchanged transcripts are not
+  reopened, the cursor no longer grows with history, and lines no record
+  reads are not parsed. Every record is byte for byte the same. A benchmark
+  on synthetic history (`bench/`) and a budget CI enforces are in
+  [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
+
+**How the project is kept**
+
+- **[docs/PRINCIPLES.md](docs/PRINCIPLES.md)**: the bar every change meets,
+  and where CI checks it. New checks: the README's install line is run
+  against the published release; every console option is started in
+  `--demo`; a pull request that changes what people run adds a changelog line,
+  and one that changes the interface retakes or confirms its screenshots.
+  SECURITY.md now says how quickly a report is answered and fixed.
 - **A public-safety gate on every push and pull request.** gitleaks checks each
   new commit and the tree. `npm run check:public` refuses absolute home paths,
   private email addresses, machine network names, credential shapes, image
@@ -49,10 +82,13 @@
   back, every read the console serves, and the hub's own transcripts, which
   must never leave through the reporting port. A new GET route that the
   canary does not read fails the suite.
-- **Fixed: about one generated certificate in 256 was invalid,** so a hub could
-  fail to start at random.
 
-## 0.2.1 — not yet released
+**Fixed**
+
+- **About one generated certificate in 256 was invalid,** so a hub could fail
+  to start at random.
+
+## 0.2.1 — 2026-09-23
 
 Safer by default, and the fixes from a first-time install.
 

@@ -183,7 +183,7 @@ test("two machines join by link, report, roll up by person, and nothing private 
   const a = await invite(hub, "You", "Laptop");
   const b = await invite(hub, "Platform engineer", "Workstation");
   // The command installs from the GitHub release, never from the hub.
-  assert.match(a.command, /^npx --yes https:\/\/github\.com\/SamSnead85\/agent-console\/releases\/download\/v\d+\.\d+\.\d+\/lockedinlabs-agent-console-\d+\.\d+\.\d+\.tgz join "http:\/\/127\.0\.0\.1:\d+\/join#[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}"$/u);
+  assert.match(a.command, /^npx --yes https:\/\/github\.com\/SamSnead85\/agent-console\/releases\/download\/v\d+\.\d+\.\d+\/lockedinlabs-agent-console-\d+\.\d+\.\d+\.tgz join 'http:\/\/127\.0\.0\.1:\d+\/join#[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}'$/u);
   const via = (inv) => through(inv.link, wire.port);
 
   const joinA = await run(["join", via(a), "--once", "--json", "--home", laptop, "--state-dir", path.join(root, "laptop-state")]);

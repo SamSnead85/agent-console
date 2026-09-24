@@ -698,6 +698,18 @@
     document.body.classList.add("signed-out");
     $("signedOut").hidden = false;
   }
+  // Ends this browser's session on the console, not just the page.
+  $("signOutBtn").addEventListener("click", async () => {
+    try {
+      const response = await fetch("/api/signout", { method: "POST", headers: HEADERS, cache: "no-store" });
+      if (!response.ok) throw new Error(String(response.status));
+      clearTimeout(pollTimer);
+      closeAdd();
+      signedOut();
+    } catch {
+      toast("Signing out did not reach the console. Try again.");
+    }
+  });
 
   // ── add a machine ───────────────────────────────────────────────────
   const addDialog = $("addDialog");
@@ -746,14 +758,14 @@
       $("linkSay").innerHTML = j.demo
         ? "This is a demonstration console, so this link cannot actually be used. On a real console, the steps are exactly these."
         : j.network
-          ? `Send the link to ${esc(who)} by any message. On their computer they open it and follow one step, or run the command below. They must be on the same network as this machine. Agent Console itself comes from its GitHub release, never from this machine.`
+          ? `Send ${esc(who)} the command below by any message. They paste it into a terminal on their computer, which must be on the same network as this machine. Agent Console itself comes from its GitHub release, never from this machine.`
           : `This console listens on this machine only, so the link works only here — for example for a second account on this computer. To add another computer, restart with <code>--listen 0.0.0.0</code>.`;
       $("linkExpiry").textContent = `Works once. Expires at ${hhmm(j.invitation.expiresAt)}.`;
       const status = $("joinStatus");
       status.className = "waiting";
       status.innerHTML = "<i></i>Waiting for the machine to join…";
       step("link");
-      $("copyLink").focus();
+      $("copyCmd").focus();
       poll();
     } catch (error) {
       toast(error.message);

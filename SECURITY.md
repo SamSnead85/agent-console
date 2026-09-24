@@ -50,15 +50,45 @@ says.
 
 **Signing in.** The console makes a random key on first start (`admin.key` in
 its state directory, mode 600). A single-use sign-in link, printed at start and
-opened by `--open`, sets an HttpOnly, SameSite=Strict cookie derived from that
-key. Only someone who can read the key file, or who has the link, can sign in.
+opened by `--open`, starts a session for that browser: a random id in an
+HttpOnly, SameSite=Strict cookie that lasts 30 days. The console keeps only a
+verifier of each session (an HMAC under the key, in `sessions.json`, mode 600);
+**Sign out** ends one, and a new key ends them all. Each state directory's
+cookie has a name of its own, so two consoles on one computer do not share or
+overwrite it. A browser sends a 127.0.0.1 cookie to every port on that address,
+so another local web server you visit can see it; that is why it is random per
+browser, ends with **Sign out** and expires. Only someone who can read the key
+file, or who has a sign-in link, can sign in.
+
+**A second start.** Starting the console again while it runs asks the running
+one for a sign-in link, and never sends the key to do it. The running console
+issues a single-use nonce; the second start answers with an HMAC of it under
+the key, bound to the port it connected to; the console answers with an HMAC of
+its own, which the second start checks before it prints a link or opens the
+browser. A program that took the port first learns nothing and gets nothing
+opened, and a proof relayed to the console from another port is refused.
 
 **TLS, pinned.** The console makes its own certificate on first start and puts
 its SHA-256 fingerprint in every join link. Joining and reporting go over TLS,
 and the reporter accepts that certificate only: a different machine answering
-at that address gets nothing. The join page itself is served over plain HTTP so
-a browser opens it without a warning; it holds no secret (the code is in the
-link's fragment, which a browser never sends).
+at that address gets nothing.
+
+**The join page.** A join link opens a page on the console's reporting port,
+served over plain HTTP so a browser opens it without a certificate warning. The
+code is in the link's fragment, which a browser never sends. The page hands out
+a command to paste into a terminal, so it builds that command only from what it
+can check: the release's download link, and a join link it rebuilds from its
+own address and a fragment that must be exactly a code and a fingerprint. Every
+character of that link must be one no shell gives a meaning to, and it goes in
+single quotes, which sh, bash, zsh, fish and PowerShell all take literally.
+A plain-HTTP page can still be changed by anyone who can change traffic on the
+network, so the page is not what to trust. **Add a machine** leads with the
+command itself: it is built on the console's own computer, and its owner sends
+it over whatever channel they already trust to carry the link. On a network you
+do not trust, send the command rather than the link. Whoever joins should run
+the command they were sent, and check that it starts with
+`npx --yes https://github.com/SamSnead85/agent-console/releases/download/` and
+ends with the link in single quotes, with nothing after it.
 
 **No code from the console.** The console never serves Agent Console itself.
 Every command it prints installs the package from its GitHub release over

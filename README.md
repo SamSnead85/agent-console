@@ -28,7 +28,7 @@
 [The same screen in the light theme.](docs/console-demo-light.png)*
 
 ```sh
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --open
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz --open
 ```
 
 You need Node.js 22 or newer. There is no account to create, nothing else to
@@ -63,7 +63,7 @@ You need a Mac, a Linux machine or a Windows PC, and about two minutes.
 2. **Start it.** Paste this into the terminal and press Return:
 
    ```sh
-   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --open
+   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz --open
    ```
 
    That fetches Agent Console from this project's GitHub release (nothing to
@@ -123,12 +123,12 @@ each reports to the same console and they all add up.
    itself stays on this computer only (see
    [How the machines connect](#how-the-machines-connect)).
 2. In the console, press **Add a machine**. Say whose machine it is and what to
-   call it, press **Create join link**, then **Copy link** and send it to them.
-3. On the other computer, they open the link and follow its one step: paste a
-   single command into a terminal. It needs Node.js 22 or newer and nothing else.
-   The command installs Agent Console from its GitHub release, never from your
-   computer, and the join itself travels encrypted, checked against your
-   console's certificate.
+   call it, press **Create join link**, then **Copy command** and send it to them.
+   (**Copy link** is there too: the link opens a page with the same command.)
+3. On the other computer, they paste that command into a terminal. It needs
+   Node.js 22 or newer and nothing else. The command installs Agent Console from
+   its GitHub release, never from your computer, and the join itself travels
+   encrypted, checked against your console's certificate.
 
 The machine appears on your console within seconds, and the console shows who
 joined and when. A join link works **once**, for at most an hour. On the
@@ -144,7 +144,8 @@ The console only shows its figures to a browser that has signed in. `--open`
 opens it signed in. Otherwise the terminal prints a sign-in link when the
 console starts; it works once. To sign in again later, for example in another
 browser, run the start command again with `--open`: it sees the console is
-already running and opens it signed in.
+already running and opens it signed in. Each browser gets its own session,
+which lasts 30 days; **Sign out**, at the foot of the console, ends it.
 
 ### What works where
 
@@ -242,7 +243,8 @@ time it starts, and every join link carries that certificate's fingerprint.
 Joining and reporting go over TLS, and the reporter accepts only that
 certificate, so nobody on the network can read the reports or pose as your
 console. The join page itself opens as plain HTTP so a browser shows no
-warning; it holds no secret.
+warning, which is why the command is what you send: see
+[SECURITY.md](SECURITY.md#how-the-console-is-protected).
 
 **Credentials.** A join link carries a single-use code that expires within the
 hour (`--invite-minutes`, at most 60). The reporter spends it once and receives
@@ -258,12 +260,13 @@ Nothing leaves that directory.
 
 ### The reporter
 
-The join page gives the exact command. Written out, with the release link:
+**Add a machine** gives the exact command, and so does the join page. Written
+out, with the release link:
 
 ```sh
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz join "<join link>"
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz report
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz leave
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz join '<join link>'
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz report
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz leave
 ```
 
 `join` enrols this computer, then keeps reporting. `report` keeps reporting after
@@ -313,7 +316,8 @@ field-by-field contract is [docs/COLLECTOR-CONTRACT.md](docs/COLLECTOR-CONTRACT.
 **The console opened on a port other than 6787.** Another program had 6787,
 so the console took the next free port and printed the address it used. If
 Agent Console itself is already running there, a second start says so and
-opens that one instead. A port you choose with `--port` is never changed: if
+opens that one instead, once that console has proved it is yours (it never sends
+it the console's key). A port you choose with `--port` is never changed: if
 it is busy you are told to pick another.
 
 **The console says "Sign in to this console".** Use the sign-in link the
@@ -391,9 +395,9 @@ The release page lists its SHA-256 in `SHA256SUMS`, and GitHub keeps a signed
 build provenance attestation for it. To check a file you downloaded:
 
 ```sh
-shasum -a 256 lockedinlabs-agent-console-0.2.1.tgz              # macOS, Linux
-Get-FileHash lockedinlabs-agent-console-0.2.1.tgz               # Windows PowerShell
-gh attestation verify lockedinlabs-agent-console-0.2.1.tgz -R SamSnead85/agent-console
+shasum -a 256 lockedinlabs-agent-console-0.2.2.tgz              # macOS, Linux
+Get-FileHash lockedinlabs-agent-console-0.2.2.tgz               # Windows PowerShell
+gh attestation verify lockedinlabs-agent-console-0.2.2.tgz -R SamSnead85/agent-console
 ```
 
 ## Development
