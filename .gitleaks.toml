@@ -1,0 +1,17 @@
+# gitleaks configuration for the public-safety workflow: the default rules,
+# plus the two synthetic shapes the test suite uses on purpose. Every
+# credential-shaped fixture is assembled at runtime from pieces
+# (test/fixtures/secrets.js), so what is allowed here is a canary label or a
+# reference to one, never a value.
+title = "Agent Console"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Synthetic canaries (CANARY-<WORD>-<4 hex>) and references to the runtime-built fixtures"
+regexTarget = "secret"
+regexes = [
+  '''^CANARY-[A-Z-]+-[0-9a-f]{4}$''',
+  '''^ops:" \+ SECRETS\.[A-Za-z]+ \+ "$''',
+]
