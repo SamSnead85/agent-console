@@ -73,10 +73,12 @@ create or update. `agent-console policy apply` writes repo-scoped `.claude/agent
 `agent-console policy remove` restores the exact prior settings and deletes
 only generated files. Use `--project <path>` to choose another repository or
 `--org-policy <file>` with `diff` and `apply` to overlay organization rules.
-The first apply stores original bytes in a private mode-600 backup under
+The first apply stores original bytes in a private backup under
 `~/.agent-console/policy/`; a changed generated file must be reviewed before
 `remove` will restore it. Applying twice without a change is a no-op. Edit a
 policy by removing the old compiled files and applying the new version.
+On POSIX the backup directory and files use modes 700 and 600; on Windows
+their protection follows the account's filesystem access controls.
 
 The compiler writes named role agents with pinned model and effort, a separate
 verified-code-edit role, and a named escalation role. A `PreToolUse` hook

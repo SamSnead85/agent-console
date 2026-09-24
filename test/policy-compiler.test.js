@@ -62,7 +62,7 @@ test('diff is read-only; apply compiles native files; remove restores exact sett
   fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2) + '\n');
   assert.equal(policyRemove(root, { stateDir }).removed, true);
   assert.equal(fs.readFileSync(settingsFile, 'utf8'), original);
-  assert.equal(fs.statSync(settingsFile).mode & 0o777, 0o600);
+  if (process.platform !== 'win32') assert.equal(fs.statSync(settingsFile).mode & 0o777, 0o600);
   assert.ok(!fs.existsSync(hook));
   assert.ok(fs.existsSync(path.join(root, '.agent-console', 'policy',
     createHash('sha256').update(fs.realpathSync(root)).digest('hex'), 'decisions.ndjson')));
