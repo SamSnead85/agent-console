@@ -188,6 +188,15 @@ body[data-demo="false"] .demo-only { display: none; }
   display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; background: var(--band-foot); border-top: 1px solid var(--hair2); }
 .lfoot span { padding-right: 14px; }
 .lfoot span + span { padding-left: 14px; box-shadow: inset 1px 0 0 var(--hair); }
+.guard-panel { margin-top: 10px; border: 1px solid var(--hair); border-radius: 12px; overflow: hidden; background: var(--band); }
+.guard-panel[hidden] { display: none; }
+.guard-head { display: flex; align-items: center; gap: 10px; padding: 9px 18px; border-bottom: 1px solid var(--hair2); color: var(--quiet); font: 400 10px var(--mono); }
+.guard-head h2 { margin: 0; color: var(--ink); font: 500 12px var(--sans); }
+.guard-rows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.guard-row { display: flex; align-items: baseline; gap: 12px; padding: 11px 18px; color: var(--ink2); font: 400 11px var(--sans); }
+.guard-row + .guard-row { border-left: 1px solid var(--hair2); }
+.guard-row b { color: var(--warn); font: 500 10px var(--mono); text-transform: uppercase; }
+.guard-row time { margin-left: auto; color: var(--quiet); font: 400 9px var(--mono); }
 .lfoot span.end { margin-left: auto; padding-right: 0; }
 
 /* ── section heads ────────────────────────────────────────── */
@@ -350,6 +359,8 @@ dialog.sheet[open] { animation: sheetin .2s var(--spring); }
   .totals { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 760px) {
+  .guard-rows { grid-template-columns: 1fr; }
+  .guard-row + .guard-row { border-left: 0; border-top: 1px solid var(--hair2); }
   .shell { padding: 0 16px; }
   .top { height: auto; flex-wrap: wrap; gap: 10px; padding: 10px 0; }
   .tabs { order: 3; width: 100%; margin-left: 0; overflow-x: auto; scrollbar-width: none; }

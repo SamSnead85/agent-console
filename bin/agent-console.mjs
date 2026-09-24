@@ -26,6 +26,10 @@ if (command === "--version" || command === "-v" || command === "version") {
 } else if (command === "join" || command === "report" || command === "leave") {
   const { main } = await import("../lib/reporter.js");
   await main(command, process.argv.slice(3));
+} else if (command === 'guard') {
+  const { mainGuard } = await import('../lib/guard/cli.js');
+  try { mainGuard(process.argv.slice(3)); }
+  catch (error) { process.stderr.write('Agent Console guard: ' + error.message + '\n'); process.exitCode = 1; }
 } else {
   await import("../server.js");
 }

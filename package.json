@@ -36,6 +36,7 @@
     "public/",
     "server.js",
     "docs/*.md",
+    "docs/*.json",
     "PROVENANCE.md",
     "CHANGELOG.md",
     "SECURITY.md",

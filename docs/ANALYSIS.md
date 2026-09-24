@@ -27,3 +27,19 @@ readings and price metadata.
 
 These are signals from counts, not proof of a changed prefix or a complete
 accounting of all request costs. The caller decides how to render them.
+
+## `parseGuardPolicy(value)` and `evaluateGuard(policy, facts)`
+
+`GUARD_POLICY_VERSION` is `1`. The parser accepts the JSON policy text or a
+plain object matching [policy.schema.json](policy.schema.json) and rejects
+unknown fields, duplicate rule IDs, unsupported patterns and actions. It
+returns plain data without reading or writing files. The local adapter turns
+commands into named pattern IDs before calling the core; command text never
+enters this module.
+
+`evaluateGuard` takes `{ tool, matches, projectHash, modelId }`. `matches` is
+an array of the schema's fixed pattern IDs, `projectHash` is a salted 64-digit
+hex hash, and `modelId` is a model ID. It returns `{ ruleId, action }`, with
+`block` before `ask` before `allow`, or both values `null` if no rule matched.
+The caller decides how to apply `ask` in its host's hook system. No path,
+command, prompt, or credential belongs in these inputs or outputs.

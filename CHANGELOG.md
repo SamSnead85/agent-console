@@ -5,6 +5,8 @@
 - Added per-session context weight and cache health signals in the existing
   Lanes view, with a dated list-price estimate for possible cache breaks.
   The signals describe observed usage patterns, not a proven cache cause.
+- Added opt-in local Guard policy and hooks for Claude Code and Codex, with
+  reversible settings edits, local rule-only decisions and a Guard panel.
 
 ## 0.2.1 — not yet released
 

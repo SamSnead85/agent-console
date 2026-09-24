@@ -175,6 +175,33 @@ observed cache write over a hypothetical cache read, using the offline price
 table version and check date shown in the drill-down. Unpriced estimates stay
 unknown. In `--demo`, the existing docs-site lane includes a synthetic break.
 
+### Local Guard (optional)
+
+`agent-console guard init` creates a readable, versioned policy and a private
+project-hash salt on this computer. Nothing changes in Claude Code or Codex until
+you explicitly install a hook:
+
+```sh
+node bin/agent-console.mjs guard init
+node bin/agent-console.mjs guard install          # Claude Code
+node bin/agent-console.mjs guard install-codex    # Codex CLI, optional
+```
+
+The default rules block force-pushes, recursive deletes outside the project,
+and credential reads. Pushes to protected branches, shell downloads piped into
+an interpreter, and production migrations ask before proceeding. The policy
+can also allow-list model IDs per salted project hash; use
+`guard project-hash <directory>` to get a hash for a model rule. Claude Code
+checks model changes through `PreModelSwitch`. Current Codex hooks expose
+`PreToolUse` but not a model-switch event, so Codex model rules are not enforced.
+
+The Guard panel shows this machine's recent decisions by rule and time; the
+synthetic demo includes a blocked force-push. Hook input and command text are
+never logged or sent to another machine. Remove either hook with `guard uninstall`
+or `guard uninstall-codex`; each settings edit has a backup. See
+[Guard setup and limitations](docs/GUARD.md) and the
+[version 1 policy schema](docs/policy.schema.json).
+
 ### Shared analysis core
 
 The dependency-free analysis functions are available to other Node.js consumers

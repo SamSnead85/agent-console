@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lockedinlabs:agent-console:guard-policy:1",
+  "title": "Agent Console local guard policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "on_error", "rules", "models"],
+  "properties": {
+    "version": { "const": 1 },
+    "on_error": { "$ref": "#/$defs/action" },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "tool", "pattern", "action"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+          "tool": { "enum": ["*", "Bash", "PowerShell", "Read", "Edit", "Write"] },
+          "pattern": { "enum": ["force-push", "protected-push", "recursive-delete-outside-repo", "pipe-to-interpreter", "credential-read", "production-migration"] },
+          "action": { "$ref": "#/$defs/action" }
+        }
+      }
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["projectHash", "allowedModelIds", "action"],
+        "properties": {
+          "projectHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "allowedModelIds": { "type": "array", "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" } },
+          "action": { "$ref": "#/$defs/action" }
+        }
+      }
+    }
+  },
+  "$defs": { "action": { "enum": ["allow", "ask", "block"] } }
+}

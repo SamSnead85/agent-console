@@ -128,12 +128,22 @@
     paintClasses();
     paintModels();
     paintLanes();
+    paintGuard();
     paintMachines();
     setChartGoal();
     paintWeek();
     if (view === "team") paintTeam();
     watchJoin();
     if (reducedMotion.matches || paused) { paintText(); drawChart(); }
+  }
+
+  function paintGuard() {
+    const guard = D.guard || { installed: false, decisions: [] };
+    const rows = (guard.decisions || []).filter((item) => item.action === 'block' || item.action === 'ask').slice(0, 5);
+    $("guardPanel").hidden = !D.hub.demo && !guard.installed && rows.length === 0;
+    $("guardRows").innerHTML = rows.length ? rows.map((item) =>
+      `<div class="guard-row"><b>${item.action === 'block' ? 'Blocked' : 'Asked for approval'}</b><span>${esc(item.ruleId)}</span><time>${hhmm(item.at)}${D.hub.demo ? ' · DEMO' : ''}</time></div>`).join('')
+      : '<div class="guard-row">No guard decisions in the last 24 hours.</div>';
   }
 
   // ── hero ─────────────────────────────────────────────────────────────
