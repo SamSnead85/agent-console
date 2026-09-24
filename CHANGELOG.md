@@ -2,6 +2,12 @@
 
 ## Unreleased — accounting you can reconcile
 
+- **[docs/PRINCIPLES.md](docs/PRINCIPLES.md)**: the bar every change meets,
+  and where CI checks it. New checks: the README's install line is run
+  against the published release; every console option is started in
+  `--demo`; a pull request that changes what people run adds a changelog line,
+  and one that changes the interface retakes or confirms its screenshots.
+  SECURITY.md now says how quickly a report is answered and fixed.
 - **[docs/accounting.md](docs/accounting.md)** defines one token event, what
   is counted once (streaming, re-written lines, retries, resumed sessions,
   compaction, subagents, copies), Codex's cumulative counters, classes and

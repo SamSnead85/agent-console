@@ -38,3 +38,13 @@ test("Start here names the folder to go into, and says what the release's .tgz i
   assert.match(README, /lockedinlabs-agent-console-<version>\.tgz/u);
   assert.match(README, /You don't\s+need to download or open it/u);
 });
+
+test("the README's install line runs this version: every release link names package.json's version", () => {
+  const { version } = JSON.parse(read("package.json"));
+  const links = [...README.matchAll(/releases\/download\/v([0-9][^/\s]*)\/lockedinlabs-agent-console-([0-9][^\s"`)]*)\.tgz/gu)];
+  assert.ok(links.length > 0, "the README has no install line");
+  for (const [link, tag, file] of links) {
+    assert.equal(tag, version, `${link} is not this version (${version})`);
+    assert.equal(file, version, `${link} is not this version (${version})`);
+  }
+});
