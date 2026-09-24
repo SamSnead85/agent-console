@@ -128,6 +128,7 @@
     paintClasses();
     paintModels();
     paintLanes();
+    paintAlerts();
     paintMachines();
     setChartGoal();
     paintWeek();
@@ -344,6 +345,20 @@
           "unpriced" : b.estimatedExtraUsd > 0 && b.estimatedExtraUsd < 0.005 ? "&lt; $0.01 est." : money(b.estimatedExtraUsd) + " est."}</li>`).join("")}</ol>` : "") +
       `<p>Signals are inferred from token counts and minute timestamps; they cannot prove the cause of a cache write. Extra cost compares observed writes with a hypothetical cache read at offline list prices (table v${esc(c?.priceTable?.version ?? "?")}, checked ${esc(c?.priceTable?.checkedOn ?? "unknown")}).</p>`;
     $("contextDialog").showModal();
+  }
+
+  function paintAlerts() {
+    const alerts = (D.alerts || []).slice(0, 3);
+    $("alertPanel").hidden = alerts.length === 0;
+    const labels = { loop: "Repeated tool call", spike: "Burn spike", stall: "Spending without progress" };
+    $("alertRows").innerHTML = alerts.map((a) => {
+      const lane = (D.lanes || []).find((item) => item.key === a.laneHash?.slice(0, 16));
+      const project = lane?.project?.name || (a.projectHash ? `project ${a.projectHash.slice(0, 6)}` : "Demo session");
+      return `<div class="alert-row"><b>${labels[a.kind] || "Alert"} · ${esc(project)}</b>` +
+      `<span>${a.kind === "loop" ? `Same tool and arguments ${fmt(a.tokens)} times` :
+        a.kind === "spike" ? `${fmt(a.tokens)} tokens in one response, above this session's baseline` :
+          `${fmt(a.tokens)} tokens since the last observed tool success`}</span><br><time>${hhmm(a.at)}${D.hub.demo ? " · DEMO" : ""}</time></div>`;
+    }).join("");
   }
 
   const vendorOf = (model) => /^claude-/.test(model) ? "anthropic" : /^(gpt-|codex-|o\d)/.test(model) ? "openai" : null;

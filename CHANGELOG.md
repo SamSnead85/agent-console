@@ -5,6 +5,9 @@
 - Added per-session context weight and cache health signals in the existing
   Lanes view, with a dated list-price estimate for possible cache breaks.
   The signals describe observed usage patterns, not a proven cache cause.
+- Added local live alerts for repeated tool calls, spend spikes and spend
+  without observed tool success, with configurable thresholds and opt-in
+  desktop notifications. Detection rules use the shared analysis subpath.
 
 ## Unreleased — accounting you can reconcile
 

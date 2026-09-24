@@ -28,6 +28,7 @@ import { createRegistry } from "./lib/hub/registry.js";
 import { createStore } from "./lib/hub/store.js";
 import { createNames, startLocalCollection } from "./lib/hub/local.js";
 import { startDemo } from "./lib/hub/demo.js";
+import { createAlerts, demoAlerts } from "./lib/hub/alerts.js";
 import { createConsoleHandler, createReportingHandler, hubAddresses, joinAssetsPresent } from "./lib/hub/routes.js";
 import { choosePort, chooseFreePort } from "./lib/hub/port.js";
 import { createAdmin, readAdminSecret } from "./lib/hub/admin.js";
@@ -120,14 +121,18 @@ const admin = createAdmin({ dir: config.stateDir });
 const certificate = hubCertificate(config.stateDir);
 let names = config.demo ? null : createNames(config.stateDir, { retentionMs });
 let local = null;
+let alertEngine = null;
 if (config.demo) {
   names = startDemo({ registry, store }).names;
 } else if (config.local) {
   const roots = defaultRoots(config.home);
   roots[0].directory = config.claudeRoot;
   roots[1].directory = config.codexRoot;
+  alertEngine = createAlerts({ repeat: config.alertRepeat, spikeFactor: config.alertSpikeFactor,
+    stallMinutes: config.alertStallMinutes, notify: config.desktopAlerts, names });
   local = startLocalCollection({
     registry, store, names, stateDir: config.stateDir, roots,
+    intervalMs: 2_000, onTranscriptLine: alertEngine.observeLine,
     label: config.machineName, person: config.person,
     onError: (error) => process.stderr.write("  this machine: " + String(error && error.message) + "\n"),
   });
@@ -143,6 +148,7 @@ const consoleHandler = createConsoleHandler({
   config, registry, store, names, local, admin, version: VERSION, publicDir: PUBLIC,
   reporting: reportingInfo,
   git: config.demo ? null : createGitStatsStore(),
+  alerts: config.demo ? { list: () => demoAlerts() } : alertEngine,
 });
 const reportingHandler = createReportingHandler({
   config, registry, store, version: VERSION, publicDir: PUBLIC, onChange: () => consoleHandler.invalidate(),
