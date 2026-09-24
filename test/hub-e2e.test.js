@@ -69,11 +69,13 @@ function startHub(args) {
 
 /**
  * A relay in front of the hub's reporting port that keeps the plaintext of
- * every request. It presents the hub's own certificate, so a reporter that
- * pins that certificate talks through it unchanged.
+ * every request (method, path, headers and body) and of every answer the hub
+ * sent back. It presents the hub's own certificate, so a reporter that pins
+ * that certificate talks through it unchanged.
  */
 function relay(hub, stateDir) {
   const bodies = [];
+  const answers = [];
   const cert = fs.readFileSync(path.join(stateDir, "tls-cert.pem"));
   const key = fs.readFileSync(path.join(stateDir, "tls-key.pem"));
   const server = https.createServer({ cert, key }, (req, res) => {
@@ -81,9 +83,12 @@ function relay(hub, stateDir) {
     req.on("data", (c) => chunks.push(c));
     req.on("end", () => {
       const body = Buffer.concat(chunks);
-      bodies.push({ url: req.url, body: body.toString("utf8"), authorization: req.headers.authorization || "" });
+      bodies.push({ method: req.method, url: req.url, headers: { ...req.headers }, body: body.toString("utf8"), authorization: req.headers.authorization || "" });
       const upstream = https.request({ host: "127.0.0.1", port: hub.reportPort, method: req.method, path: req.url, ca: cert,
         checkServerIdentity: () => undefined, headers: req.headers }, (up) => {
+        const back = [];
+        up.on("data", (c) => back.push(c));
+        up.on("end", () => answers.push({ url: req.url, status: up.statusCode, headers: { ...up.headers }, body: Buffer.concat(back).toString("utf8") }));
         res.writeHead(up.statusCode, up.headers);
         up.pipe(res);
       });
@@ -91,7 +96,41 @@ function relay(hub, stateDir) {
       upstream.end(body);
     });
   });
-  return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve({ server, port: server.address().port, bodies })));
+  return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve({ server, port: server.address().port, bodies, answers })));
+}
+
+/** Everything a request carried: its method, path, every header and the body. */
+const wholeRequest = (b) => [b.method, b.url, JSON.stringify(b.headers), b.body].join("\n");
+/** Everything an answer carried: status, every header and the body. */
+const wholeAnswer = (a) => [a.status, JSON.stringify(a.headers), a.body].join("\n");
+
+/*
+ * Every read the console serves, and every path the reporting port serves.
+ * The privacy checks below read all of them; the last test in this file fails
+ * when lib/hub/routes.js gains a GET route that is not listed here, so a new
+ * way for data to reach a screen or another machine cannot skip the canaries.
+ */
+const CONSOLE_READS = ["/api/console", "/api/projects?period=24h", "/api/projects?period=3d", "/api/hello"];
+const REPORTING_READS = ["/join", "/join.js", "/join.css", "/house.css", "/brand/mark.svg", "/favicon.svg", "/api/join/info"];
+
+async function consoleReads(hub) {
+  let text = "";
+  for (const url of CONSOLE_READS) {
+    const r = await fetch(hub.url + url, { headers: { ...INTENT, cookie: hub.cookie } });
+    assert.equal(r.status, 200, url);
+    text += `${url}\n${JSON.stringify([...r.headers])}\n${await r.text()}\n`;
+  }
+  return text;
+}
+
+async function reportingReads(hub) {
+  let text = "";
+  for (const url of REPORTING_READS) {
+    const r = await fetch(`http://127.0.0.1:${hub.reportPort}${url}`);
+    assert.equal(r.status, 200, url);
+    text += `${url}\n${JSON.stringify([...r.headers])}\n${await r.text()}\n`;
+  }
+  return text;
 }
 
 async function invite(hub, person, machine) {
@@ -175,13 +214,18 @@ test("two machines join by link, report, roll up by person, and nothing private 
 
   // Privacy: nothing private in anything that crossed the wire, in anything
   // the hub stored, or in what the reporters keep on their own disks.
-  const sent = wire.bodies.map((b) => b.body).join("\n");
+  // "The wire" is every request whole (method, path, headers, body) and every
+  // answer the hub sent back; "the console" is every read it serves.
+  const sent = wire.bodies.map(wholeRequest).join("\n");
+  const answered = wire.answers.map(wholeAnswer).join("\n");
   assert.ok(wire.bodies.some((b) => b.url === "/api/ingest"), "no report went through the relay");
+  assert.equal(wire.answers.length, wire.bodies.length, "an answer was not recorded");
   const stored = readTree(hubState);
   const kept = readTree(path.join(root, "laptop-state")) + readTree(path.join(root, "ws-state"));
-  const shown = JSON.stringify(view);
+  const shown = JSON.stringify(view) + await consoleReads(hub);
   for (const canary of CANARIES) {
     assert.ok(!sent.includes(canary), `"${canary}" crossed the wire`);
+    assert.ok(!answered.includes(canary), `"${canary}" came back over the wire`);
     assert.ok(!stored.includes(canary), `"${canary}" was stored by the hub`);
     assert.ok(!kept.includes(canary), `"${canary}" was kept by a reporter`);
     assert.ok(!shown.includes(canary), `"${canary}" reached the console`);
@@ -306,4 +350,57 @@ test("--share-project-names stops at once when it is left off, and leave deletes
   assert.equal(left.code, 0);
   const remaining = fs.existsSync(state) ? fs.readdirSync(state, { recursive: true }) : [];
   assert.deepEqual(remaining, [], "leave left files behind: " + remaining.join(", "));
+});
+
+test("the hub's own machine: nothing of it leaves through the reporting port", async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-hubown-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const now = Date.now();
+  // The hub reads its own canary-filled transcripts, as a hub on a laptop does.
+  const hubHome = writeHome(path.join(root, "hub-home"), {
+    claude: [{ sessionId: "abababab-0000-4000-8000-000000000001", cwd: "/home/dev/canary-secret-project-dir", start: now - 12 * 60_000, turns: 3 }],
+    codex: [{ id: "cdcdcdcd-0000-4000-8000-000000000001", cwd: "/home/dev/canary-secret-project-dir", start: now - 8 * 60_000, turns: 2 }],
+  });
+  const reporterHome = writeHome(path.join(root, "reporter-home"), {
+    claude: [{ sessionId: "efefefef-0000-4000-8000-000000000001", cwd: "/home/dev/other", start: now - 5 * 60_000, turns: 2 }],
+  });
+  const hubState = path.join(root, "hub");
+  const started = startHub(["--state-dir", hubState, "--home", hubHome]);
+  t.after(() => started.child.kill("SIGKILL"));
+  const hub = await started.ready;
+  let view;
+  for (let i = 0; i < 200; i += 1) {
+    view = await consoleView(hub);
+    if (view.hub.local.firstRunComplete && view.day.tokens.total > 0) break;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  assert.ok(view.devices.some((d) => d.local && d.day.tokens.total > 0), "the hub did not read its own machine");
+
+  const wire = await relay(hub, hubState);
+  t.after(() => wire.server.close());
+  const inv = await invite(hub, "Platform engineer", "Workstation");
+  const joined = await run(["join", through(inv.link, wire.port), "--once", "--json", "--home", reporterHome, "--state-dir", path.join(root, "reporter-state")]);
+  assert.equal(joined.code, 0, joined.out + joined.err);
+
+  // Everything the reporting port gave another machine: the join exchange, the
+  // receipts, the join page and its assets, and the join info.
+  const given = wire.answers.map(wholeAnswer).join("\n") + await reportingReads(hub);
+  const kept = readTree(path.join(root, "reporter-state")) + joined.out + joined.err;
+  assert.ok(wire.answers.some((a) => a.url === "/api/join" && a.status === 200));
+  for (const canary of CANARIES) {
+    assert.ok(!given.includes(canary), `"${canary}" from the hub's own machine left through the reporting port`);
+    assert.ok(!kept.includes(canary), `"${canary}" from the hub's own machine reached the reporter`);
+  }
+});
+
+test("every GET route the hub serves is read by the privacy checks above", () => {
+  const source = fs.readFileSync(new URL("../lib/hub/routes.js", import.meta.url), "utf8");
+  const routes = new Set();
+  for (const m of source.matchAll(/url === (["'])(\/[^"']+)\1 && req\.method === (["'])GET\3/gu)) routes.add(m[2]);
+  for (const m of source.matchAll(/\[(["'])(\/[^"']+)\1, (["'])[^"']+\3\]/gu)) routes.add(m[2]);   // the join page's assets
+  const read = new Set([...CONSOLE_READS, ...REPORTING_READS].map((u) => u.split("?")[0]));
+  // /login answers a single-use ticket with a redirect or a fixed refusal: no data.
+  const unchecked = [...routes].filter((r) => !read.has(r) && r !== "/login");
+  assert.ok(routes.has("/api/console") && routes.has("/join"), "the route pattern no longer matches lib/hub/routes.js");
+  assert.deepEqual(unchecked, [], "add these to CONSOLE_READS or REPORTING_READS so the canaries cover them");
 });
