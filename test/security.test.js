@@ -11,6 +11,13 @@
  *   M4  join guesses are counted before they are read; codes are long and short-lived
  *   M5  reporting refuses callers outside private networks unless allowed
  *   LOW paths are refused unless already in their simplest form
+ *
+ * and of the 0.2.2 review:
+ *
+ *   S1  (test/join-command.test.js) a join link cannot put anything into the command
+ *   S2  a second start never sends the key; it proves it holds it
+ *   S3  a random session per browser, kept as a verifier, with sign-out and a
+ *       cookie name of its own per state directory
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -26,6 +33,7 @@ import { once } from "node:events";
 import { fileURLToPath } from "node:url";
 
 import { selfSignedCertificate, fingerprintOf } from "../lib/hub/tls.js";
+import { createAdmin, readAdminKey, requestSignIn, ticketRequestProof, SESSION_TTL_MS } from "../lib/hub/admin.js";
 import { createReportingHandler, isPrivateAddress } from "../lib/hub/routes.js";
 import { createRegistry, MAX_INVITE_TTL_MS } from "../lib/hub/registry.js";
 import { createStore } from "../lib/hub/store.js";
@@ -42,8 +50,7 @@ function scratch(t, name) {
   return dir;
 }
 
-async function startHub(t, args = []) {
-  const state = scratch(t, "hub");
+async function startHub(t, args = [], state = scratch(t, "hub")) {
   const child = spawn(process.execPath, [BIN, "--json", "--port", "0", "--no-local", "--state-dir", state, ...args], { stdio: ["ignore", "pipe", "pipe"] });
   t.after(() => child.kill("SIGKILL"));
   let out = "";
@@ -100,10 +107,11 @@ test("H1: the console needs its sign-in cookie, refuses proxies and foreign host
   const cookie = await signIn(hub);
   assert.equal((await raw(hub.port, "/login" + ticket)).status, 403, "a sign-in link works once");
   assert.equal((await raw(hub.port, "/login?ticket=guess")).status, 403);
-  assert.match(cookie, /^agent_console_session=/u);
-  // A second start of the console, as the same user, gets a fresh link from the key file.
-  const again = new URL((await startTicket(hub)).url);
-  assert.equal((await raw(hub.port, again.pathname + again.search)).status, 303);
+  assert.match(cookie, /^agent_console_[A-Za-z0-9_-]{12}=[A-Za-z0-9_-]{43}$/u);
+  // A second start of the console, as the same user, gets a fresh link by proving it can read the key file.
+  const again = await requestSignIn({ port: hub.port, key: readAdminKey(hub.state) });
+  assert.equal(again.verified, true);
+  assert.equal((await raw(hub.port, new URL(again.url).pathname + new URL(again.url).search)).status, 303);
   assert.equal((await raw(hub.port, "/api/console", { headers: { ...INTENT, cookie } })).status, 200);
   for (const proxy of [{ "x-forwarded-for": "203.0.113.9" }, { forwarded: "for=203.0.113.9" }, { via: "1.1 proxy" }, { "x-real-ip": "203.0.113.9" }]) {
     assert.equal((await raw(hub.port, "/api/console", { headers: { ...INTENT, cookie, ...proxy } })).status, 421, JSON.stringify(proxy));
@@ -118,15 +126,153 @@ test("H1: the console needs its sign-in cookie, refuses proxies and foreign host
   if (process.platform !== "win32") assert.equal(fs.statSync(path.join(hub.state, "admin.key")).mode & 0o777, 0o600);
 });
 
-/** A second start, as the same user, is handed a fresh sign-in link by the running console. */
-async function startTicket(hub) {
-  const secret = fs.readFileSync(path.join(hub.state, "admin.key"), "utf8").trim();
-  const answer = await raw(hub.port, "/api/ticket", { method: "POST", headers: { authorization: "Bearer " + secret } });
-  assert.equal(answer.status, 200);
-  const wrong = await raw(hub.port, "/api/ticket", { method: "POST", headers: { authorization: "Bearer " + "x".repeat(43) } });
-  assert.equal(wrong.status, 403);
-  return { url: `http://127.0.0.1:${hub.port}/login?ticket=${JSON.parse(answer.body).ticket}` };
+/** Runs the command-line program; its exit code and output. */
+function cli(args) {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [BIN, ...args], { stdio: ["ignore", "pipe", "pipe"] });
+    let out = "", err = "";
+    child.stdout.on("data", (c) => { out += c; });
+    child.stderr.on("data", (c) => { err += c; });
+    const timer = setTimeout(() => child.kill("SIGKILL"), 20_000);
+    child.on("close", (code) => { clearTimeout(timer); resolve({ code, out, err }); });
+  });
 }
+
+test("S2: a second start never sends the key, and something else on the port gets nothing and opens nothing", async (t) => {
+  const state = scratch(t, "impostor");
+  createAdmin({ dir: state });
+  const key = fs.readFileSync(path.join(state, "admin.key"), "utf8").trim();
+  // Answers as an Agent Console, and plays along with every step it can.
+  const seen = [];
+  const impostor = http.createServer((req, res) => {
+    let body = ""; req.on("data", (c) => { body += c; });
+    req.on("end", () => {
+      seen.push({ url: req.url, headers: req.headers, body });
+      res.writeHead(200, { "content-type": "application/json" });
+      if (req.url === "/api/hello") res.end(JSON.stringify({ product: "Agent Console", version: "0.2.2", demo: false }));
+      else if (req.url === "/api/ticket/challenge") res.end(JSON.stringify({ ok: true, nonce: "N".repeat(32) }));
+      else res.end(JSON.stringify({ ok: true, ticket: "T".repeat(32), proof: "P".repeat(43) }));
+    });
+  });
+  impostor.listen(0, "127.0.0.1");
+  await once(impostor, "listening");
+  t.after(() => impostor.close());
+  const run = await cli(["--port", String(impostor.address().port), "--state-dir", state, "--no-local"]);
+  assert.equal(run.code, 1, run.out + run.err);
+  assert.match(run.err, /could not prove it holds that console's key\)\. Nothing was sent to it/u);
+  assert.doesNotMatch(run.out + run.err, /ticket=/u, "a sign-in link from the impostor was printed");
+  assert.ok(seen.some((r) => r.url === "/api/ticket"), "the second start did not get as far as the proof");
+  const everything = JSON.stringify(seen);
+  assert.ok(!everything.includes(key), "the key reached the impostor");
+  assert.ok(!everything.includes(Buffer.from(key, "base64url").toString("hex")), "the key reached the impostor");
+  for (const r of seen) assert.equal(r.headers.authorization, undefined);
+});
+
+test("S2: the running console proves itself; a proof relayed from another port, a wrong key and a spent nonce are refused", async (t) => {
+  const hub = await startHub(t);
+  const key = readAdminKey(hub.state);
+  // A second start from the command line gets a working link.
+  const second = await cli(["--port", String(hub.port), "--state-dir", hub.state, "--no-local"]);
+  assert.equal(second.code, 0, second.out + second.err);
+  const printed = /Sign in with this link \(it works once\): (http:\/\/127\.0\.0\.1:\d+\/login\?ticket=[A-Za-z0-9_-]{32})/u.exec(second.out);
+  assert.ok(printed, second.out);
+  assert.equal((await raw(hub.port, new URL(printed[1]).pathname + new URL(printed[1]).search)).status, 303);
+  assert.equal((await requestSignIn({ port: hub.port, key: crypto.randomBytes(32) })).verified, false, "a wrong key");
+
+  // Something that took another port relays both steps to the real console unchanged.
+  const relayed = [];
+  const relay = http.createServer((req, res) => {
+    const chunks = []; req.on("data", (c) => chunks.push(c));
+    req.on("end", () => {
+      const body = Buffer.concat(chunks);
+      const forward = http.request({ host: "127.0.0.1", port: hub.port, path: req.url, method: req.method, agent: false,
+        headers: { ...req.headers, host: "127.0.0.1:" + hub.port } }, (answer) => {
+        relayed.push(req.url + " " + answer.statusCode);
+        res.writeHead(answer.statusCode, answer.headers);
+        answer.pipe(res);
+      });
+      forward.end(body);
+    });
+  });
+  relay.listen(0, "127.0.0.1");
+  await once(relay, "listening");
+  t.after(() => relay.close());
+  assert.equal((await requestSignIn({ port: relay.address().port, key })).verified, false);
+  assert.deepEqual(relayed, ["/api/ticket/challenge 200", "/api/ticket 403"], "the console accepted a proof made for another port");
+
+  // A nonce works once.
+  const nonce = JSON.parse((await raw(hub.port, "/api/ticket/challenge", { method: "POST", headers: INTENT, body: "{}" })).body).nonce;
+  const client = "C".repeat(32);
+  const body = JSON.stringify({ nonce, client, proof: ticketRequestProof(key, { port: hub.port, nonce, client }) });
+  assert.equal((await raw(hub.port, "/api/ticket", { method: "POST", headers: INTENT, body })).status, 200);
+  assert.equal((await raw(hub.port, "/api/ticket", { method: "POST", headers: INTENT, body })).status, 403, "a spent nonce was accepted");
+  // 0.2.1's request, the raw key as a bearer token, is not accepted any more.
+  for (const headers of [{ authorization: "Bearer " + key.toString("base64url") }, { ...INTENT, authorization: "Bearer " + key.toString("base64url") }]) {
+    assert.equal((await raw(hub.port, "/api/ticket", { method: "POST", headers })).status, 403);
+  }
+});
+
+test("S3: each browser has its own session, sign out ends only that one, and a new key ends them all", async (t) => {
+  const state = scratch(t, "sessions");
+  const first = await startHub(t, [], state);
+  const a = await signIn(first);
+  const b = await signIn({ ...first, signIn: (await requestSignIn({ port: first.port, key: readAdminKey(state) })).url });
+  const [nameA, valueA] = a.split("=");
+  const [nameB, valueB] = b.split("=");
+  assert.equal(nameA, nameB);
+  assert.notEqual(valueA, valueB, "two browsers share a session");
+  const view = (cookie) => raw(first.port, "/api/console", { headers: { ...INTENT, cookie } });
+  assert.equal((await view(a)).status, 200);
+  assert.equal((await view(b)).status, 200);
+  // The console keeps verifiers, never the sessions themselves.
+  const saved = fs.readFileSync(path.join(state, "sessions.json"), "utf8");
+  assert.ok(!saved.includes(valueA) && !saved.includes(valueB));
+  if (process.platform !== "win32") assert.equal(fs.statSync(path.join(state, "sessions.json")).mode & 0o777, 0o600);
+  // The 0.2.1 cookie, derived from the key alone, opens nothing.
+  const legacy = crypto.createHmac("sha256", readAdminKey(state)).update("console-session").digest("base64url");
+  for (const cookie of ["agent_console_session=" + legacy, nameA + "=" + legacy]) assert.equal((await view(cookie)).status, 401);
+
+  assert.equal((await raw(first.port, "/api/signout", { method: "POST", headers: { cookie: a } })).status, 403, "sign-out needs the console's header");
+  const out = await raw(first.port, "/api/signout", { method: "POST", headers: { ...INTENT, cookie: a } });
+  assert.equal(out.status, 200);
+  assert.match(out.headers["set-cookie"][0], new RegExp(`^${nameA}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0$`, "u"));
+  assert.equal((await view(a)).status, 401, "a signed-out session still works");
+  assert.equal((await view(b)).status, 200, "signing one browser out signed another out");
+
+  // A restart keeps the sessions it had.
+  first.child.kill("SIGKILL");
+  await once(first.child, "exit");
+  const restarted = await startHub(t, [], state);
+  const again = (cookie) => raw(restarted.port, "/api/console", { headers: { ...INTENT, cookie } });
+  assert.equal((await again(b)).status, 200);
+  assert.equal((await again(a)).status, 401);
+  // A new key ends every session, and names the cookie differently.
+  restarted.child.kill("SIGKILL");
+  await once(restarted.child, "exit");
+  fs.writeFileSync(path.join(state, "admin.key"), crypto.randomBytes(32).toString("base64url") + "\n", { mode: 0o600 });
+  const rekeyed = await startHub(t, [], state);
+  assert.equal((await raw(rekeyed.port, "/api/console", { headers: { ...INTENT, cookie: b } })).status, 401);
+  assert.notEqual((await signIn(rekeyed)).split("=")[0], nameA);
+});
+
+test("S3: consoles with different state directories use different cookies, and a session lasts 30 days", async (t) => {
+  const one = await startHub(t);
+  const two = await startHub(t);
+  const [nameOne] = (await signIn(one)).split("=");
+  const [nameTwo] = (await signIn(two)).split("=");
+  assert.notEqual(nameOne, nameTwo, "signing in to one console would sign the other out");
+
+  let clock = Date.parse("2026-09-24T12:00:00Z");
+  const admin = createAdmin({ dir: null, now: () => clock });
+  const set = admin.startSession();
+  assert.match(set, new RegExp(`^${admin.cookieName}=[A-Za-z0-9_-]{43}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000$`, "u"));
+  const req = { headers: { cookie: set.split(";")[0] } };
+  assert.equal(admin.signedIn(req), true);
+  clock += SESSION_TTL_MS - 1;
+  assert.equal(admin.signedIn(req), true);
+  clock += 1;
+  assert.equal(admin.signedIn(req), false, "a session outlived its 30 days");
+});
 
 test("H2: a record that is not exactly metadata is refused at the door", async (t) => {
   const now = Date.now();

@@ -30,7 +30,7 @@ import { createNames, startLocalCollection } from "./lib/hub/local.js";
 import { startDemo } from "./lib/hub/demo.js";
 import { createConsoleHandler, createReportingHandler, hubAddresses, joinAssetsPresent } from "./lib/hub/routes.js";
 import { choosePort, chooseFreePort } from "./lib/hub/port.js";
-import { createAdmin, readAdminSecret } from "./lib/hub/admin.js";
+import { createAdmin, readAdminKey, requestSignIn } from "./lib/hub/admin.js";
 import { hubCertificate } from "./lib/hub/tls.js";
 import { defaultRoots } from "./lib/collector/collector.js";
 import { createGitStatsStore } from "./lib/gitstats.js";
@@ -71,22 +71,32 @@ function openBrowser(address) {
 const consoleChoice = await choosePort({ port: config.port, host: "127.0.0.1", explicit: config.portExplicit, demo: config.demo });
 if (consoleChoice.action === "already-running") {
   const base = "http://127.0.0.1:" + consoleChoice.port;
-  // The same user can read the running console's key and ask it for a sign-in link.
-  let url = base;
-  const secret = config.stateDir ? readAdminSecret(config.stateDir) : null;
-  if (secret) {
-    try {
-      const answer = await fetch(base + "/api/ticket", { method: "POST", headers: { authorization: "Bearer " + secret }, signal: AbortSignal.timeout(3000) });
-      if (answer.ok) url = base + "/login?ticket=" + (await answer.json()).ticket;
-    } catch { /* the plain address still works for a browser already signed in */ }
+  // The same user can read the running console's key, and proves it without
+  // sending it: whatever answers on the port gets no secret, and the browser
+  // opens only on a console that proved it holds the same key.
+  const key = config.stateDir ? readAdminKey(config.stateDir) : null;
+  const answer = key ? await requestSignIn({ port: consoleChoice.port, key }) : { verified: false };
+  if (key && !answer.verified) {
+    if (config.json) {
+      process.stdout.write(JSON.stringify({ ok: false, alreadyRunning: true, verified: false, dashboard: { name: PRODUCT_NAME, url: base, port: consoleChoice.port } }) + "\n");
+    } else {
+      process.stderr.write("\n  Something on port " + consoleChoice.port + " answers as " + PRODUCT_NAME + ", but it is not the console for\n"
+        + "  " + config.stateDir + " (it could not prove it holds that console's key). Nothing was sent to it.\n"
+        + "  If it is an older copy of the console, or one with another --state-dir, stop it first.\n"
+        + "  Otherwise start on another port:  " + COMMAND + " --port " + (consoleChoice.port + 2) + "\n\n");
+    }
+    process.exit(1);
   }
+  const url = answer.verified ? answer.url : base;
   if (config.json) {
     process.stdout.write(JSON.stringify({ ok: true, alreadyRunning: true, dashboard: { name: PRODUCT_NAME, version: consoleChoice.running.version, url: base, port: consoleChoice.port } }) + "\n");
   } else {
-    process.stdout.write("\n  " + PRODUCT_NAME + " is already running at " + base + (config.open ? " — opening it." : ".") + "\n"
-      + (config.open || url === base ? "" : "  Sign in with this link (it works once): " + url + "\n") + "\n");
+    const opening = config.open && answer.verified;
+    process.stdout.write("\n  " + PRODUCT_NAME + " is already running at " + base + (opening ? " — opening it." : ".") + "\n"
+      + (opening || !answer.verified ? "" : "  Sign in with this link (it works once): " + url + "\n") + "\n");
   }
-  if (config.open) openBrowser(url);
+  // Only a console that proved itself is opened: a browser sends its 127.0.0.1 cookies to any port.
+  if (config.open && answer.verified) openBrowser(url);
   process.exit(0);
 }
 if (consoleChoice.action === "busy") {

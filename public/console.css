@@ -284,6 +284,9 @@ table.grid .models .names b { color: var(--ink2); font-weight: 400; }
 .foot .grow { flex: 1; }
 .foot a { color: var(--quiet); text-decoration: none; }
 .foot a:hover { color: var(--ink); }
+.foot .signout { border: 0; padding: 0; background: none; color: var(--quiet); font: inherit; cursor: pointer; }
+.foot .signout:hover { color: var(--ink); }
+body.signed-out .foot .signout { display: none; }
 
 /* ── the sheet ────────────────────────────────────────────── */
 dialog.sheet { width: min(calc(560px * var(--k)), calc(100vw - 32px)); border: 0; padding: 0; border-radius: 16px; color: var(--ink);
