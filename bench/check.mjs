@@ -45,7 +45,7 @@ check(`idle pass cost, ${large.lines.toLocaleString("en-US")} vs ${small.lines.t
 const width = Math.max(...checks.map((c) => c.name.length));
 for (const c of checks) process.stdout.write(`${c.ok ? "ok  " : "OVER"}  ${c.name.padEnd(width)}  ${String(c.value).padStart(10)}  budget ${c.limit}\n`);
 process.stdout.write("\nFor information (not gated; depends on the machine):\n");
-for (const r of runs) process.stdout.write(`  ${r.lines.toLocaleString("en-US")} lines, ${(r.sourceBytes / 1048576).toFixed(0)} MB: first read ${r.first.ms} ms, idle pass ${r.idle.ms} ms, five new lines ${r.fiveNewLines.ms} ms, heap ${r.heapMb} MB\n`);
+for (const r of runs) process.stdout.write(`  ${r.lines.toLocaleString("en-US")} lines, ${(r.sourceBytes / 1048576).toFixed(0)} MB: first read ${r.first.ms} ms, idle pass ${r.idle.ms} ms, five new lines ${r.fiveNewLines.ms} ms, store load ${r.storeLoad.loadMs} ms for ${r.storeLoad.records.toLocaleString("en-US")} records, heap ${r.heapMb} MB\n`);
 const over = checks.filter((c) => !c.ok);
 if (over.length) {
   process.stdout.write(`\n${over.length} over budget. If the cost is deliberate, raise the budget in bench/budgets.json in the same pull request and say why.\n`);
