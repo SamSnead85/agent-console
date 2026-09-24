@@ -1,6 +1,32 @@
 # Changelog
 
-## Unreleased — accounting you can reconcile
+## 0.2.2 — 2026-09-24
+
+Security fixes, and accounting you can reconcile. Upgrade from 0.2.1: this
+release fixes three security issues, described in advisory
+[GHSA-grq6-4rfv-hxhj](https://github.com/SamSnead85/agent-console/security/advisories/GHSA-grq6-4rfv-hxhj).
+
+**Security**
+
+- **The join page checks the whole link before it offers a command.** It
+  rebuilds the link from the parts it checked and puts it in single quotes, and
+  gives no command for a link it cannot vouch for. The console's commands use
+  single quotes too, and the reporter accepts a link with the quotes that
+  cmd.exe passes through.
+- **Add a machine leads with the command to send.** It is built on the
+  console's own computer; the link, which opens a page served over plain HTTP,
+  is the alternative. `SECURITY.md` explains the choice.
+- **A second start never sends the console's key.** It proves it can read the
+  key instead, and prints a sign-in link or opens the browser only for a
+  console that proved it holds the same key. Something else answering on the
+  port is told nothing, and the second start says so.
+- **Each browser has its own session.** Sessions are random, last 30 days and
+  end with the new **Sign out**; the console keeps only a verifier of each, and
+  a new key ends them all. Each console's cookie has a name of its own, so
+  signing in to one console on a computer no longer signs you out of another.
+  Everyone signs in once more after upgrading.
+
+**Accounting**
 
 - **[docs/PRINCIPLES.md](docs/PRINCIPLES.md)**: the bar every change meets,
   and where CI checks it. New checks: the README's install line is run
@@ -52,7 +78,7 @@
 - **Fixed: about one generated certificate in 256 was invalid,** so a hub could
   fail to start at random.
 
-## 0.2.1 — not yet released
+## 0.2.1 — 2026-09-23
 
 Safer by default, and the fixes from a first-time install.
 
