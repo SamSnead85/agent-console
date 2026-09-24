@@ -30,3 +30,13 @@ readings and price metadata.
 
 These are signals from counts, not proof of a changed prefix or a complete
 accounting of all request costs. The caller decides how to render them.
+
+## `parsePolicy(repoText, orgText?)`
+
+Parses the version 1 policy in JSON or the documented YAML subset. Both
+inputs are plain text or objects; the optional organization document overrides
+the repository document recursively. The result includes defaults and is
+validated against the field rules in [policy.md](policy.md) and
+[policy.schema.json](policy.schema.json). `parsePolicyDocument` parses syntax
+only; use `parsePolicy` before compiling a policy. Neither function reads a
+file or receives a raw agent prompt or command.
