@@ -48,9 +48,9 @@ test("one streamed Claude response is one message, however many records its line
     timestamp: "2026-09-22T11:59:20.000Z", isSidechain: false,
     message: { id: "msg-2", model: "claude-sonnet-5", usage: { input_tokens: 3, output_tokens: 9, cache_creation_input_tokens: 0, cache_read_input_tokens: 99 } } }), context, state);
   records.push(...next.records);
-  assert.equal(records.length, 4, "the collector still reports every delta, so no token is lost");
+  assert.equal(records.length, 4, "the collector reports every line that grew a message, so no token is lost");
   assert.deepEqual(records.map((r) => r.continuation), [false, true, true, false]);
-  assert.equal(records.reduce((sum, r) => sum + r.output, 0), 129, "output adds up to the final count, once");
+  assert.deepEqual(records.map((r) => r.output), [5, 40, 120, 9], "each is the message's running maximum");
 
   const now = Date.UTC(2026, 8, 22, 12);
   const store = createStore({ dir: null, retentionMs: 8 * DAY, prices: PRICES, now: () => now });
@@ -60,6 +60,7 @@ test("one streamed Claude response is one message, however many records its line
   store.ingest("device-a", records);
   const view = buildConsole({ store, registry, now, hub: {} });
   assert.equal(view.day.messages, 2, "two API responses, not four records");
+  assert.equal(view.day.tokens.output, 129, "the hub adds each reading's growth once: 120 + 9");
   assert.equal(view.day.records, 4);
   assert.equal(view.day.models[0].messages, 2);
   assert.equal(view.devices[0].day.messages, 2);

@@ -426,13 +426,31 @@ test("M4: one address over its own limit does not use up everyone's joins, and I
   assert.deepEqual(tally, { 404: 10, 429: 190 }, "ten guesses evaluated, the rest refused");
   // A real join from another machine still reaches the code check.
   assert.equal(await attempt("192.168.1.20"), 404);
-  // Every address in one /64 shares one allowance; another /64 has its own.
-  const inPrefix = [];
-  for (let i = 1; i <= 12; i += 1) inPrefix.push(await attempt(`fd12:3456:789a:1::${i.toString(16)}`));
-  assert.equal(inPrefix.filter((s) => s === 404).length, 10);
-  assert.equal(await attempt("fd12:3456:789a:2::1"), 404);
-  assert.equal(joinAddressKey("fd12:3456:789a:1:aaaa:bbbb:cccc:dddd"), joinAddressKey("fd12:3456:789a:0001::9"));
+  // A unique-local or link-local /64 is the whole office network: its addresses count one by one.
+  for (let i = 1; i <= 12; i += 1) await attempt(`fd12:3456:789a:1::${(0x60 + i).toString(16)}`);
+  assert.equal(await attempt("fd12:3456:789a:1::20"), 404, "a neighbour on the same ULA /64 is not held off");
+  assert.notEqual(joinAddressKey("fd12:3456:789a:1::66"), joinAddressKey("fd12:3456:789a:1::20"));
+  assert.notEqual(joinAddressKey("fe80::66%en0"), joinAddressKey("fe80::20%en0"));
+  // A global /64 (reachable only with --allow-public) is one machine's: it shares one allowance.
+  assert.equal(joinAddressKey("2001:db8:1:1:aaaa:bbbb:cccc:dddd"), joinAddressKey("2001:db8:1:0001::9"));
   assert.equal(joinAddressKey("::ffff:192.168.1.20"), "192.168.1.20");
+});
+
+test("M4: however many addresses one device uses, a join by link from another machine is never held off", async () => {
+  const registry = createRegistry({ dir: null });
+  const handler = createReportingHandler({ config: { demo: false, retentionDays: 8, allowPublic: false }, registry,
+    store: createStore({ dir: null, retentionMs: 86_400_000, prices: PRICES }), version: "0.0.0", publicDir: process.cwd() });
+  const attempt = async (remoteAddress, code) => {
+    const req = Object.assign(Readable.from([Buffer.from(JSON.stringify({ code }))]),
+      { method: "POST", url: "/api/join", headers: { "content-type": "application/json" }, socket: { remoteAddress } });
+    let status = 0;
+    await handler(req, { writeHead: (s) => { status = s; }, end: () => {} }, { secure: true });
+    return status;
+  };
+  // Six addresses, ten guesses each, at typed codes and at link-shaped codes.
+  for (let a = 0x66; a <= 0x71; a += 1) for (let i = 0; i < 10; i += 1) await attempt(`192.168.1.${a}`, i % 2 ? "2222-2223" : "A".repeat(22));
+  const { linkCode } = registry.invite({ person: "Reviewer", machine: "Laptop" });
+  assert.equal(await attempt("192.168.1.20", linkCode), 200);
 });
 
 test("S4: carrier-grade NAT (100.64.0.0/10) counts as private only with --allow-cgnat", async () => {

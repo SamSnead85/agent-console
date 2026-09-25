@@ -70,3 +70,23 @@ test("the CLI refuses a busy port the person chose, and says so", async (t) => {
   assert.equal(code, 1);
   assert.match(err, new RegExp(`Port ${port} is already in use by another program`, "u"));
 });
+
+test("started again after it moved off a busy port, the console finds itself instead of starting a second copy", async (t) => {
+  // Another program holds the default port; this console moved one port on.
+  const held = await holdPort(t);
+  const hello = (req, res) => {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ product: "Agent Console", version: "0.3.0", demo: false, retentionDays: 8 }));
+  };
+  const server = http.createServer(hello);
+  server.listen(held + 1, "127.0.0.1");
+  const listening = await Promise.race([once(server, "listening").then(() => true), once(server, "error").then(() => false)]);
+  if (!listening) { t.skip("the next port was not free"); return; }
+  t.after(() => server.close());
+  const ours = await choosePort({ port: held, host: "127.0.0.1", explicit: false, demo: false, mine: async (p) => p === held + 1 });
+  assert.deepEqual([ours.action, ours.port], ["already-running", held + 1]);
+  // A console that cannot prove it is this one (another --state-dir) is passed over.
+  const theirs = await choosePort({ port: held, host: "127.0.0.1", explicit: false, demo: false, mine: async () => false });
+  assert.equal(theirs.action, "listen");
+  assert.ok(theirs.port > held + 1);
+});

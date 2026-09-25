@@ -99,16 +99,26 @@ function rememberedReportPort() {
 // ---------------------------------------------------------------------------
 
 const remembered = REPORTING_FILE ? rememberedReportPort() : null;
+// A console found on a nearby port (where an earlier start moved to) is this
+// one only when it proves it holds this state directory's key; a demo has none.
+const ownKey = config.stateDir ? readAdminKey(config.stateDir) : null;
+const proofs = new Map();
+const mine = config.demo ? null : async (port) => {
+  if (!ownKey) return false;
+  const answer = await requestSignIn({ port, key: ownKey });
+  proofs.set(port, answer);
+  return answer.verified;
+};
 const consoleChoice = await choosePort({ port: config.port, host: "127.0.0.1", explicit: config.portExplicit, demo: config.demo,
   // A console that moves off a busy port never lands on the port its machines report to.
-  avoid: remembered && !config.reportPortExplicit ? [remembered] : [] });
+  avoid: remembered && !config.reportPortExplicit ? [remembered] : [], mine });
 if (consoleChoice.action === "already-running") {
   const base = "http://127.0.0.1:" + consoleChoice.port;
   // The same user can read the running console's key, and proves it without
   // sending it: whatever answers on the port gets no secret, and the browser
   // opens only on a console that proved it holds the same key.
-  const key = config.stateDir ? readAdminKey(config.stateDir) : null;
-  const answer = key ? await requestSignIn({ port: consoleChoice.port, key }) : { verified: false };
+  const key = ownKey;
+  const answer = proofs.get(consoleChoice.port) ?? (key ? await requestSignIn({ port: consoleChoice.port, key }) : { verified: false });
   if (!key) {
     // No key to prove (a demo keeps none): ask the running console to print a
     // new sign-in link in its own window. Nothing secret is sent, and nothing

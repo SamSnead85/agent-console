@@ -40,3 +40,16 @@ test('synthetic Projects payload uses the shared ratios and projects no Git path
   assert.ok(payload.projects.some((project) => project.repo
     && project.repo.prsMerged !== project.repo.defaultMerges), 'demo integration counts are distinct');
 });
+
+test('demo Projects: a period too short for a commit shows no lines, PRs or merges either', async () => {
+  const prices = JSON.parse(fs.readFileSync(new URL('../lib/collector/prices.json', import.meta.url), 'utf8'));
+  const store = createStore({ retentionMs: 8 * 86_400_000, prices });
+  const registry = createRegistry();
+  const names = startDemo({ store, registry }).names;
+  const payload = await projectsPayload({ store, registry, names, period: '1h', demo: true, now: Date.now() });
+  for (const project of payload.projects) {
+    if (!project.repo || project.repo.commits) continue;
+    assert.deepEqual([project.repo.added, project.repo.removed, project.repo.prsMerged, project.repo.defaultMerges], [0, 0, 0, 0], project.name);
+  }
+  assert.ok(payload.projects.some((project) => project.repo && project.repo.commits === 0), 'the 1-hour demo has a project without a commit');
+});

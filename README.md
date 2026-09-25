@@ -309,13 +309,21 @@ suite that checks them to the token, are in [docs/accounting.md](docs/accounting
 
 ## Project policy
 
-Add `agent-policy.yaml` at your repository root, then run
-`agent-console policy diff` to inspect the proposed Claude Code agents,
-settings and hooks. `agent-console policy apply` installs those project files
-with private backups; `agent-console policy remove` restores them. All three
-refuse a symlinked `.claude` path and never write your user-level Claude
-settings, and the installed hook asks or denies when it cannot classify a
-command. Nothing is
+Add `agent-policy.yaml` at your repository root, then, from that root:
+
+```sh
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy diff
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy apply
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy remove
+```
+
+`policy diff` shows the proposed Claude Code agents, settings and hooks;
+`policy apply` installs those project files with private backups; `policy
+remove` restores what was there before and deletes what apply created. From a
+download, use `node bin/agent-console.mjs policy …`; `policy --help` prints the
+usage. All three refuse a symlinked `.claude` path and never write your
+user-level Claude settings. The installed hook decides within five seconds,
+and asks or denies when it cannot classify a command in time. Nothing is
 installed by starting the dashboard. The optional policy covers model roles,
 effort, action gates, and budget thresholds; hard token and dollar budget
 enforcement is not available from the native launch hook. See
@@ -380,14 +388,17 @@ a restart, with no new link. `stop` stops a reporter running in the background
 and keeps the enrolment. `leave` stops any reporter, tells the console this
 computer has left, and deletes everything the enrolment left on this computer.
 Joining the same console again keeps this computer's entry and history, rather
-than adding a second machine with the same name. From a download, use `node bin/agent-console.mjs` in place
+than adding a second machine with the same name; after `leave`, that holds when
+the new link names the same person and machine. From a download, use `node bin/agent-console.mjs` in place
 of `npx --yes <release link>`. Always use the full command: the short name on
 its own would fetch a different, unrelated package from the public registry.
 
 The command **Add a machine** gives, and the join page's, starts with
-`node -e '…'`: a short check that downloads the release file and its
+`node -e '<check>'`: a short check that downloads the release file and its
 `SHA256SUMS` from GitHub, runs nothing unless the file's SHA-256 matches,
-keeps the checked file in `~/.agent-console/releases/`, and then runs it. The
+keeps the checked file in `~/.agent-console/releases/`, and then runs it.
+Before running a command you were sent, compare its check with the published
+one ([The check in every command](#the-check-in-every-command)). The
 reporter's own restart line names that checked file.
 
 Options: `--name` (what to call this computer), `--interval <seconds>` (2 to
@@ -534,6 +545,33 @@ build provenance attestation for it. To check a file you downloaded:
 shasum -a 256 lockedinlabs-agent-console-0.3.0.tgz              # macOS, Linux
 Get-FileHash lockedinlabs-agent-console-0.3.0.tgz               # Windows PowerShell
 gh attestation verify lockedinlabs-agent-console-0.3.0.tgz -R SamSnead85/agent-console
+```
+
+## The check in every command
+
+Every command the console or the join page prints starts with
+`node -e '<check>'`: a short program that downloads the release file and the
+release's `SHA256SUMS` from GitHub over HTTPS, and runs nothing unless the
+file's SHA-256 is the one listed. Before you run a command someone sent you,
+compare its check with the published one, not only its first words. The
+check's SHA-256 is:
+
+```text
+114422b34fdc2721cd70e125908fe2ef381b4afddf6c7317d3e540710ec03737
+```
+
+This command prints the SHA-256 of the check in any command you paste into it,
+without running anything. Paste the command, press Return, then Ctrl+D
+(Ctrl+Z and Return in PowerShell):
+
+```sh
+node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(require('crypto').createHash('sha256').update(s.split(String.fromCharCode(39))[1]).digest('hex')))"
+```
+
+The check itself, verbatim:
+
+```text
+const[u,...a]=process.argv.slice(1),p=require(`path`),n=p.basename(u),g=x=>fetch(x).then(r=>{if(!r.ok)throw Error(x+` answered `+r.status);return r.arrayBuffer()}).then(Buffer.from);(async()=>{if(!/^https:[/][/]github[.]com[/][A-Za-z0-9_.-]+[/][A-Za-z0-9_.-]+[/]releases[/]download[/]v[0-9.]+[/][A-Za-z0-9_.-]+[.]tgz(?![^])/.test(u))throw Error(`not a release file: `+u);const t=String(await g(p.posix.dirname(u)+`/SHA256SUMS`)).split(/[^0-9A-Za-z._-]+/),b=await g(u),h=require(`crypto`).createHash(`sha256`).update(b).digest(`hex`);if(h!==t[t.indexOf(n)-1])throw Error(n+` does not match the release SHA256SUMS; nothing was run`);const f=require(`fs`),d=p.join(require(`os`).homedir(),`.agent-console`,`releases`),k=p.join(d,n),w=process.platform==`win32`,q=String.fromCharCode(34);f.mkdirSync(d,{recursive:true});f.writeFileSync(k,b);console.error(n+` matches the release SHA256SUMS: `+h);const r=require(`child_process`).spawnSync(w?[`npx`,`--yes`,`file:`+k,...a].map(x=>q+x+q).join(` `):`npx`,w?[]:[`--yes`,`file:`+k,...a],{stdio:`inherit`,shell:w,env:{...process.env,AGENT_CONSOLE_PACKAGE:k}});process.exit(r.status??1)})().catch(e=>{console.error(String(e.message));process.exit(1)})
 ```
 
 ## Development

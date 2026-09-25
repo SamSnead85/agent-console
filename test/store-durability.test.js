@@ -144,3 +144,46 @@ test("a zero-byte write cannot loop forever or create a phantom record", (t) => 
   assert.equal(store.ingest("device", [row(1)]).accepted, 1);
   checkRestart(make, 1);
 });
+
+function usage(store) {
+  const total = { fresh: 0, output: 0, messages: 0 };
+  store.eachBucket(0, Infinity, (_minute, bucket) => {
+    for (const key of Object.keys(total)) total[key] += bucket[key];
+  });
+  return total;
+}
+
+test("a failed cumulative append preserves the held maximum, totals and retry", (t) => {
+  const { file, make, store } = fixture(t);
+  const initial = { ...row(1), tool: "claude-code", cumulative: true };
+  const grown = { ...initial, fresh: 30, output: 20, continuation: true };
+  store.ingest("device", [initial]);
+  const before = fs.readFileSync(file);
+  const beforeUsage = usage(store);
+  const sync = fs.fsyncSync.bind(fs);
+  let calls = 0;
+  t.mock.method(fs, "fsyncSync", (fd) => { if (++calls === 1) throw diskError(); return sync(fd); });
+  assert.throws(() => store.ingest("device", [grown]), { code: "EIO" });
+  t.mock.reset();
+  assert.deepEqual(fs.readFileSync(file), before);
+  assert.deepEqual(usage(store), beforeUsage);
+  assert.equal(store.quotaLeft("device"), DEVICE_DAILY_RECORDS - 1);
+  assert.equal(store.ingest("device", [grown]).accepted, 1);
+  assert.deepEqual(usage(store), { fresh: 30, output: 20, messages: 1 });
+  assert.deepEqual(usage(checkRestart(make, 1)), usage(store));
+});
+
+test("one durable batch keeps only cumulative growth across repeated identities", (t) => {
+  const { make, store } = fixture(t);
+  const initial = { ...row(1), tool: "claude-code", cumulative: true };
+  const grown = { ...initial, fresh: 30, output: 20, continuation: true };
+  const greatest = { ...grown, fresh: 40, output: 30 };
+  const receipt = store.ingest("device", [initial, grown, initial, greatest, grown]);
+  assert.equal(receipt.accepted, 3);
+  assert.equal(receipt.duplicate, 2);
+  assert.equal(store.recordCount, 1);
+  assert.deepEqual(usage(store), { fresh: 40, output: 30, messages: 1 });
+  const restored = checkRestart(make, 1);
+  assert.deepEqual(usage(restored), usage(store));
+  assert.equal(restored.ingest("device", [greatest]).duplicate, 1);
+});

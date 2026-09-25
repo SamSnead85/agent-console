@@ -104,3 +104,17 @@ test("the dark theme is declared twice, so the toggle and the system agree", () 
   const toggled = tokens(':root[data-theme="dark"] {');
   assert.deepEqual(system, toggled);
 });
+
+test("each lane's buttons are named with their reading and their row", () => {
+  assert.doesNotMatch(JS, /aria-label="Show agent tree"|aria-label="Session context details"/u, "every row's buttons share one name");
+  assert.match(JS, /agButton\.setAttribute\("aria-label", [^\n]*l\.agents\.live[^\n]*l\.project\.name/u);
+  assert.match(JS, /cx\.querySelector\("button"\)\.setAttribute\("aria-label"[\s\S]{0,200}Context \$\{fmt\(l\.context\.latest\)\}[\s\S]{0,120}l\.project\.name/u);
+});
+
+test("the Machines panel names the chosen period, and the agent tree says when an outcome is unknown", () => {
+  assert.doesNotMatch(JS, /share of the last 24 hours/u, "the Machines subtitle is fixed to 24 hours");
+  assert.match(JS, /share of the \$\{PERIOD_TEXT\[period\]\[0\]\}/u);
+  assert.match(JS, /outcome unknown · no result recorded/u);
+  assert.match(JS, /on machines that left or were removed/u);
+  assert.match(JS, /d\.leftAt \? "left" : "removed"/u);
+});

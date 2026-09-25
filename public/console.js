@@ -196,7 +196,11 @@
   function paintPeriod() {
     const [label, short] = PERIOD_TEXT[period];
     const w = win();
-    const since = period === "30d" && w.partial && w.since ? " · daily totals kept since " + new Date(w.since + "T00:00:00Z").toLocaleDateString([], { day: "numeric", month: "short", timeZone: "UTC" }) : "";
+    const day = (iso) => new Date(iso).toLocaleDateString([], { day: "numeric", month: "short", timeZone: "UTC" });
+    const since = !w.partial ? ""
+      : period === "30d" ? (w.since && Date.parse(w.since + "T00:00:00Z") > w.from ? " · daily totals kept since " + day(w.since + "T00:00:00Z")
+        : " · partial: some usage arrived after its day's detail was gone")
+      : w.since ? " · minute detail kept since " + day(w.since) : " · partial";
     $("cCap").textContent = "Tokens · " + label + since;
     $("cCap").title = period === "30d" ? "The last 30 calendar days in UTC, today included, from the daily totals the console keeps after its minute-by-minute detail."
       : "The whole minutes of the " + label + ", ending with the current one. The chart's bars add up to this figure.";
@@ -290,7 +294,7 @@
           row = document.createElement("div");
           row.className = "lane";
           row.innerHTML = `<span class="st"><i></i><span></span></span><span class="pr"><b></b><em></em></span><span class="md"></span>
-            <span class="sp" aria-hidden="true">${"<i></i>".repeat(20)}</span><span class="fm r"></span><span class="ag r"><button type="button" aria-label="Show agent tree" aria-expanded="false"></button></span><span class="cx"><button type="button" aria-label="Session context details"></button></span><span class="dv"></span>`;
+            <span class="sp" aria-hidden="true">${"<i></i>".repeat(20)}</span><span class="fm r"></span><span class="ag r"><button type="button" aria-expanded="false"></button></span><span class="cx"><button type="button"></button></span><span class="dv"></span>`;
           row._tree = document.createElement("div");
           row._tree.className = "agent-tree";
           row._tree.hidden = true;
@@ -323,11 +327,15 @@
     }
     const live = D.lanes.filter((l) => l.state === "live").length;
     const idle = D.lanes.filter((l) => l.state === "idle").length;
-    const unavailable = D.lanes.filter((l) => l.state === "silent" || l.state === "revoked").length;
+    const silent = D.lanes.filter((l) => l.state === "silent").length;
+    const gone = D.lanes.filter((l) => l.state === "revoked").length;
     const catching = D.lanes.filter((l) => l.state === "catching-up" || l.state === "reconnecting").length;
-    const parts = [sessionWords(), `${live} live`, `${idle} idle`];
+    // Idle lanes that have not worked for an hour are hidden too: say how many.
+    const quiet = showUnavailable ? 0 : D.lanes.filter((l) => l.state === "idle" && !laneVisible(l, now)).length;
+    const parts = [sessionWords(), `${live} live`, `${idle} idle` + (quiet ? ` (${quiet} of them idle for more than an hour, hidden)` : "")];
     if (catching) parts.push(`${catching} on machines still catching up${showUnavailable ? "" : " (hidden)"}`);
-    if (unavailable) parts.push(`${unavailable} on silent machines${showUnavailable ? "" : " (hidden)"}`);
+    if (silent) parts.push(`${silent} on silent machines${showUnavailable ? "" : " (hidden)"}`);
+    if (gone) parts.push(`${gone} on machines that left or were removed${showUnavailable ? "" : " (hidden)"}`);
     const tail = D.hub.demo ? "DEMO · every figure here is generated" : "figures are what each machine reported · costs are list-price estimates";
     $("lFoot").innerHTML = parts.map((p) => `<span>${esc(p)}</span>`).join("") + `<span class="end">${esc(tail)}</span>`;
   }
@@ -378,12 +386,16 @@
     agButton.textContent = l.agents.total ? `${l.agents.live}/${l.agents.total}` : "—";
     agButton.disabled = !l.agents.total;
     agButton.title = l.agents.total ? `${l.agents.live} subagents worked in the last five minutes, of ${l.agents.total} today. Open the agent tree.` : "No subagents";
-    row._tree.innerHTML = (l.agentTree || []).map((agent, index) => `<div class="agent-node" style="--depth:${Math.min(agent.depth, 8)}"><span>${index === 0 ? 'Orchestrator' : '↳ Subagent'}</span><span class="agent-model">${vendorMark(vendorOf(agent.model))}${esc(agent.modelLabel)}</span><span>${agent.tokens == null ? 'Tokens unavailable' : fmt(agent.tokens) + ' tokens · 24 h'}</span><span>${observedSpan(agent.durationMinutes)}${agent.outcome === 'unknown' ? '' : ` · ${esc(agent.outcome)}`}</span></div>`).join('');
+    // The label carries the reading and the row, so a screen reader hears both.
+    agButton.setAttribute("aria-label", l.agents.total ? `Agents ${l.agents.live} of ${l.agents.total} live, ${l.project.name}: show tree` : `No subagents, ${l.project.name}`);
+    row._tree.innerHTML = (l.agentTree || []).map((agent, index) => `<div class="agent-node" style="--depth:${Math.min(agent.depth, 8)}"><span>${index === 0 ? 'Orchestrator' : '↳ Subagent'}</span><span class="agent-model">${vendorMark(vendorOf(agent.model))}${esc(agent.modelLabel)}</span><span>${agent.tokens == null ? 'Tokens unavailable' : fmt(agent.tokens) + ' tokens · 24 h'}</span><span>${observedSpan(agent.durationMinutes)} · ${agent.outcome === 'unknown' ? 'outcome unknown · no result recorded' : esc(agent.outcome)}</span></div>`).join('');
     const cx = row.querySelector(".cx");
     cx.classList.toggle("bloated", l.context?.status === "bloated");
     cx.querySelector("button").textContent = l.context?.latest === null || l.context?.latest === undefined
       ? "—" : fmt(l.context.latest) + (l.context.status === "bloated" ? " ↑" : "");
     cx.title = l.context?.latest === null ? "Context unavailable: input classes were not reported" : "Latest reported input tokens per API response. Open for history and cache signals.";
+    cx.querySelector("button").setAttribute("aria-label", (l.context?.latest === null || l.context?.latest === undefined
+      ? "Context unavailable" : `Context ${fmt(l.context.latest)}${l.context.status === "bloated" ? ", growing" : ""}`) + `, ${l.project.name}: details`);
     const dv = row.querySelector(".dv");
     const who = l.device.person ? ` · ${esc(l.device.person)}` : "";
     dv.innerHTML = `<b>${esc(l.device.label)}</b>${who} · ` + (l.state === "catching-up" ? "catching up"
@@ -449,8 +461,11 @@
     const now = serverNow();
     const rows = D.devices.filter((d) => d.status !== "revoked" || showUnavailable);
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
+    // The share of machines that left or were removed, when their cards are hidden.
+    const goneShare = showUnavailable ? 0 : D.devices.filter((d) => d.status === "revoked").reduce((a, d) => a + (pw(d).shareOfWhole || 0), 0);
     $("machinesHint").textContent = D.devices.length
-      ? `${reporting} of ${currentDevices().length} reporting · share of the last 24 hours`
+      ? `${reporting} of ${currentDevices().length} reporting · share of the ${PERIOD_TEXT[period][0]}`
+        + (goneShare > 0 ? ` · ${pct(goneShare)} from machines that left or were removed` : "")
       : "none yet";
     $("machines").innerHTML = rows.map((d) => `<div class="mach ${d.status}">
         <div class="n"><b>${esc(d.label)}</b><em>${esc(d.person || "")}</em>${d.local ? '<span class="here">THIS MACHINE</span>' : ""}</div>
@@ -721,7 +736,11 @@
     const current = currentDevices().length;
     const label = PERIOD_TEXT[period][1];
     $("teamTotals").innerHTML = [
-      [fmt(total), "Tokens · " + label, "across " + plural(D.devices.length, "machine") + (current < D.devices.length ? `, ${D.devices.length - current} since removed` : "")],
+      [fmt(total), "Tokens · " + label, "across " + plural(D.devices.length, "machine") + (() => {
+        const gone = D.devices.filter((d) => d.status === "revoked");
+        const left = gone.filter((d) => d.leftAt).length, removed = gone.length - left;
+        return [left ? `, ${left} since left` : "", removed ? `, ${removed} since removed` : ""].join("");
+      })()],
       // Every model unpriced is "no priced model", never $0.00.
       [cost.status === "unpriced" ? "—" : cost.status === "none" ? money(0) : money(cost.usd), "Est. cost",
         cost.status === "unpriced" ? "no priced model" : cost.status === "partial" ? "partial — some models unpriced" : "list-price estimate"],
@@ -747,7 +766,7 @@
     $("machineTable").tBodies[0].innerHTML = D.devices.length ? D.devices.map((d) => {
       const a = of(d);
       const action = d.local ? `<span class="sub">this machine</span>`
-        : d.status === "revoked" ? `<span class="sub">removed</span>`
+        : d.status === "revoked" ? `<span class="sub">${d.leftAt ? "left" : "removed"}</span>`
         : `<button type="button" class="btn small danger" data-revoke="${esc(d.id)}" data-label="${esc(d.label)}">Remove</button>`;
       // On its own line, so the machine column stays narrow enough for the row's action at 1440 wide.
       const lost = d.coverage && d.coverage.dropped ? `<span class="sub"><b title="${esc(d.coverage.reasons.map((r) => r.count + " × " + r.label).join("; "))}">${d.coverage.dropped} not counted</b></span>` : "";

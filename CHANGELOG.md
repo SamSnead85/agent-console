@@ -14,10 +14,13 @@ apply and remove; optional local metrics; figures that follow one period
 everywhere; and reporters that keep going in the background and survive a
 console's restart.
 
-**Upgrading from 0.2.2.** Upgrade the console before its reporters: a 0.3.0
-reporter's records carry a `tier` key that a 0.2.x console refuses (joining
-pins a reporter to its console's version, so this happens only when a reporter
-is upgraded by hand). A console whose machines join over Tailscale or other
+**Upgrading from 0.2.1 or 0.2.2.** Coming from 0.2.1, this release includes
+0.2.2's security fixes (below): everyone signs in to the console once more
+after upgrading, and a second start proves it holds the console's key instead
+of sending it. Upgrade the console before its reporters: a 0.3.0 reporter's
+records carry `tier` and `cumulative` keys that a 0.2.x console refuses
+(joining pins a reporter to its console's version, so this happens only when a
+reporter is upgraded by hand). A console whose machines join over Tailscale or other
 carrier-grade NAT addresses (100.64.0.0/10) must now be started with
 `--allow-cgnat`. A Prometheus scraper of `/metrics` needs the token that
 `metrics-token` prints. The burn is now a fifteen-minute average.
@@ -50,16 +53,23 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
 
 - **An optional `agent-policy.yaml`** (or JSON) with a published schema and a
   shared parser; unknown fields fail validation.
-- **`agent-console policy diff`, `apply` and `remove`** compile the policy into
+- **`policy diff`, `apply` and `remove`** (run with the release's full
+  command, like every other command; `policy --help` prints the usage) compile the policy into
   repository-scoped Claude Code agents, settings and a local hook, with private
   backups so `remove` restores the files that were there before. Starting the
   console installs nothing. [docs/policy.md](docs/policy.md) says what is
   enforced and what is not.
 - All three refuse a symlinked `.claude` path and never write the user-level
-  Claude directory. The hook classifies quoted, wrapped and `sh -c` commands
-  and path-qualified interpreters, catches `cat .env`-style secret reads and
-  `git -C <path> push --force`, and asks or denies when it cannot load its
-  classifier.
+  Claude directory, compared by file identity, so a miscased or firmlinked
+  path on macOS is refused too. The hook classifies quoted (including `$'…'`),
+  wrapped and `sh -c` commands (after `-o`, `-O` and `+` options) and here-strings,
+  interpreters on the right of a pipe however they are written, secret files
+  handed to any program that prints them, force pushes through git aliases
+  and push settings, and deletes after a `cd` or through a symbolic link out
+  of the repository. It decides within five seconds on a worker thread and
+  asks or denies when it cannot load its classifier or runs out of time.
+  `policy remove` says `removed` for files it deleted and takes away the
+  directories apply created.
 
 **Metrics and telemetry (opt-in)**
 
@@ -76,10 +86,17 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
 
 - **Every command the console and the join page print checks the release file
   against the release's `SHA256SUMS`** before running anything, and keeps the
-  checked file in `~/.agent-console/releases/`.
-- **One address over its join limit no longer counts toward the total**, so
-  one device cannot hold off everyone's joins; IPv6 addresses count by their
-  /64.
+  checked file in `~/.agent-console/releases/`. The check's SHA-256 is
+  published in the README and each release's notes, with a short command that
+  prints the SHA-256 of the check in any command pasted into it, so whoever is
+  sent a command can compare the whole check. The join page shows the whole
+  command (only the code masked), and its restart line is a complete command
+  with its own Copy button.
+- **A join by link is never held off by other machines' attempts**, however
+  many addresses one device uses; the total of sixty per ten minutes guards
+  only the typed code, and an address over its own limit does not count
+  toward it. A global IPv6 address counts by its /64; a unique-local or
+  link-local one counts by itself.
 - **Carrier-grade NAT (100.64.0.0/10, also Tailscale's range) is no longer
   private by default.** Start the console with `--allow-cgnat` to accept it;
   the start banner says so when it sees such an address.
@@ -91,7 +108,20 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
 
 - **Fixed: a message a forked subagent copied from its parent is counted
   once.** Copies, including ones cut off mid-stream, were counted again in each
-  fork's file, so input, cache and message counts could be overstated.
+  fork's file, so input, cache and message counts could be overstated. A
+  Claude message is now sent as its running per-class maximum under one id,
+  and the console keeps the largest reading it holds, so two machines that met
+  a fork's copy in a different order, or a machine that lost its cursor, give
+  the same total.
+- **A Codex thread resumed by a newer Codex is counted from its records** from
+  its first own record on; only a record for a response already counted is
+  reported as late.
+- **Drops follow their transcripts**: a deleted or replaced transcript takes
+  its drops with it, and a line Claude Code rewrites with all-zero usage is not
+  a drop.
+- **Partial periods say so**: 7 days with `--retention-days` below 7, and 30
+  days when usage arrives after its day passed minute retention (counted as
+  `pastRetention`).
 - **Nothing is dropped silently.** Every transcript line that carries usage and
   cannot be counted is counted by reason, sent with each report, and shown
   beside the figures and on its machine's row in Team, as are records the
@@ -117,7 +147,8 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
   machine. "PRs merged" is now "commits referencing #N", which is what it
   counts.
 - The accounting spec is 1.1 and the conformance suite 1.1.0, with a case with
-  exact expected totals for each of these.
+  exact expected totals for each of these. Records carry a new `cumulative`
+  key ([docs/COLLECTOR-CONTRACT.md](docs/COLLECTOR-CONTRACT.md)).
 
 **Reporters and machines**
 
@@ -127,15 +158,22 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
   [docs/BACKGROUND.md](docs/BACKGROUND.md) has launchd, systemd and Task
   Scheduler examples for starting it at login.
 - **One reporter per state directory, for its whole life**: a second one is
-  refused and names the one that is running. New `stop` command.
+  refused and names the one that is running. New `stop` command. A lock is
+  honoured only for a process that is really a reporter, so a reused process
+  id is never refused or signalled. A reporter stopped by `stop` or `leave`
+  says so in its own window, and `--once` says it reports once.
 - **`leave` tells the console** and stops a reporter running in another window;
   the console shows the machine as having left, not as silent.
 - **Joining the same console again keeps the machine's entry and history**
-  instead of adding a second machine with the same name.
+  instead of adding a second machine with the same name, also after `leave`
+  when the new link names the same person and machine.
 - **Reporters survive a console's port change.** The console keeps its
   reporting port across restarts, and a reporter that loses its console looks
   for the same pinned certificate on nearby ports. A console with a new
   certificate is reported as "certificate changed", not "cannot reach".
+- **A second start finds this console on the port it moved to** when the
+  default port was busy, instead of starting another console on the same
+  data.
 - **Removed machines no longer count as silent** in the chart's "incomplete"
   label, the burn's "left out" list or "N of M machines". For two minutes
   after a restart, a machine that was reporting shows as "Reconnecting".
@@ -154,7 +192,14 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
   console on the network. The week's line no longer runs through the hero's
   label.
 - **Mistakes are refused, not ignored**: an unknown command (`joni`), an
-  unknown option (`--intervall`), or a value out of range (`--interval abc`).
+  unknown option (`--intervall`), a value out of range (`--interval abc`), a
+  `--name` or `--person` without a value, and a mistyped `metrics-token`
+  option (which no longer prints the token; `metrics-token --help` prints its
+  usage). `--help` lists the `policy` command.
+- **The Machines panel, lane footer and Team say what they cover**: the chosen
+  period, idle lanes hidden after an hour, machines that left apart from ones
+  that were removed, and each agent's outcome as "outcome unknown · no result
+  recorded" until one is.
 - **Input the console changes is said**: a machine name it cannot use, a
   duplicate name for the same person, and a link duration outside 5 to 60
   minutes. With `--json`, errors are JSON lines, and the console prints an

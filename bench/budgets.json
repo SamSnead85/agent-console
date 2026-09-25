@@ -7,7 +7,7 @@
   "sessions": 60,
   "budgets": {
     "first.bytesReadPerSourceByte": 1.35,
-    "first.writesPerThousandRecords": 2,
+    "first.writesPerThousandRecords": 2.3,
     "first.jsonParsesPerLine": 1.15,
     "idle.bytesRead": 131072,
     "idle.bytesWritten": 1024,

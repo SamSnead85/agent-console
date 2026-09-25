@@ -34,7 +34,10 @@ if (command === "--version" || command === "-v" || command === "version") {
   process.exitCode = mainMetricsToken(process.argv.slice(3));
 } else if (command === "policy") {
   const { mainPolicy } = await import('../lib/policy/cli.js');
-  try { mainPolicy(process.argv.slice(3)); }
+  const { readFileSync } = await import("node:fs");
+  const { invocation } = await import("../lib/invocation.js");
+  const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+  try { process.exitCode = mainPolicy(process.argv.slice(3), { cmd: invocation(version) }); }
   catch (error) { process.stderr.write('Agent Console policy: ' + error.message + '\n'); process.exitCode = 1; }
 } else if (command === undefined || command.startsWith("-")) {
   await import("../server.js");

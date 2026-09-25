@@ -100,7 +100,16 @@ it over whatever channel they already trust to carry the link. On a network you
 do not trust, send the command rather than the link. Whoever joins should run
 the command they were sent, and check that it starts with `node -e`, names
 `https://github.com/SamSnead85/agent-console/releases/download/`, and ends
-with the link in single quotes, with nothing after it.
+with the link in single quotes, with nothing after it. Those parts alone do not
+pin what runs: the check between the first two single quotes must be the
+published one. Its SHA-256 is `114422b34fdc2721cd70e125908fe2ef381b4afddf6c7317d3e540710ec03737`, listed in the README
+("The check in every command") and in each release's notes. This command
+prints the SHA-256 of the check in a command pasted into it, without running
+anything (paste, Return, then Ctrl+D; Ctrl+Z and Return in PowerShell):
+
+```sh
+node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(require('crypto').createHash('sha256').update(s.split(String.fromCharCode(39))[1]).digest('hex')))"
+```
 
 **No code from the console.** The console never serves Agent Console itself.
 Every command it prints installs the package from its GitHub release over
@@ -114,10 +123,13 @@ README's "Checking a download").
 
 **Joining.** A join link carries a 128-bit code; the eight-character code for
 typing by hand exists too. Either works once and lives at most an hour. Join
-attempts are counted before they are read, ten per address (an IPv6 address by
-its /64) and sixty in total per ten minutes; an address over its own limit is
-refused without counting toward the total, so one device cannot hold off
-everyone else's joins. The console stores only SHA-256 verifiers of codes and device
+attempts are counted before they are read, ten per address per ten minutes (a
+global IPv6 address by its /64; a unique-local or link-local one by itself,
+since that /64 is usually the whole office network). Typed codes also share a
+total of sixty per ten minutes, the guard against guessing from many
+addresses; an address over its own limit does not count toward it. A join by
+link is never held off by other addresses' attempts: its code cannot be
+guessed. The console stores only SHA-256 verifiers of codes and device
 tokens, in files with mode 600.
 
 **Reporting.** Each machine has its own bearer token; **Remove** revokes it at

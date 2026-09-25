@@ -80,6 +80,12 @@ validates record shape and device identity, applies reporting limits, and
 classifies records as accepted, duplicate, expired or rejected. Daily record
 files back the hub's in-memory minute aggregates and retention window.
 
+Claude messages carry a stable message ID and cumulative per-class maxima.
+Copies arriving in a different order add only growth above the retained maximum.
+Within an ingestion batch, both that maximum and its aggregate increments remain
+staged until the record append and flush succeed. A failed write leaves the
+previous maximum intact, so retrying the same growth cannot silently lose usage.
+
 Counts describe what the tools recorded. Missing classes remain unknown;
 unrecognized models remain unpriced. Streaming increments, copies, forks and
 counter resets have explicit accounting rules. Dollar figures use a dated,

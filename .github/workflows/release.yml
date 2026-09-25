@@ -57,6 +57,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name }}
         run: gh release upload "$TAG" lockedinlabs-agent-console-*.tgz SHA256SUMS --repo "$GITHUB_REPOSITORY"
+      # Whoever is sent a join command compares the check in it with this
+      # (README, "The check in every command"). npm test above holds the
+      # published value equal to the check's real SHA-256.
+      - name: Publish the join check's SHA-256 in the release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          check="$(node --input-type=module -e "import { VERIFY_SHA256 } from './lib/invocation.js'; process.stdout.write(VERIFY_SHA256)")"
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body > notes.md
+          if ! grep -q "$check" notes.md; then
+            printf '\n\nThe check at the start of every join command has SHA-256 `%s` (README, "The check in every command").\n' "$check" >> notes.md
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file notes.md
+          fi
 
   acceptance:
     name: Published install (${{ matrix.os }})

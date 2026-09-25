@@ -43,18 +43,25 @@ counted exactly once.
   sometimes as a mid-stream snapshot. The maximum is taken across all of them:
   an implementation MUST NOT keep it per file or per agent session.
 - **Event time** is the timestamp of the first line that carries the message.
-  An implementation MAY send the usage as increments, one for each line whose
-  usage grew. Those increments MUST add up to the maximum, and every one MUST
-  carry the event time. A response that starts at 23:59:30 and finishes at
-  00:00:20 belongs wholly to 23:59.
+  A response that starts at 23:59:30 and finishes at 00:00:20 belongs wholly
+  to 23:59.
+- **Running maximum.** A reader sends a message as its per-class maximum as
+  far as it has read, again each time a line grows it, marked `cumulative`
+  and dated by the event time. A receiver MUST keep, for each such record id,
+  the largest amount per class it has held, and add only the growth above it,
+  to the minute it first held the id. A lower or equal reading adds nothing.
+  Two readers that meet a message's lines, and forks' mid-stream copies of
+  them, in different orders send different readings; the receiver's maximum
+  is the same whichever arrives first (§8).
 - A message whose `model` is `<synthetic>` is not an event. These are API-error
   and interruption placeholders, and their usage is zero.
-- Record identity is `(tool, sessionId, line uuid)`, or `message.id` plus
-  `requestId` when a line has no uuid. A line with neither is not counted and
-  is reported as coverage debt. When a line uuid already counted is seen again
-  with larger usage (a copy in a fork, or a rewrite), the growth is a further
-  increment with an identity of its own, derived from the uuid and the line's
-  usage, so first-writer-wins cannot drop it.
+- Record identity is `(tool, sessionId, message.id)` for a message whose lines
+  carry uuids, sent as a running maximum. A line without a uuid is identified
+  by `message.id` plus `requestId` and sent once, when its response stops. A
+  line with neither is not counted and is reported as coverage debt. A 0.2
+  collector sent a message as increments, one per line uuid whose usage grew;
+  a receiver keeps accepting those, first writer wins, and a message a 0.2
+  cursor had begun is finished in that form.
 - The message is credited to the session of the first file that carries it.
   An implementation reads a session's own transcript before its `subagents/`
   folder, so a copied message stays with the session that made it. Which file
@@ -69,6 +76,13 @@ counted exactly once.
   own thread are counted; a record for another thread is history replayed into
   a fork. A repeated `response_id` adds nothing. The rollout's `token_count`
   totals then only move the baseline (§4.7).
+- **A thread resumed by a Codex that writes records.** A thread that began
+  before Codex wrote records is counted from its running totals, then from its
+  records from its first own record on. Each record is written before its own
+  running total, so switching there counts nothing twice. Only a record for
+  the response the last counted running total already covered (its
+  `last_token_usage` equals the record's usage) is late: it is not counted,
+  and is reported as `lateUsageRecord`.
 - Otherwise, an event is one `event_msg` / `token_count` line whose cumulative
   `info.total_token_usage` differs from the previous distinct cumulative total
   in the same thread.
@@ -107,7 +121,7 @@ an unknown is a floor, and it MUST be shown as one.
 |---|---|---|
 | Streamed partial messages | Several lines with one `message.id`, output growing | One event; per-class maximum; dated by the first line (§2). |
 | A re-written line | The same line uuid written twice (identical, or with smaller usage) | Adds nothing. |
-| Delivery retries | A reporter re-sends records after a lost receipt, a crash, or a lost cursor | Same record ids, so first writer wins and the rest are duplicates. |
+| Delivery retries | A reporter re-sends records after a lost receipt, a crash, or a lost cursor | Same record ids, so first writer wins and the rest are duplicates; a running maximum adds only what it grew by (§2). |
 | API retries | A failed request (a `<synthetic>` error line, no usage), then a new request with a new `message.id` | The failure is not an event. The retry that the provider answered is a new event, because it was billed. |
 | Resumed Claude sessions | A new transcript file that starts with a verbatim copy of earlier lines (same `sessionId`, `message.id` and line uuids), then new lines under the new session id | The copied lines are the same events: same identity, counted once. The new lines are a new session (§7). |
 | Compaction | A `system` line with `subtype: "compact_boundary"`, and a user line with `isCompactSummary: true` | Neither carries usage. The first assistant message after compaction is an ordinary event, usually with a large cache write. History before the boundary is never counted again. A summarising call is counted only if the transcript records it as an assistant message with usage. |
@@ -130,16 +144,18 @@ is then complete only when nothing was dropped. The reasons:
 | `sidechainWithoutAgent` | A subagent line (`isSidechain: true`) without its `agentId`. |
 | `noFinalUsage` | A response with no line uuid that never reached its stop (after 30 minutes). |
 | `changedFinalUsage` | Usage that changed after a response without line uuids was counted. |
-| `revisedDown` | A line rewritten in the same transcript with lower usage. What was counted is not un-counted. |
+| `revisedDown` | A line rewritten in the same transcript with lower, non-zero usage. What was counted is not un-counted. A copy with all-zero usage, which Claude Code writes of counted lines, takes nothing away and is not a drop. |
 | `missingReplayOrdinal`, `unboundedReplay`, `counterReset`, `ambiguousEventIdentity` | Codex readings §4 cannot place. |
-| `lateUsageRecord` | A Codex per-response record after running-total events of the same thread were counted. |
+| `lateUsageRecord` | A Codex per-response record written after the running total that already counted its response (§2). |
 | `oversizedLine` | A line longer than the implementation holds (32 MiB here) whose usage could not be recovered from its first and last bytes. |
 | `unreadableLine` | A complete line that looks like usage and is not valid JSON. |
 | `future`, `hubFull`, `damaged` | Records the console itself could not keep: dated more than a day ahead of its clock, beyond its record limit, or damaged on its own disk. |
+| `pastRetention` | A record inside the 30-day period that arrived after its day passed the console's minute retention. Without its id the daily totals cannot tell it from one already counted, so it is left out and the 30 days say they are partial (§6). |
 
 A collector reports these counts with each delivery (the envelope's
 `coverage`, [COLLECTOR-CONTRACT.md](COLLECTOR-CONTRACT.md)). They cover the
-transcripts it still reads, not a time window. A recovered over-long line
+transcripts it still reads, not a time window: a transcript that is deleted,
+or replaced by a new file at the same path, takes its drops with it. A recovered over-long line
 (`oversizedLineRecovered`) and a cache write whose lifetime split did not add
 up (`ttlConflict`, counted with an unknown lifetime) are not drops.
 
@@ -213,10 +229,15 @@ the Console headline and chart, Team, and Projects.
 - **30 days:** the last 30 **UTC calendar days**, today included, read from
   the console's daily totals. The console keeps a per-day rollup (by machine,
   model, project and price tier) for 400 days, long after its minute buckets
-  are pruned at the retention edge, so this period does not depend on
-  `--retention-days`. The rollup keeps no sessions, so a session count for 30
-  days is unknown, not zero. A console that has not kept daily totals for all
-  30 days says from which day it has (`since`).
+  are pruned at the retention edge. A record joins the daily totals when it
+  arrives inside minute retention; one that arrives later (a reporter off for
+  longer than the retention) is counted as `pastRetention` (§3.2) and the
+  period is marked `partial`. The rollup keeps no sessions, so a session count
+  for 30 days is unknown, not zero. A console that has not kept daily totals
+  for all 30 days says from which day it has (`since`).
+- A minute period longer than the minute retention (7 days with
+  `--retention-days` below 7) covers only the minutes still kept: it is
+  marked `partial`, with `since` the retention edge.
 
 ## 7. Individual attribution
 
@@ -244,7 +265,8 @@ the Console headline and chart, Team, and Projects.
 ## 8. Team roll-up
 
 A team's total is the sum of the **distinct record ids** first reported by the
-devices in that team. Record ids come from the transcript, under the
+devices in that team, each at the largest reading held for it when it is a
+running maximum (§2). Record ids come from the transcript, under the
 organisation's salt, so none of these add anything:
 
 - the same transcript on a second machine;

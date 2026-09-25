@@ -47,7 +47,7 @@ fail. They run at 20,000 and 100,000 lines.
 | What | Budget | Measured |
 | --- | --- | --- |
 | First read: bytes read per byte of history | ≤ 1.35 | 1.27 |
-| First read: writes per 1,000 records | ≤ 2 | 1.2–1.7 |
+| First read: writes per 1,000 records spooled | ≤ 2.3 | 1.2–2.04 |
 | First read: JSON parses per transcript line | ≤ 1.15 | 0.98–1.06 |
 | Idle pass: bytes read | ≤ 128 KB | 84 KB |
 | Idle pass: bytes written | ≤ 1 KB | 16 B |
@@ -56,7 +56,12 @@ fail. They run at 20,000 and 100,000 lines.
 | Five new lines: bytes read / written | ≤ 256 KB / 384 KB | 93 KB / 175 KB |
 | Cursor size | ≤ 256 KB | 84 KB |
 | Console answer for one machine | ≤ 64 KB | 15–19 KB |
-| Restart: store load time ÷ bare JSON.parse time of the same records | ≤ 6.5 | 4.3–4.8 |
+| Restart: store load time ÷ bare JSON.parse time of the same records | ≤ 6.5 | 4.3–5.0 |
+
+Since 0.3.0 a Claude message is sent as its running maximum, and the hub
+keeps each reading that grew one so a restart takes the same maximum; that
+adds a few writes on a first read, and the budget rose from 2 to 2.3 with it.
+Records are counted as the collector spools them.
 
 The last row is a ratio of two timings taken back to back in one process,
 each the best of three. That makes it hold across machines. It is there to

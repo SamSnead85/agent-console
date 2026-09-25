@@ -58,18 +58,20 @@ and nothing else; it does not upload conversations.
 | `engagement` | `null`, unless the reporter was run with `--share-project-names`: then the project folder's last name, reduced to `[a-z][a-z0-9-]{1,47}`. Never a path. Records spooled while the option was on are sent with `null` once it is off. |
 | `reportingDevice` | The enrolled machine that sent the record; must equal the envelope's device. |
 | `executionOrigin` | Always `unknown` unless a transcript names where it ran (then a salted hash). |
-| `at` | Event time, rounded down to the UTC minute: the minute the API response began. Every increment of one response carries the minute of its first transcript line ([accounting.md](accounting.md) §2). |
+| `at` | Event time, rounded down to the UTC minute: the minute the API response began. Every reading of one response carries the minute of its first transcript line ([accounting.md](accounting.md) §2). |
 | `fresh`, `output`, `cacheWrite`, `cacheRead` | Disjoint token classes: non-negative integers, or `null` when the tool did not report the class. Unknown is never turned into zero. |
 | `cacheWrite5m`, `cacheWrite1h`, `ttl` | The cache-write split by lifetime when the tool reports it (`ttl: "split"`, and they sum to `cacheWrite`), otherwise `null` and `ttl: "unknown"`. They are parts of `cacheWrite`, not extra tokens. |
 | `observed` | Always `true`. |
-| `continuation` | `true` when an earlier record already counted this API message. Claude Code writes one response over several transcript lines, and each line whose usage grew becomes its own record so no token is lost; only the first counts as a message. Codex records are `false`. |
+| `continuation` | `true` when an earlier record already counted this API message, so only the first counts as a message. Codex records are `false`. |
+| `cumulative` | `true` when the token classes are a Claude message's running per-class maximum, sent again under the same message-level `id` each time a line grows it. The console keeps the largest reading per class for that id and adds only the growth above it; a lower or equal reading adds nothing ([accounting.md](accounting.md) §2). `false` for Codex records and for a response sent once at its stop. |
 | `tier` | The price tier the response was billed under: `standard`, `fast` (Claude Code's `usage.speed: "fast"`), `other` (a `usage.service_tier` other than `standard`), or `null` when the transcript does not say. Fast mode is priced at the table's fast rates; `other` is unpriced ([accounting.md](accounting.md) §9). |
 | `measurement` | A fixed descriptor derived from the fields above; anything else is refused. |
 
 The console refuses a record that does not have exactly these keys and these
 shapes (a 0.2.0 record without `continuation` is still accepted and counts as a
-message, and a 0.2.1 or 0.2.2 record without `tier` is accepted and priced at
-standard rates, as it always was). Hashes must be 64 lowercase hex characters. Unrecognised transcript
+message, a 0.2.1 or 0.2.2 record without `tier` is accepted and priced at
+standard rates, as it always was, and a record without `cumulative` is kept
+first-writer-wins). Hashes must be 64 lowercase hex characters. Unrecognised transcript
 lines and fields are ignored and never forwarded.
 
 `backlog` is optional: two counts saying how far a large upload has got (see
@@ -142,11 +144,11 @@ but never lose one, and never makes up a new id for a retry.
 **Claude Code.** Assistant `message.usage` carries `input_tokens`,
 `output_tokens`, `cache_creation_input_tokens` and `cache_read_input_tokens`,
 plus the cache-write split in `usage.cache_creation`. Several lines can repeat
-the same `message.id` with growing usage; the collector emits per-message
-increments, all dated by the response's first line, and nothing for an
-identical repeat. The per-message marks are shared by every transcript the
-collector reads, so a forked subagent's copy of a message adds only what it
-grew by. `usage.speed` and `usage.service_tier` set `tier`. A line too long
+the same `message.id` with growing usage; the collector sends the message's
+running maximum each time a line grows it, all dated by the response's first
+line, and nothing for an identical repeat. The per-message marks are shared by
+every transcript the collector reads, so a forked subagent's copy of a message
+sends nothing unless it is larger. `usage.speed` and `usage.service_tier` set `tier`. A line too long
 to hold is read from its first and last bytes; its usage is recovered when
 Claude Code wrote it where expected, and otherwise it is coverage debt. A subagent is identified by
 `isSidechain` and `agentId` within its `sessionId`.
