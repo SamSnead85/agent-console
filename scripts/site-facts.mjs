@@ -77,22 +77,46 @@ function cmdRow(command, { osOnly, quiet } = {}) {
   return `<div class="cmd${quiet ? ' quiet-cmd' : ''}"${attr}><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>${text}</code><button class="tb copy" type="button" data-copy="${text}"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>`;
 }
 
+/**
+ * The Windows one-line install. PowerShell has no &&, so the line runs in its
+ * own scope with every error stopping it: the installer is downloaded to a new
+ * temporary file (never a fixed name that an earlier download could have left),
+ * checked to be there, told which release to install, run, and removed. A
+ * failed download ends it before anything runs. docs/standalone-install.md
+ * prints the same command for the main branch (no tag: the latest release).
+ */
+export function windowsInstallCommand(url, tag) {
+  // Whatever AGENT_CONSOLE_VERSION this window had is put back afterwards.
+  const keep = tag ? '$v = $env:AGENT_CONSOLE_VERSION; ' : '';
+  const pin = tag ? `$env:AGENT_CONSOLE_VERSION = '${tag}'; ` : '';
+  const unpin = tag ? '; $env:AGENT_CONSOLE_VERSION = $v' : '';
+  return "& { $ErrorActionPreference = 'Stop'; "
+    + "$f = Join-Path ([IO.Path]::GetTempPath()) ('agent-console-install-' + [Guid]::NewGuid().ToString('N') + '.ps1'); "
+    + keep
+    + `try { Invoke-WebRequest -UseBasicParsing -Uri '${url}' -OutFile $f; `
+    + "if (-not (Test-Path -LiteralPath $f) -or (Get-Item -LiteralPath $f).Length -eq 0) { throw 'The installer did not download. Nothing was run.' }; "
+    + pin
+    + "powershell -NoProfile -ExecutionPolicy Bypass -File $f; "
+    + "if ($LASTEXITCODE -ne 0) { throw 'The installer stopped without installing.' } "
+    + `} finally { Remove-Item -LiteralPath $f -Force -ErrorAction SilentlyContinue${unpin} } }`;
+}
+
 function standaloneBlock(tag) {
   const raw = `https://raw.githubusercontent.com/${REPO}/${tag}`;
   return `<div class="way">
                 <div class="k"><b>Standalone executable</b><span>one file with Node.js inside, for a computer without Node. The installer fetches the file for this computer and the release's <code>SHA256SUMS</code>, and installs nothing unless the SHA-256 matches. <span data-os-only="mac linux">It installs to <code>~/.local/bin</code>.</span><span data-os-only="win">It installs to <code>AppData\\Local\\Programs\\AgentConsole</code> for your user only.</span> Unsigned files say so on the release page.</span></div>
-                ${cmdRow(`curl -fsSLO ${raw}/install.sh && sh ./install.sh`, { osOnly: 'mac linux' })}
-                ${cmdRow(`Invoke-WebRequest ${raw}/install.ps1 -OutFile install.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File .\\install.ps1`, { osOnly: 'win' })}
+                ${cmdRow(`curl -fsSLO ${raw}/install.sh && AGENT_CONSOLE_VERSION=${tag} sh ./install.sh`, { osOnly: 'mac linux' })}
+                ${cmdRow(windowsInstallCommand(`${raw}/install.ps1`, tag), { osOnly: 'win' })}
                 <div class="fine">Or use the <b>Download</b> button on the overview for the file itself, and <a href="#/verify">verify it</a> before you run it.</div>
               </div>`;
 }
 
-function registriesBlock({ npm, brew }) {
+function registriesBlock({ npm, brew, version }) {
   const rows = [];
   rows.push(npm
     ? `<div class="way">
                 <div class="k"><b>npm</b><span>the same file as the release, served by the registry with its provenance. Node 22 or newer.</span></div>
-                ${cmdRow(`npx --yes ${NPM_NAME} --open`)}
+                ${cmdRow(`npx --yes ${NPM_NAME}@${version} --open`)}
               </div>`
     : `<div class="way coming">
                 <div class="k"><b>npm <span class="chip" data-tone="quiet">coming</span></b><span>The package is not on the npm registry for this release yet. Until it is, the release link above is the install, and it is the one CI tests.</span></div>
@@ -144,7 +168,7 @@ export function renderSite({ html, script, tag, publishedAt, digest, cert, logge
     html = swapFact(html, 'standalone', html.slice(html.indexOf('<!-- fact:standalone -->') + '<!-- fact:standalone -->'.length, html.indexOf('<!-- /fact:standalone -->')).trim());
   }
   html = npm || brew
-    ? swapFact(html, 'registries', registriesBlock({ npm, brew }))
+    ? swapFact(html, 'registries', registriesBlock({ npm, brew, version }))
     : swapFact(html, 'registries', html.slice(html.indexOf('<!-- fact:registries -->') + '<!-- fact:registries -->'.length, html.indexOf('<!-- /fact:registries -->')).trim());
   // The Download button offers only files that exist; with none, it stays the package.
   html = replace(html, '</head>', `<script id="native-downloads" type="application/json">${JSON.stringify(standalone ? native : {})}</script>\n</head>`);

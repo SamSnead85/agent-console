@@ -14,7 +14,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { formulaMatches, nativeDownloads, parseSums, renderSite, shortDate } from "../scripts/site-facts.mjs";
+import { formulaMatches, nativeDownloads, parseSums, renderSite, shortDate, windowsInstallCommand } from "../scripts/site-facts.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 // Windows checks the tree out with CRLF; the checks below read lines.
@@ -194,6 +194,9 @@ const FACTS = {
   npm: false,
   brew: false,
 };
+/** Every command the page's Copy buttons copy, as copied. */
+const copied = (html) => [...html.matchAll(/data-copy="([^"]*)"/gu)].map((m) => m[1]
+  .replace(/&quot;/gu, '"').replace(/&lt;/gu, "<").replace(/&gt;/gu, ">").replace(/&amp;/gu, "&"));
 const nativeScript = (html) => JSON.parse(/<script id="native-downloads" type="application\/json">(.*?)<\/script>/u.exec(html)[1]);
 
 test("the download page marks the executables, npm and Homebrew coming until the release really has them", () => {
@@ -216,8 +219,11 @@ test("a release that carries the executables gets them on the Download button an
   const { html, standalone } = renderSite({ ...FACTS, native, installers: true });
   assert.equal(standalone, true);
   assert.match(html, /<h2>Four ways in<\/h2>/u);
-  assert.match(html, /https:\/\/raw\.githubusercontent\.com\/SamSnead85\/agent-console\/v9\.9\.9\/install\.sh &amp;&amp; sh \.\/install\.sh/u);
-  assert.match(html, /v9\.9\.9\/install\.ps1/u);
+  // Both installers are told the checked tag: without it they install whatever "latest" is.
+  assert.ok(copied(html).includes("curl -fsSLO https://raw.githubusercontent.com/SamSnead85/agent-console/v9.9.9/install.sh && AGENT_CONSOLE_VERSION=v9.9.9 sh ./install.sh"));
+  const windows = copied(html).find((command) => command.includes("install.ps1"));
+  assert.equal(windows, windowsInstallCommand("https://raw.githubusercontent.com/SamSnead85/agent-console/v9.9.9/install.ps1", "v9.9.9"));
+  assert.ok(windows.includes("$env:AGENT_CONSOLE_VERSION = 'v9.9.9'"));
   assert.deepEqual(Object.keys(nativeScript(html)), ["agent-console-darwin-arm64", "agent-console-win32-x64.exe"]);
   assert.equal(nativeScript(html)["agent-console-darwin-arm64"].sha256, "3".repeat(64));
   // Executables without the installers in the tag: nothing is offered.
@@ -228,11 +234,88 @@ test("a release that carries the executables gets them on the Download button an
 
 test("npm and Homebrew each go live on their own, and an executable missing from SHA256SUMS fails the build", () => {
   const npmOnly = renderSite({ ...FACTS, npm: true }).html;
-  assert.match(npmOnly, /npx --yes @lockedinlabs\/agent-console --open/u);
+  // The version the registry was checked for, not whatever its latest tag is.
+  assert.ok(copied(npmOnly).includes("npx --yes @lockedinlabs/agent-console@9.9.9 --open"));
+  assert.doesNotMatch(npmOnly, /@lockedinlabs\/agent-console --open/u);
   assert.match(npmOnly, /Homebrew <span class="chip" data-tone="quiet">coming<\/span>/u);
   const brewOnly = renderSite({ ...FACTS, brew: true }).html;
   assert.match(brewOnly, /brew install SamSnead85\/tap\/agent-console/u);
   assert.match(brewOnly, /npm <span class="chip" data-tone="quiet">coming<\/span>/u);
   assert.throws(() => nativeDownloads({ tag: "v9.9.9", assetNames: new Set(["agent-console-linux-x64"]), sums: new Map() }), /Missing release checksum/u);
   assert.throws(() => parseSums(`${"a".repeat(64)}  x\n${"b".repeat(64)}  x\n`), /duplicate/u);
+});
+
+test("the copied macOS and Linux command installs the page's release even when a newer one is latest", posixOnly, () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-site-pin-"));
+  try {
+    const release = path.join(dir, "release");
+    const bin = path.join(dir, "fake-bin");
+    const dest = path.join(dir, "dest");
+    const cwd = path.join(dir, "cwd");
+    for (const d of [bin, cwd]) fs.mkdirSync(d);
+    const platform = process.platform === "darwin" ? "darwin" : "linux";
+    const arch = process.arch === "arm64" ? "arm64" : "x64";
+    const asset = `agent-console-${platform}-${arch}`;
+    for (const version of ["9.9.9", "9.9.10"]) {
+      const program = `#!/bin/sh\necho 'agent-console ${version}'\n`;
+      fs.mkdirSync(path.join(release, "v" + version), { recursive: true });
+      fs.writeFileSync(path.join(release, "v" + version, asset), program);
+      fs.writeFileSync(path.join(release, "v" + version, "SHA256SUMS"), `${sha256(program)}  ${asset}\n`);
+    }
+    fs.copyFileSync(path.join(ROOT, "install.sh"), path.join(release, "install.sh"));
+    // curl: the tag's installer for -O, v9.9.10 as "latest", and release files for -o. Nothing else.
+    fs.writeFileSync(path.join(bin, "curl"), `#!/bin/sh
+out=""; url=""; remote=""; write=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -o) out="$2"; shift 2 ;;
+    -w) write="$2"; shift 2 ;;
+    -*O*) remote=1; shift ;;
+    -*) shift ;;
+    *) url="$1"; shift ;;
+  esac
+done
+case "$url" in
+  https://raw.githubusercontent.com/SamSnead85/agent-console/v9.9.9/install.sh) [ -n "$remote" ] && cp "${release}/install.sh" ./install.sh ;;
+  https://github.com/SamSnead85/agent-console/releases/latest) printf '%s' https://github.com/SamSnead85/agent-console/releases/tag/v9.9.10 ;;
+  https://github.com/SamSnead85/agent-console/releases/download/v9.9.9/*|https://github.com/SamSnead85/agent-console/releases/download/v9.9.10/*)
+    rest=\${url#https://github.com/SamSnead85/agent-console/releases/download/}; cp "${release}/\${rest%%/*}/\${url##*/}" "$out" ;;
+  *) exit 22 ;;
+esac
+`, { mode: 0o755 });
+    const sums = parseSums(`${"3".repeat(64)}  agent-console-darwin-arm64\n`);
+    const native = nativeDownloads({ tag: "v9.9.9", assetNames: new Set(["agent-console-darwin-arm64"]), sums });
+    const { html } = renderSite({ ...FACTS, native, installers: true });
+    const command = copied(html).find((c) => c.includes("install.sh"));
+    const result = spawnSync("sh", ["-c", command], {
+      cwd, encoding: "utf8",
+      env: { PATH: `${bin}:/usr/bin:/bin:/usr/sbin:/sbin`, HOME: dir, AGENT_CONSOLE_INSTALL_DIR: dest },
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /^Installed v9\.9\.9 to /u);
+    assert.equal(spawnSync(path.join(dest, "agent-console"), [], { encoding: "utf8" }).stdout, "agent-console 9.9.9\n");
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("the copied Windows command downloads to a new temporary file, stops on any failure, and only then runs it", () => {
+  const url = "https://raw.githubusercontent.com/SamSnead85/agent-console/v9.9.9/install.ps1";
+  const command = windowsInstallCommand(url, "v9.9.9");
+  const at = (text) => { const i = command.indexOf(text); assert.ok(i >= 0, `missing: ${text}`); return i; };
+  // Its own scope, so the stop-on-error preference does not outlive the command.
+  assert.ok(command.startsWith("& { $ErrorActionPreference = 'Stop'; ") && command.endsWith(" }"));
+  const temp = at("$f = Join-Path ([IO.Path]::GetTempPath()) ('agent-console-install-' + [Guid]::NewGuid().ToString('N') + '.ps1')");
+  const download = at(`Invoke-WebRequest -UseBasicParsing -Uri '${url}' -OutFile $f`);
+  const check = at("if (-not (Test-Path -LiteralPath $f) -or (Get-Item -LiteralPath $f).Length -eq 0) { throw");
+  const version = at("$env:AGENT_CONSOLE_VERSION = 'v9.9.9'");
+  const run = at("powershell -NoProfile -ExecutionPolicy Bypass -File $f");
+  const exit = at("if ($LASTEXITCODE -ne 0) { throw");
+  const cleanup = at("finally { Remove-Item -LiteralPath $f -Force -ErrorAction SilentlyContinue");
+  assert.ok(temp < download && download < check && check < version && version < run && run < exit && exit < cleanup, "temp, download, check, pin, run, exit code, clean up");
+  assert.ok(at("try {") < download, "the download is inside the try");
+  // Nothing runs a file that could have been there before: no fixed name, no ';' straight into the run.
+  assert.doesNotMatch(command, /-OutFile install\.ps1|\.\\install\.ps1|install\.ps1; powershell/u);
+  assert.equal(windowsInstallCommand(url, null).includes("AGENT_CONSOLE_VERSION"), false, "no tag, no pin");
+  // The documented one-line form is the same command.
+  assert.ok(read("docs/standalone-install.md").includes(windowsInstallCommand("https://raw.githubusercontent.com/SamSnead85/agent-console/main/install.ps1", null)));
+  assert.doesNotMatch(read("docs/standalone-install.md"), /install\.ps1; powershell/u);
 });

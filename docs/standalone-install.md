@@ -36,11 +36,16 @@ Get-Content .\install.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-The one-line form is:
+The one-line form downloads the script to a new temporary file, stops on any
+error (a failed download runs nothing), checks the file arrived, runs it, and
+removes it:
 
 ```powershell
-Invoke-WebRequest https://raw.githubusercontent.com/SamSnead85/agent-console/main/install.ps1 -OutFile install.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+& { $ErrorActionPreference = 'Stop'; $f = Join-Path ([IO.Path]::GetTempPath()) ('agent-console-install-' + [Guid]::NewGuid().ToString('N') + '.ps1'); try { Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/SamSnead85/agent-console/main/install.ps1' -OutFile $f; if (-not (Test-Path -LiteralPath $f) -or (Get-Item -LiteralPath $f).Length -eq 0) { throw 'The installer did not download. Nothing was run.' }; powershell -NoProfile -ExecutionPolicy Bypass -File $f; if ($LASTEXITCODE -ne 0) { throw 'The installer stopped without installing.' } } finally { Remove-Item -LiteralPath $f -Force -ErrorAction SilentlyContinue } }
 ```
+
+The download page's copy of this command also sets `AGENT_CONSOLE_VERSION` to
+the release it shows, so it installs exactly that release.
 
 `-ExecutionPolicy Bypass` applies to that one PowerShell process only, so a
 downloaded script can run on a computer whose policy would otherwise refuse
