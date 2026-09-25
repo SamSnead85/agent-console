@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Usage batches are indexed only after successful persistence. Failed writes
+  preserve earlier batches, allow safe retries, and recover incomplete final
+  lines before rebuilding the index after a restart.
+- Only one hub can own a state directory, including when different listening
+  ports or directory aliases are used. A crashed owner's lock can be recovered;
+  an owner that cannot be verified is never displaced automatically.
+- [Architecture diagrams](docs/ARCHITECTURE.md) document collection, enrollment,
+  trust boundaries, delivery controls and the separate future MCP integration.
+
 ## 0.2.2 — 2026-09-24
 
 Security fixes, accounting you can reconcile, and a console that is nearly

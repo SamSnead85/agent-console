@@ -25,6 +25,7 @@ import { fileURLToPath } from "node:url";
 
 import { help, readConfig } from "./lib/config.js";
 import { createRegistry } from "./lib/hub/registry.js";
+import { acquireStateLock } from "./lib/hub/state-lock.js";
 import { createStore } from "./lib/hub/store.js";
 import { createNames, startLocalCollection } from "./lib/hub/local.js";
 import { startDemo } from "./lib/hub/demo.js";
@@ -123,12 +124,30 @@ config.reportPort = reportChoice.port;
 
 const PRICES = JSON.parse(fs.readFileSync(path.join(HERE, "lib", "collector", "prices.json"), "utf8"));
 const retentionMs = config.retentionDays * 86_400_000;
-const registry = createRegistry({ dir: config.stateDir });
+let stateLock;
+try {
+  stateLock = acquireStateLock(config.stateDir);
+  config.stateDir = stateLock.dir;
+} catch (error) {
+  process.stderr.write("\n  " + error.message + "\n\n");
+  process.exit(1);
+}
+let registry = null, names = null;
+if (!config.demo) {
+  // Register before initializing any persisted component, including failures
+  // during startup. Finish every final write before another hub may acquire it.
+  process.on("exit", () => {
+    try { registry?.flush(); names?.save(); } catch { /* exiting */ }
+    finally { try { stateLock.release(); } catch { /* a dead owner is recovered on the next start */ } }
+  });
+  for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => process.exit(signal === "SIGINT" ? 130 : 143));
+}
+registry = createRegistry({ dir: config.stateDir });
 const store = createStore({ dir: config.stateDir, retentionMs, prices: PRICES });
 if (!config.demo) store.load();
 const admin = createAdmin({ dir: config.stateDir });
 const certificate = hubCertificate(config.stateDir);
-let names = config.demo ? null : createNames(config.stateDir, { retentionMs });
+names = config.demo ? null : createNames(config.stateDir, { retentionMs });
 let local = null;
 if (config.demo) {
   names = startDemo({ registry, store }).names;
@@ -142,11 +161,6 @@ if (config.demo) {
     onError: (error) => process.stderr.write("  this machine: " + String(error && error.message) + "\n"),
   });
 }
-if (!config.demo) {
-  process.on("exit", () => { try { registry.flush(); names && names.save(); } catch { /* exiting */ } });
-  for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => process.exit(signal === "SIGINT" ? 130 : 143));
-}
-
 // Filled in with the real ports once both listeners are up.
 const reportingInfo = { port: config.reportPort, consolePort: config.port, fingerprint: certificate.fingerprint };
 const consoleHandler = createConsoleHandler({
