@@ -13,6 +13,8 @@
   when the reporter has no result event.
 - Added same-window estimated spend per local commit and per default-branch
   integration in Projects, labelled as correlation rather than attribution.
+- Added an optional, versioned `agent-policy.yaml` (or JSON) with a published
+  schema and a shared parser; unknown fields fail validation.
 
 ## 0.2.2 — 2026-09-24
 

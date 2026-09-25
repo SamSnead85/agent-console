@@ -38,6 +38,7 @@
     "public/",
     "server.js",
     "docs/*.md",
+    "docs/*.json",
     "test/conformance/",
     "PROVENANCE.md",
     "CHANGELOG.md",
