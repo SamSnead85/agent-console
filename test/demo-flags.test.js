@@ -33,6 +33,10 @@ function samples(tmp) {
     "--invite-minutes": ["10"],
     "--claude-root": [path.join(tmp, "claude")],
     "--codex-root": [path.join(tmp, "codex")],
+    "--desktop-alerts": [],     // demo runs no local alert engine, so nothing is shown
+    "--alert-repeat": ["3"],
+    "--alert-spike-factor": ["4"],
+    "--alert-stall-minutes": ["2"],
   };
 }
 /** Options that do not start a console, or would act outside the test. */
