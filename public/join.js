@@ -56,9 +56,11 @@
 
   $("hubName").textContent = location.host;
   if (!valid) {
+    // no code, nothing to copy: the box says so and the button is out, with the reason on it — never a dead click
     $("noCode").hidden = false;
-    $("cmd").textContent = "—";
+    $("cmd").textContent = "no join code in this link";
     $("copyBtn").disabled = true;
+    $("copyBtn").title = "Nothing to copy — the link has no join code";
   }
 
   fetch("/api/join/info").then((r) => r.json()).then((info) => {

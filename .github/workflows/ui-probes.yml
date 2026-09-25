@@ -32,10 +32,20 @@ jobs:
         run: |
           node bin/agent-console.mjs --demo --port 6970 --state-dir "$RUNNER_TEMP/state" > "$RUNNER_TEMP/server.log" 2>&1 &
           for i in $(seq 1 40); do curl -sf -o /dev/null http://127.0.0.1:6970/ && break; sleep 0.5; done
+      # a bar met on the demo alone is not a bar: a synthetic month (bench/generate.mjs) with no Git, a 30-day period and a
+      # daily rollup is read beside it, on its own console
+      - name: Start a console on a synthetic month
+        run: |
+          node bench/generate.mjs --out "$RUNNER_TEMP/bench" --days 30 --sessions 120 --lines 40000 --homes 1 --seed 1 > /dev/null
+          node bin/agent-console.mjs --port 6972 --state-dir "$RUNNER_TEMP/state-bench" --retention-days 30 \
+            --claude-root "$RUNNER_TEMP/bench/home-1/.claude/projects" --codex-root "$RUNNER_TEMP/bench/home-1/.codex/sessions" \
+            --name "Build box" --person "Engineer" > "$RUNNER_TEMP/bench.log" 2>&1 &
+          for i in $(seq 1 120); do curl -sf -o /dev/null http://127.0.0.1:6972/ && break; sleep 0.5; done
+          for i in $(seq 1 120); do grep -q "ready:" "$RUNNER_TEMP/bench.log" && break; sleep 1; done
       - name: Run the probes
         env:
           AGENT_CONSOLE_PLAYWRIGHT_DIR: ${{ runner.temp }}/probes/node_modules
-        run: node scripts/ui-probes.mjs http://127.0.0.1:6970 "$RUNNER_TEMP/server.log" --out "$RUNNER_TEMP/shots"
+        run: node scripts/ui-probes.mjs http://127.0.0.1:6970 "$RUNNER_TEMP/server.log" --out "$RUNNER_TEMP/shots" --also http://127.0.0.1:6972 "$RUNNER_TEMP/bench.log"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:

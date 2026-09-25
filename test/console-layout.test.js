@@ -124,12 +124,35 @@ test("every Attention row is a door, by pointer and by keyboard; the pointer is 
   assert.doesNotMatch(CSS, /\.arow \{[^}]*cursor: pointer/u);
 });
 
-test("Projects fills its frame at desk width", () => {
+test("Projects and Team end where their rows end at desk width: no card is stretched into an empty tile", () => {
   const desk = media("min-width: 1024px");
-  assert.match(desk, /#projCanvas \{ flex: 1 1 auto; \}/u);
-  assert.match(desk, /#projCanvas \.lanes:last-child \{ flex: 1 1 auto; \}/u);
+  assert.match(desk, /#projCanvas, #teamCanvas \{ flex: 0 1 auto; \}/u, "the canvas fits its rows and shrinks to scroll when they need more than the frame has");
+  assert.match(desk, /#projCanvas \.lanes, #teamCanvas \.lanes \{ flex: none; \}/u, "a card ends at its last row; what is left under it is the tray");
+  assert.doesNotMatch(desk, /\.lanes:last-child \{ flex: 1 1 auto; \}/u, "a stretched last card is an empty tile under its rows");
   assert.match(desk, /\.canvas \{ flex: 0 1 auto; min-height: 0; overflow-y: auto;/u, "the canvas still scrolls by itself when its rows need more than the frame has");
+  // the Console canvas alone takes the frame's height: the lanes get it, and the first band is one height under any reading
+  assert.match(desk, /#consoleCanvas \{ flex: 1 1 auto; \}/u);
+  assert.match(desk, /#band \{ height: calc\(260px \* var\(--k\)\); \}/u);
+  assert.match(desk, /#band \.classes \.note \{ display: none; \}/u, "a partial estimate's notes go to hover, never into the frame's height");
 });
+
+test("a short frame keeps eight lane rows: the compact tier folds the second band to one row and every caption to one line", () => {
+  const compact = media("min-width: 1024px) and ((max-width: 1280px) or (max-height: 820px)");
+  assert.match(compact, /#band \{ height: calc\(240px \* var\(--k\)\); \}/u);
+  assert.match(compact, /\.console\.two \{ height: calc\(68px \* var\(--k\)\); \}/u);
+  assert.match(compact, /\.cap \.long, \.cap \.by, \.mhead \.long \{ display: none; \} \.cap \.short, \.mhead \.short \{ display: inline; \}/u);
+  assert.match(compact, /\.lfoot span\.end \{ display: none; \}/u);
+  // the strip is 76px with the name in the display sans, and the status bar is one 28px line
+  assert.match(CSS, /\.conhead \{[^}]*height: calc\(76px \* var\(--k\)\)/u);
+  assert.match(CSS, /\.conhead h1 \{ margin: 0; font: 300 calc\(22px \* var\(--k\)\)\/1 var\(--sans\); letter-spacing: -\.02em;/u);
+  assert.match(CSS, /\.foot \{ margin: 0; min-height: calc\(28px \* var\(--k\)\); padding: calc\(2px \* var\(--k\)\) 0; display: flex; flex-wrap: nowrap; white-space: nowrap; overflow: hidden;/u, "the status bar is one line; its mono provenance gives way with an ellipsis");
+  assert.match(media("max-width: 760px"), /\.foot \{ flex-wrap: wrap; white-space: normal; overflow: visible; \}/u, "the phone wraps it again");
+  // captions carry their short form in the markup, so the tier can choose without a second string in the script
+  assert.match(HTML, /Burn · <span class="long">last 60 min<\/span><span class="short">60 min<\/span>/u);
+  assert.match(HTML, /<span class="long">Spend spectrum<\/span><span class="short">Spectrum<\/span>/u);
+  assert.match(HTML, /<span class="c-pr" title="Project \/ branch"><span class="long">Project \/ branch<\/span><span class="short">Project<\/span><\/span>/u);
+});
+const desk_ = () => media("min-width: 1024px");
 
 /* The bounded pass after the six: three residual groups the final captures still showed. */
 test("Effort's figures are never cut: a line wraps its figures whole under the label", () => {
@@ -152,7 +175,7 @@ test("a row that opens an inspector is a 24px target, and the type keeps its siz
   // every inspector-opening row still carries the door class the rule sizes
   assert.match(JS, /<div class="xrow door \$\{d\.status\}" title=/u);
   assert.match(JS, /<div class="xrow msgs door" data-inspect="person:/u);
-  assert.equal((JS.match(/<div class="mrow door" data-inspect="project:/gu) || []).length, 2, "share and spend rows");
+  assert.equal((JS.match(/<div class="mrow door" data-inspect="project:/gu) || []).length, 3, "share, spend-per-commit and spend-per-merge rows");
 });
 
 test("on a phone the hour axis caption, the person's machine status and the lane's DEMO stamp are shown whole", () => {

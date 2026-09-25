@@ -81,7 +81,8 @@
   </section>
 
   <!-- the instrument strip, shared by every view: what this is, where it reads, what is live, the clock, and the two presenter controls.
-       It sits on the substrate, the approved band's ground; the copy stays on the dark side of it in both themes.
+       It sits on the substrate, the approved band's ground — the artwork reads from a third of the way across, as the approved band
+       and the design study show it; the words stay on its dark left in both themes.
        In --demo this stamp is the one frame stamp; every generated row and figure carries its own. -->
   <div class="conhead" id="strip">
     <h1 id="h-console">Agent Console</h1>
@@ -89,7 +90,7 @@
     <span class="stamp demo-only" title="Every figure on this screen is generated. Nothing was read from any machine.">DEMO</span>
     <span class="stamp present" id="presentStamp" hidden title="Presenting: projects, branches, machines and people are shown under stable stand-in names. Press P to stop.">PRESENTING</span>
     <span class="cap live" id="liveCap"><i id="liveDot"></i><span id="liveCount">—</span></span>
-    <span class="count" id="machineCount">—</span>
+    <span class="count fit" id="machineCount">—</span>
     <button class="alertchip" id="alertChip" type="button" hidden aria-describedby="alertPanel">—</button>
     <span class="clock"><span id="clockDate">—</span><b id="clockTime">—</b><em id="clockZone" title="Every time on this screen is in this zone">—</em></span>
     <span class="scan" id="scanNote" title="When the last reading arrived, and how long the hub took to answer">—</span>
@@ -156,13 +157,14 @@
           <div class="afoot" id="attnFoot">—</div>
         </div>
         <div class="alist" id="attnList"></div>
-        <div class="astrip" title="The last sixty minutes: one tick per alert, hatched from the moment a machine went silent">
+        <!-- the card's own sixty minutes: one tick per alert, hatched from the moment a machine went silent; the axis is said on hover and in the alerts sheet -->
+        <div class="astrip" title="The last sixty minutes, left to right: one tick per alert, hatched from the moment a machine went silent">
           <svg id="attnStrip" viewBox="0 0 520 18" preserveAspectRatio="none" role="img" aria-label="Alerts over the last sixty minutes"></svg>
-          <div class="bx"><span>60 min ago</span><span id="attnStripCap"></span><span>now</span></div>
+          <span class="visually-hidden" id="attnStripCap"></span>
         </div>
       </div>
       <div class="col spectrum">
-        <div class="cap">Spend spectrum <em class="by">cost share over token share</em><span class="capr" id="specCap">—</span></div>
+        <div class="cap"><span class="long">Spend spectrum</span><span class="short">Spectrum</span> <em class="by">cost share over token share</em><span class="capr" id="specCap">—</span></div>
         <div class="specwrap inst" id="specWrap">
           <div class="voidstate"><b>No estimate</b><span id="specReason">—</span></div>
           <div class="slabs" aria-hidden="true"><span class="slab cost">cost</span><span class="slab tok">tokens</span></div>
@@ -172,9 +174,10 @@
         <div class="specmodels" id="specModels"></div>
       </div>
       <div class="col burn">
-        <div class="cap">Burn · last 60 min<span class="capr" id="burnMedian">—</span><button type="button" class="unit" id="unitBtn" aria-label="Burn per minute, switch to per second">per minute ⇄</button></div>
+        <div class="cap">Burn · <span class="long">last 60 min</span><span class="short">60 min</span><button type="button" class="unit" id="unitBtn" aria-label="Burn per minute, switch to per second">per minute ⇄</button></div>
         <div class="bigrow"><div id="cBurn" class="big mid" data-src="burn.tokensPerMinute">—</div><div class="brate"><span id="cRate" data-src="burn.usdPerMinute">—</span></div></div>
-        <div class="bprov"><span id="cBurnNote">—</span><span id="burnGapNote"></span></div>
+        <!-- the median sits under the figure, never in the caption, so the caption is one line at every width -->
+        <div class="bprov"><span id="burnMedian">—</span><span id="cBurnNote">—</span><span id="burnGapNote"></span></div>
         <div class="bsparkwrap inst" id="burnWrap">
           <div class="voidstate"><b>No reading</b><span id="burnReason">—</span></div>
           <svg id="cBurnSpark" class="bspark" viewBox="0 0 520 44" preserveAspectRatio="none" role="img" aria-label="Tokens per minute over the last 60 minutes, every machine"></svg>
@@ -186,7 +189,7 @@
     <div class="canvas" id="consoleCanvas">
       <section class="lanes" aria-label="Sessions">
         <h2 class="visually-hidden">Sessions</h2>
-        <div class="lanebody"><div class="lhead" aria-hidden="true"><span class="grp" title="Uncached input, output, total and estimate are the last 24 hours, whatever the period control says">24 h</span><span class="c-st">State</span><span class="c-pr">Project / branch</span><span class="c-md">Model</span><span class="c-sp">Activity · 1 h</span>
+        <div class="lanebody"><div class="lhead" aria-hidden="true"><span class="grp" title="Uncached input, output, total and estimate are the last 24 hours, whatever the period control says"><span>24 h</span></span><span class="c-st">State</span><span class="c-pr" title="Project / branch"><span class="long">Project / branch</span><span class="short">Project</span></span><span class="c-md">Model</span><span class="c-sp" title="Activity · last hour, three-minute steps">Activity<span class="win"> · 1 h</span></span>
           <span class="r c-fm">5 min</span><span class="r c-in" title="Uncached input tokens · last 24 h"><span class="long">Uncached</span><span class="short">In</span></span><span class="r c-out">Out</span><span class="r c-tot">Total</span><span class="r c-usd">Est. $</span><span class="r c-ag">Agents</span><span class="r c-cx">Context</span><span class="c-do">Doing</span><span class="c-dv">Machine</span><span class="r c-la">Last</span></div>
         <div id="cLanes" class="lanescroll" tabindex="0" role="region" aria-label="Lanes, one per session, scrollable"></div></div>
         <div class="lfoot" id="lFoot"><span>—</span></div>
@@ -200,10 +203,10 @@
         <button type="button" data-fold="foldShipped"><span class="fk">Shipped</span><span class="fs" id="shipSum">—</span></button>
       </div>
       <section class="fold" id="fold" aria-label="The rest of the day, opened">
-        <details class="foldrow" id="foldCold"><summary><span class="fk">Cold sessions</span><span class="fs">idle for more than an hour, or on an unavailable machine</span></summary><div id="coldLanes" class="coldlanes"></div></details>
-        <details class="foldrow" id="foldProjects"><summary><span class="fk">Projects</span><span class="fs">this machine's projects in the period</span></summary><div id="foldProjBody" class="foldbody"></div></details>
-        <details class="foldrow" id="foldEffort"><summary><span class="fk">Effort</span><span class="fs">every machine beside this machine's Git</span></summary><div id="foldEffortBody" class="foldbody"></div></details>
-        <details class="foldrow" id="foldShipped"><summary><span class="fk">Shipped</span><span class="fs">what Git recorded on this machine</span></summary><div id="foldShipBody" class="foldbody"></div></details>
+        <details class="foldrow" id="foldCold"><summary><span class="fk">Cold sessions</span><span class="fs" id="coldSumRow">idle for more than an hour, or on an unavailable machine</span></summary><div id="coldLanes" class="coldlanes"></div></details>
+        <details class="foldrow" id="foldProjects"><summary><span class="fk">Projects</span><span class="fs" id="projSumRow">this machine's projects in the period</span></summary><div id="foldProjBody" class="foldbody"></div></details>
+        <details class="foldrow" id="foldEffort"><summary><span class="fk">Effort</span><span class="fs" id="effortSumRow">every machine beside this machine's Git</span></summary><div id="foldEffortBody" class="foldbody"></div></details>
+        <details class="foldrow" id="foldShipped"><summary><span class="fk">Shipped</span><span class="fs" id="shipSumRow">what Git recorded on this machine</span></summary><div id="foldShipBody" class="foldbody"></div></details>
       </section>
 
       <section class="interop-panel" id="interopPanel" aria-label="Optional telemetry" hidden>
@@ -259,7 +262,7 @@
         <div class="thead"><h3>People</h3><span class="hc" id="peopleCount">—</span></div>
         <div class="tablewrap" tabindex="0" role="region" aria-label="Usage per person, scrollable"><table class="grid" id="peopleTable">
           <caption class="visually-hidden">Usage per person</caption>
-          <thead><tr><th scope="col">Person</th><th scope="col">Machines</th><th scope="col">Activity · 1 h</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r" title="Share of the person's tokens the cache served">Cache read</th><th scope="col" class="r" title="Share of the person's tokens written to the cache">Cache write</th><th scope="col">Models</th><th scope="col" class="r" title="List-price estimate, not an invoice">Est. $</th></tr></thead>
+          <thead><tr><th scope="col">Person</th><th scope="col">Machines</th><th scope="col" class="act">Activity · 24 h</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r" title="Share of the person's tokens the cache served">Cache read</th><th scope="col" class="r" title="Share of the person's tokens written to the cache">Cache write</th><th scope="col">Models</th><th scope="col" class="r" title="List-price estimate, not an invoice">Est. $</th></tr></thead>
           <tbody></tbody>
         </table></div>
       </section>
@@ -268,13 +271,20 @@
         <div class="thead"><h3>Machines</h3><span class="hc" id="machineCountHead">—</span></div>
         <div class="tablewrap" tabindex="0" role="region" aria-label="Usage per machine, scrollable"><table class="grid" id="machineTable">
           <caption class="visually-hidden">Usage per machine</caption>
-          <thead><tr><th scope="col">Machine</th><th scope="col" title="Machines with the same person roll up into one People row">Person</th><th scope="col" title="A machine that stops reporting keeps its last contact time; its silence is never counted as zero">Status</th><th scope="col">Activity · 1 h</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r">Cache read</th><th scope="col" class="r">Cache write</th><th scope="col">Models</th><th scope="col" class="r" title="List-price estimate, not an invoice">Est. $</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+          <thead><tr><th scope="col">Machine</th><th scope="col" title="Machines with the same person roll up into one People row">Person</th><th scope="col" title="A machine that stops reporting keeps its last contact time; its silence is never counted as zero">Status</th><th scope="col" class="act">Activity · 24 h</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r">Cache read</th><th scope="col" class="r">Cache write</th><th scope="col">Models</th><th scope="col" class="r" title="List-price estimate, not an invoice">Est. $</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
           <tbody></tbody>
         </table></div>
         <div class="thead sub"><h3>Join links</h3><span class="hc" id="inviteCount">—</span></div>
         <section class="invites" id="invites" aria-label="Join links"></section>
         <div class="thead sub"><h3>Alerts today</h3><span class="hc" id="teamAlertCount">—</span></div>
         <div class="alert-rows team" id="teamAlerts"></div>
+        <!-- the last thirty days, one row each, from the daily series every machine adds up to: which day burned, and whose machine led it -->
+        <div class="thead sub"><h3>Days</h3><span class="hc" id="dayCount">—</span></div>
+        <div class="tablewrap" tabindex="0" role="region" aria-label="Tokens by day, scrollable"><table class="grid" id="dayTable">
+          <caption class="visually-hidden">Tokens by day</caption>
+          <thead><tr><th scope="col">Day</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" title="The machine that carried most of the day, and how many others had usage">Machines</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
       </section>
     </div>
   </section>
@@ -311,6 +321,8 @@
         <div id="pShare"></div>
         <div class="mhead second"><span>spend per commit</span><span>commits</span><span>est. $</span></div>
         <div id="pSpendRows"></div>
+        <div class="mhead second" id="pMergeHead"><span title="Spend in the window of the work per local default-branch integration">spend per merge</span><span>merges</span><span>est. $</span></div>
+        <div id="pMergeRows"></div>
         <div class="mfoot"><span class="hint" id="pEffortHint">—</span></div>
       </div>
     </div>
@@ -320,14 +332,14 @@
         <div class="thead"><h3>Projects on this machine</h3><span class="hc" id="projTableCount">—</span></div>
         <div class="tablewrap" tabindex="0" role="region" aria-label="Projects on this machine, scrollable"><table class="grid" id="projTable">
           <caption class="visually-hidden">Projects on this machine</caption>
-          <thead><tr><th scope="col">Project</th><th scope="col" title="Sessions on this project that reported in the last two minutes">Live</th><th scope="col">Activity · 1 h</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r" title="List-price estimate, not an invoice">Est. $</th><th scope="col" class="r">Sessions</th><th scope="col" class="r" title="Local Git history in the period">Commits</th><th scope="col" class="r">Lines + / −</th><th scope="col" class="r" title="Commits whose subject ends (#N) or merges a pull request; #N may name an issue">PR-linked</th><th scope="col" class="r" title="Local default-branch integration commits">Merges</th><th scope="col" class="r" title="Spend in the window of the work per local commit — not attribution, not a productivity score">$ / commit</th><th scope="col" class="r" title="Spend in the window of the work per local default-branch integration">$ / merge</th><th scope="col">Branches</th></tr></thead>
+          <thead><tr><th scope="col">Project</th><th scope="col" title="Sessions on this project that reported in the last two minutes">Live</th><th scope="col" class="act">Activity · 24 h</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r" title="List-price estimate, not an invoice">Est. $</th><th scope="col" class="r">Sessions</th><th scope="col" class="r" title="Local Git history in the period">Commits</th><th scope="col" class="r">Lines + / −</th><th scope="col" class="r" title="Commits whose subject ends (#N) or merges a pull request; #N may name an issue">PR-linked</th><th scope="col" class="r" title="Local default-branch integration commits">Merges</th><th scope="col" class="r" title="Spend in the window of the work per local commit — not attribution, not a productivity score">$ / commit</th><th scope="col" class="r" title="Spend in the window of the work per local default-branch integration">$ / merge</th><th scope="col">Branches</th></tr></thead>
           <tbody></tbody>
         </table></div>
       </section>
       <!-- the sessions behind those projects: this machine's own lanes, by project, in the same row grammar as the Console -->
       <section class="lanes" aria-label="Sessions on this machine">
         <div class="thead"><h3>Sessions on this machine</h3><span class="hc" id="pLaneCount">—</span></div>
-        <div class="lanebody"><div class="lhead" aria-hidden="true"><span class="grp" title="Uncached input, output, total and estimate are the last 24 hours, whatever the period control says">24 h</span><span class="c-st">State</span><span class="c-pr">Project / branch</span><span class="c-md">Model</span><span class="c-sp">Activity · 1 h</span>
+        <div class="lanebody"><div class="lhead" aria-hidden="true"><span class="grp" title="Uncached input, output, total and estimate are the last 24 hours, whatever the period control says"><span>24 h</span></span><span class="c-st">State</span><span class="c-pr" title="Project / branch"><span class="long">Project / branch</span><span class="short">Project</span></span><span class="c-md">Model</span><span class="c-sp" title="Activity · last hour, three-minute steps">Activity<span class="win"> · 1 h</span></span>
           <span class="r c-fm">5 min</span><span class="r c-in" title="Uncached input tokens · last 24 h"><span class="long">Uncached</span><span class="short">In</span></span><span class="r c-out">Out</span><span class="r c-tot">Total</span><span class="r c-usd">Est. $</span><span class="r c-ag">Agents</span><span class="r c-cx">Context</span><span class="c-do">Doing</span><span class="c-dv">Machine</span><span class="r c-la">Last</span></div>
         <div id="pLanes" class="lanescroll"></div></div>
       </section>
@@ -389,13 +401,6 @@
   </div>
 </dialog>
 
-<dialog class="sheet dock" id="contextDialog" aria-labelledby="contextTitle">
-  <div class="step">
-    <header><h2 id="contextTitle" tabindex="-1">Session context</h2><button type="button" class="x" data-close aria-label="Close">×</button></header>
-    <div id="contextDetails" class="context-details"></div>
-  </div>
-</dialog>
-
 <!-- the inspector: a machine, a person, a project or a lane, opened beside the canvas by its row; Remove confirms inside it -->
 <dialog class="sheet dock" id="inspectDialog" aria-labelledby="inspectTitle">
   <div class="step">
@@ -417,6 +422,8 @@
     <div id="alertRows" class="alert-rows"></div>
     <div class="alert-head earlier" id="alertEarlierHead" hidden><span>earlier today</span></div>
     <div id="alertEarlier" class="alert-rows"></div>
+    <div class="alert-head earlier"><span id="alertModelsCap">spend by model · 24 h</span></div>
+    <div id="alertModels" class="specmodels"></div>
   </div>
 </dialog>
 

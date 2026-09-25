@@ -2,6 +2,51 @@
 
 ## Unreleased
 
+- The strip is the approved band's hero again, compact: 76px on the substrate
+  with the artwork reading from a third of the way across, the instrument's
+  name in the display sans and the view beside it, and everything else on the
+  same line. The first band is one height whatever the reading says, so a
+  partial estimate's notes never push the lanes down: eight lane rows stay
+  whole above their footer at 1440×900 under a real alert load, and the
+  compact frame (1280×800, 1366×768, 1024×768) folds the second band to one
+  row — the alert and its factor, the cost bar, the burn and its dollars, the
+  rest in the alerts sheet — and every caption to its short form, so it keeps
+  eight rows too (six is the floor at 1024). The status bar is one line.
+- Nothing cut mid-word: the fold summaries and the strip's scope line are
+  ordered parts that drop whole from the least important when the frame is
+  tight, with the whole line on hover; the tool is a chip before the model
+  name, whole at every width; Doing and Machine have the room a tool, its
+  recency and its pace need; the "24 h" group label is a bracket over its
+  four columns.
+- Git nobody could read is a void with the hub's reason everywhere the
+  console used to say "0 commits": the Effort and Shipped summaries, the
+  Projects figures, the effort line and the fold tables.
+- Every money figure with records the reporter could not count is a floor,
+  marked with the number ("partial" in the Team tables and the machine
+  inspector, "+" in the band's machine rows) and counted on hover; the chart
+  legend and the spend spectrum say "est." on every dollar and mark a partial
+  estimate.
+- The period control moves Team and Projects whole: by tool, by person, each
+  row's activity wave and the table heads follow it; thirty days say sessions
+  are not kept rather than showing the day's count under a month's caption. A
+  folder outside Git, and a period without sessions or branches, are said once
+  over the table, each cell a plain void with its reason on hover.
+- Closing a sheet returns focus to what opened it even after the rows were
+  repainted: the opener is found again by what names it. The context button
+  opens the lane's inspector at its Context section (one door, one content),
+  and an address opens one sheet at a time. Projects' breakdown card carries
+  spend per merge; Projects and Team end where their rows end, never stretched
+  into an empty tile, and Team's last card carries the last thirty days, one
+  row each — the day's tokens, its share, the machine that carried it — so a
+  one-machine fleet on a large frame is still a full instrument. The join
+  page names its steps in plain labels, and a link without a code disables
+  Copy and says why. On the phone the fold rows alone carry the summaries and
+  the state and name stay while the figures scroll.
+- `scripts/ui-probes.mjs` counts the lane rows drawn whole above the footer at
+  1440, 1280 and 1024, checks caption and status-bar heights, the fold
+  summaries and model names for clipping, the 12px floor with a sheet open,
+  focus return after a sheet stayed open, and runs against a synthetic month
+  beside the demo (`--also`), in CI too.
 - The console is a set of instruments on a tray, not a page: every pane is a
   card with its own light, rim and shadow that lifts under the pointer and
   settles under a press, in the dark theme and the light one; the strip that

@@ -61,10 +61,10 @@
   /* a card is an object: a surface that catches light at the top, a rim, and a shadow that gets deeper the further it lifts */
   --card-a: #FFFFFF; --card-b: #F6F4F0;
   --card-rim: rgba(255, 255, 255, .95); --card-edge: rgba(28, 24, 16, .12);
-  --card-shadow: 0 1px 1px rgba(28, 24, 16, .06), 0 2px 4px rgba(28, 24, 16, .06), 0 10px 24px -6px rgba(28, 24, 16, .16), 0 24px 48px -18px rgba(28, 24, 16, .18);
-  --card-lift: 0 2px 3px rgba(28, 24, 16, .08), 0 6px 10px rgba(28, 24, 16, .08), 0 18px 34px -8px rgba(28, 24, 16, .22), 0 36px 64px -20px rgba(28, 24, 16, .24);
-  --card-press: 0 1px 1px rgba(28, 24, 16, .08), 0 4px 10px -4px rgba(28, 24, 16, .16);
-  --tray: #E6E3DD; --tray-edge: rgba(28, 24, 16, .10);
+  --card-shadow: 0 1px 1px rgba(28, 24, 16, .08), 0 2px 5px rgba(28, 24, 16, .08), 0 12px 28px -6px rgba(28, 24, 16, .2), 0 28px 56px -18px rgba(28, 24, 16, .22);
+  --card-lift: 0 2px 3px rgba(28, 24, 16, .1), 0 6px 12px rgba(28, 24, 16, .1), 0 20px 40px -8px rgba(28, 24, 16, .26), 0 40px 72px -20px rgba(28, 24, 16, .28);
+  --card-press: 0 1px 1px rgba(28, 24, 16, .1), 0 4px 10px -4px rgba(28, 24, 16, .2);
+  --tray: #E2DFD8; --tray-edge: rgba(28, 24, 16, .12);
   --btn-rim: rgba(255, 255, 255, .18);
   --stamp-edge: rgba(28, 24, 16, .3);
   /* type */

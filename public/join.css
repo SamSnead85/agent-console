@@ -8,12 +8,12 @@
 
 .conhead {
   --ink: #EEF2F8; --ink2: #C3CCDB; --quiet: #94A0B4; --lit: #7FB4FF; --stamp-edge: rgba(255, 255, 255, .28); --hatch: rgba(255, 255, 255, .06);
-  color: var(--ink); margin-top: 4px; height: calc(56px * var(--k)); display: flex; align-items: center; gap: 12px; padding: 0 18px; border-radius: 12px 12px 0 0; overflow: hidden; isolation: isolate; position: relative; white-space: nowrap;
-  background: #070B13 url("/brand/substrate.jpg") 72% 46% / cover no-repeat; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 0 0 1px rgba(255, 255, 255, .06), var(--elev2);
+  color: var(--ink); margin-top: 4px; height: calc(76px * var(--k)); display: flex; align-items: center; gap: 14px; padding: 0 18px 0 20px; border-radius: 12px 12px 0 0; overflow: hidden; isolation: isolate; position: relative; white-space: nowrap;
+  background: #070B13 url("/brand/substrate.jpg") 78% 42% / cover no-repeat; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 0 0 1px rgba(255, 255, 255, .06), var(--elev2);
 }
-.conhead::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #070B13 0%, #070B13 40%, rgba(7, 11, 19, .86) 56%, rgba(7, 11, 19, .42) 74%, rgba(7, 11, 19, .3) 100%), linear-gradient(0deg, rgba(5, 8, 14, .45), transparent 60%); }
-.conhead h1 { margin: 0; font: 600 calc(12px * var(--k))/1 var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--ink); }
-.conhead .vt { font: 600 calc(12px * var(--k))/1 var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--lit); margin-left: -6px; }
+.conhead::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #070B13 0%, #070B13 30%, rgba(7, 11, 19, .78) 44%, rgba(7, 11, 19, .34) 58%, rgba(7, 11, 19, .18) 76%, rgba(7, 11, 19, .4) 100%), linear-gradient(0deg, rgba(5, 8, 14, .3), transparent 60%); }
+.conhead h1 { margin: 0; font: 300 calc(22px * var(--k))/1 var(--sans); letter-spacing: -.02em; color: var(--ink); }
+.conhead .vt { font: 300 calc(22px * var(--k))/1 var(--sans); letter-spacing: -.02em; color: var(--ink2); margin-left: -8px; }
 .conhead .vt::before { content: "· "; color: var(--quiet); }
 .conhead .count { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); }
 .conhead .count::before { content: "·"; margin-right: 12px; opacity: .5; }
@@ -24,7 +24,8 @@
 .col { padding: calc(12px * var(--k)) calc(16px * var(--k)) calc(14px * var(--k)); border-radius: 10px; min-width: 0;
   background: linear-gradient(180deg, var(--card-a), var(--card-b)); box-shadow: inset 0 1px 0 var(--card-rim), inset 0 0 0 1px var(--card-edge), var(--card-shadow); }
 .cap { display: flex; align-items: center; gap: 10px; font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); min-height: 18px; }
-.cap .n { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: 0; color: var(--lit); box-shadow: inset 0 0 0 1px var(--cobalt-edge); background: var(--cobalt-wash); }
+/* the step's ordinal, in the label's own voice, set off by a hairline: "STEP 1 | CHECK YOU HAVE…" — never a coloured circle */
+.cap .step { color: var(--ink2); padding-right: 10px; box-shadow: inset -1px 0 0 var(--hair); }
 .col p { margin: 8px 0 0; font: 400 calc(13.5px * var(--k))/1.55 var(--sans); color: var(--ink2); }
 .col p em { font-style: normal; color: var(--ink); }
 .col p code, .col .fine code { font: 400 calc(12.5px * var(--k)) var(--mono); color: var(--ink); overflow-wrap: anywhere; }

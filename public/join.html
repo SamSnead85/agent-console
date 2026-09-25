@@ -22,7 +22,7 @@
   </header>
 
   <!-- the same strip the console wears: what this is, on the substrate, with the console it joins -->
-  <div class="conhead">
+  <div class="conhead" role="region" aria-label="The console this computer joins">
     <h1>Agent Console</h1><span class="vt">Join</span>
     <span class="stamp" id="demoStamp" hidden title="This console is a demonstration. Its links show the steps but cannot add a real computer.">DEMO</span>
     <span class="count">console at <b id="hubName">—</b></span>
@@ -39,13 +39,14 @@
       </div>
     </section>
 
+    <!-- three steps, each a card named by its ordinal in the label: plain words, no numbered circles -->
     <ol class="steps" id="steps">
       <li class="col">
-        <div class="cap"><span class="n">1</span>Check you have Node.js 22 or newer</div>
+        <div class="cap"><span class="step">Step 1</span>Check you have Node.js 22 or newer</div>
         <p>Open a terminal — <em>Terminal</em> on a Mac, <em>PowerShell</em> on Windows — type <code>node --version</code> and press Return. If it says v22 or higher, carry on. If not, install the LTS version from <a href="https://nodejs.org" target="_blank" rel="noopener">nodejs.org</a> first.</p>
       </li>
       <li class="col">
-        <div class="cap"><span class="n">2</span>Paste this into the terminal and press Return</div>
+        <div class="cap"><span class="step">Step 2</span>Paste this into the terminal and press Return</div>
         <p class="warnline" id="noCode" hidden>This link is missing its join code, or the code is mistyped. Ask whoever sent it for a new link.</p>
         <p class="warnline" id="demoNote" hidden>This console is a demonstration. Its links show the steps but cannot add a real computer.</p>
         <div class="copyrow"><code class="cmd" id="cmd">—</code><button type="button" class="btn primary" id="copyBtn">Copy</button></div>
@@ -56,7 +57,7 @@
         </details>
       </li>
       <li class="col">
-        <div class="cap"><span class="n">3</span>Leave that window open</div>
+        <div class="cap"><span class="step">Step 3</span>Leave that window open</div>
         <p>This computer appears on the console within a few seconds. Closing the window stops reporting.</p>
         <details class="why">
           <summary>Start reporting again after a restart — no new link needed</summary>

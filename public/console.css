@@ -69,6 +69,11 @@ body[data-demo="false"] .demo-only { display: none; }
   .canvas { flex: 0 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--hair) transparent; }
   /* the Console canvas takes what the two bands leave — the lanes get the height, never the fold — and scrolls under its own header and over its own footer, which stays in frame while any lane is; the fold strip stays under that */
   #consoleCanvas { flex: 1 1 auto; }
+  /* the first band is one height whatever the reading says (a partial estimate's notes go to hover, never into the frame), so the lanes keep their eight rows under a real load */
+  #band { height: calc(260px * var(--k)); }
+  #band > .col { overflow: hidden; }
+  #band > .col > :not(.flowwrap, .week) { flex-shrink: 0; }
+  #band .classes .note { display: none; }
   /* the lanes card takes the canvas's height: its rows scroll inside it under their own header, its footer sits at its foot,
      and nothing stands empty above the fold strip; with a fold open it keeps at least half the canvas and the canvas scrolls */
   #consoleCanvas .lanes { flex: 1 1 auto; min-height: 50%; display: flex; flex-direction: column; }
@@ -85,11 +90,10 @@ body[data-demo="false"] .demo-only { display: none; }
   .console.two > .col { overflow: hidden; }
   /* a caption or a figure never gives up its height to fit; only the instrument sunk under them does */
   .console.two > .col > :not(.inst) { flex-shrink: 0; }
-  /* Projects: the canvas takes the frame's height and the sessions behind the projects take what the table leaves, so the frame is never a fifth empty */
-  #projCanvas { flex: 1 1 auto; }
-  #projCanvas .lanes:last-child { flex: 1 1 auto; }
-  #teamCanvas { flex: 1 1 auto; }
-  #teamCanvas .lanes:last-child { flex: 1 1 auto; }
+  /* Projects and Team: the canvas ends where its last row ends and scrolls by itself when the rows need more than the frame has;
+     a card is never stretched into an empty tile under its rows — what is left under the last card is the tray */
+  #projCanvas, #teamCanvas { flex: 0 1 auto; }
+  #projCanvas .lanes, #teamCanvas .lanes { flex: none; }
 }
 /* a cut row is never the affordance: a pane with more below fades its last 14px until it is scrolled to the end */
 .fademore { -webkit-mask-image: linear-gradient(#000 calc(100% - 16px), transparent); mask-image: linear-gradient(#000 calc(100% - 16px), transparent); }
@@ -102,16 +106,17 @@ body[data-demo="false"] .demo-only { display: none; }
   --ink: #EEF2F8; --ink2: #C3CCDB; --quiet: #94A0B4; --hair: rgba(255, 255, 255, .1); --rim: rgba(255, 255, 255, .12); --cobalt-edge: rgba(110, 168, 255, .5); --cobalt-wash: rgba(91, 155, 255, .16); --row-hover: rgba(255, 255, 255, .06);
   --warn: #F2C14E; --warn-wash: rgba(242, 193, 78, .12); --good: #4FE0A8; --good-glow: rgba(79, 224, 168, .85); --lit: #7FB4FF; --stamp-edge: rgba(255, 255, 255, .28); --hatch: rgba(255, 255, 255, .06);
   color: var(--ink);
-  margin-top: calc(4px * var(--k)); height: calc(52px * var(--k)); flex: none; display: flex; align-items: center; gap: calc(12px * var(--k));
-  padding: 0 calc(14px * var(--k)) 0 calc(18px * var(--k)); border-radius: 12px 12px 0 0; overflow: hidden; isolation: isolate;
-  background: #070B13 url("/brand/substrate.jpg") 72% 46% / cover no-repeat;
+  margin-top: calc(4px * var(--k)); height: calc(76px * var(--k)); flex: none; display: flex; align-items: center; gap: calc(14px * var(--k));
+  padding: 0 calc(14px * var(--k)) 0 calc(20px * var(--k)); border-radius: 12px 12px 0 0; overflow: hidden; isolation: isolate;
+  background: #070B13 url("/brand/substrate.jpg") 78% 42% / cover no-repeat;
   box-shadow: inset 0 1px 0 var(--rim), inset 0 0 0 1px rgba(255, 255, 255, .06), var(--elev2); white-space: nowrap; position: relative; z-index: 3;
 }
-/* the words sit on the dark left; the glass shows through the middle and the right, and the far right dims again under the clock and the controls */
+/* the words sit on the dark left; the glass and its light read from a third of the way across, and the far right dims again under the clock and the controls */
 .conhead::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: linear-gradient(90deg, #070B13 0%, #070B13 26%, rgba(7, 11, 19, .86) 40%, rgba(7, 11, 19, .42) 56%, rgba(7, 11, 19, .3) 70%, rgba(7, 11, 19, .62) 84%, rgba(7, 11, 19, .8) 100%), linear-gradient(0deg, rgba(5, 8, 14, .45), transparent 60%); }
-.conhead h1 { margin: 0; font: 600 calc(12px * var(--k))/1 var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--ink); }
-.conhead .vt { font: 600 calc(12px * var(--k))/1 var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--lit); margin-left: calc(-6px * var(--k)); }
+  background: linear-gradient(90deg, #070B13 0%, #070B13 24%, rgba(7, 11, 19, .78) 38%, rgba(7, 11, 19, .34) 52%, rgba(7, 11, 19, .18) 70%, rgba(7, 11, 19, .5) 86%, rgba(7, 11, 19, .72) 100%), linear-gradient(0deg, rgba(5, 8, 14, .3), transparent 60%); }
+/* the instrument's name, in the display sans, and the view beside it */
+.conhead h1 { margin: 0; font: 300 calc(22px * var(--k))/1 var(--sans); letter-spacing: -.02em; color: var(--ink); white-space: nowrap; }
+.conhead .vt { font: 300 calc(22px * var(--k))/1 var(--sans); letter-spacing: -.02em; color: var(--ink2); margin-left: calc(-8px * var(--k)); white-space: nowrap; }
 .conhead .vt::before { content: "· "; color: var(--quiet); }
 .conhead .vt[hidden] { display: none; }
 .conhead .stamp.present { color: var(--lit); box-shadow: inset 0 0 0 1px var(--cobalt-edge); background: var(--cobalt-wash); }
@@ -122,8 +127,11 @@ body[data-demo="false"] .demo-only { display: none; }
 /* the one pulse on the screen: the strip's live dot. Measured green; in --demo the accent, like every generated row. */
 .conhead .cap i.on { background: var(--good); box-shadow: 0 0 10px var(--good-glow); animation: bp 1.7s var(--ease) infinite; }
 body[data-demo="true"] .conhead .cap i.on { background: var(--lit); box-shadow: 0 0 10px var(--cobalt-edge); }
-/* the scope line gives way first when the strip is tight; the clock and the controls never do */
-.conhead .count { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); font-variant-numeric: tabular-nums; }
+/* the scope line gives way first when the strip is tight — its lowest-priority parts drop whole, never an ellipsis on meaning; the clock and the controls never give way */
+.conhead .count { flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); font-variant-numeric: tabular-nums; }
+/* a line of ordered parts: when it does not fit, the parts drop from the least important, whole; the whole line is on hover */
+.fit .fseg[hidden] { display: none; }
+.fit .fseg .sep { margin: 0 6px; opacity: .5; }
 .conhead .clock { display: inline-flex; align-items: baseline; gap: calc(8px * var(--k)); font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); flex: none; }
 .conhead .clock b { font: 500 calc(13px * var(--k)) var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
 .conhead .clock em { font-style: normal; font: 400 calc(12px * var(--k)) var(--mono); color: var(--quiet); }
@@ -144,7 +152,7 @@ body[data-demo="true"] .conhead .cap i.on { background: var(--lit); box-shadow: 
 body.paused .conhead .cap i.on, body.paused .waiting i { animation: none; }
 
 /* ── the band: three cards standing on the tray, each an object with its own light and shadow ── */
-.console { flex: none; display: grid; gap: calc(6px * var(--k)); padding: calc(4px * var(--k)) calc(8px * var(--k)); grid-template-columns: calc(340px * var(--k)) 1fr calc(372px * var(--k));
+.console { flex: none; display: grid; gap: calc(6px * var(--k)) calc(8px * var(--k)); padding: calc(4px * var(--k)) calc(8px * var(--k)); grid-template-columns: calc(340px * var(--k)) 1fr calc(372px * var(--k));
   background: var(--tray); box-shadow: inset 0 0 0 1px var(--tray-edge), inset 0 2px 6px rgba(0, 0, 0, .22); position: relative; z-index: 2; }
 .console.two { padding-top: 0; z-index: 1; }
 .console > .col { padding: calc(8px * var(--k)) calc(14px * var(--k)) calc(8px * var(--k)); display: flex; flex-direction: column; min-width: 0; border-radius: 10px; position: relative;
@@ -159,26 +167,28 @@ body.paused .conhead .cap i.on, body.paused .waiting i { animation: none; }
 /* an instrument sits sunk into its card */
 .inst { background: var(--tile2); border-radius: 7px; box-shadow: var(--inset); padding: calc(6px * var(--k)) calc(6px * var(--k)) 0; }
 .cap { display: flex; align-items: center; gap: calc(8px * var(--k)); font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); white-space: nowrap; min-height: calc(18px * var(--k)); }
+/* a caption's long form at desk width, its short form where the frame is tight */
+.cap .short, .mhead .short { display: none; }
 .cap .by { font-style: normal; letter-spacing: .04em; font-weight: 400; }
 .cap .capr { margin-left: auto; letter-spacing: 0; text-transform: none; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); min-width: 0; font-variant-numeric: tabular-nums; }
 .cap .capr b { font: 500 calc(12px * var(--k)) var(--sans); color: var(--ink2); font-variant-numeric: tabular-nums; }
 /* the hero figure: display sans, light, tight; its unit smaller and quieter beside it */
-.big { font: 300 calc(46px * var(--k))/1 var(--sans); letter-spacing: -.035em; margin-top: calc(3px * var(--k)); font-variant-numeric: tabular-nums; color: var(--ink); }
+.big { font: 300 calc(46px * var(--k))/1 var(--sans); letter-spacing: -.035em; margin-top: calc(2px * var(--k)); font-variant-numeric: tabular-nums; color: var(--ink); }
 .big.mid { font-size: calc(32px * var(--k)); letter-spacing: -.025em; margin-top: calc(3px * var(--k)); }
 .big .u { font: 400 calc(13px * var(--k)) var(--sans); letter-spacing: 0; color: var(--quiet); margin-left: .35em; }
-.tline { margin-top: calc(4px * var(--k)); display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px calc(8px * var(--k)); font: 400 calc(13px * var(--k)) var(--sans); color: var(--ink2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tline { margin-top: calc(2px * var(--k)); display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px calc(8px * var(--k)); font: 400 calc(13px * var(--k)) var(--sans); color: var(--ink2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .tline em { font-style: normal; color: var(--quiet); }
 .tline em::before { content: "· "; color: var(--quiet); opacity: .6; }
 .tline .s { color: var(--quiet); }
-.prov { margin-top: calc(3px * var(--k)); font: 400 calc(12px * var(--k))/1.35 var(--sans); color: var(--quiet); white-space: normal; font-variant-numeric: tabular-nums; }
+.prov { margin-top: calc(1px * var(--k)); font: 400 calc(12px * var(--k))/1.35 var(--sans); color: var(--quiet); white-space: normal; font-variant-numeric: tabular-nums; }
 .prov b { font-weight: 500; color: var(--warn); }
-.mix { display: flex; height: calc(6px * var(--k)); margin-top: calc(6px * var(--k)); border-radius: 3px; overflow: hidden; background: var(--hair2); gap: 1px; box-shadow: inset 0 0 0 1px var(--hair2); }
+.mix { display: flex; height: calc(6px * var(--k)); margin-top: calc(4px * var(--k)); border-radius: 3px; overflow: hidden; background: var(--hair2); gap: 1px; box-shadow: inset 0 0 0 1px var(--hair2); }
 .mix i { display: block; height: 100%; transition: flex-grow .9s var(--ease); min-width: 0; }
 .chead, .classes > span { display: grid; grid-template-columns: calc(8px * var(--k)) 1fr auto calc(44px * var(--k)) calc(60px * var(--k)); align-items: center; gap: calc(8px * var(--k)); white-space: nowrap; }
-.chead { margin-top: calc(6px * var(--k)); padding-bottom: 2px; border-bottom: 1px solid var(--hair2); font: 500 calc(12px * var(--k))/1.1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); }
+.chead { margin-top: calc(3px * var(--k)); padding-bottom: 2px; border-bottom: 1px solid var(--hair2); font: 500 calc(12px * var(--k))/1.1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); }
 .chead span:nth-child(n+3) { text-align: right; }
 .classes { margin-top: calc(2px * var(--k)); display: flex; flex-direction: column; gap: 0; }
-.classes > span { font: 400 calc(12.5px * var(--k))/1.2 var(--sans); color: var(--quiet); }
+.classes > span { font: 400 calc(12.5px * var(--k))/calc(14px * var(--k)) var(--sans); color: var(--quiet); }
 .classes b { font: 400 calc(12.5px * var(--k)) var(--sans); color: var(--ink2); text-align: right; font-variant-numeric: tabular-nums; }
 .classes .pc { font: 500 calc(12.5px * var(--k)) var(--sans); font-style: normal; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
 .classes .usd { font: 400 calc(12.5px * var(--k)) var(--sans); color: var(--ink2); text-align: right; font-variant-numeric: tabular-nums; }
@@ -190,12 +200,12 @@ body.paused .conhead .cap i.on, body.paused .waiting i { animation: none; }
 .sw.output, .mix .output, #cStack .output { background: var(--c-output); fill: var(--c-output); }
 .sw.fresh, .mix .fresh, #cStack .fresh { background: var(--c-input); fill: var(--c-input); }
 /* the week, as data: seven days drawn as one wave under the day's figure, today's part lit, growing to fill the card so nothing floats */
-.week { margin-top: auto; padding-top: calc(5px * var(--k)); flex: 1 1 auto; min-height: calc(34px * var(--k)); display: flex; flex-direction: column; gap: calc(2px * var(--k)); }
+.week { margin-top: auto; padding-top: calc(3px * var(--k)); flex: 1 1 auto; min-height: calc(30px * var(--k)); display: flex; flex-direction: column; gap: calc(2px * var(--k)); }
 .week .wrow { display: flex; align-items: baseline; gap: calc(10px * var(--k)); white-space: nowrap; }
 .week .wl { font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); }
 .week .wp { font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); min-width: 0; overflow: hidden; }
 .week .wp b { font: 500 calc(12px * var(--k)) var(--sans); color: var(--ink2); font-variant-numeric: tabular-nums; }
-.week svg { width: 100%; flex: 1 1 auto; min-height: calc(18px * var(--k)); max-height: calc(26px * var(--k)); display: block; overflow: visible; }
+.week svg { width: 100%; flex: 1 1 auto; min-height: calc(16px * var(--k)); max-height: calc(22px * var(--k)); display: block; overflow: visible; }
 .week svg .area { fill: url(#wg); }
 .week svg .line { fill: none; stroke: var(--spark); stroke-width: 1.2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
 .week svg .today { fill: var(--spark-hot); opacity: .35; }
@@ -208,7 +218,7 @@ body.paused .conhead .cap i.on, body.paused .waiting i { animation: none; }
 .kv .v { font: 300 calc(22px * var(--k))/1 var(--sans); letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
 .kv .v .u { font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); margin-left: 3px; }
 .kv .v.warn { color: var(--warn); }
-.kv .l { margin-top: 3px; font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--quiet); white-space: nowrap; }
+.kv .l { margin-top: 3px; font: 500 calc(12px * var(--k))/1.2 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--quiet); white-space: normal; }
 .kv .s { font: 400 calc(12px * var(--k))/1.3 var(--sans); color: var(--quiet); white-space: normal; }
 /* Projects: the fleet on one line, this machine's Git on the other — never divided into each other */
 .effort { margin-top: auto; padding-top: calc(8px * var(--k)); display: flex; flex-direction: column; gap: 3px; }
@@ -274,15 +284,16 @@ body.paused .wave .top, .flowwrap.void .wave .top { filter: none; }
 .legend .sw.k.rest { background: repeating-linear-gradient(-45deg, var(--quiet) 0 2px, transparent 2px 4px); opacity: .7; }
 
 /* by model, by machine: one row each */
-.mhead { display: grid; grid-template-columns: 1fr calc(46px * var(--k)) calc(64px * var(--k)); gap: calc(8px * var(--k)); padding-bottom: calc(3px * var(--k)); border-bottom: 1px solid var(--hair2);
+.mhead { display: grid; grid-template-columns: 1fr calc(60px * var(--k)) calc(64px * var(--k)); gap: calc(8px * var(--k)); padding-bottom: calc(3px * var(--k)); border-bottom: 1px solid var(--hair2);
   font: 500 calc(12px * var(--k))/1.1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); white-space: normal; }
 .mhead.second { margin-top: calc(8px * var(--k)); }
-.mhead.machines, .mhead.people, .mhead.tools { margin-top: calc(5px * var(--k)); grid-template-columns: 1fr calc(40px * var(--k)) calc(52px * var(--k)) calc(64px * var(--k)); }
-.mhead.people { grid-template-columns: 1fr calc(40px * var(--k)) calc(64px * var(--k)) calc(64px * var(--k)); }
-.xrow.msgs { grid-template-columns: minmax(0, 1fr) calc(40px * var(--k)) calc(64px * var(--k)) calc(64px * var(--k)); }
+.mhead[hidden] { display: none; }
+.mhead.machines, .mhead.people, .mhead.tools { margin-top: calc(3px * var(--k)); grid-template-columns: 1fr calc(50px * var(--k)) calc(56px * var(--k)) calc(72px * var(--k)); }
+.mhead.people { grid-template-columns: 1fr calc(50px * var(--k)) calc(72px * var(--k)) calc(72px * var(--k)); }
+.xrow.msgs { grid-template-columns: minmax(0, 1fr) calc(50px * var(--k)) calc(72px * var(--k)) calc(72px * var(--k)); }
 .mhead span + span { text-align: right; }
 .mhead span:first-child { min-width: 0; }
-.mrow { display: grid; grid-template-columns: calc(104px * var(--k)) auto 1fr calc(46px * var(--k)) calc(64px * var(--k)); align-items: center; gap: calc(8px * var(--k)); margin-top: calc(1px * var(--k)); line-height: 1.2; min-height: calc(17px * var(--k)); }
+.mrow { display: grid; grid-template-columns: calc(104px * var(--k)) auto 1fr calc(60px * var(--k)) calc(64px * var(--k)); align-items: center; gap: calc(8px * var(--k)); margin-top: calc(1px * var(--k)); line-height: 1.2; min-height: calc(17px * var(--k)); }
 /* a row that opens an inspector is a 24px target (WCAG 2.5.8): the type keeps its size, the row takes the height */
 .mrow.door { min-height: 24px; margin-top: 0; cursor: pointer; }
 .mrow .ms { display: flex; min-width: 0; }
@@ -297,10 +308,13 @@ body.paused .wave .top, .flowwrap.void .wave .top { filter: none; }
 .mbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--cobalt), var(--lit)); border-radius: 3px; transition: width .8s var(--ease); }
 .mv { font: 400 calc(12.5px * var(--k)) var(--sans); text-align: right; color: var(--ink2); font-variant-numeric: tabular-nums; }
 .mc { font: 400 calc(12.5px * var(--k)) var(--sans); text-align: right; color: var(--quiet); font-variant-numeric: tabular-nums; }
+/* a money figure with records it could not count is a floor: the mark sits with the number, never under the name */
+.part { font-style: normal; font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .04em; color: var(--warn); margin-left: 5px; }
+.xc .part { margin-left: 2px; }
 /* "n more": a quiet row that opens the rest in place, never a silent cut */
 .more { margin-top: calc(2px * var(--k)); border: 0; background: none; cursor: pointer; padding: 0; min-height: 24px; line-height: 1.2; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); text-align: left; }
 .more:hover { color: var(--lit); }
-.xrow { display: grid; grid-template-columns: minmax(0, 1fr) calc(40px * var(--k)) calc(52px * var(--k)) calc(64px * var(--k)); align-items: center; gap: calc(8px * var(--k)); margin-top: calc(2px * var(--k)); line-height: 1.2; min-height: calc(17px * var(--k)); }
+.xrow { display: grid; grid-template-columns: minmax(0, 1fr) calc(50px * var(--k)) calc(56px * var(--k)) calc(72px * var(--k)); align-items: center; gap: calc(8px * var(--k)); margin-top: calc(2px * var(--k)); line-height: 1.2; min-height: calc(17px * var(--k)); }
 .xrow.door { cursor: pointer; border-radius: 5px; min-height: 24px; margin-top: 0; margin-left: -6px; margin-right: -6px; padding: 0 6px; transition: background .16s var(--ease); }
 .xrow.door:hover, .xrow.door:focus-visible { background: var(--row-hover); }
 .xrow .xn { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 7px; min-width: 0; font: 500 calc(12.5px * var(--k)) var(--sans); color: var(--ink); line-height: 1.25; }
@@ -360,8 +374,6 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .astrip svg rect.tick { fill: var(--warn); }
 .astrip svg rect.tick.earlier { fill: var(--quiet); }
 .astrip svg line.base { stroke: var(--hair); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.astrip .bx { margin-top: 3px; }
-.astrip .bx span:nth-child(2) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
 /* spend spectrum: where the money goes against where the tokens go */
 .specwrap { position: relative; margin-top: calc(4px * var(--k)); display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: calc(10px * var(--k)); align-items: start; }
@@ -396,9 +408,10 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .specmodels .sc { font: 400 calc(12.5px * var(--k)) var(--sans); color: var(--ink2); text-align: right; font-variant-numeric: tabular-nums; }
 
 /* burn: the rate now, and its last sixty minutes drawn as a wave */
-.burn > .cap { flex-wrap: wrap; min-width: 0; white-space: normal; }
-.burn > .cap #burnMedian { flex: 1 1 100%; min-width: 0; margin-left: 0; order: 1; white-space: normal; }
+.burn > .cap { min-width: 0; }
 .burn > .cap .unit { flex-shrink: 0; margin-left: auto; }
+.bprov > span:not(:empty) + span:not(:empty)::before { content: " · "; }
+.bprov #burnMedian b { color: var(--ink2); }
 .unit { margin-left: 0; cursor: pointer; border: 0; background: none; font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: 0; text-transform: none; color: var(--quiet);
   min-height: 24px; padding: 2px 8px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--hair); transition: .15s var(--ease); }
 .unit:hover { color: var(--lit); box-shadow: inset 0 0 0 1px var(--cobalt-edge); }
@@ -422,21 +435,25 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .bsparkwrap.void .bspark { opacity: .12; }
 
 /* ── the canvas: dense rows under the band, scrolling by themselves ─────── */
-.canvas { background: var(--tray); padding: calc(6px * var(--k)) calc(8px * var(--k)); box-shadow: inset 0 0 0 1px var(--tray-edge), inset 0 2px 6px rgba(0, 0, 0, .22); display: flex; flex-direction: column; gap: calc(6px * var(--k)); }
+/* the canvas is positioned so a visually-hidden reason inside a table (absolute, 1px) is contained by it and never stretches the document */
+.canvas { position: relative; background: var(--tray); padding: calc(4px * var(--k)) calc(8px * var(--k)); box-shadow: inset 0 0 0 1px var(--tray-edge), inset 0 2px 6px rgba(0, 0, 0, .22); display: flex; flex-direction: column; gap: calc(5px * var(--k)); }
 .lanes, .fold, .interop-panel { background: linear-gradient(180deg, var(--card-a), var(--card-b)); box-shadow: inset 0 1px 0 var(--card-rim), inset 0 0 0 1px var(--card-edge), var(--card-shadow); flex: none; border-radius: 10px; overflow: hidden; }
 .lanescroll { scrollbar-width: thin; scrollbar-color: var(--hair) transparent; }
 .lanescroll:focus-visible { outline: 2px solid var(--lit); outline-offset: -2px; }
 /* the state column is 124px at every width: room for the longest word the console says (REMOVED, RECONNECTING) beside the DEMO stamp, never a stamp cut to DEM;
    the last column is 60px, the width of a clock time, so a silent lane's last report is never cut */
 .lhead, .lane { display: grid; align-items: center; gap: calc(12px * var(--k)); padding: 0 calc(16px * var(--k)) 0 calc(20px * var(--k));
-  grid-template-columns: calc(124px * var(--k)) minmax(calc(150px * var(--k)), 1.2fr) minmax(calc(96px * var(--k)), .5fr) minmax(calc(96px * var(--k)), .5fr)
-    calc(74px * var(--k)) calc(78px * var(--k)) calc(58px * var(--k)) calc(66px * var(--k)) calc(64px * var(--k)) calc(50px * var(--k)) calc(58px * var(--k)) minmax(calc(126px * var(--k)), .9fr) minmax(calc(84px * var(--k)), .7fr) calc(60px * var(--k)); }
+  grid-template-columns: calc(124px * var(--k)) minmax(calc(150px * var(--k)), 1.2fr) minmax(calc(124px * var(--k)), .55fr) minmax(calc(92px * var(--k)), .5fr)
+    calc(66px * var(--k)) calc(78px * var(--k)) calc(58px * var(--k)) calc(60px * var(--k)) calc(60px * var(--k)) calc(50px * var(--k)) calc(58px * var(--k)) minmax(calc(128px * var(--k)), 1fr) minmax(calc(76px * var(--k)), .6fr) calc(60px * var(--k)); }
 .lhead { height: calc(32px * var(--k)); align-items: end; padding-bottom: 4px; font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--quiet); white-space: nowrap;
   background: var(--band-head); border-bottom: 1px solid var(--hair2); box-shadow: inset 0 1px 0 var(--rim); overflow: hidden; position: relative; }
 .lhead span { overflow: hidden; }
-/* the four day figures are named for their window once, in a group label over their columns, whatever the period control says */
-.lhead .grp { position: absolute; top: 3px; left: 0; right: 0; height: 12px; font: 500 12px/1 var(--sans); letter-spacing: .1em; color: var(--quiet); text-align: center; pointer-events: auto; }
-.lhead .c-in .long { display: inline; } .lhead .c-in .short { display: none; }
+/* the four day figures are named for their window once: a bracket over their columns, the word sitting on its line, whatever the period control says */
+.lhead .grp { position: absolute; top: 3px; left: 0; right: 0; height: 9px; border-bottom: 1px solid var(--hair); font: 500 12px/1 var(--sans); letter-spacing: .1em; color: var(--quiet); text-align: center; pointer-events: auto; }
+.lhead .grp::before, .lhead .grp::after { content: ""; position: absolute; bottom: 0; width: 1px; height: 4px; background: var(--hair); }
+.lhead .grp::before { left: 0; } .lhead .grp::after { right: 0; }
+.lhead .grp span { position: relative; top: 3px; display: inline-block; padding: 0 6px; background: var(--band-head); }
+.lhead .c-in .long, .lhead .c-pr .long { display: inline; } .lhead .c-in .short, .lhead .c-pr .short { display: none; }
 .lhead .r, .lane .r { text-align: right; }
 .lane { position: relative; height: calc(26px * var(--k)); border-bottom: 1px solid var(--hair2); font-size: calc(12.5px * var(--k)); transition: background .18s var(--ease); cursor: pointer; }
 /* the state's edge: a live lane is lit along its left, an idle one is not */
@@ -468,9 +485,10 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .lane .pr b { font: 500 calc(12.5px * var(--k)) var(--sans); flex: none; max-width: 70%; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
 .lane .pr b.hash { font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); }
 .lane .pr em { font-style: normal; font: 400 calc(12px * var(--k)) var(--mono); color: var(--quiet); overflow: hidden; text-overflow: ellipsis; }
-.lane .md { font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
-/* the tool, as a quiet stamp after the model when the lane carries no branch */
-.lane .md em.tool { font-style: normal; font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .06em; color: var(--quiet); padding: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1px var(--hair2); flex: none; }
+.lane .md { font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); white-space: nowrap; overflow: hidden; display: flex; align-items: center; gap: 6px; min-width: 0; }
+/* the tool as a chip before the model, whole at every width; the model name is the part that gives way, its whole on hover */
+.lane .md .tool { font-style: normal; font: 500 calc(12px * var(--k))/16px var(--mono); letter-spacing: .04em; color: var(--quiet); padding: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1px var(--hair2); flex: none; }
+.lane .md .mname { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .lane .md svg { width: 11px; height: 11px; flex: none; opacity: .85; }
 .lane .sp { display: flex; align-items: flex-end; gap: 2px; height: calc(16px * var(--k)); width: 100%; }
 .lane .sp i { flex: 1; min-width: 2px; border-radius: 1px; background: var(--spark); height: 6%; transition: height .34s var(--ease), background .34s var(--ease); }
@@ -524,8 +542,9 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
   background: repeating-linear-gradient(-45deg, var(--hatch) 0 6px, transparent 6px 13px); }
 .lanes .empty b, .coldlanes .empty b { color: var(--ink2); font-weight: 500; }
 .lfoot { min-height: calc(24px * var(--k)); padding: calc(3px * var(--k)) calc(16px * var(--k)) calc(3px * var(--k)) calc(20px * var(--k)); font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet);
-  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; background: var(--band-foot); border-top: 1px solid var(--hair2); font-variant-numeric: tabular-nums; }
-.lfoot span { padding-right: 14px; }
+  display: flex; flex-wrap: nowrap; align-items: center; gap: 4px 0; background: var(--band-foot); border-top: 1px solid var(--hair2); font-variant-numeric: tabular-nums; overflow: hidden; white-space: nowrap; }
+.lfoot span { padding-right: 14px; flex: none; }
+.lfoot span.end { flex: 0 1 auto; min-width: 0; overflow: hidden; }
 .lfoot span + span { padding-left: 14px; box-shadow: inset 1px 0 0 var(--hair); }
 .lfoot span.end { margin-left: auto; padding-right: 0; }
 
@@ -536,7 +555,8 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .foldstrip button:hover { background: var(--row-hover); color: var(--ink2); }
 .foldstrip button:focus-visible { outline-offset: -2px; }
 .foldstrip .fk { font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink2); flex: none; }
-.foldstrip .fs { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.foldstrip .fs { min-width: 0; overflow: hidden; white-space: nowrap; }
+.foldstrip .fs .fseg[hidden] { display: none; }
 .foldstrip .fs b { font: 500 calc(12px * var(--k)) var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
 .foldstrip .fs .sep { margin: 0 6px; opacity: .5; }
 .foldrow + .foldrow { border-top: 1px solid var(--hair2); }
@@ -651,6 +671,14 @@ table.grid .sp i { flex: 1; min-width: 2px; border-radius: 1px; background: var(
 table.grid .sp i.hot { background: var(--spark-hot); box-shadow: 0 0 6px var(--cobalt-edge); }
 table.grid tr.silent .sp i, table.grid tr.revoked .sp i { background: var(--spark-idle); box-shadow: none; }
 table.grid .sp.none { font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); align-items: center; }
+/* a row's activity over the chosen period: a small wave from the hub's own per-row series at the chart's resolution */
+table.grid .spw { display: inline-block; width: calc(76px * var(--k)); height: calc(16px * var(--k)); vertical-align: middle; overflow: visible; }
+table.grid .spw .area { fill: url(#wg); }
+table.grid .spw .line { fill: none; stroke: var(--spark); stroke-width: 1.1; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+table.grid .spw.hot .line { stroke: var(--spark-hot); }
+table.grid .spw.hot .now { fill: var(--spark-hot); }
+table.grid tr.silent .spw .line, table.grid tr.revoked .spw .line { stroke: var(--spark-idle); }
+table.grid tr.silent .spw .area, table.grid tr.revoked .spw .area { opacity: .3; }
 .status { display: inline-flex; align-items: center; gap: 7px; font: 400 calc(12.5px * var(--k)) var(--sans); color: var(--quiet); white-space: nowrap; flex-wrap: wrap; row-gap: 0; }
 .status i { width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--quiet); flex: none; }
 /* the dot carries the state; the words stay in ink so nothing reads as a link */
@@ -702,7 +730,8 @@ table.grid td.merged .na.held { display: inline-block; }
 .flowwrap.void .peak { display: none; }
 
 /* ── the status bar ───────────────────────────────────────── */
-.foot { margin: 0; min-height: calc(30px * var(--k)); padding: calc(3px * var(--k)) 0; display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: center; color: var(--quiet); font: 400 calc(12px * var(--k)) var(--sans); border-top: 1px solid var(--hair); }
+.foot { margin: 0; min-height: calc(28px * var(--k)); padding: calc(2px * var(--k)) 0; display: flex; flex-wrap: nowrap; white-space: nowrap; overflow: hidden; gap: 4px 18px; align-items: center; color: var(--quiet); font: 400 calc(12px * var(--k)) var(--sans); border-top: 1px solid var(--hair); }
+.foot > span:first-child, .foot a, .foot .signout { flex: none; }
 .foot b { font: 400 calc(12px * var(--k)) var(--mono); color: var(--quiet); }
 /* the reading's provenance, as the reference shows it: price table, what was left out, how fresh */
 .foot .prov { margin: 0; font: 400 calc(12px * var(--k)) var(--mono); color: var(--quiet); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -752,8 +781,8 @@ dialog.sheet.dock[open] { animation: dockin .2s var(--ease); }
 .warnline { margin: 0; padding: 10px 12px; border-radius: 8px; font-size: calc(12.5px * var(--k)); color: var(--ink2);
   background: linear-gradient(90deg, color-mix(in srgb, var(--warn) 14%, transparent), transparent); box-shadow: inset 3px 0 0 var(--warn); }
 .warnline .copyrow { margin-top: 8px; }
-.warnline .cmd { font-size: .95em; word-break: break-all; }
-.warnline code, .say code { font: 400 .95em var(--mono); color: var(--ink); }
+.warnline .cmd { font-size: max(12px, .95em); word-break: break-all; }
+.warnline code, .say code { font: 400 max(12px, .95em) var(--mono); color: var(--ink); }
 .waiting { margin: 0; display: flex; align-items: center; gap: 8px; font-size: calc(12.5px * var(--k)); color: var(--quiet); }
 .waiting i { width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--quiet); animation: bp 1.7s var(--ease) infinite; }
 .waiting.done { color: var(--good); }
@@ -797,7 +826,7 @@ dialog.sheet.dock[open] { animation: dockin .2s var(--ease); }
 .inspect .ispark.dim i { background: var(--spark-idle); }
 .inspect .ihead, .context-details .ihead { display: flex; align-items: baseline; gap: 10px; margin-top: 4px; padding-bottom: 4px; border-bottom: 1px solid var(--hair2); font: 500 12px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); }
 .inspect .ihead span, .context-details .ihead span { margin-left: auto; font: 400 12px var(--sans); letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
-.inspect .mrow { grid-template-columns: 120px auto 1fr 46px 64px; }
+.inspect .mrow { grid-template-columns: 120px auto 1fr 60px 64px; }
 .inspect .irow { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 64px 60px; gap: 8px; align-items: center; min-height: 26px; border-bottom: 1px solid var(--hair2); font: 400 12px var(--sans); color: var(--ink2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .inspect .irow:last-child { border-bottom: 0; }
 .inspect .irow .nm { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
@@ -870,6 +899,31 @@ body[data-present] .conhead .count { visibility: hidden; }
 /* below 1440 the uncached-input column is 32px: its header is the short word, the long one on hover */
 @media (max-width: 1439px) {
   .lhead .c-in .long { display: none; } .lhead .c-in .short { display: inline; }
+  .lane .md .tool { display: none; }
+}
+/* the compact frame — 1280 wide or 820 tall and under, 1024 and up — keeps eight lane rows in frame: the first band drops its week strip,
+   the second band is one row (the alert and its factor, the cost bar, the burn and its dollars; the rest is in the alerts sheet), every caption is its short form on one line */
+@media (min-width: 1024px) and ((max-width: 1280px) or (max-height: 820px)) {
+  #band { height: calc(240px * var(--k)); }
+  #band .week { display: none; }
+  #teamBand .week { display: none; }
+  .console.two { height: calc(68px * var(--k)); }
+  .console.two > .col { padding: calc(6px * var(--k)) calc(12px * var(--k)); }
+  .cap .long, .cap .by, .mhead .long { display: none; } .cap .short, .mhead .short { display: inline; }
+  .cap, .mhead { min-height: 0; }
+  .cap .peak { display: none; }
+  .attention .ahead { font-size: calc(16px * var(--k)); line-height: calc(20px * var(--k)); -webkit-line-clamp: 1; margin-top: 1px; }
+  .attention .aline { margin-top: 1px; }
+  .attention .afoot, .attention .alist, .attention .astrip, .attention .cap .capr .tag { display: none; }
+  .specwrap { margin-top: calc(4px * var(--k)); }
+  .slabs { display: none; }
+  #cSpec { height: calc(24px * var(--k)); }
+  .speclegend, .specmodels { display: none; }
+  .specwrap.void .voidstate { min-height: calc(24px * var(--k)); }
+  .bigrow .big.mid { font-size: calc(26px * var(--k)); margin-top: 1px; }
+  .bprov, .bsparkwrap { display: none; }
+  .lfoot span.end { display: none; }
+  .mhead .win, .thead .hc .win, .bx .win { display: none; }
 }
 @media (min-width: 1280px) and (max-width: 1439px) {
   .lhead, .lane { grid-template-columns: calc(124px * var(--k)) minmax(calc(160px * var(--k)), 1.2fr) minmax(calc(97px * var(--k)), .5fr) minmax(calc(93px * var(--k)), .4fr)
@@ -892,6 +946,12 @@ body[data-present] .conhead .count { visibility: hidden; }
 }
 /* 1024–1240: the three columns hold, each a little narrower, so the frame still carries the lanes under the band */
 @media (min-width: 1024px) and (max-width: 1240px) {
+  .lhead .c-sp .win { display: none; }
+  /* the two presenter controls keep their names (aria-label, title) and show their glyphs; the clock's date goes to hover: the scope line keeps its room */
+  .conhead .ctrls button span { display: none; }
+  .conhead .ctrls button svg { display: block; }
+  .conhead .ctrls button { padding: 3px 6px; }
+  .conhead .clock #clockDate { display: none; }
   .console { grid-template-columns: calc(296px * var(--k)) 1fr calc(324px * var(--k)); }
   .console > .col { padding-left: calc(12px * var(--k)); padding-right: calc(12px * var(--k)); }
   .conhead .scan { display: none; }
@@ -900,6 +960,7 @@ body[data-present] .conhead .count { visibility: hidden; }
 }
 /* below 1024 the page scrolls as a document and the band stacks: the figure and the breakdown side by side, the wave under them */
 @media (max-width: 1023px) {
+  .foldstrip { display: none; }
   .console { grid-template-columns: 1fr 1fr; }
   .console > .col.flow { grid-column: 1 / -1; order: 3; }
   .console.two > .col.spectrum { grid-column: 1 / -1; order: 3; }
@@ -953,6 +1014,7 @@ body[data-present] .conhead .count { visibility: hidden; }
   .cap .seg button { flex: 1; }
   .speclegend { grid-template-columns: 1fr; }
   .attention .ahead { font-size: 18px; }
+  .attention .afoot { white-space: normal; flex-wrap: wrap; overflow: visible; }
   .mfoot { white-space: normal; }
   .week { min-height: 40px; }
   /* the lanes keep their row grammar and scroll sideways under their own header; each row is the door to its own inspector */
@@ -968,6 +1030,11 @@ body[data-present] .conhead .count { visibility: hidden; }
   .lhead, .lane { width: max-content; min-width: 100%; padding: 0 14px 0 16px; gap: 8px; grid-template-columns: 124px 120px 64px 60px 64px 64px 96px 96px; }
   .lhead .c-st, .lane .st { order: 0; }
   .lhead .c-pr, .lane .pr { order: 1; }
+  .lhead .c-pr .long { display: none; } .lhead .c-pr .short { display: inline; }
+  /* the state and the name stay while the figures scroll under the thumb */
+  .lhead .c-st, .lane .st { position: sticky; left: 0; z-index: 1; background: var(--band-head); padding-left: 16px; margin-left: -16px; }
+  .lane .st { background: var(--card-b); }
+  .lane:hover .st, .lane.focused .st { background: var(--card-a); }
   .lhead .c-fm, .lane .fm { order: 2; }
   .lhead .c-la, .lane .la { order: 3; }
   .lhead .c-usd, .lane .usd { order: 4; }
@@ -982,8 +1049,6 @@ body[data-present] .conhead .count { visibility: hidden; }
   .lane .sp { height: 20px; }
   .lfoot { padding: 8px 14px; }
   .lfoot span.end { flex-basis: 100%; margin-left: 0; padding-left: 0; box-shadow: none; }
-  .foldstrip { flex-wrap: wrap; }
-  .foldstrip button { flex: 1 1 45%; min-height: 44px; }
   .agent-tree { padding: 8px 14px; }
   .agent-node { grid-template-columns: 1fr 1fr; gap: 4px 10px; padding: 8px 4px 8px calc(4px + var(--depth) * 10px); }
   .agent-node span:last-child, .agent-node .abar { grid-column: 1 / -1; }
@@ -1022,6 +1087,7 @@ body[data-present] .conhead .count { visibility: hidden; }
   .inspect .irow.mach > b { grid-area: 1 / 1; }
   .inspect .irow.mach .r { grid-row: 1; }
   .inspect .irow.mach .status { grid-row: 2; grid-column: 1 / -1; }
+  .foot { flex-wrap: wrap; white-space: normal; overflow: visible; }
   .foot .prov { display: none; }
   #toast { left: 16px; right: 16px; bottom: calc(72px + env(safe-area-inset-bottom)); }
 }

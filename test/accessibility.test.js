@@ -39,9 +39,15 @@ test("the console is a semantic page with named regions", () => {
   assert.match(HTML, /id="cLanes"[^>]*tabindex="0"[^>]*role="region"[^>]*aria-label="[^"]+"/u);
   assert.match(HTML, /id="toast" role="status" aria-live="polite"/u);
   assert.match(HTML, /id="joinStatus" role="status" aria-live="polite"/u);
-  for (const id of ["addDialog", "inspectDialog", "contextDialog", "alertPanel"]) {
+  for (const id of ["addDialog", "inspectDialog", "alertPanel"]) {
     assert.match(HTML, new RegExp(`<dialog class="sheet dock" id="${id}" aria-labelledby="[^"]+"`, "u"), id + " is not a docked sheet");
   }
+  // one door, one content: a lane's context lives in its inspector, and the context button opens the inspector at that section
+  assert.doesNotMatch(HTML, /id="contextDialog"/u, "a second sheet repeats the inspector's context block");
+  assert.match(JS, /function showContext\(lane, from = null\) \{\s*openInspect\("lane", lane\.key, from\);/u);
+  assert.match(HTML + JS, /id="inspectContext"/u);
+  // the address opens one thing beside the canvas: whatever it does not name closes first
+  assert.match(JS, /for \(const d of document\.querySelectorAll\("dialog\[open\]"\)\) d\.close\(\);/u);
   // Remove confirms inside the machine's inspector, never in a modal that blanks the frame.
   assert.doesNotMatch(HTML, /id="revokeDialog"/u);
   assert.match(JS, /data-revoke-go=/u);
