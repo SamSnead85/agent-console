@@ -1,106 +1,154 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — unreleased
 
-- Added per-session context weight and cache health signals in the existing
-  Lanes view, with a dated list-price estimate for possible cache breaks.
-  The signals describe observed usage patterns, not a proven cache cause.
-- Added local live alerts for repeated tool calls, spend spikes and spend
-  without observed tool success, with configurable thresholds and opt-in
-  desktop notifications. Detection rules use the shared analysis subpath.
-- Added an expandable parent and subagent tree in each lane, showing each
-  agent's model, observed tokens and duration, and an honest unknown outcome
-  when the reporter has no result event.
-- Added same-window estimated spend per local commit and per default-branch
-  integration in Projects, labelled as correlation rather than attribution.
-- Added an optional, versioned `agent-policy.yaml` (or JSON) with a published
-  schema and a shared parser; unknown fields fail validation.
-- Added `agent-console policy diff`, `apply` and `remove`, which compile the
-  policy into repo-scoped Claude Code agents, settings and a local hook, with
-  private backups so `remove` restores the prior files. Starting the console
-  installs nothing.
-- `policy apply`, `diff` and `remove` refuse a symlinked `.claude` path and
-  never write the user-level Claude directory. The policy hook now classifies
-  quoted, wrapped and `sh -c` commands, catches `cat .env`-style secret reads
-  and `git -C <path> push --force`, and asks or denies when it cannot load its
+What your agents are doing, not only what they spent: context and cache
+health, live alerts and an agent tree in each lane; a project policy you can
+apply and remove; optional local metrics; figures that follow one period
+everywhere; and reporters that keep going in the background and survive a
+console's restart.
+
+**Upgrading from 0.2.2.** Upgrade the console before its reporters: a 0.3.0
+reporter's records carry a `tier` key that a 0.2.x console refuses (joining
+pins a reporter to its console's version, so this happens only when a reporter
+is upgraded by hand). A console whose machines join over Tailscale or other
+carrier-grade NAT addresses (100.64.0.0/10) must now be started with
+`--allow-cgnat`. A Prometheus scraper of `/metrics` needs the token that
+`metrics-token` prints. The burn is now a fifteen-minute average.
+
+**Seeing what agents are doing**
+
+- **Context and cache health in each lane.** The Context column shows each
+  session's latest complete input reading; open it for the last 16 readings,
+  growth and possible cache breaks, with a dated list-price estimate of what a
+  break cost. These are observed patterns, not a proven cause.
+- **Live alerts** for repeated identical tool calls, a spend spike against the
+  session's recent median, and spend without an observed successful tool
+  result. Thresholds are set with `--alert-repeat`, `--alert-spike-factor` and
+  `--alert-stall-minutes`; `--desktop-alerts` opts in to native notifications,
+  which name the signal and never include tool arguments. Alerts stay on this
+  machine.
+- **An agent tree in each lane**: the orchestrator and its subagents, each with
+  its model, observed tokens and duration. The outcome is "unknown" until a
+  result is recorded; activity is not treated as success.
+- **Spend in the window of the work**: Projects shows estimated spend per local
+  commit and per integration into the default branch in the same period,
+  labelled as correlation, not attribution. Anything unpriced leaves the ratio
+  unknown.
+- **A shared analysis core**, `@lockedinlabs/agent-console/analysis` (version
+  1): the same dependency-free functions the console uses for context health,
+  alerts, the agent tree, spend per outcome, the policy file and interop, for
+  other Node.js programs. [docs/ANALYSIS.md](docs/ANALYSIS.md) is the contract.
+
+**Project policy**
+
+- **An optional `agent-policy.yaml`** (or JSON) with a published schema and a
+  shared parser; unknown fields fail validation.
+- **`agent-console policy diff`, `apply` and `remove`** compile the policy into
+  repository-scoped Claude Code agents, settings and a local hook, with private
+  backups so `remove` restores the files that were there before. Starting the
+  console installs nothing. [docs/policy.md](docs/policy.md) says what is
+  enforced and what is not.
+- All three refuse a symlinked `.claude` path and never write the user-level
+  Claude directory. The hook classifies quoted, wrapped and `sh -c` commands
+  and path-qualified interpreters, catches `cat .env`-style secret reads and
+  `git -C <path> push --force`, and asks or denies when it cannot load its
   classifier.
-- Added opt-in `--interop`: a Telemetry panel with Claude Code OpenTelemetry
-  and AI-gateway token readings kept separate from transcript totals, a local
-  Prometheus `/metrics` format and a Grafana dashboard. `/metrics` and the
-  telemetry ingest answer 401 until their scrape token is available.
-- `/metrics` and the telemetry ingest now take a scrape token: an HMAC of a
+
+**Metrics and telemetry (opt-in)**
+
+- **`--interop`** adds a Telemetry panel with Claude Code OpenTelemetry and
+  AI-gateway token readings, kept apart from transcript totals so a request is
+  never counted twice, a local Prometheus `/metrics` endpoint and a Grafana
+  dashboard. [docs/INTEROP.md](docs/INTEROP.md) has setup and formats.
+- `/metrics` and the telemetry ingest take a **scrape token**: an HMAC of a
   fixed label under the console's key, printed by the new `metrics-token`
   command and replaced whenever the key is. The key itself is never accepted.
   A `--demo` console prints its token at start and stamps `/metrics` DEMO.
-- Every command the console and the join page print now checks the release
-  file against the release's `SHA256SUMS` before running anything, and keeps
-  the checked file in `~/.agent-console/releases/`.
-- One address over its join limit no longer counts toward the total, so one
-  device cannot hold off everyone's joins; IPv6 addresses count by their /64.
-- Carrier-grade NAT (100.64.0.0/10, also Tailscale's range) is no longer
-  private by default: start the console with `--allow-cgnat` to accept it.
-- Fixed: a message a forked subagent copied from its parent is counted once.
-  Copies, including ones cut off mid-stream, were counted again in each fork's
-  file, so input, cache and message counts could be overstated.
-- Every transcript line that carries usage and cannot be counted is now
-  counted by reason, sent with each report, and shown beside the figures and
-  on its machine's row in Team, as are records the console itself could not
-  keep. They were recorded and then discarded.
-- Codex per-response usage records are counted, one per response, including
-  requests the running total never shows, such as compaction.
-- Model ids are kept exactly, including Bedrock and Vertex forms, instead of
+
+**Joining and security**
+
+- **Every command the console and the join page print checks the release file
+  against the release's `SHA256SUMS`** before running anything, and keeps the
+  checked file in `~/.agent-console/releases/`.
+- **One address over its join limit no longer counts toward the total**, so
+  one device cannot hold off everyone's joins; IPv6 addresses count by their
+  /64.
+- **Carrier-grade NAT (100.64.0.0/10, also Tailscale's range) is no longer
+  private by default.** Start the console with `--allow-cgnat` to accept it;
+  the start banner says so when it sees such an address.
+- **Signed out, a console can print a new sign-in link** in its own window,
+  from the button on its sign-in page or from a second start. A demo console
+  can be signed into again without a restart.
+
+**Accounting**
+
+- **Fixed: a message a forked subagent copied from its parent is counted
+  once.** Copies, including ones cut off mid-stream, were counted again in each
+  fork's file, so input, cache and message counts could be overstated.
+- **Nothing is dropped silently.** Every transcript line that carries usage and
+  cannot be counted is counted by reason, sent with each report, and shown
+  beside the figures and on its machine's row in Team, as are records the
+  console itself could not keep.
+- **Codex per-response usage records are counted**, one per response,
+  including requests the running total never shows, such as compaction.
+- **Model ids are kept exactly**, including Bedrock and Vertex forms, instead of
   becoming `unknown`. A transcript line too long to read has its usage
   recovered where possible, and is reported when it is not. Usage that grows on
   a line already counted is counted; usage rewritten lower is reported.
-- The period switch (1H, 24H, 7D and the new 30D) now drives the headline
-  tokens, cost, messages, model list and machine list, and Team and Projects
-  offer the same periods with the same edges. The chart's bars add up to the
-  headline. 30 days come from daily totals the console keeps for 400 days,
-  after its minute detail is pruned.
-- Fast mode is priced at its published rates, and any other service tier is
-  left unpriced instead of being priced at the standard rate.
+- **One period everywhere.** The period switch (1H, 24H, 7D and the new 30D)
+  drives the headline tokens, cost, messages, model list and machine list, and
+  Team and Projects offer the same periods with the same edges. The chart's
+  bars add up to the headline. 30 days come from daily totals the console keeps
+  for 400 days, after its minute detail is pruned.
+- **Fast mode is priced at its published rates**, and any other service tier
+  is left unpriced instead of being priced at the standard rate.
 - Input is labelled "uncached input", the cache-write split by lifetime is
   shown, Team shows "no priced model" rather than $0.00 when nothing is priced,
   and the JSON counts priced and unpriced messages and records separately.
-- The accounting spec is 1.1 and the conformance suite 1.1.0, with a case with
-  exact expected totals for each of these.
-- **Signed out, a console can print a new sign-in link** in its own window,
-  from the button on its sign-in page or from a second start. A demo console
-  can now be signed into again without a restart.
 - **Projects counts only your commits**: those authored with the repository's
   `user.email`, so a fresh clone no longer credits other people's work to this
-  machine. "PRs merged" is now "commits referencing #N", which is what it counts.
-- **Pause motion stops the animation, not the data.** Figures keep updating
-  while paused, without moving.
-- **One meaning of "session" on every view**: a top-level session, with its
-  subagents counted apart, over "the last 24 h" rather than "today". "1 person",
-  not "1 people".
-- **The burn is the average of the last fifteen minutes**, not five, so one
-  burst of agent traffic does not swing it. A lane's "tokens · 5 min" is
-  unchanged.
-- **Add a machine gives the exact command** to restart a this-machine-only
-  console on the network. The week's line no longer runs through the hero's
-  label.
-- **`leave` tells the console** and stops a reporter running in another window;
-  the console shows the machine as having left, not as silent.
+  machine. "PRs merged" is now "commits referencing #N", which is what it
+  counts.
+- The accounting spec is 1.1 and the conformance suite 1.1.0, with a case with
+  exact expected totals for each of these.
+
+**Reporters and machines**
+
+- **`--background` and a periodic mode.** A reporter can keep running after its
+  window closes, and one reporting less often than every minute shows as
+  "reporting periodically" instead of flapping to silent.
+  [docs/BACKGROUND.md](docs/BACKGROUND.md) has launchd, systemd and Task
+  Scheduler examples for starting it at login.
 - **One reporter per state directory, for its whole life**: a second one is
   refused and names the one that is running. New `stop` command.
+- **`leave` tells the console** and stops a reporter running in another window;
+  the console shows the machine as having left, not as silent.
 - **Joining the same console again keeps the machine's entry and history**
   instead of adding a second machine with the same name.
 - **Reporters survive a console's port change.** The console keeps its
   reporting port across restarts, and a reporter that loses its console looks
   for the same pinned certificate on nearby ports. A console with a new
   certificate is reported as "certificate changed", not "cannot reach".
-- **`--background` and a periodic mode.** A reporter can keep running after its
-  window closes, and one reporting less often than every minute shows as
-  "reporting periodically" instead of flapping to silent.
-  [docs/BACKGROUND.md](docs/BACKGROUND.md) has launchd, systemd and Task
-  Scheduler examples.
-- **Mistakes are refused, not ignored**: an unknown command (`joni`), an
-  unknown option (`--intervall`), or a value out of range (`--interval abc`).
 - **Removed machines no longer count as silent** in the chart's "incomplete"
   label, the burn's "left out" list or "N of M machines". For two minutes
   after a restart, a machine that was reporting shows as "Reconnecting".
+
+**The console**
+
+- **The burn is the average of the last fifteen minutes**, not five, so one
+  burst of agent traffic does not swing it. A lane's "tokens · 5 min" is
+  unchanged.
+- **One meaning of "session" on every view**: a top-level session, with its
+  subagents counted apart, over "the last 24 h" rather than "today". "1 person",
+  not "1 people".
+- **Pause motion stops the animation, not the data.** Figures keep updating
+  while paused, without moving.
+- **Add a machine gives the exact command** to restart a this-machine-only
+  console on the network. The week's line no longer runs through the hero's
+  label.
+- **Mistakes are refused, not ignored**: an unknown command (`joni`), an
+  unknown option (`--intervall`), or a value out of range (`--interval abc`).
 - **Input the console changes is said**: a machine name it cannot use, a
   duplicate name for the same person, and a link duration outside 5 to 60
   minutes. With `--json`, errors are JSON lines, and the console prints an

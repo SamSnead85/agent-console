@@ -28,7 +28,7 @@
 [The same screen in the light theme.](docs/console-demo-light.png)*
 
 ```sh
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz --open
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --open
 ```
 
 You need Node.js 22 or newer. There is no account to create, nothing else to
@@ -38,8 +38,9 @@ this computer, and opens the console in your browser, signed in, normally at
 `http://127.0.0.1:6787`. To look around first without reading anything of
 yours, add `--demo` before `--open`.
 
-**In the first thirty seconds you see:** the last 24 hours of tokens, split
-into cache read, cache write, output and input; their list-price estimate;
+**In the first thirty seconds you see:** the last 24 hours of tokens (or the
+last hour, 7 days or 30 days), split into cache read, cache write, output and
+uncached input; their list-price estimate;
 burn right now, in tokens per minute and dollars per hour; one lane per
 session with its model, its subagents and its last hour of activity; and every
 machine and person reporting, each with a share of the total.
@@ -63,7 +64,7 @@ You need a Mac, a Linux machine or a Windows PC, and about two minutes.
 2. **Start it.** Paste this into the terminal and press Return:
 
    ```sh
-   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz --open
+   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --open
    ```
 
    That fetches Agent Console from this project's GitHub release (nothing to
@@ -163,13 +164,18 @@ connections on the machine running the console, allow it on private networks.
 
 ## What you see
 
-**Tokens · last 24 hours**: the total across every machine, the list-price
-estimate, the number of messages (API responses, not transcript lines), and the
-split into **cache read**, **cache write**, **output** and **input**, each with
-its share of all tokens. (Cache read as a share of *input tokens only*, the
+**Tokens · last 24 hours**, or the last hour, 7 days or 30 days from the period
+switch: the total across every machine, the list-price estimate, the number of
+messages (API responses, not transcript lines), and the split into **cache
+read**, **cache write** (by cache lifetime), **output** and **uncached input**,
+each with its share of all tokens. The chart, the model list and the machine
+list follow the same period, and the chart's bars add up to the headline. 30
+days come from daily totals the console keeps for 400 days. Transcript lines
+that carry usage but could not be counted are counted by reason and shown
+beside the figures, never silently dropped. (Cache read as a share of *input tokens only*, the
 other common reading, is in the cache-read tooltip, labelled as such.)
 
-**Tokens over time**: the last hour, day or week. Where a machine has stopped
+**Tokens over time**: the last hour, day, week or 30 days. Where a machine has stopped
 reporting, the chart says from when it is incomplete.
 
 **Burn · right now**: tokens per minute (or per second), averaged over the last
@@ -254,8 +260,7 @@ The synthetic team includes parent and child sessions. The same count-only
 tree builder is exported from the shared analysis subpath.
 
 **Machines** and **Team**: every machine and every person: tokens, share of the
-total, cache read and write shares, model split and cost, for 24 hours or
-7 days; every join link, who used it and when. Two machines with the same
+total, cache read and write shares, model split and cost, for the same periods as the headline; every join link, who used it and when. Two machines with the same
 person roll up into one row.
 
 **Projects**: this computer only: tokens per project, and what Git recorded in
@@ -266,7 +271,7 @@ read on this computer and never sent anywhere.
 
 **Spend in the window of the work**: Projects also shows estimated spend per
 local commit and per integration into a locally known default branch. The
-denominator is Git evidence in the selected 24-hour or 3-day window; the
+denominator is Git evidence in the selected period (1 hour to 30 days); the
 numerator is this machine's usage estimate in that same window. These are
 correlations, not attribution to a commit or a merge. Squash subjects with a
 pull-request number and merge commits on the default branch count as
@@ -306,7 +311,10 @@ suite that checks them to the token, are in [docs/accounting.md](docs/accounting
 Add `agent-policy.yaml` at your repository root, then run
 `agent-console policy diff` to inspect the proposed Claude Code agents,
 settings and hooks. `agent-console policy apply` installs those project files
-with private backups; `agent-console policy remove` restores them. Nothing is
+with private backups; `agent-console policy remove` restores them. All three
+refuse a symlinked `.claude` path and never write your user-level Claude
+settings, and the installed hook asks or denies when it cannot classify a
+command. Nothing is
 installed by starting the dashboard. The optional policy covers model roles,
 effort, action gates, and budget thresholds; hard token and dollar budget
 enforcement is not available from the native launch hook. See
@@ -361,9 +369,9 @@ Nothing leaves that directory.
 out, with the release link:
 
 ```sh
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz join '<join link>'
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz report
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz leave
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz join '<join link>'
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz report
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz leave
 ```
 
 `join` enrols this computer, then keeps reporting. `report` keeps reporting after
@@ -514,9 +522,9 @@ The release page lists its SHA-256 in `SHA256SUMS`, and GitHub keeps a signed
 build provenance attestation for it. To check a file you downloaded:
 
 ```sh
-shasum -a 256 lockedinlabs-agent-console-0.2.2.tgz              # macOS, Linux
-Get-FileHash lockedinlabs-agent-console-0.2.2.tgz               # Windows PowerShell
-gh attestation verify lockedinlabs-agent-console-0.2.2.tgz -R SamSnead85/agent-console
+shasum -a 256 lockedinlabs-agent-console-0.3.0.tgz              # macOS, Linux
+Get-FileHash lockedinlabs-agent-console-0.3.0.tgz               # Windows PowerShell
+gh attestation verify lockedinlabs-agent-console-0.3.0.tgz -R SamSnead85/agent-console
 ```
 
 ## Development
