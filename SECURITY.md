@@ -110,10 +110,13 @@ README's "Checking a download").
 
 **Joining.** A join link carries a 128-bit code; the eight-character code for
 typing by hand exists too. Either works once and lives at most an hour. Join
-attempts are counted before they are read, ten per address (an IPv6 address by
-its /64) and sixty in total per ten minutes; an address over its own limit is
-refused without counting toward the total, so one device cannot hold off
-everyone else's joins. The console stores only SHA-256 verifiers of codes and device
+attempts are counted before they are read, ten per address per ten minutes (a
+global IPv6 address by its /64; a unique-local or link-local one by itself,
+since that /64 is usually the whole office network). Typed codes also share a
+total of sixty per ten minutes, the guard against guessing from many
+addresses; an address over its own limit does not count toward it. A join by
+link is never held off by other addresses' attempts: its code cannot be
+guessed. The console stores only SHA-256 verifiers of codes and device
 tokens, in files with mode 600.
 
 **Reporting.** Each machine has its own bearer token; **Remove** revokes it at

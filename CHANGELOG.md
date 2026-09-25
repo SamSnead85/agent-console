@@ -71,9 +71,11 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
 - **Every command the console and the join page print checks the release file
   against the release's `SHA256SUMS`** before running anything, and keeps the
   checked file in `~/.agent-console/releases/`.
-- **One address over its join limit no longer counts toward the total**, so
-  one device cannot hold off everyone's joins; IPv6 addresses count by their
-  /64.
+- **A join by link is never held off by other machines' attempts**, however
+  many addresses one device uses; the total of sixty per ten minutes guards
+  only the typed code, and an address over its own limit does not count
+  toward it. A global IPv6 address counts by its /64; a unique-local or
+  link-local one counts by itself.
 - **Carrier-grade NAT (100.64.0.0/10, also Tailscale's range) is no longer
   private by default.** Start the console with `--allow-cgnat` to accept it;
   the start banner says so when it sees such an address.
