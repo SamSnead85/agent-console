@@ -1,8 +1,13 @@
 name: Release asset
-# When a release is published, CI builds the package from the release's tag,
-# tests it, attaches it with its SHA-256, and records a signed build
-# provenance attestation for it. The one-line install and every join command
-# fetch exactly this file; nothing is built on anyone's own machine.
+# When a release is published, CI first proves the tag is a main commit whose
+# own main-push CI, public-safety and performance checks all passed
+# (scripts/release-source-check.mjs). Only then does it build: the package, the
+# standalone executables (binaries.yml) and the team hub image (ghcr.yml), all
+# from the release's tag. The package and executables go on the release under
+# one SHA256SUMS and one signed build provenance attestation; every one of them
+# is then downloaded from the release and installed the way a person would.
+# npm (npm-publish.yml) receives the exact attested package file, and only
+# after it passed that acceptance. Nothing is built on anyone's own machine.
 on:
   release:
     types: [published]
@@ -11,8 +16,50 @@ permissions:
   checks: read
   actions: read
 jobs:
+  authorize:
+    name: Verify source and required checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      checks: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - name: Verify source and required checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: node scripts/release-source-check.mjs
+
+  executables:
+    name: Standalone executables
+    needs: authorize
+    uses: ./.github/workflows/binaries.yml
+    with:
+      ref: ${{ github.event.release.tag_name }}
+    secrets:
+      APPLE_DEVELOPER_ID_P12: ${{ secrets.APPLE_DEVELOPER_ID_P12 }}
+      APPLE_DEVELOPER_ID_P12_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_P12_PASSWORD }}
+      APPLE_NOTARY_KEY_P8: ${{ secrets.APPLE_NOTARY_KEY_P8 }}
+      APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+      APPLE_NOTARY_ISSUER: ${{ secrets.APPLE_NOTARY_ISSUER }}
+
   asset:
     name: Build, attest and attach the package
+    # Waits for the executables but is never held back by them: if they fail,
+    # the package still ships and is still accepted below, and the
+    # "Every executable attached" job fails to say what is missing. It is
+    # never started for a source that failed authorization.
+    needs: [authorize, executables]
+    if: ${{ !cancelled() && needs.authorize.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -30,6 +77,8 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
+      # Checked again in the job that holds write access: the checkout here is
+      # what gets packed, so its authorization is not inferred from another job.
       - name: Verify source and required checks
         env:
           GH_TOKEN: ${{ github.token }}
@@ -37,18 +86,25 @@ jobs:
         run: node scripts/release-source-check.mjs
       - run: npm test
       - run: npm run smoke:pack
+      - name: Collect the executables
+        if: needs.executables.result == 'success'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: agent-console-*
+          merge-multiple: true
       - name: Pack
         env:
           TAG: ${{ github.event.release.tag_name }}
         run: |
           version="${TAG#v}"
           test "$(node -p "require('./package.json').version")" = "$version"
-          npm pack
-          sha256sum "lockedinlabs-agent-console-${version}.tgz" > SHA256SUMS
+          mkdir -p dist
+          npm pack --pack-destination dist
+          (cd dist && sha256sum -- * > ../SHA256SUMS)
           cat SHA256SUMS
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: lockedinlabs-agent-console-*.tgz
+          subject-path: dist/*
       # No --clobber: a release file that already exists is never replaced
       # silently. If a file must really change, delete it on the release page
       # first, on purpose, and run this job again.
@@ -56,7 +112,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$TAG" lockedinlabs-agent-console-*.tgz SHA256SUMS --repo "$GITHUB_REPOSITORY"
+        # Each executable is shown on the release page with its label: the
+        # file name, the platform, and whether it is signed.
+        run: |
+          files=()
+          for f in dist/*; do
+            label="labels/$(basename "$f").label"
+            if [ -f "$label" ]; then files+=("$f#$(cat "$label")"); else files+=("$f"); fi
+          done
+          gh release upload "$TAG" "${files[@]}" SHA256SUMS --repo "$GITHUB_REPOSITORY"
       # Whoever is sent a join command compares the check in it with this
       # (README, "The check in every command"). npm test above holds the
       # published value equal to the check's real SHA-256.
@@ -96,3 +160,96 @@ jobs:
         env:
           TAG: ${{ github.event.release.tag_name }}
         run: node scripts/readme-install.mjs --expected-version "$TAG"
+
+  executables-attached:
+    name: Every executable attached
+    needs: [executables, asset]
+    if: ${{ !cancelled() && needs.asset.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: The standalone executables built
+        env:
+          RESULT: ${{ needs.executables.result }}
+        run: |
+          if [ "$RESULT" != success ]; then
+            echo "::error::The standalone executables did not build, so this release carries only the package. Fix binaries.yml and publish a patch release."
+            exit 1
+          fi
+
+  executable-acceptance:
+    name: Published executable (${{ matrix.target }})
+    # The installer from this tag, against the files now on the release page:
+    # it must refuse anything that does not match SHA256SUMS, and what it
+    # installs must print this release's version.
+    needs: [executables, asset]
+    if: ${{ !cancelled() && needs.asset.result == 'success' && needs.executables.result == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: darwin-arm64, runner: macos-15 }
+          - { target: darwin-x64, runner: macos-15-intel }
+          - { target: linux-x64, runner: ubuntu-24.04 }
+          - { target: linux-arm64, runner: ubuntu-24.04-arm }
+          - { target: win32-x64, runner: windows-2025 }
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+      - name: Install with install.sh and run it
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          AGENT_CONSOLE_VERSION: ${{ github.event.release.tag_name }}
+          AGENT_CONSOLE_INSTALL_DIR: ${{ runner.temp }}/agent-console-bin
+        run: |
+          sh ./install.sh
+          test "$("$AGENT_CONSOLE_INSTALL_DIR/agent-console" --version)" = "agent-console ${AGENT_CONSOLE_VERSION#v}"
+      - name: Install with install.ps1 and run it
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          AGENT_CONSOLE_VERSION: ${{ github.event.release.tag_name }}
+          AGENT_CONSOLE_INSTALL_DIR: ${{ runner.temp }}\agent-console-bin
+        run: |
+          ./install.ps1
+          $printed = & (Join-Path $env:AGENT_CONSOLE_INSTALL_DIR 'agent-console.exe') --version
+          if ($printed -ne ('agent-console ' + $env:AGENT_CONSOLE_VERSION.Substring(1))) { throw "installed executable printed: $printed" }
+      - name: The attestation covers what was installed
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh attestation verify "$RUNNER_TEMP/agent-console-bin/agent-console" -R "$GITHUB_REPOSITORY"
+
+  image:
+    name: Team hub image
+    needs: authorize
+    uses: ./.github/workflows/ghcr.yml
+    with:
+      tag: ${{ github.event.release.tag_name }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+
+  npm:
+    name: npm
+    # Only the exact file that is on the release, under its SHA256SUMS and
+    # attestation, and only after it installed on all three systems.
+    needs: acceptance
+    uses: ./.github/workflows/npm-publish.yml
+    with:
+      tag: ${{ github.event.release.tag_name }}
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    permissions:
+      contents: read
+      id-token: write

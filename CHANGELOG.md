@@ -220,6 +220,19 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
 - [Architecture diagrams](docs/ARCHITECTURE.md) document collection, enrollment,
   trust boundaries, delivery controls and the separate future MCP integration.
 
+**Distribution**
+
+- **Standalone executables, for a computer without Node.js.** Each release
+  carries one file per platform — macOS (Apple silicon and Intel), Linux (x64
+  and arm64) and Windows (x64) — that is Node.js 24 with the release package
+  inside. Each is built and started on its own platform in CI, listed in
+  `SHA256SUMS` and covered by the release's build attestation. The macOS and
+  Windows files are unsigned until a signing identity is configured, and the
+  release page says so beside each one; `docs/executables.md` has the
+  Gatekeeper and SmartScreen steps.
+- Run as a standalone executable, the commands the console prints name the
+  executable instead of `node`, by its bare name when `PATH` finds it.
+
 ## 0.2.2 — 2026-09-24
 
 Security fixes, accounting you can reconcile, and a console that is nearly

@@ -1,0 +1,9 @@
+{
+  "name": "agent-console-sea-build",
+  "private": true,
+  "description": "Build-time only: injects the release package into Node.js for the standalone executables. Never shipped.",
+  "license": "MIT",
+  "devDependencies": {
+    "postject": "1.0.0-alpha.6"
+  }
+}
