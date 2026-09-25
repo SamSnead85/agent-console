@@ -195,6 +195,18 @@ observed cache write over a hypothetical cache read, using the offline price
 table version and check date shown in the drill-down. Unpriced estimates stay
 unknown. In `--demo`, the existing docs-site lane includes a synthetic break.
 
+### Optional telemetry and metrics
+
+Start with `--interop` to enable a local Prometheus `/metrics` endpoint and
+local ingest of Claude Code OpenTelemetry and Kong or LiteLLM token metrics.
+The console shows those readings in a Telemetry panel, separate from the
+transcript totals so the same request is never added twice. It is off for
+ordinary users. The synthetic demo shows an OpenTelemetry reading. See
+[setup, accepted formats and privacy rules](docs/INTEROP.md); the included
+[Grafana dashboard](docs/grafana-agent-console.json) can read `/metrics`.
+Until the scrape token for `/metrics` and ingest is available, those paths
+answer `401`.
+
 ### Shared analysis core
 
 The dependency-free analysis functions are available to other Node.js consumers

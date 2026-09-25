@@ -37,6 +37,7 @@ function samples(tmp) {
     "--alert-repeat": ["3"],
     "--alert-spike-factor": ["4"],
     "--alert-stall-minutes": ["2"],
+    "--interop": [],            // demo shows generated telemetry and accepts no ingest
   };
 }
 /** Options that do not start a console, or would act outside the test. */

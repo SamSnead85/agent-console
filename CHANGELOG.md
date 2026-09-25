@@ -19,6 +19,10 @@
   policy into repo-scoped Claude Code agents, settings and a local hook, with
   private backups so `remove` restores the prior files. Starting the console
   installs nothing.
+- Added opt-in `--interop`: a Telemetry panel with Claude Code OpenTelemetry
+  and AI-gateway token readings kept separate from transcript totals, a local
+  Prometheus `/metrics` format and a Grafana dashboard. `/metrics` and the
+  telemetry ingest answer 401 until their scrape token is available.
 
 ## 0.2.2 — 2026-09-24
 

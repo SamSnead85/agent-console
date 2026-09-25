@@ -48,6 +48,13 @@ second port, which serves only the join page, the join exchange and
 token-checked reporting. Nothing of the console is on it, whatever `--listen`
 says.
 
+When `--interop` is enabled, its loopback `/metrics` and telemetry ingest
+paths refuse every request (`401`) until a dedicated scrape token, derived
+from the console key, is available; the console key itself is never accepted
+on them. Ingest will also require `X-Agent-Console-Interop: 1` and rejects browser
+`Origin` headers. These paths are disabled without `--interop` and never
+appear on the reporting listener.
+
 **Signing in.** The console makes a random key on first start (`admin.key` in
 its state directory, mode 600). A single-use sign-in link, printed at start and
 opened by `--open`, starts a session for that browser: a random id in an

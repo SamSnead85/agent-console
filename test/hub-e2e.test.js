@@ -212,6 +212,7 @@ test("two machines join by link, report, roll up by person, and nothing private 
   assert.ok(view.day.shares.cacheRead > 0.5 && view.day.shares.cacheWrite > 0);
   assert.ok(view.day.models.some((m) => m.model === "gpt-5.6-sol") && view.day.models.some((m) => m.model === "claude-opus-5"));
   assert.equal(view.invitations.filter((i) => i.state === "joined").length, 2, "the console shows who joined");
+  assert.equal(view.interop, null, 'optional telemetry is off for an ordinary hub');
   for (const lane of view.lanes) {
     assert.ok(Array.isArray(lane.agentTree) && lane.agentTree.length > 0);
     for (const agent of lane.agentTree) {
@@ -417,7 +418,9 @@ test("every GET route the hub serves is read by the privacy checks above", () =>
   for (const m of source.matchAll(/\[(["'])(\/[^"']+)\1, (["'])[^"']+\3\]/gu)) routes.add(m[2]);   // the join page's assets
   const read = new Set([...CONSOLE_READS, ...REPORTING_READS].map((u) => u.split("?")[0]));
   // /login answers a single-use ticket with a redirect or a fixed refusal: no data.
-  const unchecked = [...routes].filter((r) => !read.has(r) && r !== "/login");
+  // /metrics refuses every request until its scrape token exists (test/interop.test.js
+  // proves it); when the token lands, /metrics joins the canary reads above.
+  const unchecked = [...routes].filter((r) => !read.has(r) && r !== "/login" && r !== "/metrics");
   assert.ok(routes.has("/api/console") && routes.has("/join"), "the route pattern no longer matches lib/hub/routes.js");
   assert.deepEqual(unchecked, [], "add these to CONSOLE_READS or REPORTING_READS so the canaries cover them");
 });

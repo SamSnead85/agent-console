@@ -74,3 +74,18 @@ validated against the field rules in [policy.md](policy.md) and
 [policy.schema.json](policy.schema.json). `parsePolicyDocument` parses syntax
 only; use `parsePolicy` before compiling a policy. Neither function reads a
 file or receives a raw agent prompt or command.
+
+## `summarizeInterop(samples, now?)` and `formatInteropMetrics(day, summary)`
+
+These pure functions take projected `{ source, at, model, kind, tokens,
+seriesHash }` samples. Sources are `otel`, `kong`, or `litellm`; kinds are
+`input`, `output`, `cacheRead`, or `cacheWrite`. The adapters remove every
+other incoming attribute before calling the core. OpenTelemetry samples are
+delta counts over 24 hours; gateway values are latest cumulative counters
+per salted series hash. They remain separate by source. Gateway cache detail
+is a subset of input and is therefore excluded from its total. Absent
+sources return `available: false` and `tokens: null`.
+
+`formatInteropMetrics` emits Prometheus text with a transcript 24-hour gauge
+and separate optional-source gauges. It never emits a path, user identity,
+prompt, or raw gateway label.
