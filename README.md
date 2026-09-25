@@ -446,7 +446,10 @@ as *not watched* rather than showing its silence as "no alert".
 `--share-tool-activity` sends how many tool calls each session made per minute
 by kind (read, edit, shell, search, web, agent, mcp, other) and how many results
 were errors — never a tool's name, its arguments or output, a path, or an MCP
-server's name.
+server's name. Every report says which of the two its run shares: run without
+one and the console shows that computer's alerts or activity as unavailable
+from then on, never as zero. What the console has not yet acknowledged waits
+beside the reporter's cursor and is sent again, and counted once.
 
 `--background` keeps reporting after the window closes. To start reporting at
 every login, [docs/BACKGROUND.md](docs/BACKGROUND.md) has launchd, systemd and
