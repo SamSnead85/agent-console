@@ -23,6 +23,47 @@
   and AI-gateway token readings kept separate from transcript totals, a local
   Prometheus `/metrics` format and a Grafana dashboard. `/metrics` and the
   telemetry ingest answer 401 until their scrape token is available.
+- **Signed out, a console can print a new sign-in link** in its own window,
+  from the button on its sign-in page or from a second start. A demo console
+  can now be signed into again without a restart.
+- **Projects counts only your commits**: those authored with the repository's
+  `user.email`, so a fresh clone no longer credits other people's work to this
+  machine. "PRs merged" is now "commits referencing #N", which is what it counts.
+- **Pause motion stops the animation, not the data.** Figures keep updating
+  while paused, without moving.
+- **One meaning of "session" on every view**: a top-level session, with its
+  subagents counted apart, over "the last 24 h" rather than "today". "1 person",
+  not "1 people".
+- **The burn is the average of the last fifteen minutes**, not five, so one
+  burst of agent traffic does not swing it. A lane's "tokens · 5 min" is
+  unchanged.
+- **Add a machine gives the exact command** to restart a this-machine-only
+  console on the network. The week's line no longer runs through the hero's
+  label.
+- **`leave` tells the console** and stops a reporter running in another window;
+  the console shows the machine as having left, not as silent.
+- **One reporter per state directory, for its whole life**: a second one is
+  refused and names the one that is running. New `stop` command.
+- **Joining the same console again keeps the machine's entry and history**
+  instead of adding a second machine with the same name.
+- **Reporters survive a console's port change.** The console keeps its
+  reporting port across restarts, and a reporter that loses its console looks
+  for the same pinned certificate on nearby ports. A console with a new
+  certificate is reported as "certificate changed", not "cannot reach".
+- **`--background` and a periodic mode.** A reporter can keep running after its
+  window closes, and one reporting less often than every minute shows as
+  "reporting periodically" instead of flapping to silent.
+  [docs/BACKGROUND.md](docs/BACKGROUND.md) has launchd, systemd and Task
+  Scheduler examples.
+- **Mistakes are refused, not ignored**: an unknown command (`joni`), an
+  unknown option (`--intervall`), or a value out of range (`--interval abc`).
+- **Removed machines no longer count as silent** in the chart's "incomplete"
+  label, the burn's "left out" list or "N of M machines". For two minutes
+  after a restart, a machine that was reporting shows as "Reconnecting".
+- **Input the console changes is said**: a machine name it cannot use, a
+  duplicate name for the same person, and a link duration outside 5 to 60
+  minutes. With `--json`, errors are JSON lines, and the console prints an
+  event when a machine joins or leaves.
 
 ## 0.2.2 — 2026-09-24
 

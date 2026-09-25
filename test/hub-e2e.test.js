@@ -364,10 +364,72 @@ test("--share-project-names stops at once when it is left off, and leave deletes
   assert.ok(sent.every((r) => r.engagement === null), "a name went out after the opt-in was turned off");
   assert.ok(!wire.bodies.some((b) => b.body.includes("canary-secret-project-dir")));
 
-  const left = await run(["leave", "--state-dir", state]);
+  wire.bodies.length = 0;
+  wire.answers.length = 0;
+  const left = await run(["leave", "--json", "--state-dir", state]);
   assert.equal(left.code, 0);
+  assert.equal(JSON.parse(left.out.trim().split("\n").at(-1)).told, "told");
   const remaining = fs.existsSync(state) ? fs.readdirSync(state, { recursive: true }) : [];
   assert.deepEqual(remaining, [], "leave left files behind: " + remaining.join(", "));
+  // leave told the console: one bodiless request with the token, through the relay the canaries read.
+  assert.deepEqual(wire.bodies.map((b) => [b.method, b.url, b.body]), [["POST", "/api/leave", ""]]);
+  assert.deepEqual(wire.answers.map((x) => x.status), [200]);
+  for (const canary of CANARIES) assert.ok(!wire.bodies.map(wholeRequest).join("\n").includes(canary), canary);
+  const device = (await consoleView(hub)).devices.find((d) => d.label === "Laptop");
+  assert.equal(device.status, "revoked");
+  assert.ok(device.leftAt, "the console shows the machine left, not silent");
+});
+
+test("joining the same console again keeps the machine's entry; a second reporter is refused", async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-rejoin-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const home = writeHome(path.join(root, "home"), { claude: [{ sessionId: "abcdabcd-0000-4000-8000-000000000001", cwd: "/home/dev/p", start: Date.now() - 10 * 60_000, turns: 2 }] });
+  const started = startHub(["--no-local", "--state-dir", path.join(root, "hub")]);
+  t.after(() => started.child.kill("SIGKILL"));
+  const hub = await started.ready;
+  const state = path.join(root, "state");
+  const first = await run(["join", (await invite(hub, "You", "Laptop")).link, "--once", "--home", home, "--state-dir", state]);
+  assert.equal(first.code, 0, first.out + first.err);
+  const again = await run(["join", (await invite(hub, "You", "Laptop")).link, "--once", "--json", "--home", home, "--state-dir", state]);
+  assert.equal(again.code, 0, again.out + again.err);
+  assert.ok(again.out.includes('"event":"rejoined"'), again.out);
+  const view = await consoleView(hub);
+  assert.equal(view.devices.length, 1, "a second machine of the same name");
+  assert.equal(view.devices[0].status, "reporting");
+  assert.ok(view.devices[0].day.tokens.total > 0, "its history stayed");
+
+  // A reporter running for this state directory refuses a second one.
+  const running = spawn(process.execPath, [BIN, "report", "--home", home, "--state-dir", state], { stdio: ["ignore", "pipe", "pipe"] });
+  t.after(() => running.kill("SIGKILL"));
+  for (let i = 0; i < 100 && !fs.existsSync(path.join(state, "reporter.lock")); i += 1) await new Promise((r) => setTimeout(r, 50));
+  const second = await run(["report", "--once", "--home", home, "--state-dir", state]);
+  assert.equal(second.code, 4, second.out + second.err);
+  assert.match(second.out, new RegExp(`already running for this machine \\(process ${running.pid}\\)`, "u"));
+  // leave stops it too.
+  const left = await run(["leave", "--state-dir", state]);
+  assert.equal(left.code, 0, left.out + left.err);
+  assert.match(left.out, new RegExp(`Stopped the reporter that was running \\(process ${running.pid}\\)`, "u"));
+});
+
+test("a reporter follows its console to a new reporting port, by its pinned certificate", async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-moved-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const home = writeHome(path.join(root, "home"), { claude: [{ sessionId: "bcdebcde-0000-4000-8000-000000000001", cwd: "/home/dev/p", start: Date.now() - 10 * 60_000, turns: 2 }] });
+  const hubState = path.join(root, "hub");
+  const port = await freePort();
+  const one = startHub(["--no-local", "--state-dir", hubState, "--report-port", String(port)]);
+  const hub = await one.ready;
+  const state = path.join(root, "state");
+  assert.equal((await run(["join", (await invite(hub, "You", "Laptop")).link, "--once", "--home", home, "--state-dir", state])).code, 0);
+  one.child.kill("SIGTERM");
+  await new Promise((r) => one.child.once("exit", r));
+  const two = startHub(["--no-local", "--state-dir", hubState, "--report-port", String(port + 3)]);
+  t.after(() => two.child.kill("SIGKILL"));
+  await two.ready;
+  const moved = await run(["report", "--once", "--json", "--home", home, "--state-dir", state]);
+  assert.equal(moved.code, 0, moved.out + moved.err);
+  assert.match(moved.out, /"event":"moved"/u);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(state, "credentials.json"), "utf8")).hub, `https://127.0.0.1:${port + 3}`);
 });
 
 test("the hub's own machine: nothing of it leaves through the reporting port", async (t) => {

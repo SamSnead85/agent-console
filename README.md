@@ -172,8 +172,9 @@ other common reading, is in the cache-read tooltip, labelled as such.)
 **Tokens over time**: the last hour, day or week. Where a machine has stopped
 reporting, the chart says from when it is incomplete.
 
-**Burn · right now**: tokens per minute (or per second) over the last five
-minutes, the dollars per hour it implies, and each model's share and spend over
+**Burn · right now**: tokens per minute (or per second), averaged over the last
+fifteen minutes so one burst of agent traffic does not swing it, the dollars per
+hour it implies, and each model's share and spend over
 the day, with real Anthropic and OpenAI marks.
 
 **Lanes**: one row per session: whether it is live, the project and branch, the
@@ -258,8 +259,10 @@ total, cache read and write shares, model split and cost, for 24 hours or
 person roll up into one row.
 
 **Projects**: this computer only: tokens per project, and what Git recorded in
-the same period (commits, lines changed, pull requests merged). It is read on
-this computer and never sent anywhere.
+the same period (commits, lines changed, and commits referencing a pull request
+or issue number). Git figures count only commits by this computer's Git email
+(`user.email`); where none is set, the page says it counts every author. It is
+read on this computer and never sent anywhere.
 
 **Spend in the window of the work**: Projects also shows estimated spend per
 local commit and per integration into a locally known default branch. The
@@ -363,18 +366,22 @@ npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/l
 ```
 
 `join` enrols this computer, then keeps reporting. `report` keeps reporting after
-a restart, with no new link. `leave` stops, and deletes everything the enrolment
-left on this computer. From a download, use `node bin/agent-console.mjs` in place
+a restart, with no new link. `stop` stops a reporter running in the background
+and keeps the enrolment. `leave` stops any reporter, tells the console this
+computer has left, and deletes everything the enrolment left on this computer.
+Joining the same console again keeps this computer's entry and history, rather
+than adding a second machine with the same name. From a download, use `node bin/agent-console.mjs` in place
 of `npx --yes <release link>`. Always use the full command: the short name on
 its own would fetch a different, unrelated package from the public registry.
 
-Options: `--name` (what to call this computer), `--interval <seconds>`, `--once`,
-`--state-dir`, `--home`, `--claude-root`, `--codex-root`,
-`--share-project-names`, `--json`.
+Options: `--name` (what to call this computer), `--interval <seconds>` (2 to
+3600; over 60 the console shows it as reporting periodically), `--background`,
+`--once`, `--state-dir`, `--home`, `--claude-root`, `--codex-root`,
+`--share-project-names`, `--json`. An unknown option is refused, not ignored.
 
-The reporter keeps going only while its window is open. To start it at login,
-add the `report` command to your system's startup items (launchd, systemd or
-Task Scheduler); this release does not install a background service for you.
+`--background` keeps reporting after the window closes. To start reporting at
+every login, [docs/BACKGROUND.md](docs/BACKGROUND.md) has launchd, systemd and
+Task Scheduler examples.
 
 ## Privacy, precisely
 
@@ -413,9 +420,9 @@ opens that one instead, once that console has proved it is yours (it never sends
 it the console's key). A port you choose with `--port` is never changed: if
 it is busy you are told to pick another.
 
-**The console says "Sign in to this console".** Use the sign-in link the
-terminal printed when the console started, or run the start command again with
-`--open`.
+**The console says "Sign in to this console".** Press **Print a new sign-in
+link** on that page, and use the link that appears in the console's terminal
+window. Running the start command again with `--open` works too.
 
 **The reporter says "the hub is pacing uploads" or "catching up".** A computer
 joining with a lot of history sends it in batches, and the hub paces them. Leave
@@ -443,6 +450,17 @@ most an hour. Press **Add a machine** again and send the new link.
 closed, the computer slept, or it changed networks. On that computer run the
 `report` command (the join page shows it), with no new link. If it says the hub
 no longer accepts it, it was removed: send it a new link.
+
+**A machine shows "Reconnecting".** The console restarted moments ago, and the
+machine was reporting when it stopped. Its reporter comes back within about a
+minute; nothing needs doing.
+
+**The console's reporting port changed.** Reporters look for the console on
+the ten ports either side of the one they joined on, and move by themselves.
+Beyond that, start the console with `--report-port` set to the old port, or send
+new links. A reporter that says the console's certificate changed has found a
+different console at that address (or one set up again from scratch): send it
+a new link.
 
 **A machine shows "Joined — waiting for its first report."** It has joined but
 its reporter has not delivered yet; if it stays that way, the reporter window
