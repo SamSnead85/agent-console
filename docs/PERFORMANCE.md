@@ -55,8 +55,14 @@ fail. They run at 20,000 and 100,000 lines.
 | Idle pass at 100,000 lines vs 20,000 lines (bytes read) | ≤ 1.5× | 0.97× |
 | Five new lines: bytes read / written | ≤ 256 KB / 384 KB | 93 KB / 175 KB |
 | Cursor size | ≤ 256 KB | 84 KB |
-| Console answer for one machine | ≤ 64 KB | 15–19 KB |
+| Console answer for one machine | ≤ 96 KB | 57–70 KB |
 | Restart: store load time ÷ bare JSON.parse time of the same records | ≤ 6.5 | 4.3–5.0 |
+
+The console answer carries, since the stacked chart and the dollars by class,
+each series step split by token class, the estimate by class for every period,
+machine and person, and each lane's day by class with its estimate. That is
+what raised the measured answer from 57 KB to 70 KB at 100,040 lines, and the
+budget from 64 KB to 96 KB. It is polled every two seconds over loopback.
 
 Since 0.3.0 a Claude message is sent as its running maximum, and the hub
 keeps each reading that grew one so a restart takes the same maximum; that

@@ -16,7 +16,7 @@
     "fiveNewLines.bytesRead": 262144,
     "fiveNewLines.bytesWritten": 393216,
     "cursorBytes": 262144,
-    "consoleBytes": 65536,
+    "consoleBytes": 98304,
     "storeLoad.ratioToParse": 6.5
   }
 }
