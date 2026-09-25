@@ -19,6 +19,11 @@
   policy into repo-scoped Claude Code agents, settings and a local hook, with
   private backups so `remove` restores the prior files. Starting the console
   installs nothing.
+- `policy apply`, `diff` and `remove` refuse a symlinked `.claude` path and
+  never write the user-level Claude directory. The policy hook now classifies
+  quoted, wrapped and `sh -c` commands, catches `cat .env`-style secret reads
+  and `git -C <path> push --force`, and asks or denies when it cannot load its
+  classifier.
 - Added opt-in `--interop`: a Telemetry panel with Claude Code OpenTelemetry
   and AI-gateway token readings kept separate from transcript totals, a local
   Prometheus `/metrics` format and a Grafana dashboard. `/metrics` and the

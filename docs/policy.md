@@ -80,13 +80,25 @@ policy by removing the old compiled files and applying the new version.
 On POSIX the backup directory and files use modes 700 and 600; on Windows
 their protection follows the account's filesystem access controls.
 
+`diff`, `apply` and `remove` refuse a `.claude` directory, subdirectory or
+generated file that is a symbolic link or resolves outside the project, and
+they never write the user-level Claude directory (`~/.claude` or
+`CLAUDE_CONFIG_DIR`). Each file is written to a temporary file inside the
+checked directory and renamed into place, so a link is never written through.
+
 The compiler writes named role agents with pinned model and effort, a separate
 verified-code-edit role, and a named escalation role. A `PreToolUse` hook
 checks explicit `Agent` model overrides and action gates on shell and file
 tools; `PreModelSwitch` checks model allow-list and switches inside an active
-agent. The hook classifies commands locally, including `+refspec` pushes,
-outside deletes through `~`, `$HOME`, `%USERPROFILE%`, separate `rm -r -f`
-flags, and long options. Its local decision log contains only a timestamp,
+agent. The hook classifies commands locally after shell quote removal, per
+simple command, including environment prefixes, wrappers such as `command`,
+`env` and `sudo`, path-qualified binaries, command substitution, and the
+command string passed to `sh -c`, `bash -c` or `eval`. It catches force pushes
+with `--force`, `--force-with-lease`, `-f` or a `+refspec`, including after
+git options such as `git -C <path>`; reads of `.env*` (not `.example`,
+`.sample`, `.template` or `.dist` copies), `*.pem`, `*.key`, `id_*` private
+keys and credentials files; and outside deletes through `~`, `$HOME`,
+`%USERPROFILE%`, separate `rm -r -f` flags, and long options. Its local decision log contains only a timestamp,
 rule name, and action. Set `AGENT_CONSOLE_HOME` if this log should live under a
 different private home. Hooks do not use the network.
 
@@ -100,7 +112,14 @@ the fields the compiler uses, with no invented settings keys. Hooks cannot
 observe every action that a shell command might perform, so native Claude
 Code permissions and sandboxing remain in effect.
 On malformed hook input or a policy read error, `on_error` applies, defaulting
-to `ask`; no raw command or credential text is logged.
+to `ask`; no raw command or credential text is logged. If the hook cannot load
+its classifier it asks or denies, even when `on_error` is `allow`.
+
+Known limits: if `node` is not on `PATH`, or the hook file itself is missing or
+broken, Claude Code treats the failure as a non-blocking hook error and the
+tool call proceeds, so the hook fails open in that case. The classifier does
+not see commands fetched or built at run time, such as `sh -c "$(curl …)"` or
+`bash <(curl …)`, nor deletes made by other tools, such as `find … -delete`.
 
 Project settings are not managed organization settings. An organization
 policy wins in the Agent Console compiler, while Claude Code's own managed
