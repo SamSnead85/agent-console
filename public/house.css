@@ -8,12 +8,15 @@
  * Nothing on screen is set below 12px at --k: 1.
  *
  * The ground is layered, near-black to raised: --void (the page), --band (the
- * instrument), --tile (a panel on it), --raise (a panel lifted on hover), each
- * a step lighter, with one hairline and one rim of light on the upper edge.
+ * instrument), --tile (a pane on it), --raise (a pane lifted, or an overlay),
+ * each a step lighter, with one hairline and one rim of light on the upper
+ * edge, and --inset for an instrument sunk into its pane. The dark ground is
+ * graphite, not navy: the blue channel never leads.
  *
  * The four token classes share one hue and step by price per token, so the
  * mix bar reads as money before it reads as colour: output is the brightest,
- * then cache write, uncached input, and cache read the quietest.
+ * then cache write, uncached input, and cache read the quietest. The light
+ * theme uses the same ramp on the light accent.
  *
  * Light is declared on :root; dark under prefers-color-scheme and again under
  * [data-theme="dark"], so the toggle and the operating system agree.
@@ -29,7 +32,7 @@
 :root {
   color-scheme: light;
   --k: 1;
-  /* ground, in layers: warm paper, the instrument a step lighter, panels lighter again */
+  /* ground, in layers: warm paper, the instrument a step lighter, panes lighter again */
   --void: #ECEAE5; --deep: #E3E0DA;
   --tile: #FAF9F6; --tile2: #F1EFEA; --raise: #FFFFFF;
   --band: #F4F2EE; --band-head: #EDEBE6; --band-foot: #F0EEE9;
@@ -38,6 +41,7 @@
   --ink: #15171B; --ink2: #3A3E46; --quiet: #5C6169; --faint: #5C6169;
   --hair: rgba(28, 24, 16, .15); --hair2: rgba(28, 24, 16, .08);
   --rim: rgba(255, 255, 255, .85);
+  --inset: inset 0 1px 3px rgba(28, 24, 16, .14), inset 0 0 0 1px rgba(28, 24, 16, .06);
   --row-hover: rgba(28, 24, 16, .04);
   /* the one accent: on what is live and what can be pressed, nowhere else */
   --cobalt: #0B5CFF; --lit: #0A4FDB;
@@ -46,13 +50,15 @@
   --good: #0A6B49; --stop: #B8322A; --warn: #7F5300;
   --good-glow: rgba(10, 107, 73, .35);
   --warn-wash: rgba(127, 83, 0, .09);
-  /* token classes: one ink, stepped by price per token — output darkest, cache read palest */
-  --c-output: #1B1E24; --c-cachewrite: #4A4F58; --c-input: #868C96; --c-cacheread: #C6C9CE;
-  --chart-line: #1B1E24; --chart-top: rgba(27, 30, 36, .28); --chart-bottom: rgba(27, 30, 36, 0);
-  --spark: #7D838D; --spark-hot: #0B5CFF; --spark-idle: #D6D3CD;
+  /* token classes: one ramp of the accent, stepped by price per token — output darkest, cache read palest */
+  --c-output: #0A4FDB; --c-cachewrite: #4F86E8; --c-input: #8FB0F0; --c-cacheread: #C9D8F7;
+  --chart-line: #0A4FDB; --chart-top: rgba(10, 79, 219, .46); --chart-bottom: rgba(10, 79, 219, 0);
+  --spark: #4F86E8; --spark-hot: #0B5CFF; --spark-idle: #D6D3CD;
   --hatch: rgba(28, 24, 16, .09);
   --elev: 0 1px 2px rgba(28, 24, 16, .08), 0 16px 40px rgba(28, 24, 16, .12);
   --elev2: 0 1px 2px rgba(28, 24, 16, .06), 0 8px 22px rgba(28, 24, 16, .08);
+  --elev-tile: 0 1px 1px rgba(28, 24, 16, .05), 0 6px 16px rgba(28, 24, 16, .06);
+  --btn-rim: rgba(255, 255, 255, .18);
   --stamp-edge: rgba(28, 24, 16, .3);
   /* type */
   --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -65,14 +71,15 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --void: #04060A; --deep: #070A10;
-    --tile: #0E1420; --tile2: #0A0F18; --raise: #131A28;
-    --band: #080C14; --band-head: #0A0F18; --band-foot: #090E16;
-    --conhead-a: #0D131D; --conhead-b: #090E16;
+    --void: #04060A; --deep: #070A0E;
+    --tile: #0F1114; --tile2: #0B0D10; --raise: #151820;
+    --band: #0A0C10; --band-head: #0C0E12; --band-foot: #0B0D11;
+    --conhead-a: #111419; --conhead-b: #0B0D11;
     --ink: #EEF2F8; --ink2: #C3CCDB; --quiet: #8B97AC; --faint: #8B97AC;
-    --hair: rgba(255, 255, 255, .09); --hair2: rgba(255, 255, 255, .055);
-    --rim: rgba(255, 255, 255, .045);
-    --row-hover: rgba(255, 255, 255, .032);
+    --hair: rgba(255, 255, 255, .085); --hair2: rgba(255, 255, 255, .05);
+    --rim: rgba(255, 255, 255, .07);
+    --inset: inset 0 1px 3px rgba(0, 0, 0, .45), inset 0 0 0 1px rgba(0, 0, 0, .25);
+    --row-hover: rgba(255, 255, 255, .055);
     --cobalt: #0B5CFF; --lit: #6EA8FF;
     --cobalt-wash: rgba(91, 155, 255, .14); --cobalt-edge: rgba(110, 168, 255, .45);
     --good: #4FE0A8; --stop: #FF7A6B; --warn: #F2C14E;
@@ -80,23 +87,26 @@
     --warn-wash: rgba(242, 193, 78, .08);
     --c-output: #BFE3FF; --c-cachewrite: #7FC2F5; --c-input: #4A86C4; --c-cacheread: #2F5F8F;
     --chart-line: #7FB4FF; --chart-top: rgba(91, 155, 255, .55); --chart-bottom: rgba(91, 155, 255, 0);
-    --spark: #2F6ACB; --spark-hot: #7FB4FF; --spark-idle: #263047;
+    --spark: #2F6ACB; --spark-hot: #7FB4FF; --spark-idle: #262B33;
     --hatch: rgba(255, 255, 255, .05);
-    --elev: 0 1px 0 rgba(0, 0, 0, .4), 0 24px 60px rgba(0, 0, 0, .55);
-    --elev2: 0 1px 0 rgba(0, 0, 0, .35), 0 10px 30px rgba(0, 0, 0, .4);
+    --elev: 0 1px 0 rgba(0, 0, 0, .5), 0 24px 60px rgba(0, 0, 0, .6);
+    --elev2: 0 1px 0 rgba(0, 0, 0, .45), 0 12px 32px rgba(0, 0, 0, .5);
+    --elev-tile: 0 1px 0 rgba(0, 0, 0, .4), 0 6px 16px rgba(0, 0, 0, .34);
+    --btn-rim: rgba(255, 255, 255, .18);
     --stamp-edge: rgba(255, 255, 255, .2);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --void: #04060A; --deep: #070A10;
-  --tile: #0E1420; --tile2: #0A0F18; --raise: #131A28;
-  --band: #080C14; --band-head: #0A0F18; --band-foot: #090E16;
-  --conhead-a: #0D131D; --conhead-b: #090E16;
+  --void: #04060A; --deep: #070A0E;
+  --tile: #0F1114; --tile2: #0B0D10; --raise: #151820;
+  --band: #0A0C10; --band-head: #0C0E12; --band-foot: #0B0D11;
+  --conhead-a: #111419; --conhead-b: #0B0D11;
   --ink: #EEF2F8; --ink2: #C3CCDB; --quiet: #8B97AC; --faint: #8B97AC;
-  --hair: rgba(255, 255, 255, .09); --hair2: rgba(255, 255, 255, .055);
-  --rim: rgba(255, 255, 255, .045);
-  --row-hover: rgba(255, 255, 255, .032);
+  --hair: rgba(255, 255, 255, .085); --hair2: rgba(255, 255, 255, .05);
+  --rim: rgba(255, 255, 255, .07);
+  --inset: inset 0 1px 3px rgba(0, 0, 0, .45), inset 0 0 0 1px rgba(0, 0, 0, .25);
+  --row-hover: rgba(255, 255, 255, .055);
   --cobalt: #0B5CFF; --lit: #6EA8FF;
   --cobalt-wash: rgba(91, 155, 255, .14); --cobalt-edge: rgba(110, 168, 255, .45);
   --good: #4FE0A8; --stop: #FF7A6B; --warn: #F2C14E;
@@ -104,10 +114,12 @@
   --warn-wash: rgba(242, 193, 78, .08);
   --c-output: #BFE3FF; --c-cachewrite: #7FC2F5; --c-input: #4A86C4; --c-cacheread: #2F5F8F;
   --chart-line: #7FB4FF; --chart-top: rgba(91, 155, 255, .55); --chart-bottom: rgba(91, 155, 255, 0);
-  --spark: #2F6ACB; --spark-hot: #7FB4FF; --spark-idle: #263047;
+  --spark: #2F6ACB; --spark-hot: #7FB4FF; --spark-idle: #262B33;
   --hatch: rgba(255, 255, 255, .05);
-  --elev: 0 1px 0 rgba(0, 0, 0, .4), 0 24px 60px rgba(0, 0, 0, .55);
-  --elev2: 0 1px 0 rgba(0, 0, 0, .35), 0 10px 30px rgba(0, 0, 0, .4);
+  --elev: 0 1px 0 rgba(0, 0, 0, .5), 0 24px 60px rgba(0, 0, 0, .6);
+  --elev2: 0 1px 0 rgba(0, 0, 0, .45), 0 12px 32px rgba(0, 0, 0, .5);
+  --elev-tile: 0 1px 0 rgba(0, 0, 0, .4), 0 6px 16px rgba(0, 0, 0, .34);
+  --btn-rim: rgba(255, 255, 255, .18);
   --stamp-edge: rgba(255, 255, 255, .2);
 }
 
@@ -151,6 +163,8 @@ button { font: inherit; color: inherit; }
   box-shadow: inset 0 0 0 1px var(--stamp-edge);
   background: repeating-linear-gradient(-45deg, var(--hatch) 0 2px, transparent 2px 5px);
 }
+/* the per-row stamp: the same mark, small enough to sit beside a state word */
+.stamp.sm { padding: 1px 4px 1px 5px; letter-spacing: .1em; font-size: calc(12px * var(--k)); line-height: 1.1; }
 
 .btn {
   display: inline-flex; align-items: center; gap: calc(7px * var(--k));
@@ -160,7 +174,8 @@ button { font: inherit; color: inherit; }
   transition: color .16s var(--ease), box-shadow .16s var(--ease), background .16s var(--ease), transform .18s var(--spring);
 }
 .btn:hover { color: var(--ink); box-shadow: inset 0 0 0 1px var(--cobalt-edge); }
-.btn.primary { background: var(--cobalt); color: #FFFFFF; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 1px 2px rgba(0, 0, 0, .25); }
+.btn.primary { background: var(--cobalt); color: #FFFFFF; box-shadow: inset 0 1px 0 var(--btn-rim), 0 1px 2px rgba(0, 0, 0, .25); }
+.btn.wide { width: 100%; justify-content: center; }
 .btn.primary:hover { background: #1A68FF; transform: translateY(-1px); }
 .btn:disabled { opacity: .5; cursor: default; transform: none; }
 .btn svg { width: calc(14px * var(--k)); height: calc(14px * var(--k)); }
