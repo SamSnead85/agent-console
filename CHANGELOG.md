@@ -2,6 +2,18 @@
 
 ## 0.3.0 — unreleased
 
+- Six things the screen said that were not so. On Team and Projects the
+  period control sits beside the figure it moves, and the hour chart is
+  captioned as the hour it always shows. The spend spectrum's COST and
+  TOKENS names sit in their own column beside their bars instead of over
+  each other. On a phone the lanes' footer stays in frame under the
+  sideways scroller and wraps, the spend legend wraps instead of cutting a
+  word, and a lane row leads with state, five minutes, the estimate and
+  when it last reported. A model split's names are never cut, and the
+  Projects Est. column says its unit once, in the header. Every Attention
+  row is a door — to its lane, or to the alert list that carries it —
+  by pointer and by keyboard. Projects fills its frame: the sessions behind
+  the projects take the height the table leaves.
 - The instrument is denser and says less twice. The lanes carry a Doing
   column (the lane's newest alert, its subagents at work, a cache signal, a
   growing context, or its state in a word — never a prompt or a path), the

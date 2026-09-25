@@ -151,7 +151,7 @@
         <div class="cap">Spend spectrum <em class="by">cost share over token share</em><span class="capr" id="specCap">—</span></div>
         <div class="specwrap inst" id="specWrap">
           <div class="voidstate"><b>No estimate</b><span id="specReason">—</span></div>
-          <span class="slab top" aria-hidden="true">cost</span><span class="slab bot" aria-hidden="true">tokens</span>
+          <div class="slabs" aria-hidden="true"><span class="slab cost">cost</span><span class="slab tok">tokens</span></div>
           <svg id="cSpec" viewBox="0 0 520 60" preserveAspectRatio="none" role="img" aria-label="Cost share over token share, by class"></svg>
         </div>
         <div class="speclegend" id="specLegend"></div>
@@ -173,9 +173,9 @@
     <div class="canvas" id="consoleCanvas">
       <section class="lanes" aria-label="Sessions">
         <h2 class="visually-hidden">Sessions</h2>
-        <div class="lhead" aria-hidden="true"><span>State</span><span>Project / branch</span><span>Model</span><span>Activity · 1 h</span>
-          <span class="r">5 min</span><span class="r c-in">In</span><span class="r c-out">Out</span><span class="r">Total</span><span class="r c-usd">Est. $</span><span class="r c-ag">Agents</span><span class="r c-cx">Context</span><span class="c-do">Doing</span><span class="c-dv">Machine</span><span class="r c-la">Last</span></div>
-        <div id="cLanes" class="lanescroll" tabindex="0" role="region" aria-label="Lanes, one per session, scrollable"></div>
+        <div class="lanebody"><div class="lhead" aria-hidden="true"><span class="c-st">State</span><span class="c-pr">Project / branch</span><span class="c-md">Model</span><span class="c-sp">Activity · 1 h</span>
+          <span class="r c-fm">5 min</span><span class="r c-in">In</span><span class="r c-out">Out</span><span class="r c-tot">Total</span><span class="r c-usd">Est. $</span><span class="r c-ag">Agents</span><span class="r c-cx">Context</span><span class="c-do">Doing</span><span class="c-dv">Machine</span><span class="r c-la">Last</span></div>
+        <div id="cLanes" class="lanescroll" tabindex="0" role="region" aria-label="Lanes, one per session, scrollable"></div></div>
         <div class="lfoot" id="lFoot"><span>—</span></div>
       </section>
 
@@ -200,7 +200,11 @@
 
     <div class="console" id="teamBand">
       <div class="col tokens">
-        <div class="cap"><span id="tCap">Tokens · last 24 hours</span></div>
+        <div class="cap"><span id="tCap">Tokens</span>
+          <span class="seg" id="periodSeg" role="group" aria-label="Period for every figure">
+            <button type="button" data-p="1h" aria-pressed="false" aria-label="Last hour">1H</button><button type="button" data-p="24h" class="on" aria-pressed="true" aria-label="Last 24 hours">24H</button><button type="button" data-p="7d" aria-pressed="false" aria-label="Last 7 days">7D</button><button type="button" data-p="30d" aria-pressed="false" aria-label="Last 30 days">30D</button>
+          </span>
+        </div>
         <div id="tTotal" class="big" data-src="windows.tokens.total">—</div>
         <div class="tline"><span id="tSpend" data-src="windows.cost.usd">—</span><em><span id="tMsgs" data-src="windows.messages">—</span> messages</em></div>
         <div class="prov" id="tProv">—</div>
@@ -211,11 +215,7 @@
         </div>
       </div>
       <div class="col flow">
-        <div class="cap">Activity · 1H <em class="by">by machine</em><span class="peak" id="tPeak" hidden></span>
-          <span class="seg" id="periodSeg" role="group" aria-label="Period for every figure">
-            <button type="button" data-p="1h" aria-pressed="false" aria-label="Last hour">1H</button><button type="button" data-p="24h" class="on" aria-pressed="true" aria-label="Last 24 hours">24H</button><button type="button" data-p="7d" aria-pressed="false" aria-label="Last 7 days">7D</button><button type="button" data-p="30d" aria-pressed="false" aria-label="Last 30 days">30D</button>
-          </span>
-        </div>
+        <div class="cap">Activity · last hour <em class="by">by machine</em><span class="peak" id="tPeak" hidden></span></div>
         <div class="flowwrap inst" id="tFlowWrap">
           <div class="voidstate"><b>No activity</b><span id="tFlowReason">—</span></div>
           <svg id="tFlow" viewBox="0 0 520 100" preserveAspectRatio="none" role="img" aria-label="Tokens in the last hour, stacked by machine, three-minute steps"></svg>
@@ -263,7 +263,11 @@
 
     <div class="console" id="projBand">
       <div class="col tokens">
-        <div class="cap"><span id="pCap">Tokens · last 24 hours · this machine</span></div>
+        <div class="cap"><span id="pCap">Tokens</span>
+          <span class="seg" id="projSeg" role="group" aria-label="Period for every figure">
+            <button type="button" data-p="1h" aria-pressed="false" aria-label="Last hour">1H</button><button type="button" data-p="24h" class="on" aria-pressed="true" aria-label="Last 24 hours">24H</button><button type="button" data-p="7d" aria-pressed="false" aria-label="Last 7 days">7D</button><button type="button" data-p="30d" aria-pressed="false" aria-label="Last 30 days">30D</button>
+          </span>
+        </div>
         <div id="pTotal" class="big" data-src="projects.tokens">—</div>
         <div class="tline"><span id="pSpend" data-src="projects.usd">—</span><em><span id="pSessions" data-src="projects.sessions">—</span> sessions</em></div>
         <div class="prov" id="pProv">—</div>
@@ -271,11 +275,7 @@
         <div class="effort" id="pEffort" title="The fleet on one line, this machine's own Git on the other; the two are never divided into each other"></div>
       </div>
       <div class="col flow">
-        <div class="cap">Activity · 1H <em class="by">by project</em><span class="peak" id="pPeak" hidden></span>
-          <span class="seg" id="projSeg" role="group" aria-label="Period for every figure">
-            <button type="button" data-p="1h" aria-pressed="false" aria-label="Last hour">1H</button><button type="button" data-p="24h" class="on" aria-pressed="true" aria-label="Last 24 hours">24H</button><button type="button" data-p="7d" aria-pressed="false" aria-label="Last 7 days">7D</button><button type="button" data-p="30d" aria-pressed="false" aria-label="Last 30 days">30D</button>
-          </span>
-        </div>
+        <div class="cap">Activity · last hour <em class="by">by project</em><span class="peak" id="pPeak" hidden></span></div>
         <div class="flowwrap inst" id="pFlowWrap">
           <div class="voidstate"><b>No activity</b><span id="pFlowReason">—</span></div>
           <svg id="pFlow" viewBox="0 0 520 100" preserveAspectRatio="none" role="img" aria-label="Tokens in the last hour, stacked by project, three-minute steps"></svg>
@@ -304,9 +304,9 @@
       <!-- the sessions behind those projects: this machine's own lanes, by project, in the same row grammar as the Console -->
       <section class="lanes" aria-label="Sessions on this machine">
         <div class="thead"><h3>Sessions on this machine</h3><span class="hc" id="pLaneCount">—</span></div>
-        <div class="lhead" aria-hidden="true"><span>State</span><span>Project / branch</span><span>Model</span><span>Activity · 1 h</span>
-          <span class="r">5 min</span><span class="r c-in">In</span><span class="r c-out">Out</span><span class="r">Total</span><span class="r c-usd">Est. $</span><span class="r c-ag">Agents</span><span class="r c-cx">Context</span><span class="c-do">Doing</span><span class="c-dv">Machine</span><span class="r c-la">Last</span></div>
-        <div id="pLanes" class="lanescroll"></div>
+        <div class="lanebody"><div class="lhead" aria-hidden="true"><span class="c-st">State</span><span class="c-pr">Project / branch</span><span class="c-md">Model</span><span class="c-sp">Activity · 1 h</span>
+          <span class="r c-fm">5 min</span><span class="r c-in">In</span><span class="r c-out">Out</span><span class="r c-tot">Total</span><span class="r c-usd">Est. $</span><span class="r c-ag">Agents</span><span class="r c-cx">Context</span><span class="c-do">Doing</span><span class="c-dv">Machine</span><span class="r c-la">Last</span></div>
+        <div id="pLanes" class="lanescroll"></div></div>
       </section>
     </div>
   </section>

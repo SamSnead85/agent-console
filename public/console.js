@@ -546,7 +546,7 @@
     row.querySelector(".ag button").addEventListener("click", () => {
       openTree(row, l.key, row._tree.hidden);
       if (!row._tree.hidden && matchMedia('(max-width: 760px)').matches) {
-        row.closest('.lanes, .fold').scrollLeft = 0;
+        row.closest('.lanebody, .fold').scrollLeft = 0;
         row.parentElement.scrollLeft = 0;
       }
     });
@@ -791,7 +791,7 @@
     const rows = alerts.slice().sort((a, b) => b.at - a.at).slice(0, 3);
     $("attnList").innerHTML = rows.map((a) => {
       const lane = alertLane(a);
-      return `<div class="arow" ${lane ? `data-lane="${esc(lane.key)}" tabindex="0" role="button"` : ""} title="${lane ? "Open the lane" : esc(alertCause(a))}"><span class="sev" aria-hidden="true"></span><b>${ALERT_LABEL[a.kind] || "Alert"}${lane ? `<em>${esc(lane.project.name)}${lane.branch ? " · " + esc(lane.branch) : ""}</em>` : ""}</b><time>${hhmm(a.at)}${D.hub.demo ? " · DEMO" : ""}</time><span class="cause">${alertCause(a)}</span></div>`;
+      return `<div class="arow" ${lane ? `data-lane="${esc(lane.key)}"` : "data-alerts"} tabindex="0" role="button" title="${lane ? "Open the lane" : "Open the alert list"}"><span class="sev" aria-hidden="true"></span><b>${ALERT_LABEL[a.kind] || "Alert"}${lane ? `<em>${esc(lane.project.name)}${lane.branch ? " · " + esc(lane.branch) : ""}</em>` : ""}</b><time>${hhmm(a.at)}${D.hub.demo ? " · DEMO" : ""}</time><span class="cause">${alertCause(a)}</span></div>`;
     }).join("") + (alerts.length > rows.length ? `<button type="button" class="more" data-alerts>${alerts.length - rows.length} more</button>` : "");
     // The pane's own series: sixty minutes, one tick per alert, hatched from the moment a machine went silent.
     const W = 520, H = 18, span = 60 * 60_000, now = serverNow();
@@ -817,11 +817,12 @@
     if (ev.target.closest("[data-alerts]")) { openAlerts(); return; }
     const go = ev.target.closest("[data-lane]"); if (!go) return;
     if (go.closest("dialog")) go.closest("dialog").close();
-    focusLane(go.dataset.lane);
+    // an Attention row whose lane is not on the canvas (hidden, or gone) still opens: the alert list carries it
+    if (!focusLane(go.dataset.lane) && go.classList.contains("arow")) openAlerts();
   });
   document.addEventListener("keydown", (ev) => {
     if (ev.key !== "Enter" && ev.key !== " ") return;
-    const door = ev.target.closest && ev.target.closest("[role='button'][data-lane], [role='button'][data-inspect]");
+    const door = ev.target.closest && ev.target.closest("[role='button'][data-lane], [role='button'][data-alerts], [role='button'][data-inspect]");
     if (!door || ev.target.tagName === "BUTTON") return;
     ev.preventDefault(); door.click();
   });
@@ -1397,7 +1398,7 @@
     const none = D.devices.length === 0;   // nothing has reported: unknown, never 0
     const label = PERIOD_TEXT[period][1];
     $("teamTotals").innerHTML = "";
-    $("tCap").textContent = "Tokens · " + PERIOD_TEXT[period][0];
+    $("tCap").title = "Tokens · " + PERIOD_TEXT[period][0] + " · every machine";
     $("tTotal").textContent = none ? "—" : fmt(total);
     $("tTotal").title = none ? "No machine has reported yet" : `${fmt(total)} tokens across ${plural(D.devices.length, "machine")} · ${asOf()}`;
     // Every model unpriced is "no priced model", never $0.00.
@@ -1429,7 +1430,7 @@
     const byDevice = sparksBy(deviceKey);
     const hourTotal = drawStacked("tFlow", "tFlowWrap", "tFlowReason", "tLegend", byDevice, (id) => (deviceOf(id) || { label: "Unknown machine" }).label, "tPeak");
     $("tFlowCap").innerHTML = hourTotal ? `<b>${fmt(hourTotal)}</b> tokens · ${D.lanes.filter((l) => l.state === "live").length} live · 3-min steps` : "3-min steps";
-    $("tFlowCap").title = "Per-machine steps are kept for the last hour; the period switch moves every figure, this series stays the hour";
+    $("tFlowCap").title = "Per-machine steps are kept for the last hour only; the period beside the figure moves every figure but this series, which is always the hour";
     // Models across every machine, and the day's sessions by tool: what the tables under the band do not carry.
     $("tModelCap").textContent = "by model · " + label;
     $("tModels").innerHTML = whole.models.length ? modelRows(whole.models, "tModels", whole.models)
@@ -1561,7 +1562,7 @@
     const by = sparksBy(projectKey, localLanes());
     const hourTotal = drawStacked("pFlow", "pFlowWrap", "pFlowReason", "pLegend", by, (name) => name, "pPeak");
     $("pFlowCap").innerHTML = hourTotal ? `<b>${fmt(hourTotal)}</b> tokens · ${localLanes().filter((l) => l.state === "live").length} live · 3-min steps` : "3-min steps";
-    $("pFlowCap").title = "Per-project steps are kept for the last hour; the period switch moves every figure, this series stays the hour";
+    $("pFlowCap").title = "Per-project steps are kept for the last hour only; the period beside the figure moves every figure but this series, which is always the hour";
     for (const cell of document.querySelectorAll("#projTable [data-live]")) {
       const s = by.get(cell.dataset.live);
       const live = s ? s.live : 0;
@@ -1612,7 +1613,7 @@
       <td class="k3" data-l="live" data-live="${esc(x.name)}"><span class="live-dot"><i></i>—</span></td>
       <td data-spark="${esc(x.name)}"><span class="sp none">—</span></td>
       <td class="num r k3" data-l="tokens" data-src="projects.tokens" title="${fmt(x.tokens)} tokens in this machine's transcripts · ${esc(label)}">${fmt(x.tokens)}</td><td class="k2">${shareBar(p.tokens ? x.tokens / p.tokens : null, "projects.tokens")}</td>
-      <td class="num r k3" data-l="est." data-internal data-src="projects.usd" title="${x.usd === null ? "No verified list price for what ran here" : "List-price estimate. Not an invoice."}">${x.usd === null ? "unpriced" : money(x.usd) + " est."}</td>
+      <td class="num r k3" data-l="est." data-internal data-src="projects.usd" title="${x.usd === null ? "No verified list price for what ran here" : "List-price estimate. Not an invoice."}">${x.usd === null ? "unpriced" : money(x.usd)}</td>
       <td class="num r" data-src="projects.sessions" title="${x.sessions === null ? "Sessions are kept with the minute detail" : plural(x.sessions, "session") + " · " + esc(label)}">${x.sessions === null ? na("not kept", "Sessions are kept with the minute detail (7 days); nothing is estimated in their place", true) : x.sessions}</td>
       <td class="num r k3" data-l="commits" data-src="projects.repo.commits" title="${x.repo ? plural(x.repo.commits, "commit") + " in local Git · " + esc(label) : "Not a Git repository"}">${x.repo ? x.repo.commits : noGit}</td>
       <td class="num r" data-src="projects.repo.added" title="${x.repo ? "Lines added and removed in local Git · " + esc(label) : "Not a Git repository"}">${x.repo ? `+${x.repo.added.toLocaleString("en-US")} / −${x.repo.removed.toLocaleString("en-US")}` : noGit}</td>
@@ -1634,14 +1635,14 @@
       const label = PERIOD_TEXT[period][1];
       const usd = p.projects.some((x) => x.usd !== null) ? p.projects.reduce((a, x) => a + (x.usd || 0), 0) : null;
       const unpriced = p.projects.filter((x) => x.usd === null && x.tokens > 0).length;
-      $("pCap").textContent = `Tokens · ${PERIOD_TEXT[period][0]} · this machine`;
+      $("pCap").title = `Tokens · ${PERIOD_TEXT[period][0]} · this machine's transcripts`;
       $("pTotal").textContent = fmt(p.tokens);
       $("pTotal").title = `${fmt(p.tokens)} tokens in this machine's transcripts · ${label} · ${asOf()}`;
       $("pSpend").textContent = usd === null ? "no priced model" : money(usd) + (unpriced ? " est. · partial" : " est.");
       $("pSpend").title = unpriced ? `${unpriced} ${unpriced === 1 ? "project has" : "projects have"} no verified list price and are not in this figure` : "List-price estimate. Not an invoice.";
       $("pSessions").textContent = p.sessions === null ? "—" : String(p.sessions);
       $("pSessions").title = p.sessions === null ? "Sessions are kept with the minute detail; none is estimated for this period" : `${plural(p.sessions, "session")} on this machine · ${label}`;
-      $("pProv").innerHTML = (p.demo ? "generated · " : "this machine's transcripts and Git · ") + (p.author === true ? "commits by this machine's Git email" : p.author === false ? "every author — no Git email set here" : "local Git history");
+      $("pProv").innerHTML = (p.demo ? "generated · this machine · " : "this machine's transcripts and Git · ") + (p.author === true ? "commits by this machine's Git email" : p.author === false ? "every author — no Git email set here" : "local Git history");
       $("pProv").title = p.author === false ? "No Git email (user.email) is set in one of these repositories, so its Git figures count every author. None of this leaves this machine." : "Read from this machine only. None of this leaves this machine.";
       $("pKv").innerHTML = [
         [String(p.projects.length), "projects", `${p.withRepo} in Git`, "projects.length"],
