@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 — unreleased
+## 0.3.0 — 2026-09-25
 
 - Six things the screen said that were not so. On Team and Projects the
   period control sits beside the figure it moves, and the hour chart is
@@ -21,8 +21,8 @@
   projects' share and spend rows — is a 24px target (WCAG 2.5.8) at the
   same type size. On a phone the hour axis caption takes its own line
   whole, a person's machine row says its status whole under the name, and
-  the lanes' state column holds the DEMO stamp inside it beside any
-  state word — SILENT included — at every width.
+  the lanes' state column holds the DEMO stamp inside it beside
+  the generated LIVE, IDLE and SILENT states at every width.
 - The lane grid fits a 1241–1439px frame whole. The 124px state column
   had pushed the desk grid past the frame at 1366, so the header read L
   for LAST and the Last values were hidden, and at 1241 the Machine
@@ -69,24 +69,6 @@
   leave historical cost unsplit when current rates do not reconcile with its
   saved estimate. The burn chart labels its median as active minutes only;
   local Git no longer divides fleet spend by local commits.
-- The console is a denser instrument. It opens on a one-line strip — the
-  name, where it reads, the live sessions with the one glow that means live,
-  the machines, the alert count, a clock and how fresh the reading is — with
-  no headline above it. The tokens panel prices each class, the chart stacks
-  the four classes with a legend that carries the same figures, and a
-  seven-day row sits under the classes. A second row holds Attention (the
-  one thing that needs it, or nothing), a spend spectrum (cost share over
-  token share, by class and by model) and the burn with its last sixty
-  minutes drawn. Each lane now shows uncached input, output, the day's
-  tokens, its estimate and when it last reported; the machines are one row
-  each beside the models; the rest of the day folds under the lanes as Cold
-  sessions, Projects, Effort and Shipped; and alerts are one dense list.
-  Nothing is set below 12px; labels are in the text face and numbers, ids,
-  models and branches in the monospace one; the four classes share one hue
-  stepped by price. At 390px wide the lanes and every table become stacked
-  rows with nothing scrolling sideways, every control is at least 44px tall,
-  and the light theme is layered paper, not a flat page. A reading a hub
-  does not send is a drawn void with its reason, never a zero.
 - `/api/console` splits each series step, the period's estimate, and each
   lane's day by token class (`series.*.classes`, `cost.byClass`,
   `lanes[].tokensDayByClass`, `lanes[].costDay`); dollars that cannot be
@@ -101,8 +83,8 @@
 
 What your agents are doing, not only what they spent: context and cache
 health, live alerts and an agent tree in each lane; a project policy you can
-apply and remove; optional local metrics; figures that follow one period
-everywhere; and reporters that keep going in the background and survive a
+apply and remove; optional local metrics; totals that follow the selected
+period; and reporters that keep going in the background and survive a
 console's restart.
 
 **Upgrading from 0.2.1 or 0.2.2.** Coming from 0.2.1, this release includes
@@ -223,11 +205,12 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
   becoming `unknown`. A transcript line too long to read has its usage
   recovered where possible, and is reported when it is not. Usage that grows on
   a line already counted is counted; usage rewritten lower is reported.
-- **One period everywhere.** The period switch (1H, 24H, 7D and the new 30D)
+- **Consistent period totals.** The period switch (1H, 24H, 7D and the new 30D)
   drives the headline tokens, cost, messages, model list and machine list, and
-  Team and Projects offer the same periods with the same edges. The chart's
-  bars add up to the headline. 30 days come from daily totals the console keeps
-  for 400 days, after its minute detail is pruned.
+  Team and Projects offer the same periods with the same edges. The Console
+  chart follows the selected period. Team and Projects retain their explicitly
+  labelled last-hour activity charts. 30 days come from daily totals the
+  console keeps for 400 days, after its minute detail is pruned.
 - **Fast mode is priced at its published rates**, and any other service tier
   is left unpriced instead of being priced at the standard rate.
 - Input is labelled "uncached input", the cache-write split by lifetime is
