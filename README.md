@@ -16,6 +16,8 @@
   <a href="https://github.com/SamSnead85/agent-console/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/SamSnead85/agent-console/ci.yml?branch=main&label=CI"></a>
 </p>
 
+<p align="center"><a href="https://samsnead85.github.io/agent-console/">Download page</a></p>
+
 <p align="center">
   <b>Fleet accounting for Claude Code and Codex.</b><br>
   Every session's tokens, cache reads and writes, models and list-price cost,

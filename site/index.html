@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agent Console · LockedIn Labs</title>
+<meta name="description" content="Fleet accounting for Claude Code and Codex. Every session's tokens, cache reads and writes, models and list-price cost, on every machine you connect, in one local console. MIT, zero dependencies, nothing leaves a machine but counts.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='96 64 880 896'%3E%3Cpath fill='%23EEF2F8' d='M105 72H275V775H703V952H105Z'/%3E%3Cpath d='M380 72H968V952H803V243H380Z' fill='%230B5CFF'/%3E%3Cpath fill='%23EEF2F8' d='M383 392L527 472V510L383 590V545L482 491L383 437Z'/%3E%3Crect fill='%23EEF2F8' x='556' y='585' width='147' height='34'/%3E%3C/svg%3E">
+<script>(function(){var d=document.documentElement,q=new URLSearchParams(location.search).get('theme'),p=null;try{p=localStorage.getItem('ll-theme')}catch(e){}var t=(q==='light'||q==='dark')?q:(p==='light'?'light':'dark');d.setAttribute('data-theme',t);d.style.colorScheme=t;})();</script>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<!--
+  Agent Console · the open-source download page (GitHub Pages).
+  Drawn in the Command Center v3 frame (header, rail, canvas of panes, status bar) so the site reads as the
+  product's own front door: eight screens switched instantly, each deep-linked (#/install), the page never
+  scrolls at desktop sizes; panes scroll inside themselves. Graphite by default, light authored.
+  Every install path and figure on this page is real as of 24 Sep 2026: v0.2.1 on GitHub Releases with a SHA-256
+  and a signed build attestation; the npm package and Homebrew formula are not published yet and are marked "coming".
+  The hero is a capture of the released package running with --demo; the page's one demo stamp is its caption.
+-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="mk-lockedin" viewBox="96 64 880 896">
+      <path d="M105 72H275V775H703V952H105Z" fill="currentColor"/>
+      <path d="M380 72H968V952H803V243H380Z" fill="#0B5CFF"/>
+      <path d="M383 392L527 472V510L383 590V545L482 491L383 437Z" fill="currentColor"/>
+      <rect x="556" y="585" width="147" height="34" fill="currentColor"/>
+    </symbol>
+    <!-- GitHub's official mark (Simple Icons path), drawn in the current ink -->
+    <symbol id="mk-github" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M9 9h10v10H9zM5 15V5h10"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14"/></symbol>
+    <symbol id="i-ext" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M14 5h5v5M19 5l-8 8M18 13v6H5V6h6"/></symbol>
+    <symbol id="i-term" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M5 7l5 5-5 5M12 17h7"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M7 11V8a5 5 0 0110 0v3M6 11h12v9H6z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M12 4v2M12 18v2M4 12h2M18 12h2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M6.3 17.7l1.4-1.4M16.3 7.7l1.4-1.4"/><circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M19 14.5A7.5 7.5 0 019.5 5a7.5 7.5 0 109.5 9.5z"/></symbol>
+    <symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<div class="app" id="app">
+  <header class="hdr" id="hdr">
+    <a class="home" href="#/overview" aria-label="Agent Console, overview">
+      <svg aria-hidden="true"><use href="#mk-lockedin"/></svg><span class="word">LockedIn Labs</span>
+    </a>
+    <span class="sep" aria-hidden="true">/</span>
+    <span class="crumb">Agent Console</span>
+    <span class="ver mono" title="Released 23 September 2026 · built by CI from the v0.2.1 tag">v0.2.1</span>
+    <span class="grow"></span>
+    <a class="ib" href="https://github.com/SamSnead85/agent-console" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#mk-github"/></svg><span class="t">GitHub</span></a>
+    <button class="ib" id="themeBtn" type="button" aria-label="Switch theme"><svg aria-hidden="true"><use href="#i-sun"/></svg></button>
+    <a class="tb" href="#/install">Install</a>
+  </header>
+
+  <div class="body">
+    <nav class="rail" id="rail" aria-label="Sections">
+      <a href="#/overview" data-space="overview"><span>Overview</span><kbd>1</kbd></a>
+      <a href="#/install" data-space="install"><span>Install</span><kbd>2</kbd></a>
+      <a href="#/see" data-space="see"><span>What you see</span><kbd>3</kbd></a>
+      <a href="#/cache" data-space="cache"><span>What cache breaks cost</span><kbd>4</kbd></a>
+      <a href="#/privacy" data-space="privacy"><span>Privacy</span><kbd>5</kbd></a>
+      <a href="#/verify" data-space="verify"><span>Verify a download</span><kbd>6</kbd></a>
+      <a href="#/policy" data-space="policy"><span>Policy</span><kbd>7</kbd></a>
+      <a href="#/enterprise" data-space="enterprise"><span>When one console is not enough</span><kbd>8</kbd></a>
+      <div class="foot">
+        <a href="https://github.com/SamSnead85/agent-console/issues" target="_blank" rel="noopener" class="ext"><span>Issues</span></a>
+        <a href="https://github.com/SamSnead85/agent-console/blob/main/CHANGELOG.md" target="_blank" rel="noopener" class="ext"><span>Changelog</span></a>
+      </div>
+    </nav>
+
+    <main class="canvas" id="canvas">
+
+      <!-- ═══════ 1 · OVERVIEW ═══════ -->
+      <section class="space" data-space="overview" aria-label="Overview">
+        <div class="pane brief-pane">
+          <div class="brief">
+            <div class="say">
+              <h1>Fleet accounting for Claude&nbsp;Code and Codex.</h1>
+              <p>Every session's tokens, cache reads and writes, models and list-price cost, on this computer and on every computer you connect, in one local console. No account, no dependencies, and nothing leaves a machine but counts.</p>
+            </div>
+            <div class="get">
+              <div class="cmd" data-cmd="npx">
+                <svg class="pr" aria-hidden="true"><use href="#i-term"/></svg>
+                <code id="cmdMain">npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --open</code>
+                <button class="tb primary copy" type="button" data-copy="npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button>
+              </div>
+              <div class="alt">
+                <a class="tb" id="osBtn" href="https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz"><svg aria-hidden="true"><use href="#i-down"/></svg><span>Download for <b id="osName">your OS</b></span></a>
+                <a class="tb" href="https://github.com/SamSnead85/agent-console" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#mk-github"/></svg><span>Source on GitHub</span></a>
+                <span class="fine mono">Node 22 or newer · MIT · <a href="#/install">other ways in</a></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="pane shot-pane">
+          <div class="pane-h"><h2>The console</h2><span class="sub">recorded from v0.2.1 with <code>--demo</code> · <a href="assets/img/hero-demo.gif" target="_blank" rel="noopener">watch the demo</a></span><span class="r stamp">DEMO · every figure in this capture is generated</span></div>
+          <div class="pane-b shot-b">
+            <img class="shot" data-dark="assets/img/hero-demo.gif" data-dark-static="assets/img/console-dark.webp" data-light="assets/img/console-light.webp" alt="Agent Console in demo mode: console, team, and project views with generated token and cost figures." width="1440" height="900">
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ 2 · INSTALL ═══════ -->
+      <section class="space" data-space="install" aria-label="Install">
+        <div class="col main">
+          <div class="pane">
+            <div class="pane-h"><h2>Three ways in</h2><span class="sub">one package for every operating system; Node 22 or newer runs it</span>
+              <span class="r"><span class="lenses os" id="osSeg" role="group" aria-label="Operating system"><button type="button" data-os="mac">macOS</button><button type="button" data-os="linux">Linux</button><button type="button" data-os="win">Windows</button></span></span></div>
+            <div class="pane-b">
+              <div class="way">
+                <div class="k"><b>Terminal, one line</b><span>fetches the packaged console from the v0.2.1 release, reads the Claude Code and Codex history already on this computer, and opens it signed in at <code>127.0.0.1:6787</code>. CI runs this exact line against the published release.</span></div>
+                <div class="cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --open</code><button class="tb primary copy" type="button" data-copy="npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="cmd quiet-cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --demo --open</code><button class="tb copy" type="button" data-copy="npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --demo --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="fine">The second line looks around first: a synthetic team of five machines, stamped DEMO, reading nothing of yours.</div>
+              </div>
+              <div class="way">
+                <div class="k"><b>Download</b><span>the same package, by hand. Unzip nowhere: <code>npx</code> runs the file where it sits. <span data-os-only="win">On Windows, use PowerShell.</span><span data-os-only="mac">On a Mac, use Terminal.</span><span data-os-only="linux">Any shell.</span></span></div>
+                <div class="dl">
+                  <a class="tb" href="https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz"><svg aria-hidden="true"><use href="#i-down"/></svg><span>lockedinlabs-agent-console-0.2.1.tgz</span></a>
+                  <span class="fine mono">SHA-256 <span class="hash">15e53aa8…9c6aeb</span> · <a href="#/verify">verify it</a></span>
+                </div>
+                <div class="cmd" data-os-only="mac linux"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>npx --yes ~/Downloads/lockedinlabs-agent-console-0.2.1.tgz --open</code><button class="tb copy" type="button" data-copy="npx --yes ~/Downloads/lockedinlabs-agent-console-0.2.1.tgz --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="cmd" data-os-only="win"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>npx --yes $HOME\Downloads\lockedinlabs-agent-console-0.2.1.tgz --open</code><button class="tb copy" type="button" data-copy="npx --yes $HOME\Downloads\lockedinlabs-agent-console-0.2.1.tgz --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+              </div>
+              <div class="way">
+                <div class="k"><b>From the source</b><span>clone it, or press <b>Code → Download ZIP</b> on GitHub, then start it with Node directly. No build step; there are no dependencies to install.</span></div>
+                <div class="cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>git clone https://github.com/SamSnead85/agent-console.git &amp;&amp; cd agent-console &amp;&amp; node bin/agent-console.mjs --open</code><button class="tb copy" type="button" data-copy="git clone https://github.com/SamSnead85/agent-console.git && cd agent-console && node bin/agent-console.mjs --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+              </div>
+              <div class="way coming">
+                <div class="k"><b>npm and Homebrew <span class="chip" data-tone="quiet">coming</span></b><span>The package is not on the npm registry yet, and there is no Homebrew formula. When it is published, this becomes the one line: <code>npx @lockedinlabs/agent-console --open</code>. Until then the release link above is the install, and it is the one CI tests.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col side">
+          <div class="pane">
+            <div class="pane-h"><h2>Then, a second machine</h2><span class="sub">a teammate's laptop, your build box</span></div>
+            <div class="pane-b pad">
+              <ol class="steps">
+                <li><b>Start the console so other computers can reach it</b><code>node bin/agent-console.mjs --listen 0.0.0.0 --open</code><span>The console itself stays on this computer only. Other machines reach a separate port that serves nothing but joining and reporting.</span></li>
+                <li><b>Press <em>Add a machine</em></b><span>Say whose machine it is, press <em>Create join link</em>, copy it, send it. The link works once, for at most an hour, and stays masked on screen.</span></li>
+                <li><b>They paste one command</b><span>It installs the console from the GitHub release, never from your computer, and reports over TLS pinned to your console's certificate. The machine appears within seconds; two machines with the same person roll into one row.</span></li>
+              </ol>
+            </div>
+          </div>
+          <div class="pane">
+            <div class="pane-h"><h2>What works where</h2><span class="sub">tested in CI on Node 22 and 24</span></div>
+            <div class="pane-b">
+              <table class="t">
+                <thead><tr><th></th><th>macOS</th><th>Linux</th><th>Windows</th></tr></thead>
+                <tbody>
+                  <tr><td>The console, reading this computer</td><td class="ok">yes</td><td class="ok">yes</td><td class="ok">yes</td></tr>
+                  <tr><td>Joining and reporting to another console</td><td class="ok">yes</td><td class="ok">yes</td><td class="ok">yes</td></tr>
+                  <tr><td>Projects view, with <code>git</code></td><td class="ok">yes</td><td class="ok">yes</td><td class="quiet">expected</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="pane">
+            <div class="pane-h"><h2>Signed in, and only here</h2><span class="sub">what <code>--open</code> does</span></div>
+            <div class="pane-b pad">
+              <p class="say2">The console shows its figures only to a browser that has signed in. <code>--open</code> opens it signed in; otherwise the terminal prints a one-time sign-in link when it starts. It listens on <code>127.0.0.1</code> and never on the network, whatever <code>--listen</code> says: other machines reach a separate port that serves joining and reporting and nothing else.</p>
+              <p class="say2">Leave the terminal open; closing it stops the console. The same command starts it again, and finds the console already running if it is.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ 3 · WHAT YOU SEE ═══════ -->
+      <section class="space" data-space="see" aria-label="What you see">
+        <div class="pane shot-pane">
+          <div class="pane-h"><h2>In the first thirty seconds</h2><span class="sub">hover a reading to find it on the screen</span><span class="r stamp">DEMO capture</span></div>
+          <div class="pane-b shot-b fit">
+            <div class="shotwrap" id="shotwrap">
+              <img class="shot" data-dark="assets/img/console-dark.webp" data-light="assets/img/console-light.webp" alt="" width="1440" height="900">
+              <button class="hot" type="button" data-hot="tokens" style="--x:2.22%;--y:22.4%;--w:20.3%;--h:28.2%" aria-label="Tokens, last 24 hours"><i>1</i></button>
+              <button class="hot" type="button" data-hot="flow" style="--x:22.5%;--y:22.4%;--w:52.4%;--h:28.2%" aria-label="Tokens over time"><i>2</i></button>
+              <button class="hot" type="button" data-hot="burn" style="--x:74.9%;--y:22.4%;--w:22.9%;--h:28.2%" aria-label="Burn right now"><i>3</i></button>
+              <button class="hot" type="button" data-hot="lanes" style="--x:2.22%;--y:50.7%;--w:95.6%;--h:27.9%" aria-label="Lanes"><i>4</i></button>
+              <button class="hot" type="button" data-hot="machines" style="--x:2.22%;--y:84.3%;--w:95.6%;--h:10.5%" aria-label="Machines"><i>5</i></button>
+              <button class="hot" type="button" data-hot="team" style="--x:88.9%;--y:1.2%;--w:8.9%;--h:3.6%" aria-label="Add a machine and Team"><i>6</i></button>
+            </div>
+          </div>
+        </div>
+        <div class="col side">
+          <div class="pane">
+            <div class="pane-h"><h2>Six readings</h2><span class="sub">what each one promises</span></div>
+            <div class="pane-b">
+              <div class="reads" id="reads">
+                <button type="button" class="read" data-hot="tokens"><i>1</i><b>Tokens · last 24 hours</b><span>The total across every machine, its list-price estimate, and the split into cache read, cache write, output and input with each class's share. Unknown is a floor, never a zero.</span></button>
+                <button type="button" class="read" data-hot="flow"><i>2</i><b>Tokens over time</b><span>The last hour, day or week. Where a machine stopped reporting the chart hatches from that minute and says so; it never draws a dip.</span></button>
+                <button type="button" class="read" data-hot="burn"><i>3</i><b>Burn · right now</b><span>Tokens per minute over the last five minutes, the dollars per hour it implies, and each model's share and spend today, with the vendors' own marks.</span></button>
+                <button type="button" class="read" data-hot="lanes"><i>4</i><b>Lanes</b><span>One row per session: live or idle, project and branch, model, its last hour of activity, tokens in the last five minutes, subagents, and which machine it is on.</span></button>
+                <button type="button" class="read" data-hot="machines"><i>5</i><b>Machines</b><span>Every machine with its share of the total. A machine that stops reporting shows when it was last heard from and is left out of "right now" by name.</span></button>
+                <button type="button" class="read" data-hot="team"><i>6</i><b>Team, and Add a machine</b><span>People and machines rolled up over 24 hours or 7 days, every join link and who used it. A second machine joins with one link and one command.</span></button>
+              </div>
+            </div>
+            <div class="tfoot"><span>Dollars are list-price estimates from a dated, offline table</span><span>Demo is never mixed with measured data</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ 4 · CACHE COST ═══════ -->
+      <section class="space" data-space="cache" aria-label="What cache breaks cost">
+        <div class="pane">
+          <div class="pane-h"><h2>What a cache break costs you</h2><span class="sub">your prefix, your model, list price from the console's dated table</span><span class="r mono">prices checked 2026-09-20 · Opus 5.5 2026-09-22</span></div>
+          <div class="pane-b calc">
+            <div class="ctl">
+              <label class="f"><span>Model</span>
+                <select id="calcModel">
+                  <option value="claude-opus-5-5" selected>Claude Opus 5.5</option>
+                  <option value="claude-sonnet-5">Claude Sonnet 5</option>
+                  <option value="claude-fable-5-1">Claude Fable 5.1</option>
+                  <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+                  <option value="gpt-5.5">GPT-5.5</option>
+                  <option value="gpt-6-astra">GPT-6 Astra</option>
+                </select></label>
+              <label class="f"><span>Cached prefix the conversation hands back</span><input type="range" id="calcPrefix" min="20000" max="1000000" step="1000" value="366000"><output class="mono" id="calcPrefixOut">366,000 tokens</output></label>
+              <label class="f"><span>Breaks per day, across your sessions</span><input type="range" id="calcBreaks" min="1" max="60" step="1" value="8"><output class="mono" id="calcBreaksOut">8</output></label>
+              <p class="fine">A break is an idle gap longer than the cache lifetime, or a model switch inside a task. Either way the next turn writes the whole prefix again instead of reading it.</p>
+            </div>
+            <div class="out">
+              <div class="fig hero"><span class="l">Extra cost per break</span><span class="v" id="calcBreak">$1.76</span><span class="s mono" id="calcWhy">366,000 × ($5.00 write − $0.20 read) per M</span></div>
+              <div class="figs cols-2">
+                <div class="fig"><span class="l">Per day</span><span class="v" data-size="m" id="calcDay">$14.05</span></div>
+                <div class="fig"><span class="l">Per week, one person</span><span class="v" data-size="m" id="calcWeek">$98</span></div>
+              </div>
+              <p class="fine">An estimate at standard API list price, not a bill and not a subscription charge. <span id="calcBasis">Anthropic charges a 5-minute cache write at 1.25× the input rate; a read is a fifth of it.</span></p>
+            </div>
+            <div class="bymodel">
+              <table class="t">
+                <thead><tr><th>At this prefix, per break</th><th class="r">Rewrite billed at</th><th class="r">A read would be</th><th class="r">Extra per break</th><th class="r">Per day</th></tr></thead>
+                <tbody id="calcTable"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="tfoot"><span>usdPerMillion from <code>lib/collector/prices.json</code>, the table the console prices with</span><span>Anthropic rows: 5-minute write; OpenAI rows: automatic cache, no write premium</span></div>
+        </div>
+        <div class="col side">
+          <div class="pane">
+            <div class="pane-h"><h2>Why this is the number</h2><span class="sub">our own run, 22–23 September 2026, counted from the logs</span></div>
+            <div class="pane-b pad">
+              <div class="figs rows">
+                <div class="fig"><span class="l">Tokens in 24 hours, 122 agents, one machine</span><span class="v" data-size="l">6.97<small>B</small></span></div>
+                <div class="fig"><span class="l">Of them, cache reads</span><span class="v" data-size="m">97.06<small>%</small></span></div>
+                <div class="fig"><span class="l">List-price equivalent · cache reads' share of it</span><span class="v" data-size="m">$2,637 <small>· 51%</small></span></div>
+                <div class="fig"><span class="l">Mean cached prefix handed back per message</span><span class="v" data-size="m">366,011 <small>tokens · 18,485 messages</small></span></div>
+              </div>
+              <p class="say2">Half the bill was the agents re-reading what they already knew. That is what caching is for; the cost is in the breaks. On that run's mean prefix of 366,011 tokens, one break on Opus 5.5 writes $1.83 of cache that a read would have served for seven cents.</p>
+              <p class="say2">Anthropic's <code>/usage</code> shows cache misses for the current session. It does not show them across sessions, subagents or machines, or for Codex, and it does not price the week.</p>
+            </div>
+            <div class="tfoot"><span>Today: the read/write split per machine and model</span><span>v0.3, in review (PR #3): each break flagged in its lane and priced</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ 5 · PRIVACY ═══════ -->
+      <section class="space" data-space="privacy" aria-label="Privacy">
+        <div class="pane brief-pane">
+          <div class="brief two">
+            <h1>Nothing leaves a machine but counts.</h1>
+            <p>No telemetry, no update check, no account. The console never fetches anything from us; a test proves what crosses the wire on every commit.</p>
+          </div>
+        </div>
+        <div class="col main">
+          <div class="pane">
+            <div class="pane-h"><h2>What a reporting machine sends, per usage event</h2><span class="sub">the whole record; there are no other fields</span></div>
+            <div class="pane-b">
+              <table class="t rec">
+                <thead><tr><th>Field</th><th>What it is</th><th class="r">Example</th></tr></thead>
+                <tbody>
+                  <tr><td>tool</td><td>which agent wrote the transcript</td><td class="r mono">claude-code</td></tr>
+                  <tr><td>model</td><td>the model id, exactly as logged</td><td class="r mono">claude-opus-5-5</td></tr>
+                  <tr><td>minute</td><td>when, to the minute</td><td class="r mono">2026-09-24T14:26Z</td></tr>
+                  <tr><td>tokens</td><td>input · cache read · cache write · output</td><td class="r mono">1,204 · 366,011 · 0 · 981</td></tr>
+                  <tr><td>subagent</td><td>whether this was a child session</td><td class="r mono">false</td></tr>
+                  <tr><td>session · parent · project</td><td>HMAC-SHA256 hashes, keyed by a salt the console shares only with machines that join it</td><td class="r mono">9f3c… · 41a0… · c77e…</td></tr>
+                  <tr><td>machine name</td><td>whatever the console's owner typed when making the link</td><td class="r mono">Build box</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="tfoot"><span>One opt-in: <code>--share-project-names</code> also sends a folder's <em>name</em>, never its path. Off unless you pass it.</span></div>
+          </div>
+        </div>
+        <div class="col side">
+          <div class="pane">
+            <div class="pane-h"><h2>What never leaves</h2></div>
+            <div class="pane-b pad">
+              <ul class="never">
+                <li>prompts, replies, thinking</li><li>tool input and output</li><li>file paths, file names, file contents</li><li>git branches, command lines</li><li>credentials</li>
+              </ul>
+            </div>
+          </div>
+          <div class="pane">
+            <div class="pane-h"><h2>The proof</h2><span class="sub">a test, not a sentence</span></div>
+            <div class="pane-b pad">
+              <p class="say2"><code>test/hub-e2e.test.js</code> pushes synthetic transcripts, in the tools' real formats, with a canary planted in every private field, through a real reporter process and a real hub process. A relay records every request whole, every answer the hub sends back and every read the console serves, and the test checks each byte for every canary. A new route the canary does not read fails the suite.</p>
+              <div class="links"><a href="https://github.com/SamSnead85/agent-console/blob/main/test/hub-e2e.test.js" target="_blank" rel="noopener">the test <svg aria-hidden="true"><use href="#i-ext"/></svg></a><a href="https://github.com/SamSnead85/agent-console/blob/main/docs/COLLECTOR-CONTRACT.md" target="_blank" rel="noopener">field-by-field contract <svg aria-hidden="true"><use href="#i-ext"/></svg></a><a href="https://github.com/SamSnead85/agent-console/blob/main/SECURITY.md" target="_blank" rel="noopener">SECURITY.md <svg aria-hidden="true"><use href="#i-ext"/></svg></a></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ 6 · VERIFY ═══════ -->
+      <section class="space" data-space="verify" aria-label="Verify a download">
+        <div class="col main">
+          <div class="pane">
+            <div class="pane-h"><h2>Check what you downloaded</h2><span class="sub">the release page lists the SHA-256, and GitHub keeps a signed build attestation</span>
+              <span class="r"><span class="lenses os" role="group" aria-label="Operating system"><button type="button" data-os="mac">macOS</button><button type="button" data-os="linux">Linux</button><button type="button" data-os="win">Windows</button></span></span></div>
+            <div class="pane-b">
+              <div class="way">
+                <div class="k"><b>1 · The hash</b><span>must print exactly the line below. <span data-os-only="win">PowerShell prints it in upper case; that is the same hash.</span></span></div>
+                <div class="cmd" data-os-only="mac linux"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>shasum -a 256 lockedinlabs-agent-console-0.2.1.tgz</code><button class="tb copy" type="button" data-copy="shasum -a 256 lockedinlabs-agent-console-0.2.1.tgz"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="cmd" data-os-only="win"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>Get-FileHash lockedinlabs-agent-console-0.2.1.tgz</code><button class="tb copy" type="button" data-copy="Get-FileHash lockedinlabs-agent-console-0.2.1.tgz"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="expect"><span class="l">expected · v0.2.1</span><code class="mono">15e53aa80504c98ddda86f0772642d9a15a4547992ed3c29139731679e9c6aeb</code><button class="tb copy" type="button" data-copy="15e53aa80504c98ddda86f0772642d9a15a4547992ed3c29139731679e9c6aeb"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+              </div>
+              <div class="way">
+                <div class="k"><b>2 · The attestation</b><span>proves this exact file was built by this repository's release workflow, from the tag, on GitHub's runners. Needs the <code>gh</code> CLI.</span></div>
+                <div class="cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>gh attestation verify lockedinlabs-agent-console-0.2.1.tgz -R SamSnead85/agent-console</code><button class="tb copy" type="button" data-copy="gh attestation verify lockedinlabs-agent-console-0.2.1.tgz -R SamSnead85/agent-console"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="result">
+                  <div class="rh"><span class="st" data-tone="good">Verification succeeded</span><span class="mono">what the v0.2.1 attestation says, read on 24 Sep 2026 with <code>--format json</code></span></div>
+                  <dl class="kv">
+                    <dt>subject</dt><dd class="mono">lockedinlabs-agent-console-0.2.1.tgz · sha256 15e53aa8…9c6aeb</dd>
+                    <dt>built by</dt><dd class="mono">.github/workflows/release.yml @ refs/tags/v0.2.1</dd>
+                    <dt>from commit</dt><dd class="mono">19644fed1f6f69c9496039dc63919104cd1bb1d4</dd>
+                    <dt>trigger · runner</dt><dd class="mono">release · github-hosted</dd>
+                    <dt>predicate</dt><dd class="mono">https://slsa.dev/provenance/v1</dd>
+                    <dt>logged</dt><dd class="mono">rekor.sigstore.dev · 2026-09-22 22:36:49 −04:00</dd>
+                  </dl>
+                </div>
+              </div>
+              <div class="way">
+                <div class="k"><b>3 · Or read the source</b><span>the package is a plain <code>npm pack</code> of the tagged tree: <code>bin/</code>, <code>lib/</code>, <code>public/</code>, <code>server.js</code>. There is no compiled or minified file in it.</span></div>
+                <div class="cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>tar tzf lockedinlabs-agent-console-0.2.1.tgz</code><button class="tb copy" type="button" data-copy="tar tzf lockedinlabs-agent-console-0.2.1.tgz"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col side">
+          <div class="pane">
+            <div class="pane-h"><h2>How a release is built</h2><span class="sub"><code>.github/workflows/release.yml</code></span></div>
+            <div class="pane-b pad">
+              <div class="trace">
+                <div class="step" data-v="passed"><div class="node"><svg aria-hidden="true"><use href="#i-check"/></svg></div><div><div class="k">Tag<span class="v">v0.2.1</span></div><div class="what">A release is published from the tag. Nothing is built on anyone's own machine.</div></div></div>
+                <div class="step" data-v="passed"><div class="node"><svg aria-hidden="true"><use href="#i-check"/></svg></div><div><div class="k">Test<span class="v">npm test · smoke:pack</span></div><div class="what">The whole suite, including the multi-machine privacy canary, then a packed install started in <code>--demo</code>.</div></div></div>
+                <div class="step" data-v="passed"><div class="node"><svg aria-hidden="true"><use href="#i-check"/></svg></div><div><div class="k">Pack<span class="v">npm pack</span></div><div class="what">The version in <code>package.json</code> must equal the tag; <code>SHA256SUMS</code> is written beside the tarball.</div></div></div>
+                <div class="step" data-v="passed"><div class="node"><svg aria-hidden="true"><use href="#i-lock"/></svg></div><div><div class="k">Attest<span class="v">build provenance</span></div><div class="what">A signed attestation records the workflow, the commit and the file's digest, in Sigstore's public log.</div></div></div>
+                <div class="step" data-v="passed"><div class="node"><svg aria-hidden="true"><use href="#i-check"/></svg></div><div><div class="k">Attach<span class="v">gh release upload</span></div><div class="what">The tarball and its sums land on the release page. The one-line install and every join command fetch exactly this file.</div></div></div>
+              </div>
+            </div>
+            <div class="tfoot"><span>Actions pinned by commit</span><span>gitleaks and a public-safety check on every push</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ 7 · POLICY ═══════ -->
+      <section class="space" data-space="policy" aria-label="Policy">
+        <div class="col main">
+          <div class="pane">
+            <div class="pane-h"><h2>A policy file that compiles into Claude Code's own controls</h2><span class="sub">version 1, as <code>policy init</code> writes it</span><span class="r"><span class="chip" data-tone="warn">v0.3 · in review</span></span></div>
+            <div class="pane-b code-b">
+<pre class="code mono"><span class="c"># agent-policy.yaml · Meridian Healthcare · platform team</span>
+version: 1
+on_error: ask
+model_allowlist: [haiku, sonnet, opus]
+routing:
+  roles:
+    search:      { model: haiku }
+    exploration: { model: haiku }
+    log_reading: { model: haiku }
+    code_edit:   { model: opus, with_verifying_test: sonnet }
+escalation:
+  after_failures: 2
+  model: opus
+budgets:
+  per_run: { tokens: 200000, usd: 50 }
+  per_day: { tokens: 1000000, usd: 200 }
+cache:
+  forbid_model_switch_in_task: true
+  idle_gap_minutes: 5
+gates:
+  force_push: ask
+  delete_outside_repo: block
+  pipe_to_interpreter: ask
+  credential_read: ask
+  production_migration: block</pre>
+            </div>
+            <div class="tfoot"><span>Unknown fields fail validation</span><span>An organisation policy overrides a repository's, field by field</span><span>JSON with the same fields works too</span></div>
+          </div>
+        </div>
+        <div class="col side">
+          <div class="pane">
+            <div class="pane-h"><h2>What it writes, and what it will not claim</h2></div>
+            <div class="pane-b pad">
+              <div class="cmdlist">
+                <div><code>agent-console policy init</code><span>writes the file above with the version 1 defaults</span></div>
+                <div><code>agent-console policy diff</code><span>shows the <code>.claude/settings.json</code>, <code>.claude/agents/*.md</code> and <code>.claude/hooks/</code> it would write; read-only</span></div>
+                <div><code>agent-console policy apply</code><span>writes them, keeps restorable backups, prints the paths</span></div>
+                <div><code>agent-console policy remove</code><span>restores exactly what it changed, and only that</span></div>
+              </div>
+              <p class="say2">Every setting key and hook it writes is one Claude Code documents: project settings, agent frontmatter with <code>model</code> and <code>effort</code>, <code>PreToolUse</code> and <code>PreModelSwitch</code> hooks. Nothing invented.</p>
+              <p class="say2">What a hook cannot see, the compiler says so. Hard token and dollar budgets, proof of a verifying test and a failed-attempt count are reported as <b>not enforceable yet</b>, because a tool-launch hook has no verified balance and no view of those facts. Budgets stay analysis thresholds the console watches.</p>
+              <p class="say2">Hooks fail safe and never touch the network. On a malformed input or a policy read error, <code>on_error</code> applies, defaulting to ask.</p>
+            </div>
+            <div class="tfoot"><span>The file and parser: PR #11</span><span>The compiler: PR #13</span><span>A managed-settings bundle for MDM follows</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ 8 · ENTERPRISE ═══════ -->
+      <section class="space" data-space="enterprise" aria-label="When one console is not enough">
+        <div class="pane brief-pane">
+          <div class="brief two">
+            <h1>When one console is not enough.</h1>
+            <p>A team that outgrows one laptop gets the self-hosted hub for free, in this repository. An organisation that needs someone accountable for sign-on, enforcement and audit is what Agent Console Enterprise is for. Both read the same records and the same policy file.</p>
+          </div>
+        </div>
+        <div class="col main">
+          <div class="pane">
+            <div class="pane-h"><h2>In this repository, free, MIT</h2><span class="sub">no CLA, no <code>ee/</code> directory, no telemetry, no licence key anywhere</span></div>
+            <div class="pane-b">
+              <div class="rows">
+                <div><b>The console and everything it draws</b><span>the local reader for Claude Code and Codex</span></div>
+                <div><b>The self-hosted hub</b><span>join by link, TLS pinning, device tokens, team and machine roll-ups, 8 to 90 days of retention</span></div>
+                <div><b>The accounting spec and conformance suite</b><span>ground-truth totals for streamed duplicates, subagent sidechains, resumed sessions, Codex counter resets, one person on two machines</span></div>
+                <div><b>The policy layer</b><span>the file, the parser, <code>init | diff | apply | remove</code> <span class="chip" data-tone="warn">in review</span></span></div>
+                <div><b>Interop</b><span><code>/metrics</code> for Prometheus, OpenTelemetry ingest, LiteLLM and Kong gateway shapes <span class="chip" data-tone="warn">in review · PR #8</span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col side">
+          <div class="pane">
+            <div class="pane-h"><h2>Agent Console Enterprise</h2><span class="sub">by LockedIn Labs</span><span class="r"><span class="chip" data-tone="quiet">in build</span></span></div>
+            <div class="pane-b">
+              <div class="rows">
+                <div><b>Sign-on</b><span>Entra ID, Okta, Google Workspace; groups to roles</span></div>
+                <div><b>Policy, distributed</b><span>the same <code>agent-policy.yaml</code>, versioned and signed per group, with a view of what each machine applied</span></div>
+                <div><b>Budgets that enforce</b><span>per person, team and project, at a gateway; the repository only warns</span></div>
+                <div><b>Signed audit export</b><span>every decision, block and refusal as evidence an auditor can verify</span></div>
+                <div><b>History</b><span>beyond 90 days, across organisations for a consultancy</span></div>
+              </div>
+            </div>
+            <div class="tfoot"><span><a href="https://lockedinlabs.ai" target="_blank" rel="noopener">lockedinlabs.ai</a></span><span>Nothing in the repository phones home, and it never will</span></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <footer class="status" id="status">
+    <span class="mono">v0.2.1 · 23 Sep 2026</span><span class="mono">MIT</span><span class="mono">Node ≥ 22</span><span class="mono plat">macOS · Linux · Windows</span>
+    <span class="right">
+      <span class="sc"><span class="kbd">1</span>–<span class="kbd">8</span> sections · <span class="kbd">T</span> theme · <span class="kbd">?</span> keys</span>
+      <button type="button" id="themeBtn2">Graphite</button>
+    </span>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim" data-open="no"></div>
+<div class="sheet" id="sheet" data-open="no" role="dialog" aria-label="Keyboard shortcuts">
+  <h2>Keyboard</h2>
+  <dl>
+    <div><dt><span class="kbd">1</span>–<span class="kbd">8</span></dt><dd>Jump to a section</dd></div>
+    <div><dt><span class="kbd">[</span> <span class="kbd">]</span></dt><dd>Previous, next section</dd></div>
+    <div><dt><span class="kbd">J</span> <span class="kbd">K</span></dt><dd>Next, previous section</dd></div>
+    <div><dt><span class="kbd">T</span></dt><dd>Graphite or light</dd></div>
+    <div><dt><span class="kbd">?</span></dt><dd>This sheet</dd></div>
+    <div><dt><span class="kbd">Esc</span></dt><dd>Close</dd></div>
+  </dl>
+</div>
+<div class="toast" id="toast" data-open="no" role="status"></div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

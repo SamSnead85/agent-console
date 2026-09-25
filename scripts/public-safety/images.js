@@ -74,14 +74,40 @@ function jpegSegments(buf) {
 
 function gifFindings(buf) {
   const found = [];
-  // Comment (0xFE) and application extensions other than looping carry metadata.
-  for (let i = 13; i < buf.length - 2; i++) {
-    if (buf[i] !== 0x21) continue;
-    if (buf[i + 1] === 0xfe) found.push({ kind: "GIF comment", detail: "" });
-    if (buf[i + 1] === 0xff && buf[i + 2] === 0x0b) {
-      const id = buf.subarray(i + 3, i + 14).toString("latin1");
+  // Walk GIF blocks: compressed image data can contain the same bytes as an
+  // extension introducer, and scanning every byte flags clean animations.
+  if (buf.length < 13) return found;
+  let at = 13;
+  if (buf[10] & 0x80) at += 3 * (1 << ((buf[10] & 7) + 1));
+  const skipSubblocks = () => {
+    while (at < buf.length) {
+      const size = buf[at++];
+      if (!size) break;
+      at += size;
+    }
+  };
+  while (at < buf.length) {
+    const block = buf[at++];
+    if (block === 0x3b) break; // trailer
+    if (block === 0x2c) { // image descriptor, local palette, LZW data
+      if (at + 9 > buf.length) break;
+      const packed = buf[at + 8];
+      at += 9;
+      if (packed & 0x80) at += 3 * (1 << ((packed & 7) + 1));
+      at++; // LZW minimum code size
+      skipSubblocks();
+      continue;
+    }
+    if (block !== 0x21 || at >= buf.length) break;
+    const label = buf[at++];
+    const size = buf[at++];
+    if (label === 0xfe) found.push({ kind: "GIF comment", detail: "" });
+    if (label === 0xff) {
+      const id = buf.subarray(at, at + size).toString("latin1");
       if (!/^(NETSCAPE2\.0|ANIMEXTS1\.0)$/u.test(id)) found.push({ kind: "GIF application data", detail: id });
     }
+    at += size;
+    skipSubblocks();
   }
   return found;
 }
