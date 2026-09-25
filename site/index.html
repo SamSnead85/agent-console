@@ -129,9 +129,16 @@
                 <div class="k"><b>From the source</b><span>clone it, or press <b>Code → Download ZIP</b> on GitHub, then start it with Node directly. No build step; there are no dependencies to install.</span></div>
                 <div class="cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>git clone https://github.com/SamSnead85/agent-console.git &amp;&amp; cd agent-console &amp;&amp; node bin/agent-console.mjs --open</code><button class="tb copy" type="button" data-copy="git clone https://github.com/SamSnead85/agent-console.git && cd agent-console && node bin/agent-console.mjs --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
               </div>
+              <!-- fact:standalone -->
+              <div class="way coming">
+                <div class="k"><b>Standalone executable <span class="chip" data-tone="quiet">coming</span></b><span>One file per system with Node.js inside, for a computer without Node. This release does not carry them yet; the release that does gets an installer that checks the file against <code>SHA256SUMS</code> before it puts it in place.</span></div>
+              </div>
+              <!-- /fact:standalone -->
+              <!-- fact:registries -->
               <div class="way coming">
                 <div class="k"><b>npm and Homebrew <span class="chip" data-tone="quiet">coming</span></b><span>The package is not on the npm registry yet, and there is no Homebrew formula. When it is published, this becomes the one line: <code>npx @lockedinlabs/agent-console --open</code>. Until then the release link above is the install, and it is the one CI tests.</span></div>
               </div>
+              <!-- /fact:registries -->
             </div>
           </div>
         </div>
@@ -362,7 +369,7 @@
           <div class="pane">
             <div class="pane-h"><h2>A policy file that compiles into Claude Code's own controls</h2><span class="sub">version 1, as <code>policy init</code> writes it</span><span class="r"><span class="chip" data-tone="warn">v0.3 · in review</span></span></div>
             <div class="pane-b code-b">
-<pre class="code mono"><span class="c"># agent-policy.yaml · Meridian Healthcare · platform team</span>
+<pre class="code mono"><span class="c"># agent-policy.yaml · platform team</span>
 version: 1
 on_error: ask
 model_allowlist: [haiku, sonnet, opus]

@@ -19,6 +19,8 @@ docker run --name agent-console-hub --network host \
 
 Open `http://127.0.0.1:6787` on that host and use the printed sign-in link.
 Keep the terminal open, or run with `-d` and read `docker logs agent-console-hub`.
+`docker ps` shows it `healthy` once the reporting port answers its join page
+(the image's `HEALTHCHECK`); the reporting port is fixed at 6788 in the image.
 Only the reporting port should be reachable from other machines. The default
 hub refuses public-network clients; use a private network and do not add
 `--allow-public` unless you intend to accept them.

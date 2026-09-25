@@ -1,8 +1,23 @@
 name: Download page
 
+# The page is built from site/ with facts read from the latest published
+# release at build time (scripts/site-facts.mjs): its version, its SHA-256,
+# its attestation, the standalone executables if it carries them, and whether
+# npm and Homebrew really serve it. A fact that cannot be read fails the build.
+#
+# A pull request builds it; a push to main builds and, only when GitHub Pages
+# is enabled for this repository, deploys it. Enabling Pages is the owner's
+# decision (a repository setting); until then the deploy job is skipped and
+# says so, and no environment or deployment is created.
 on:
   push:
     branches: [main]
+    paths:
+      - site/**
+      - scripts/site-facts.mjs
+      - lib/collector/prices.json
+      - .github/workflows/pages.yml
+  pull_request:
     paths:
       - site/**
       - scripts/site-facts.mjs
@@ -14,21 +29,20 @@ permissions:
   contents: read
 
 concurrency:
-  group: pages
+  group: pages-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
+    name: Build the download page
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     permissions:
       contents: read
-      pages: write
-      id-token: write
+      pages: read
       attestations: read
+    outputs:
+      enabled: ${{ steps.pages.outputs.enabled }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -40,9 +54,36 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/site-facts.mjs
-      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
       - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: dist/site
+      - name: Is GitHub Pages enabled?
+        id: pages
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/pages" --jq .build_type > build_type 2>/dev/null; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "GitHub Pages is enabled ($(cat build_type)); deploying."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::GitHub Pages is not enabled for this repository, so the page was built and checked but not deployed. The owner enables it with Source: GitHub Actions."
+          fi
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    if: github.event_name != 'pull_request' && needs.build.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

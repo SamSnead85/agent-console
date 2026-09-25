@@ -2,7 +2,9 @@
 
 The release executables do not require Node.js. They are prepared for macOS
 (Apple silicon and Intel), Linux (arm64 and x64), and Windows (x64). Use the
-assets attached to a release; source ZIP files are not executables.
+assets attached to a release; source ZIP files are not executables. Only a
+release built with `binaries.yml` carries them (0.3.0 and later); for an
+earlier release the installers stop without installing anything.
 
 ## macOS or Linux
 
@@ -31,16 +33,18 @@ Download, inspect, and run the script:
 ```powershell
 Invoke-WebRequest https://raw.githubusercontent.com/SamSnead85/agent-console/main/install.ps1 -OutFile install.ps1
 Get-Content .\install.ps1
-.\install.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
 The one-line form is:
 
 ```powershell
-Invoke-WebRequest https://raw.githubusercontent.com/SamSnead85/agent-console/main/install.ps1 -OutFile install.ps1; .\install.ps1
+Invoke-WebRequest https://raw.githubusercontent.com/SamSnead85/agent-console/main/install.ps1 -OutFile install.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-It installs to the current user's `AppData\Local\Programs\AgentConsole`.
+`-ExecutionPolicy Bypass` applies to that one PowerShell process only, so a
+downloaded script can run on a computer whose policy would otherwise refuse
+it; it changes no setting. It installs to the current user's `AppData\Local\Programs\AgentConsole`.
 Set `AGENT_CONSOLE_INSTALL_DIR` to choose another user directory. It compares
 the SHA-256 digest using `Get-FileHash` before installing.
 

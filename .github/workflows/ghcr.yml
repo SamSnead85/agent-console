@@ -1,42 +1,124 @@
-name: Publish team hub image
-
+name: Team hub image
+# The Linux team hub image (docs/docker-hub.md), for amd64 and arm64. arm64 is
+# built and started under QEMU on the amd64 runner. On a pull request that
+# touches what goes into the image, both architectures are built and started
+# until their HEALTHCHECK reports healthy; nothing is pushed. For a published
+# release, release.yml calls this only after the tag passed its source and
+# required-check authorization: the same build and start, then the image is
+# pushed as ghcr.io/<owner>/agent-console:<tag> (never a floating tag) and its
+# digest gets a signed build provenance attestation stored beside it.
 on:
-  release:
-    types: [published]
-
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - scripts/docker-smoke.mjs
+      - .github/workflows/ghcr.yml
+      - package.json
+      - server.js
+      - bin/**
+      - lib/**
+      - public/**
+  workflow_call:
+    inputs:
+      tag:
+        description: The release tag to build from
+        required: true
+        type: string
 permissions:
   contents: read
-
 jobs:
-  image:
+  check:
+    name: Build and start (amd64, arm64)
+    if: ${{ inputs.tag == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
-      packages: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.release.tag_name }}
           persist-credentials: false
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - name: Build and start each architecture
+        run: |
+          for arch in amd64 arm64; do
+            docker buildx build --platform "linux/$arch" --load --tag "agent-console:check-$arch" .
+            node scripts/docker-smoke.mjs "agent-console:check-$arch" --platform "linux/$arch" --port 6900
+          done
+
+  publish:
+    name: Build, start, push and attest
+    if: ${{ inputs.tag != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
       - name: Match the release tag
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ inputs.tag }}
         run: test "$TAG" = "v$(node -p "require('./package.json').version")"
       - name: Test the release source
         run: npm test
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      # Proven to start before anything is pushed.
+      - name: Build and start each architecture
+        run: |
+          for arch in amd64 arm64; do
+            docker buildx build --platform "linux/$arch" --load --tag "agent-console:check-$arch" .
+            node scripts/docker-smoke.mjs "agent-console:check-$arch" --platform "linux/$arch" --port 6900
+          done
       - name: Log in to GHCR
         env:
           GH_TOKEN: ${{ github.token }}
         run: printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
       - name: Build and push both Linux architectures
+        id: push
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ inputs.tag }}
         run: |
           image="ghcr.io/${GITHUB_REPOSITORY,,}"
-          docker buildx create --use
           docker buildx build --platform linux/amd64,linux/arm64 \
-            --provenance=true \
+            --provenance=mode=max --sbom=true \
             --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
             --label "org.opencontainers.image.version=$TAG" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --label "org.opencontainers.image.licenses=MIT" \
+            --metadata-file "$RUNNER_TEMP/image.json" \
             --tag "$image:$TAG" --push .
+          digest="$(node -p "require(process.env.RUNNER_TEMP + '/image.json')['containerimage.digest']")"
+          echo "$digest" | grep -Eq '^sha256:[0-9a-f]{64}$'
+          echo "name=$image" >> "$GITHUB_OUTPUT"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "Pushed $image:$TAG at $digest"
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ steps.push.outputs.name }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+      - name: The pushed image is the attested one
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE: ${{ steps.push.outputs.name }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: gh attestation verify "oci://$IMAGE@$DIGEST" -R "$GITHUB_REPOSITORY"
