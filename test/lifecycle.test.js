@@ -15,7 +15,7 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 import { readConfig, closest } from "../lib/config.js";
-import { parse, failureReason, findMovedHub, takeReporterLock, runningReporter } from "../lib/reporter.js";
+import { parse, failureReason, findMovedHub, takeReporterLock, runningReporter, backgroundArgs } from "../lib/reporter.js";
 import { createRegistry, labelProblem, cleanLabel } from "../lib/hub/registry.js";
 import { createStore } from "../lib/hub/store.js";
 import { buildConsole, deviceStatus, RECONNECT_GRACE_MS } from "../lib/hub/aggregate.js";
@@ -87,6 +87,27 @@ test("under --json a reporter's mistake is a JSON line on stdout", () => {
   assert.equal(line.kind, "usage");
   assert.match(line.message, /--intervall/u);
   assert.equal(r.stderr, "");
+});
+
+test("a background reporter is started with the arguments its runtime expects", (t) => {
+  const state = scratch(t);
+  const carried = ["--state-dir", state, "--interval", "30"];
+  // Under node, the script comes first; a standalone executable carries its own
+  // entry, so what it is given starts at the command.
+  assert.deepEqual(backgroundArgs(carried, { sea: false, entry: BIN }), [BIN, "report", ...carried]);
+  assert.deepEqual(backgroundArgs(carried, { sea: true, entry: BIN }), ["report", ...carried]);
+  // What each child then sees, run for real: packaging/sea/main.cjs puts the
+  // unpacked entry at argv[1] ahead of the given arguments, which node does
+  // for a script. Either way the dispatcher reaches `report` (here refusing an
+  // unenrolled state directory), never "not an Agent Console command".
+  for (const [sea, argv] of [[false, backgroundArgs([...carried, "--json"], { sea: false, entry: BIN })],
+    [true, [BIN, ...backgroundArgs([...carried, "--json"], { sea: true, entry: BIN })]]]) {
+    const r = spawnSync(process.execPath, argv, { encoding: "utf8" });
+    const line = JSON.parse(r.stdout.trim());
+    assert.equal(r.status, 2, `sea=${sea}: ${r.stdout}`);
+    assert.doesNotMatch(line.message, /is not an Agent Console command/u, `sea=${sea}`);
+    assert.match(line.message, /has not joined a console yet/u, `sea=${sea}`);
+  }
 });
 
 // ---------------------------------------------------------------------------

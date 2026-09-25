@@ -31,6 +31,19 @@ identify which company made a model in the usage it shows. Using them implies no
 affiliation with or endorsement by either company. Simple Icons releases its SVG
 path data under CC0 1.0; that dedication covers the drawing, not the trademark.
 
+## Node.js, inside the standalone executables
+
+The standalone executables attached to each release
+([docs/executables.md](docs/executables.md)) are a copy of Node.js with this
+package inside. Node.js is © OpenJS Foundation and Node.js contributors, under
+the MIT licence, and bundles V8, libuv, OpenSSL, ICU and other components under
+their own licences. Node.js's complete licence file, covering each of them,
+ships inside every executable (unpacked beside the package as `LICENSE.node`)
+and beside it in every `.tar.gz`. The npm package and the release tarball
+contain no Node.js. The executables are built with
+[postject](https://github.com/nodejs/postject) (MIT), a build tool that is not
+shipped.
+
 ## Data
 
 `lib/collector/prices.json` and `lib/prices.js` hold the vendors' published

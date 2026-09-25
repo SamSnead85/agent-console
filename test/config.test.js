@@ -51,7 +51,7 @@ test("every printed command runs this copy: never a bare name npx could resolve 
   assert.equal(fromNpx, verifiedRun("0.2.1"), "through npx, the command checks the release file first");
   assert.match(releaseUrl("0.2.1"), /^https:\/\/github\.com\/SamSnead85\/agent-console\/releases\/download\/v0\.2\.1\/lockedinlabs-agent-console-0\.2\.1\.tgz$/u);
   const fromDownload = invocation("0.2.1", "/home/dev/agent-console-main/bin/agent-console.mjs");
-  assert.equal(fromDownload, `node "${path.resolve("/home/dev/agent-console-main/bin/agent-console.mjs")}"`);
+  assert.equal(fromDownload, `node '${path.resolve("/home/dev/agent-console-main/bin/agent-console.mjs")}'`);
   for (const text of [help(fromDownload), reporterHelp(fromDownload), help(fromNpx), reporterHelp(fromNpx)]) {
     assert.doesNotMatch(text, /npx\s+(--yes\s+)?agent-console\b/u);
     assert.doesNotMatch(text, /^\s*agent-console\s/mu, "a bare command line");

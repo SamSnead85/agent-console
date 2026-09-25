@@ -87,7 +87,9 @@ explicitly (`PR checks`).
 
 Versions follow [SemVer](https://semver.org). CI builds each release's package
 from its tag and attaches it with a SHA-256 checksum and a signed build
-provenance attestation (`gh attestation verify`). Every user-visible change
+provenance attestation (`gh attestation verify`). The standalone executables
+are built the same way, each on its own platform, and carry the same checks
+([executables.md](executables.md)). Every user-visible change
 has a plain-language line in [CHANGELOG.md](../CHANGELOG.md) (`PR checks`).
 
 ## 12. Security reports are answered on a clock

@@ -27,7 +27,7 @@ test('--help lists the policy command, and policy --help prints its usage with a
     assert.match(usage.stdout, /policy diff\|apply\|remove/u);
     // Never a bare `agent-console`: that name fetches an unrelated package.
     assert.doesNotMatch(usage.stdout, /(?:^|\s)agent-console policy/mu);
-    assert.match(usage.stdout, /node "[^"]+agent-console\.mjs" policy/u);
+    assert.match(usage.stdout, /node '[^']+agent-console\.mjs' policy/u);
   }
   assert.equal(run(['policy', 'frobnicate']).status, 1);
 });
