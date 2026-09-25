@@ -201,7 +201,8 @@ test("the burn is the average of the last fifteen minutes; a lane's five minutes
 
 test("one reporter per state directory: a live holder is named, a dead one is cleared", async (t) => {
   const dir = scratch(t);
-  const holder = spawn(process.execPath, ["-e", "setTimeout(() => {}, 60000)"], { stdio: "ignore" });
+  // A stand-in reporter: its command line names Agent Console, as a real one's does.
+  const holder = spawn(process.execPath, ["-e", "setTimeout(() => {}, 60000)", "agent-console.mjs", "report"], { stdio: "ignore" });
   t.after(() => holder.kill("SIGKILL"));
   fs.writeFileSync(path.join(dir, "reporter.lock"), JSON.stringify({ pid: holder.pid }));
   assert.equal(runningReporter(dir), holder.pid);
@@ -333,4 +334,43 @@ test("a demo console prints a new sign-in link on request, from its page or from
   const second = spawnSync(process.execPath, [BIN, "--demo", "--port", String(port), "--report-port", "0"], { encoding: "utf8", timeout: 20_000 });
   assert.equal(second.status, 0, second.stdout + second.stderr);
   assert.match(second.stdout, /A demo of Agent Console is already running at .*\n.*printed a new sign-in link in the window where it runs/u);
+});
+
+test("after leave, a link for the same person and machine name brings back the entry that left, with its history", () => {
+  const registry = createRegistry({ dir: null });
+  const joined = registry.redeem(registry.invite({ person: "Reviewer", machine: "Second box" }).code);
+  assert.equal(registry.leave(joined.device.id), true);
+  // The reporter deleted its enrolment, token included: no proof, only the same person and name.
+  const back = registry.redeem(registry.invite({ person: "Reviewer", machine: "Second box" }).code);
+  assert.equal(back.reattached, true);
+  assert.equal(back.device.id, joined.device.id);
+  assert.equal(registry.list().filter((d) => d.label === "Second box").length, 1, "no second machine of the same name");
+  // A machine the console removed is not brought back, and another person's name is not matched.
+  registry.revoke(back.device.id);
+  const removedName = registry.redeem(registry.invite({ person: "Reviewer", machine: "Second box" }).code);
+  assert.notEqual(removedName.device.id, joined.device.id);
+  assert.equal(registry.leave(removedName.device.id), true);
+  const otherPerson = registry.redeem(registry.invite({ person: "Someone else", machine: "Second box" }).code);
+  assert.notEqual(otherPerson.device.id, removedName.device.id);
+});
+
+test("a stale lock whose process id now belongs to another program is cleared, and that program is never signalled", { skip: process.platform === "win32" }, async (t) => {
+  const dir = scratch(t);
+  const other = spawn(process.execPath, ["-e", "setTimeout(() => {}, 60000)"], { stdio: "ignore" });
+  t.after(() => other.kill("SIGKILL"));
+  let ended = null;
+  other.once("exit", (code, signal) => { ended = signal || code; });
+  const lock = path.join(dir, "reporter.lock");
+  fs.writeFileSync(lock, JSON.stringify({ pid: other.pid }));
+  // Old enough that no heartbeat vouches for it either.
+  const old = new Date(Date.now() - 10 * 60_000);
+  fs.utimesSync(lock, old, old);
+  assert.equal(runningReporter(dir), null);
+  const stop = spawnSync(process.execPath, [BIN, "stop", "--state-dir", dir], { encoding: "utf8" });
+  assert.equal(stop.status, 0);
+  assert.match(stop.stdout, /No reporter is running/u);
+  const report = spawnSync(process.execPath, [BIN, "report", "--once", "--json", "--state-dir", dir], { encoding: "utf8" });
+  assert.notEqual(report.status, 4, "refused as if another reporter held the lock");
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  assert.equal(ended, null, "the unrelated program was signalled");
 });

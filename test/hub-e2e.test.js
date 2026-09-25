@@ -406,6 +406,8 @@ test("joining the same console again keeps the machine's entry; a second reporte
   const state = path.join(root, "state");
   const first = await run(["join", (await invite(hub, "You", "Laptop")).link, "--once", "--home", home, "--state-dir", state]);
   assert.equal(first.code, 0, first.out + first.err);
+  assert.match(first.out, /once, then this command exits/u);
+  assert.doesNotMatch(first.out, /Leave this window open/u);
   const again = await run(["join", (await invite(hub, "You", "Laptop")).link, "--once", "--json", "--home", home, "--state-dir", state]);
   assert.equal(again.code, 0, again.out + again.err);
   assert.ok(again.out.includes('"event":"rejoined"'), again.out);
@@ -417,6 +419,8 @@ test("joining the same console again keeps the machine's entry; a second reporte
   // A reporter running for this state directory refuses a second one.
   const running = spawn(process.execPath, [BIN, "report", "--home", home, "--state-dir", state], { stdio: ["ignore", "pipe", "pipe"] });
   t.after(() => running.kill("SIGKILL"));
+  let runningOut = "";
+  running.stdout.on("data", (chunk) => { runningOut += chunk; });
   for (let i = 0; i < 100 && !fs.existsSync(path.join(state, "reporter.lock")); i += 1) await new Promise((r) => setTimeout(r, 50));
   const second = await run(["report", "--once", "--home", home, "--state-dir", state]);
   assert.equal(second.code, 4, second.out + second.err);
@@ -425,6 +429,18 @@ test("joining the same console again keeps the machine's entry; a second reporte
   const left = await run(["leave", "--state-dir", state]);
   assert.equal(left.code, 0, left.out + left.err);
   assert.match(left.out, new RegExp(`Stopped the reporter that was running \\(process ${running.pid}\\)`, "u"));
+  // The reporter says so in its own window.
+  if (running.exitCode === null) await new Promise((r) => running.once("exit", r));
+  assert.match(runningOut, /stopped from another window/u);
+
+  // Joining again after leave, for the same person and machine name, brings the entry back.
+  const back = await run(["join", (await invite(hub, "You", "Laptop")).link, "--once", "--json", "--home", home, "--state-dir", state]);
+  assert.equal(back.code, 0, back.out + back.err);
+  assert.ok(back.out.includes('"event":"rejoined"'), back.out);
+  const after = await consoleView(hub);
+  assert.equal(after.devices.length, 1, "a second machine of the same name after leave");
+  assert.equal(after.devices[0].status, "reporting");
+  assert.ok(after.devices[0].day.tokens.total > 0, "its history stayed with it");
 });
 
 test("a reporter follows its console to a new reporting port, by its pinned certificate", async (t) => {
