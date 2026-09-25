@@ -426,6 +426,11 @@
   function paintAlerts() {
     const alerts = (D.alerts || []).slice(0, 3);
     $("alertPanel").hidden = alerts.length === 0;
+    // The rail carries the count; the panel below carries the words.
+    const chip = $("alertChip");
+    chip.hidden = !(D.alerts || []).length;
+    chip.textContent = "▲ " + plural((D.alerts || []).length, "live alert");
+    chip.title = "Live alerts on this machine in the last hour. Open the panel.";
     const labels = { loop: "Repeated tool call", spike: "Burn spike", stall: "Spending without progress" };
     $("alertRows").innerHTML = alerts.map((a) => {
       const lane = (D.lanes || []).find((item) => item.key === a.laneHash?.slice(0, 16));
@@ -498,6 +503,11 @@
     chart.goal = goal;
     chart.goalMax = Math.max(...goal, 1) * 1.12;
     chart.series = s;
+    // The scale, said once: the busiest whole step in the period, and how long a step is.
+    const peak = Math.max(...s.values.slice(0, -1), 0);
+    const stepText = s.step >= 86_400_000 ? "day" : s.step >= 3_600_000 ? `${Math.round(s.step / 3_600_000)} h` : s.step >= 60_000 ? `${Math.round(s.step / 60_000)} min` : "step";
+    $("cPeak").hidden = peak <= 0;
+    $("cPeak").innerHTML = `peak <b>${fmt(peak)}</b> / ${stepText}`;
     // No travel without the loop: a paused or reduced-motion chart shows the reading as it is.
     if (paused || reducedMotion.matches) { chart.vals = goal.slice(); chart.max = chart.goalMax; }
   }
@@ -668,6 +678,7 @@
     if (paused && D) { Object.assign(shown, target); setChartGoal(); paintText(); drawChart(); }
     if (!paused) startLoop();
   });
+  $("alertChip").addEventListener("click", () => $("alertPanel").scrollIntoView({ behavior: reducedMotion.matches || paused ? "auto" : "smooth", block: "start" }));
   $("voidBtn").addEventListener("click", (ev) => {
     showUnavailable = !showUnavailable;
     const b = ev.currentTarget;
@@ -721,6 +732,13 @@
        <span class="names">${models.slice(0, 3).map((m) => `<b>${esc(m.label)}</b> ${pct(m.share, 0)}`).join(" · ")}</span></span>`
     : `<span class="names">—</span>`;
   const costCell = (c) => c.status === "none" ? "—" : c.status === "unpriced" ? "unpriced" : money(c.usd) + (c.status === "partial" ? `<span class="sub">partial</span>` : "");
+  /* On a phone a table becomes stacked rows, each cell under its own label:
+     the label is the column's header, carried on the cell so CSS can draw it. */
+  function labelCells(tableId) {
+    const table = $(tableId);
+    const heads = [...table.tHead.rows[0].cells].map((th) => th.textContent.trim());
+    for (const row of table.tBodies[0].rows) [...row.cells].forEach((td, i) => { td.dataset.label = td.colSpan > 1 ? "" : heads[i] || ""; });
+  }
 
   function paintTeam() {
     if (!D) return;
@@ -777,6 +795,8 @@
         <td class="num r">${pct(a.shares.cacheRead)}</td><td class="num r">${pct(a.shares.cacheWrite)}</td>
         <td>${modelSplit(a.models)}</td><td class="num r">${costCell(a.cost)}</td><td class="r">${action}</td></tr>`;
     }).join("") : `<tr><td colspan="10">No machine yet.</td></tr>`;
+    labelCells("peopleTable");
+    labelCells("machineTable");
 
     $("invites").innerHTML = D.invitations.length ? D.invitations.map((i) => {
       const who = [i.person, i.machine].filter(Boolean).map(esc).join(" · ") || "Unnamed";
@@ -842,6 +862,7 @@
         <td class="num r" title="Spend in the work window per local default-branch integration, not attribution">${x.costPerOutcome.perDefaultMergeUsd === null ? "—" : money(x.costPerOutcome.perDefaultMergeUsd) + " est."}</td>
         <td class="num">${esc((x.branches || []).slice(0, 3).join(", ") || "—")}</td></tr>`).join("")
         : `<tr><td colspan="11">No project on this machine has transcripts in this period.</td></tr>`;
+      labelCells("projTable");
       $("projNote").textContent = (p.demo ? "DEMO — synthetic projects and Git figures. " : "") +
         (p.author === true ? "Git figures count only commits authored with this machine's Git email (user.email). " : p.author === false ? "No Git email (user.email) is set in one of these repositories, so its Git figures count every author. " : "") +
         "A commit referencing #N is a subject ending (#N) or a pull-request merge; it may name an issue rather than a merged pull request. " +

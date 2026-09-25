@@ -76,6 +76,7 @@
 
     <div class="conhead">
       <span class="cap"><i id="liveDot"></i>Agent console<b class="stamp demo-only">DEMO</b></span>
+      <button class="alertchip" id="alertChip" type="button" hidden aria-describedby="alertPanel">—</button>
       <span class="ctrls">
         <button id="voidBtn" type="button" aria-pressed="false">Show unavailable</button>
         <button id="motionBtn" type="button" aria-pressed="false">Pause motion</button>
@@ -101,11 +102,13 @@
           <div class="voidstate"><b>Reading unavailable</b><span id="voidReason">No machine has reported yet. Nothing is estimated in its place.</span></div>
           <svg id="cFlow" viewBox="0 0 520 100" preserveAspectRatio="none" role="img" aria-label="Tokens over time">
             <defs><linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--chart-top)"/><stop offset="1" stop-color="var(--chart-bottom)"/></linearGradient></defs>
+            <g id="cGridLines" aria-hidden="true"><line x1="0" x2="520" y1="25" y2="25"/><line x1="0" x2="520" y1="50" y2="50"/><line x1="0" x2="520" y1="75" y2="75"/></g>
             <rect id="cGap" x="0" y="0" width="0" height="100" fill="url(#hatchfill)"/>
             <path id="cArea" fill="url(#fg)"/>
             <path id="cLine" fill="none" stroke="var(--chart-line)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
             <line id="cHover" x1="0" x2="0" y1="0" y2="100" stroke="var(--quiet)" stroke-width="1" vector-effect="non-scaling-stroke" opacity="0"/>
           </svg>
+          <div class="peak" id="cPeak" hidden></div>
           <div class="gaplabel" id="cGapLabel" hidden></div>
           <div class="tip" id="cTip" hidden></div>
         </div>
@@ -158,14 +161,14 @@
     <section class="totals" id="teamTotals" aria-label="Total across every machine"></section>
 
     <div class="head"><h2>People</h2><span class="hint">Machines with the same person roll up into one row.</span></div>
-    <div class="tablewrap"><table class="grid" id="peopleTable">
+    <div class="tablewrap" tabindex="0" role="region" aria-label="Usage per person, scrollable"><table class="grid" id="peopleTable">
       <caption class="visually-hidden">Usage per person</caption>
       <thead><tr><th scope="col">Person</th><th scope="col">Machines</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r">Cache read</th><th scope="col" class="r">Cache write</th><th scope="col">Models</th><th scope="col" class="r">Est. cost</th></tr></thead>
       <tbody></tbody>
     </table></div>
 
     <div class="head"><h2>Machines</h2><span class="hint">A machine that stops reporting keeps its last contact time; its silence is never counted as zero.</span></div>
-    <div class="tablewrap"><table class="grid" id="machineTable">
+    <div class="tablewrap" tabindex="0" role="region" aria-label="Usage per machine, scrollable"><table class="grid" id="machineTable">
       <caption class="visually-hidden">Usage per machine</caption>
       <thead><tr><th scope="col">Machine</th><th scope="col">Person</th><th scope="col">Status</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r">Cache read</th><th scope="col" class="r">Cache write</th><th scope="col">Models</th><th scope="col" class="r">Est. cost</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
       <tbody></tbody>
@@ -185,7 +188,7 @@
       </span>
     </div>
     <section class="totals" id="projTotals" aria-label="Delivery evidence"></section>
-    <div class="tablewrap"><table class="grid" id="projTable">
+    <div class="tablewrap" tabindex="0" role="region" aria-label="Projects on this machine, scrollable"><table class="grid" id="projTable">
       <caption class="visually-hidden">Projects on this machine</caption>
       <thead><tr><th scope="col">Project</th><th scope="col" class="r">Tokens</th><th scope="col" class="r">Est. cost</th><th scope="col" class="r">Sessions</th><th scope="col" class="r">Commits</th><th scope="col" class="r">Lines + / −</th><th scope="col" class="r" title="Commits whose subject ends (#N) or merges a pull request; #N may name an issue">Commits referencing #N</th><th scope="col" class="r">Default merges</th><th scope="col" class="r">Spend / commit</th><th scope="col" class="r">Spend / default merge</th><th scope="col">Branches</th></tr></thead>
       <tbody></tbody>

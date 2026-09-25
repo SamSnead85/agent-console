@@ -2,6 +2,13 @@
 
 ## 0.3.0 — unreleased
 
+- The console's screens are sharper and work on a phone. Nothing on screen
+  is set below 12px; labels are in the text face and only numbers, ids,
+  models and branches are in the monospace one; the four token classes share
+  one hue and step by price per token; a live lane is lit along its edge and
+  the rail carries a count of live alerts; the chart names its peak. At 390px
+  wide the lanes and every table become stacked rows with nothing scrolling
+  sideways, and the light theme is as layered as the dark one.
 - Separate telemetry read and ingest credentials with independent live
   rotation. Exporters must use `metrics-token --scope ingest`.
 - Add `policy status --json` for installed-file/source drift checks; protect
