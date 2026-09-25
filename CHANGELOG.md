@@ -1,5 +1,58 @@
 # Changelog
 
+## Unreleased
+
+- Alerts are dated by the transcript line that raised them, not by when it
+  was read, and the stall's five minutes are measured on that clock too. An
+  alert older than the hour, or raised while a first run replays history, is
+  `historical`: listed as earlier, never counted as live, and never a desktop
+  notification. A first start over a month of transcripts no longer fills the
+  last hour with a month of loops.
+- A spike or a stall says how far above normal it is: the session's tokens in
+  the five minutes ending with the alert, its own median five minutes over
+  the day before, and the factor between them. Every alert names its lane.
+- Joined machines can send their alerts (`--share-alerts`) and their tool
+  activity (`--share-tool-activity`), each off unless passed, each counts,
+  kinds, minutes and salted hashes only (docs/COLLECTOR-CONTRACT.md). The
+  console says how many current machines are watched for alerts and names the
+  ones that are not, instead of reading their silence as "no alert".
+- Tool activity, counts only: each tool call is mapped on the machine to one
+  of eight kinds (read, edit, shell, search, web, agent, mcp, other) — never
+  its name, arguments, output, a path or an MCP server's name — and each
+  result to ok or error. Each lane carries its last five minutes of calls by
+  kind, its results and its last tool; a machine that does not share them is
+  marked as such, not shown as idle.
+- Every period is stacked by machine (and, on Projects, by project) at the
+  chart's own resolution — 3 minutes, 15 minutes, 2 hours, a day — over the
+  same span as the headline, so the bands add up to it. The week is also given
+  by this console's local calendar day, with its time zone named.
+- Counts over every lane, not only the 80 sent: sessions by tool, machine,
+  person and project, subagents, and the lanes the list folds away. A
+  subagent whose root last reported more than a day ago is folded under it
+  instead of becoming a lane of its own.
+- Projects: a project is its folder's hash, so two folders called `app` are two
+  rows, each with its parent folder's name; Git is read once per repository.
+  Each project's estimate says whether it is priced, partial (a floor) or
+  unpriced, and the payload's total says the same. The payload carries the
+  whole team's totals for every period at the same clock, and says whether
+  its period keeps branches and sessions (30 days does not).
+- Per machine names its denominator: the machines heard within the period and
+  not removed, from their own figures. A machine whose reporter never said
+  what it could not count has unknown drops (null), never 0, and the console
+  knows since when each machine has said.
+- OTel: a point sent again is dropped by its series and time, cumulative
+  points are counted as ignored, and each telemetry source names what its
+  token total adds up.
+- `claude-haiku-4-5` prices through its published alias of
+  `claude-haiku-4-5-20251001`; every model the benchmark generator writes has
+  a price.
+- Fixtures and schemas for building against the next payloads:
+  `fixtures/console-v0.4.json`, `fixtures/projects-v0.4.json`,
+  `docs/console-v0.4.schema.json`, `docs/projects-v0.4.schema.json`
+  (`node scripts/api-fixtures.mjs` regenerates the fixtures from the demo).
+- README: a "No Node.js?" path under Start here, and the nine standalone
+  files listed under Checking a download.
+
 ## 0.3.0 — 2026-09-25
 
 - Six things the screen said that were not so. On Team and Projects the

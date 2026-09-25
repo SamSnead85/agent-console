@@ -83,6 +83,58 @@ names are plain words, the values non-negative integers, at most 32 of them.
 The console shows them beside the figures ([accounting.md](accounting.md) §3.2).
 A 0.2 reporter does not send it, and a 0.2 console ignores it.
 
+`alerts` is optional and sent only when the reporter runs with
+`--share-alerts` (off unless given, each run). It is the list of alerts the
+reporter's own collector raised since its last acknowledged envelope, on the
+first envelope of a delivery only:
+
+```json
+"alerts": [
+  { "id": "64 hex characters", "kind": "spike", "at": "2026-09-20T12:34:00.000Z",
+    "sessionHash": "64 hex characters", "count": 440000, "historical": false }
+]
+```
+
+| Field | Meaning |
+| --- | --- |
+| `id` | A salted hash naming this alert, so a resent envelope is not counted twice. |
+| `kind` | `loop` (the same tool call with the same arguments, repeated), `spike` (one response far above the session's recent median), or `stall` (spending without a tool success). Nothing else. |
+| `at` | The minute of the transcript line that raised it — the line's own time, not when it was read. |
+| `sessionHash` | The session's hash, as on its records. |
+| `count` | The alert's one number: repeats for a loop, tokens for a spike or a stall. |
+| `historical` | `true` when it was raised while the reporter's first pass was reading history: the console lists it under "earlier" and never counts it as live. |
+
+The tool's name and arguments are hashed together on the machine to tell a
+repeat, and the hash stays there. An `alerts` list, even empty, tells the
+console this machine is watched; a reporter that does not send one is named
+on the console as *not watched*, not shown as having no alert. At most 100.
+
+`activity` is optional and sent only with `--share-tool-activity` (off unless
+given, each run): per session and minute, the tool calls counted by kind and
+the tool results counted as ok or error, since the last acknowledged envelope.
+
+```json
+"activity": [
+  { "sessionHash": "64 hex characters", "at": "2026-09-20T12:34:00.000Z",
+    "calls": { "read": 3, "edit": 2, "shell": 1, "search": 0, "web": 0, "agent": 0, "mcp": 1, "other": 0 },
+    "results": { "ok": 6, "error": 1 },
+    "lastTool": { "kind": "edit", "at": "2026-09-20T12:34:00.000Z" } }
+]
+```
+
+A tool's name is mapped to its kind on the machine that read it
+(`lib/collector/activity.js`): Claude Code's Read is `read`; Write, Edit and
+MultiEdit are `edit`; Bash is `shell`; Grep, Glob and LS are `search`;
+WebFetch and WebSearch are `web`; Task is `agent`; every MCP tool is `mcp`,
+whatever its server is called; and a tool the list does not know is `other`.
+Codex's shell and exec calls are `shell`, `apply_patch` is `edit`. The name
+itself, its arguments, its output, a path and a server's name have no field
+to go in: the console refuses an entry with any key or kind not listed here.
+All eight kinds are present in every entry. At most 500 entries.
+
+A console older than 0.4 ignores both lists; a 0.4 console refuses an
+envelope whose lists do not have exactly these shapes.
+
 ## How it is delivered
 
 `POST /api/ingest` on the console's reporting port, over TLS, with
@@ -179,7 +231,10 @@ estimate; anything else is unpriced, never priced at zero. The figure is a
 standard-API-price estimate, not an invoice: it cannot see subscriptions,
 negotiated rates, batch, data residency or taxes. Fast mode is priced from a
 row's `fast` rates where the vendor publishes them; without them it is
-unpriced.
+unpriced. `aliases` lists the short ids a vendor publishes for a dated one
+(`claude-haiku-4-5` for `claude-haiku-4-5-20251001`), each with its source and
+the day it was checked; an alias prices at its dated row and nothing else is
+matched loosely.
 
 ## What the numbers do not say
 
