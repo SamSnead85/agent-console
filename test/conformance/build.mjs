@@ -31,7 +31,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, "..", "..");
-export const SUITE_VERSION = "1.0.0";
+export const SUITE_VERSION = "1.1.0";
 
 // ---- the organisation, its window, its machines and people --------------------
 
@@ -79,6 +79,11 @@ const S = {
   X3: "d0000003-0000-4000-8000-000000000003",
   X33: "d0000033-0000-4000-8000-000000000033",
   X7: "d0000007-0000-4000-8000-000000000007",
+  S10: "c0000010-0000-4000-8000-000000000010",
+  S11: "c0000011-0000-4000-8000-000000000011",
+  X8: "d0000008-0000-4000-8000-000000000008",
+  X88: "d0000088-0000-4000-8000-000000000088",
+  X9: "d0000009-0000-4000-8000-000000000009",
 };
 
 /** Session labels as the spec names them: tool, session id, and agent id for a Claude subagent. */
@@ -95,7 +100,13 @@ const SESSIONS = {
   [`claude-code:${S.S6}`]: { parent: null, device: "sharedbox-userB", rule: "unknown cache-write lifetime" },
   [`codex:${S.X7}`]: { parent: null, device: "sharedbox-userB", rule: "an event without an ordinal" },
   [`claude-code:${S.S8}`]: { parent: null, device: "sharedbox-build", rule: "shared account enrolled to nobody" },
-  [`claude-code:${S.S9}`]: { parent: null, device: "personA-studio-rejoined", rule: "new work after joining again" },
+  [`claude-code:${S.S9}`]: { parent: null, device: "personA-studio-rejoined", rule: "new work after joining again; fast mode" },
+  [`claude-code:${S.S10}`]: { parent: null, device: "personA-studio", rule: "a response copied into three forked subagents, one copy a mid-stream snapshot" },
+  [`claude-code:${S.S10}:agent:f1`]: { parent: `claude-code:${S.S10}`, device: "personA-studio", rule: "a fork: a snapshot of the parent's response, then its own work" },
+  [`claude-code:${S.S10}:agent:f3`]: { parent: `claude-code:${S.S10}`, device: "personA-studio", rule: "a fork: the parent's last line, then its own work" },
+  [`codex:${S.X8}`]: { parent: null, device: "personA-studio", rule: "per-response usage records, one of them a compaction the running total never shows" },
+  [`codex:${S.X88}`]: { parent: `codex:${S.X8}`, device: "personA-studio", rule: "a fork that replays its parent's per-response records" },
+  [`claude-code:${S.S11}`]: { parent: null, device: "personA-laptop", rule: "a Vertex-style model id and a service tier the price table has no rate for" },
 };
 
 // u(fresh, output, cacheRead, cacheWrite5m, cacheWrite1h, cacheWriteUnknownTtl)
@@ -135,6 +146,29 @@ const EVENTS = [
   { id: "E29", session: `claude-code:${S.S8}`, model: HAIKU, at: "2026-09-20T20:00:00.000Z", usage: u(30, 400, 0, 2000, 0) },
   { id: "E30", session: `claude-code:${S.S8}`, model: HAIKU, at: "2026-09-20T20:00:40.000Z", usage: u(1, 20, 2000, 0, 0) },
   { id: "E31", session: `claude-code:${S.S9}`, model: OPUS, at: "2026-09-20T22:00:00.000Z", usage: u(8, 180, 0, 900, 100) },
+  { id: "E32", session: `claude-code:${S.S10}`, model: OPUS, at: "2026-09-20T15:00:00.000Z", usage: u(4, 399, 3000, 1000, 0), note: "streamed over three lines; copied into three forks, one copy a snapshot with 60 output tokens" },
+  { id: "E33", session: `claude-code:${S.S10}:agent:f1`, model: SONNET, at: "2026-09-20T15:02:00.000Z", usage: u(3, 120, 3000, 200, 0) },
+  { id: "E34", session: `claude-code:${S.S10}:agent:f3`, model: SONNET, at: "2026-09-20T15:03:00.000Z", usage: u(2, 80, 3000, 100, 0) },
+  { id: "E35", session: `codex:${S.X8}`, model: SOL, at: "2026-09-20T16:30:00.000Z", usage: u(500, 60, 0, 0, 0, 100), note: "a per-response record, then the running total" },
+  { id: "E36", session: `codex:${S.X8}`, model: SOL, at: "2026-09-20T16:31:00.000Z", usage: u(9000, 700, 0, 0, 0, 0), note: "a compaction request: only a per-response record, the running total never moves" },
+  { id: "E37", session: `codex:${S.X8}`, model: SOL, at: "2026-09-20T16:32:00.000Z", usage: u(300, 40, 600, 0, 0, 50) },
+  { id: "E38", session: `codex:${S.X88}`, model: SOL, at: "2026-09-20T16:40:00.000Z", usage: u(200, 30, 500, 0, 0, 20), note: "the fork's own response, after its parent's replayed records" },
+  { id: "E39", session: `claude-code:${S.S8}`, model: HAIKU, at: "2026-09-20T20:02:00.000Z", usage: u(5, 777, 2000, 10, 0), note: "a line longer than the collector holds (a huge tool input): its usage is recovered" },
+  { id: "E40", session: `claude-code:${S.S9}`, model: OPUS, at: "2026-09-20T22:05:00.000Z", usage: u(10, 500, 1000, 400, 0), fast: true, note: "fast mode: priced at the fast rates" },
+  { id: "E41", session: `claude-code:${S.S11}`, model: "claude-opus-4-6@20250805", at: "2026-09-20T17:00:00.000Z", usage: u(6, 90, 0, 300, 0), unpriced: "no verified rate for this exact id", note: "a Vertex-style id, kept exactly" },
+  { id: "E42", session: `claude-code:${S.S11}`, model: OPUS, at: "2026-09-20T17:01:00.000Z", usage: u(4, 60, 300, 20, 0), tier: "priority", unpriced: "a service tier with no rate in the table", note: "service_tier priority: counted, left unpriced" },
+];
+
+/**
+ * Lines that carry usage the rules cannot count. They are not events: their
+ * usage is unknown. Each MUST be counted as coverage debt, by reason, for the
+ * machine that read it (docs/accounting.md §3.2).
+ */
+const DROPS = [
+  { device: "personA-laptop", kind: "unreadableLine", count: 1, note: "an assistant line cut off mid-write" },
+  { device: "personA-laptop", kind: "missingTimestamp", count: 1, note: "an assistant line without a timestamp" },
+  { device: "sharedbox-userB", kind: "sidechainWithoutAgent", count: 1, note: "a subagent line without its agentId" },
+  { device: "sharedbox-userB", kind: "unboundedReplay", count: 2, note: "a forked Codex child without subagent_history_start_ordinal" },
 ];
 
 // ---- transcript rendering -----------------------------------------------------
@@ -155,9 +189,9 @@ const plus = (iso, seconds) => new Date(Date.parse(iso) + seconds * 1000).toISOS
 let uuidCounter = 0;
 const lineUuid = () => `aaaa${String(++uuidCounter).padStart(4, "0")}-0000-4000-8000-${String(uuidCounter).padStart(12, "0")}`;
 
-function claudeUsage(x, output = x.output) {
+function claudeUsage(x, output = x.output, event = {}) {
   const usage = { input_tokens: x.fresh, cache_creation_input_tokens: x.cacheWrite5m + x.cacheWrite1h + x.cacheWriteUnknownTtl,
-    cache_read_input_tokens: x.cacheRead, output_tokens: output, service_tier: "standard" };
+    cache_read_input_tokens: x.cacheRead, output_tokens: output, service_tier: event.tier ?? "standard", speed: event.fast ? "fast" : "standard" };
   if (x.cacheWriteUnknownTtl === 0) usage.cache_creation = { ephemeral_5m_input_tokens: x.cacheWrite5m, ephemeral_1h_input_tokens: x.cacheWrite1h };
   return usage;
 }
@@ -187,9 +221,17 @@ function assistantLines(base, event, { outputs = [event.usage.output], stepSecon
       parentUuid: null, ...base, type: "assistant", uuid: lineUuid(), requestId: `req_conf_${event.id.toLowerCase()}`,
       timestamp: index === 0 && timestamp ? timestamp : plus(event.at, index * stepSeconds),
       message: { id: messageId, type: "message", role: "assistant", model: event.model, content, stop_reason: index === outputs.length - 1 ? "tool_use" : null,
-        usage: claudeUsage(event.usage, output) },
+        usage: claudeUsage(event.usage, output, event) },
     };
   });
+}
+
+/** The collector under test holds at most this much of one line (collectDeliveries). */
+export const CONFORMANCE_MAX_LINE = 64 * 1024;
+/** A tool input far longer than the collector holds: the line's usage must still be recovered. */
+function oversized(line) {
+  line.message.content = [{ type: "tool_use", id: "toolu_conf_big", name: "Write", input: { file_path: CANARY.file, content: CANARY.reply.repeat(4000) } }];
+  return line;
 }
 
 function syntheticErrorLine(base, at) {
@@ -212,6 +254,13 @@ function tokenCount(at, ordinal, cumulative, last) {
 function codexMeta(at, id, model, extra = {}) {
   return { timestamp: at, type: "session_meta", payload: { id, timestamp: at, cwd: CANARY.project, originator: "codex_cli_rs", cli_version: "0.99.0",
     instructions: CANARY.prompt, model_provider: "openai", model, git: { branch: CANARY.branch, commit_hash: "0".repeat(40), repository_url: "git@example.invalid:canary-secret-project-dir.git" }, ...extra } };
+}
+/** A per-response usage record: this response's own usage, and the thread's running total. */
+function usageRecord(at, ordinal, thread, event, threadTotal) {
+  const own = codexTotals(cumulativeOf(event.usage));
+  return { timestamp: at, ...(ordinal === null ? {} : { ordinal }), type: "token_usage_record",
+    payload: { thread_id: thread, turn_id: "turn_conf", session_id: thread, root_turn_id: "turn_conf", response_id: `resp_conf_${event.id.toLowerCase()}`,
+      usage: own, turn_token_usage: own, thread_token_usage: codexTotals(threadTotal) } };
 }
 const turnContext = (at, model) => ({ timestamp: at, type: "turn_context", payload: { cwd: CANARY.project, model, approval_policy: "on-request", sandbox_policy: { mode: "workspace-write" } } });
 const codexReply = (at) => ({ timestamp: at, type: "response_item", payload: { type: "message", role: "assistant", content: [{ type: "output_text", text: CANARY.reply }] } });
@@ -298,7 +347,7 @@ function buildLogs() {
 
   // --- studio, later: new work after the machine joined again --------------------
   const s9 = claudeBase(S.S9, CANARY.project);
-  put(`personA-studio-later/claude/projects/${slug(CANARY.project)}/${S.S9}.jsonl`, jsonl([userLine(s9, "2026-09-20T21:59:50.000Z", CANARY.prompt), ...assistantLines(s9, byId.E31)]));
+  put(`personA-studio-later/claude/projects/${slug(CANARY.project)}/${S.S9}.jsonl`, jsonl([userLine(s9, "2026-09-20T21:59:50.000Z", CANARY.prompt), ...assistantLines(s9, byId.E31), ...assistantLines(s9, byId.E40)]));
 
   // --- laptop: S4 (offset timestamp), S5 (window edges), and a synced copy of S1 --
   const laptopProject = `personA-laptop/claude/projects/${slug(CANARY.laptopProject)}`;
@@ -335,6 +384,67 @@ function buildLogs() {
   const s8 = claudeBase(S.S8, "/srv/ci/canary-secret-project-dir");
   put(`sharedbox-build/claude/projects/${slug("/srv/ci/canary-secret-project-dir")}/${S.S8}.jsonl`, jsonl([
     userLine(s8, "2026-09-20T19:59:50.000Z", CANARY.prompt), ...assistantLines(s8, byId.E29), ...assistantLines(s8, byId.E30),
+    oversized(assistantLines(s8, byId.E39, { outputs: [byId.E39.usage.output] })[0]),
+  ]));
+  // --- studio: S10, one response copied into three forked subagents (A1) --------
+  const s10 = claudeBase(S.S10, CANARY.project);
+  const e32 = assistantLines(s10, byId.E32, { outputs: [2, 150, 399], stepSeconds: 10 });
+  put(`${studioProject}/${S.S10}.jsonl`, jsonl([userLine(s10, "2026-09-20T14:59:50.000Z", CANARY.prompt), ...e32]));
+  const forked = (line, agentId, output = null) => {
+    const copy = JSON.parse(JSON.stringify(line));
+    copy.isSidechain = true; copy.agentId = agentId;
+    if (output !== null) copy.message.usage.output_tokens = output;
+    return copy;
+  };
+  const f1 = claudeBase(S.S10, CANARY.project, { agentId: "f1" });
+  const f3 = claudeBase(S.S10, CANARY.project, { agentId: "f3" });
+  put(`${studioProject}/${S.S10}/subagents/agent-f1.jsonl`, jsonl([forked(e32[1], "f1", 60), userLine(f1, "2026-09-20T15:01:50.000Z", CANARY.prompt), ...assistantLines(f1, byId.E33)]));
+  put(`${studioProject}/${S.S10}/subagents/agent-f2.jsonl`, jsonl([forked(e32[0], "f2"), forked(e32[1], "f2")]));
+  put(`${studioProject}/${S.S10}/subagents/agent-f3.jsonl`, jsonl([forked(e32[2], "f3"), userLine(f3, "2026-09-20T15:02:50.000Z", CANARY.prompt), ...assistantLines(f3, byId.E34)]));
+
+  // --- studio: Codex X8 writes per-response records; X88 forks it (A3) ------------
+  const r35 = cumulativeOf(byId.E35.usage), r36 = addVec(r35, cumulativeOf(byId.E36.usage)), r37 = addVec(r36, cumulativeOf(byId.E37.usage));
+  const run37 = addVec(r35, cumulativeOf(byId.E37.usage)); // the running total never includes the compaction
+  put(`personA-studio/codex/sessions/2026/09/20/rollout-2026-09-20T16-29-00-${S.X8}.jsonl`, jsonl([
+    codexMeta("2026-09-20T16:29:00.000Z", S.X8, SOL, { source: "cli" }),
+    turnContext("2026-09-20T16:29:01.000Z", SOL),
+    usageRecord(byId.E35.at, 1, S.X8, byId.E35, r35),
+    tokenCount(byId.E35.at, 2, r35, r35),
+    usageRecord(byId.E36.at, 3, S.X8, byId.E36, r36),
+    usageRecord(byId.E37.at, 4, S.X8, byId.E37, r37),
+    tokenCount(byId.E37.at, 5, run37, cumulativeOf(byId.E37.usage)),
+  ]));
+  const r38 = cumulativeOf(byId.E38.usage);
+  put(`personA-studio/codex/sessions/2026/09/20/rollout-2026-09-20T16-39-00-${S.X88}.jsonl`, jsonl([
+    codexMeta("2026-09-20T16:39:00.000Z", S.X88, SOL, { forked_from_id: S.X8, subagent_history_start_ordinal: 3,
+      source: { subagent: { thread_spawn: { parent_thread_id: S.X8, depth: 1 } } } }),
+    codexMeta("2026-09-20T16:39:00.000Z", S.X8, SOL, { source: "cli" }),
+    turnContext("2026-09-20T16:39:00.000Z", SOL),
+    usageRecord("2026-09-20T16:39:00.000Z", 1, S.X8, byId.E35, r35), // the parent's record, replayed
+    tokenCount("2026-09-20T16:39:00.000Z", 2, r35, r35),
+    usageRecord(byId.E38.at, 3, S.X88, byId.E38, r38),
+    tokenCount(byId.E38.at, 4, r38, r38),
+  ]));
+
+  // --- studio later: fast mode (F5) ---------------------------------------------
+  // (appended to S9 below, where the re-joined studio reads it)
+
+  // --- laptop: a Vertex-style model id, a priority service tier, and two drops ----
+  const s11 = claudeBase(S.S11, CANARY.laptopProject);
+  const noTime = assistantLines(s11, { id: "D01", model: OPUS, at: "2026-09-20T17:02:00.000Z", usage: u(1, 1, 1) })[0];
+  delete noTime.timestamp;
+  put(`${laptopProject}/${S.S11}.jsonl`, jsonl([
+    userLine(s11, "2026-09-20T16:59:50.000Z", CANARY.prompt), ...assistantLines(s11, byId.E41), ...assistantLines(s11, byId.E42), noTime,
+  ]) + '{"parentUuid":null,"type":"assistant","message":{"id":"msg_conf_d02","usage":{"input_tokens":3,\n');
+
+  // --- shared box, account B: a subagent line without its agent id, and an unbounded fork
+  const orphan = assistantLines({ ...claudeBase(S.S6, CANARY.project), isSidechain: true }, { id: "D03", model: SONNET, at: "2026-09-20T18:05:00.000Z", usage: u(1, 2, 3) })[0];
+  put(`${userBProject}/${S.S6}/subagents/agent-unnamed.jsonl`, jsonl([orphan]));
+  put(`sharedbox-userB/codex/sessions/2026/09/20/rollout-2026-09-20T18-40-00-${S.X9}.jsonl`, jsonl([
+    codexMeta("2026-09-20T18:40:00.000Z", S.X9, SOL, { forked_from_id: S.X7 }),
+    codexMeta("2026-09-20T18:40:00.000Z", S.X7, SOL, { source: "cli" }),
+    tokenCount("2026-09-20T18:40:00.000Z", 1, c27, c27),
+    tokenCount("2026-09-20T18:40:00.000Z", 2, c28, cumulativeOf(byId.E28.usage)),
   ]));
   return files;
 }
@@ -346,9 +456,10 @@ const sessionHash = (label) => hmac(`session|${label}`);
 
 /** USD for one event at the pinned price table, in exact units of 1e-8 USD (rates have at most 2 decimals). */
 function priceUnits(event, rows) {
+  if (event.unpriced) return null;
   const row = rows.find((r) => r.model === event.model);
   if (!row || row.status !== "verified") return null;
-  const r = row.usdPerMillion, x = event.usage;
+  const r = event.fast ? row.fast.usdPerMillion : row.usdPerMillion, x = event.usage;
   const cents = (rate) => { // cents per million tokens; the table's rates have at most two decimals
     const value = Math.round(rate * 100);
     if (Math.abs(rate * 100 - value) > 1e-9) throw new Error(`rate ${rate} has more than two decimals`);
@@ -367,13 +478,17 @@ function priceUnits(event, rows) {
 }
 
 function emptyTotals() {
-  return { total: 0, fresh: 0, output: 0, cacheRead: 0, cacheWrite: 0, cacheWrite5m: 0, cacheWrite1h: 0, cacheWriteUnknownTtl: 0, messages: 0, usdUnits: 0 };
+  return { total: 0, fresh: 0, output: 0, cacheRead: 0, cacheWrite: 0, cacheWrite5m: 0, cacheWrite1h: 0, cacheWriteUnknownTtl: 0, messages: 0,
+    unpricedMessages: 0, unpricedTokens: 0, usdUnits: 0 };
 }
 function addEvent(t, e, units) {
   const x = e.usage, write = x.cacheWrite5m + x.cacheWrite1h + x.cacheWriteUnknownTtl;
+  const tokens = x.fresh + x.output + x.cacheRead + write;
   t.fresh += x.fresh; t.output += x.output; t.cacheRead += x.cacheRead; t.cacheWrite += write;
   t.cacheWrite5m += x.cacheWrite5m; t.cacheWrite1h += x.cacheWrite1h; t.cacheWriteUnknownTtl += x.cacheWriteUnknownTtl;
-  t.total += x.fresh + x.output + x.cacheRead + write; t.messages += 1; t.usdUnits += units;
+  t.total += tokens; t.messages += 1;
+  // A model or tier with no verified rate adds tokens and no dollars (§9).
+  if (units === null) { t.unpricedMessages += 1; t.unpricedTokens += tokens; } else t.usdUnits += units;
 }
 function finish(t) {
   const { usdUnits, ...rest } = t;
@@ -393,7 +508,7 @@ function calendarDay(ms, timeZone) {
 
 function buildExpected(prices) {
   const rows = prices.rows;
-  for (const e of EVENTS) if (priceUnits(e, rows) === null) throw new Error(`fixture model ${e.model} has no verified rate for its classes`);
+  for (const e of EVENTS) if (!e.unpriced && priceUnits(e, rows) === null) throw new Error(`fixture model ${e.model} has no verified rate for its classes`);
   const minuteOf = (e) => Math.floor(Date.parse(e.at) / 60_000) * 60_000;
   const inWindow = (e, from, to) => minuteOf(e) >= Date.parse(from) && minuteOf(e) < Date.parse(to);
   const personOfSession = (label) => DEVICES[SESSIONS[label].device].person ?? "Unassigned";
@@ -425,18 +540,28 @@ function buildExpected(prices) {
     spec: "docs/accounting.md",
     units: "tokens; usd is a standard API-list-price estimate from the pinned price table, never an invoice",
     priceTable: { file: "lib/collector/prices.json", basis: prices.basis, inventoryCheckedOn: prices.inventoryCheckedOn,
-      rows: Object.fromEntries([...new Set(EVENTS.map((e) => e.model))].sort().map((m) => [m, rows.find((r) => r.model === m).usdPerMillion])) },
+      rows: Object.fromEntries([...new Set(EVENTS.filter((e) => !e.unpriced).map((e) => e.model))].sort().map((m) => {
+        const row = rows.find((r) => r.model === m);
+        return [m, EVENTS.some((e) => e.model === m && e.fast) ? { ...row.usdPerMillion, fast: row.fast.usdPerMillion } : row.usdPerMillion];
+      })) },
     team: TEAM,
     window: windowBlock(W0, W1),
     windows: [windowBlock(W0, HALF), windowBlock(HALF, W1)],
     days,
     sessions,
-    events: EVENTS.map((e) => ({ id: e.id, session: e.session, model: e.model, at: e.at, minute: new Date(minuteOf(e)).toISOString(), inWindow: window.includes(e), usage: e.usage, ...(e.note ? { note: e.note } : {}) })),
+    events: EVENTS.map((e) => ({ id: e.id, session: e.session, model: e.model, at: e.at, minute: new Date(minuteOf(e)).toISOString(), inWindow: window.includes(e), usage: e.usage,
+      tier: e.fast ? "fast" : e.tier ? "other" : "standard", ...(e.unpriced ? { unpriced: e.unpriced } : {}), ...(e.note ? { note: e.note } : {}) })),
+    dropped: {
+      total: DROPS.reduce((a, d) => a + d.count, 0),
+      devices: DROPS.reduce((out, d) => { const id = DEVICES[d.device].id; (out[id] ??= {})[d.kind] = (out[id][d.kind] ?? 0) + d.count; return out; }, {}),
+      lines: DROPS,
+    },
     invariants: [
       "team == sum(people) == sum(devices) == sum(models) == sum(sessions) == sum(sessionTrees)",
       "windows[0] + windows[1] == window",
       "total == fresh + output + cacheRead + cacheWrite; cacheWrite == cacheWrite5m + cacheWrite1h + cacheWriteUnknownTtl",
       "every delivery after the first copy of an event adds nothing",
+      "every line that carries usage and cannot be counted is counted in dropped, by machine and reason",
     ],
   };
 }
@@ -479,9 +604,10 @@ export async function collectDeliveries({ fixtureRoot = HERE, manifest = buildMa
         if (fs.existsSync(codex)) roots.push({ tool: "codex", directory: codex });
       }
       let sent = [];
-      await runOnce({ directory, roots, sinkName: "conformance", now: new Date(W1),
+      const result = await runOnce({ directory, roots, sinkName: "conformance", now: new Date(W1), maxLineBytes: CONFORMANCE_MAX_LINE,
         deliver: async (_device, records) => { sent = records.map((r) => JSON.parse(JSON.stringify(r))); return { accepted: sent.length, duplicate: 0, rejected: [] }; } });
-      deliveries.push({ step: delivery.step, device: delivery.device, deviceId: device.id, records: sent });
+      const coverage = Object.fromEntries(Object.entries(result.coverage.coverageDebt).sort(([a], [b]) => (a < b ? -1 : 1)));
+      deliveries.push({ step: delivery.step, device: delivery.device, deviceId: device.id, coverage, records: sent });
     }
   } finally {
     if (!scratch) fs.rmSync(base, { recursive: true, force: true });

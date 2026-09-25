@@ -82,7 +82,7 @@
 
     <div class="console" id="band">
       <div class="col tokens">
-        <div class="cap">Tokens · last 24 hours</div>
+        <div class="cap" id="cCap">Tokens · last 24 hours</div>
         <div id="cTotal" class="big">—</div>
         <div class="tline"><span id="cSpend">—</span><em><span id="cMsgs">—</span> messages</em></div>
         <div class="prov" id="cProv">—</div>
@@ -91,8 +91,8 @@
       </div>
       <div class="col flow">
         <div class="cap">Tokens over time
-          <span class="seg" id="winSeg" role="group" aria-label="Chart window">
-            <button type="button" data-w="1h" aria-pressed="false">1H</button><button type="button" data-w="24h" class="on" aria-pressed="true">24H</button><button type="button" data-w="7d" aria-pressed="false">7D</button>
+          <span class="seg" id="winSeg" role="group" aria-label="Period for every figure">
+            <button type="button" data-w="1h" aria-pressed="false">1H</button><button type="button" data-w="24h" class="on" aria-pressed="true">24H</button><button type="button" data-w="7d" aria-pressed="false">7D</button><button type="button" data-w="30d" aria-pressed="false">30D</button>
           </span>
         </div>
         <div class="flowwrap" id="flowWrap">
@@ -114,7 +114,7 @@
         <div id="cBurn" class="big mid">—</div>
         <div class="brate"><span id="cRate">—</span></div>
         <div class="bprov" id="cBurnNote">—</div>
-        <div class="mhead"><span>by model · 24 h</span><span>share</span><span>est.</span></div>
+        <div class="mhead"><span id="cModelCap">by model · 24 h</span><span>share</span><span>est.</span></div>
         <div id="cModels"></div>
       </div>
     </div>
@@ -150,7 +150,7 @@
       <h2 id="h-team">Team</h2><span class="stamp demo-only">DEMO</span>
       <span class="hint" id="teamHint">Every machine that reports here, and the people they belong to.</span>
       <span class="seg big" id="periodSeg" role="group" aria-label="Period">
-        <button type="button" data-p="day" class="on" aria-pressed="true">24 hours</button><button type="button" data-p="week" aria-pressed="false">7 days</button>
+        <button type="button" data-p="1h" aria-pressed="false">1 hour</button><button type="button" data-p="24h" class="on" aria-pressed="true">24 hours</button><button type="button" data-p="7d" aria-pressed="false">7 days</button><button type="button" data-p="30d" aria-pressed="false">30 days</button>
       </span>
     </div>
     <section class="totals" id="teamTotals" aria-label="Total across every machine"></section>
@@ -179,7 +179,7 @@
       <h2 id="h-projects">Projects</h2><span class="stamp demo-only">DEMO</span>
       <span class="hint">This machine only — read from its own transcripts and Git history, and never reported to anyone.</span>
       <span class="seg big" id="projSeg" role="group" aria-label="Period">
-        <button type="button" data-p="24h" class="on" aria-pressed="true">24 hours</button><button type="button" data-p="3d" aria-pressed="false">3 days</button>
+        <button type="button" data-p="1h" aria-pressed="false">1 hour</button><button type="button" data-p="24h" class="on" aria-pressed="true">24 hours</button><button type="button" data-p="7d" aria-pressed="false">7 days</button><button type="button" data-p="30d" aria-pressed="false">30 days</button>
       </span>
     </div>
     <section class="totals" id="projTotals" aria-label="Delivery evidence"></section>

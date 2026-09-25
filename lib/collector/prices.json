@@ -8,7 +8,8 @@
     "Anthropic lifetime splits use observed 5m and 1h components; an unknown lifetime uses an explicitly labeled 5m assumption.",
     "OpenAI short-context rates are a baseline assumption where context tiers apply; service tier, geography, discounts and subscription charges are not observed.",
     "API-equivalent estimates never measure productivity or claim actual spend.",
-    "Exact model ids only. Every model found in the local metadata inventory has a row; unverifiable models and token rates stay null."
+    "Exact model ids only. Every model found in the local metadata inventory has a row; unverifiable models and token rates stay null.",
+    "Fast mode uses each row's verified fast rates, with the published cache multipliers applied on top; a model without them leaves fast-mode usage unpriced. Other Anthropic service tiers are unpriced."
   ],
   "rows": [
     {
@@ -73,6 +74,11 @@
         "cacheWrite5m": 6.25,
         "cacheWrite1h": 10,
         "cacheRead": 0.5
+      },
+      "fast": {
+        "verifiedOn": "2026-09-24",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+        "billedAs": "standard"
       }
     },
     {
@@ -105,6 +111,18 @@
         "cacheWrite5m": 6.25,
         "cacheWrite1h": 10,
         "cacheRead": 0.5
+      },
+      "fast": {
+        "verifiedOn": "2026-09-24",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+        "usdPerMillion": {
+          "fresh": 10,
+          "output": 50,
+          "cacheWrite": 12.5,
+          "cacheWrite5m": 12.5,
+          "cacheWrite1h": 20,
+          "cacheRead": 1
+        }
       }
     },
     {
@@ -121,6 +139,18 @@
         "cacheWrite5m": 6.25,
         "cacheWrite1h": 10,
         "cacheRead": 0.5
+      },
+      "fast": {
+        "verifiedOn": "2026-09-24",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+        "usdPerMillion": {
+          "fresh": 10,
+          "output": 50,
+          "cacheWrite": 12.5,
+          "cacheWrite5m": 12.5,
+          "cacheWrite1h": 20,
+          "cacheRead": 1
+        }
       }
     },
     {
@@ -137,6 +167,18 @@
         "cacheWrite5m": 5,
         "cacheWrite1h": 8,
         "cacheRead": 0.2
+      },
+      "fast": {
+        "verifiedOn": "2026-09-24",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+        "usdPerMillion": {
+          "fresh": 8,
+          "output": 40,
+          "cacheWrite": 10,
+          "cacheWrite5m": 10,
+          "cacheWrite1h": 16,
+          "cacheRead": 0.4
+        }
       }
     },
     {

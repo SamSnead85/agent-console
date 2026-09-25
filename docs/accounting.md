@@ -4,8 +4,10 @@ The rules Agent Console follows to turn Claude Code and Codex transcripts into
 token totals for a person, a team, a model and a session, and the conformance
 suite that holds any implementation to them.
 
-- **Spec version:** 1.0 (24 September 2026)
-- **Conformance suite:** 1.0.0, in [`test/conformance/`](../test/conformance/),
+- **Spec version:** 1.1 (24 September 2026). 1.1 adds forked-subagent copies,
+  Codex per-response records, drops that must be counted (§3.2), price tiers,
+  exact provider model ids and the 30-day period.
+- **Conformance suite:** 1.1.0, in [`test/conformance/`](../test/conformance/),
   published as `@lockedinlabs/agent-console/conformance`
 - **Words:** MUST and MUST NOT are requirements; everything else explains them.
 
@@ -33,9 +35,13 @@ counted exactly once.
   `message.usage` object, identified by its conversation's `sessionId` and
   `message.id`.
 - **Usage** is the per-class maximum over every line that carries that message
-  in that conversation. Claude Code writes one line per content block
-  (thinking, text, tool use), each with the usage as it stood then. Output
-  grows across the lines, and the input and cache classes repeat.
+  in that conversation, **in any file**. Claude Code writes one line per content
+  block (thinking, text, tool use), each with the usage as it stood then. Output
+  grows across the lines, and the input and cache classes repeat. A forked
+  subagent copies its parent's context into its own `subagents/agent-*.jsonl`,
+  so one message can appear in several files, with the same line uuids,
+  sometimes as a mid-stream snapshot. The maximum is taken across all of them:
+  an implementation MUST NOT keep it per file or per agent session.
 - **Event time** is the timestamp of the first line that carries the message.
   An implementation MAY send the usage as increments, one for each line whose
   usage grew. Those increments MUST add up to the maximum, and every one MUST
@@ -45,11 +51,25 @@ counted exactly once.
   and interruption placeholders, and their usage is zero.
 - Record identity is `(tool, sessionId, line uuid)`, or `message.id` plus
   `requestId` when a line has no uuid. A line with neither is not counted and
-  is reported as coverage debt.
+  is reported as coverage debt. When a line uuid already counted is seen again
+  with larger usage (a copy in a fork, or a rewrite), the growth is a further
+  increment with an identity of its own, derived from the uuid and the line's
+  usage, so first-writer-wins cannot drop it.
+- The message is credited to the session of the first file that carries it.
+  An implementation reads a session's own transcript before its `subagents/`
+  folder, so a copied message stays with the session that made it. Which file
+  that is never changes a total.
 
 ### Codex
 
-- An event is one `event_msg` / `token_count` line whose cumulative
+- **Per-response records.** When a rollout writes `token_usage_record` lines,
+  each is one event: one API response, identified by `(tool, thread id,
+  response_id)`, with the record's own `usage` (not a running total), dated by
+  the line's timestamp. Only records whose `payload.thread_id` is the rollout's
+  own thread are counted; a record for another thread is history replayed into
+  a fork. A repeated `response_id` adds nothing. The rollout's `token_count`
+  totals then only move the baseline (§4.7).
+- Otherwise, an event is one `event_msg` / `token_count` line whose cumulative
   `info.total_token_usage` differs from the previous distinct cumulative total
   in the same thread.
 - **Usage** is the per-class difference from the previous cumulative total.
@@ -92,8 +112,36 @@ an unknown is a floor, and it MUST be shown as one.
 | Resumed Claude sessions | A new transcript file that starts with a verbatim copy of earlier lines (same `sessionId`, `message.id` and line uuids), then new lines under the new session id | The copied lines are the same events: same identity, counted once. The new lines are a new session (§7). |
 | Compaction | A `system` line with `subtype: "compact_boundary"`, and a user line with `isCompactSummary: true` | Neither carries usage. The first assistant message after compaction is an ordinary event, usually with a large cache write. History before the boundary is never counted again. A summarising call is counted only if the transcript records it as an assistant message with usage. |
 | Subagent sidechains | `subagents/agent-<id>.jsonl` with `isSidechain: true`, `agentId`, and the parent's `sessionId` | Each subagent is its own session, `claude-code:<sessionId>:agent:<agentId>`, a child of the orchestrator's session. Its events are counted in the child only. |
+| Forked subagents | Several `agent-*.jsonl` files that each start with a copy of the parent's messages (same `message.id` and line uuids), some copies cut off mid-stream | One event per `(sessionId, message.id)` across every file, at its per-class maximum (§2). The copies add nothing, in any read order. |
+| Codex per-response records | `token_usage_record` lines, one per `response_id`, beside the running total; a compaction request can appear only here | One event per own-thread `response_id` (§2, §4.7). |
 | Codex forks and subagents | A child rollout that replays the parent's history before `subagent_history_start_ordinal` | The replayed events belong to the parent and are not counted in the child (§4). |
 | Copies across machines | The same transcript on two machines (a synced folder, a copied home directory) | Identity comes from the transcript, under the organisation's salt, and never from a path or a device. First writer wins (§8). |
+
+## 3.2 Nothing is dropped silently
+
+A line that carries usage and cannot be counted by these rules is not an
+event: its usage is unknown. It MUST still be **counted**, by reason, for the
+machine that read it, and shown beside the figures it is missing from. A total
+is then complete only when nothing was dropped. The reasons:
+
+| Reason | What the line was |
+|---|---|
+| `missingTimestamp`, `missingProject`, `missingIdentity` | Usage without a readable time, project folder, or message and session identity. |
+| `sidechainWithoutAgent` | A subagent line (`isSidechain: true`) without its `agentId`. |
+| `noFinalUsage` | A response with no line uuid that never reached its stop (after 30 minutes). |
+| `changedFinalUsage` | Usage that changed after a response without line uuids was counted. |
+| `revisedDown` | A line rewritten in the same transcript with lower usage. What was counted is not un-counted. |
+| `missingReplayOrdinal`, `unboundedReplay`, `counterReset`, `ambiguousEventIdentity` | Codex readings §4 cannot place. |
+| `lateUsageRecord` | A Codex per-response record after running-total events of the same thread were counted. |
+| `oversizedLine` | A line longer than the implementation holds (32 MiB here) whose usage could not be recovered from its first and last bytes. |
+| `unreadableLine` | A complete line that looks like usage and is not valid JSON. |
+| `future`, `hubFull`, `damaged` | Records the console itself could not keep: dated more than a day ahead of its clock, beyond its record limit, or damaged on its own disk. |
+
+A collector reports these counts with each delivery (the envelope's
+`coverage`, [COLLECTOR-CONTRACT.md](COLLECTOR-CONTRACT.md)). They cover the
+transcripts it still reads, not a time window. A recovered over-long line
+(`oversizedLineRecovered`) and a cache write whose lifetime split did not add
+up (`ttlConflict`, counted with an unknown lifetime) are not drops.
 
 ## 4. Codex cumulative counters
 
@@ -120,10 +168,13 @@ its children's usage, so each thread's own differences are added once.
    observation in a file with no earlier baseline counts its whole cumulative
    total. That is correct for a new thread. For a continued thread without
    ordinals, it is the known limit in §13.
-7. **Why not `last_token_usage`:** the cumulative difference is authoritative.
-   `last_token_usage` covers only the latest request, and it would miss a
-   request whose `token_count` was never written. On the reference machine,
-   the two agree on every increase (§12).
+7. **Per-response records first.** Where a rollout writes `token_usage_record`
+   lines, they are the events (§2) and the rules above only keep the baseline.
+   The running total can miss requests, such as a compaction call, that the
+   per-response records show. Without them, the cumulative difference is
+   authoritative: `last_token_usage` covers only the latest request, and it
+   would miss a request whose `token_count` was never written. On the
+   reference machine, the two agree on every increase (§12).
 
 ## 5. Model attribution
 
@@ -132,6 +183,10 @@ its children's usage, so each thread's own differences are added once.
   the first `session_meta.model`, else `unknown`.
 - Model ids are exact, with no aliasing and no family fallback. A session that
   switches models contributes each event to that event's model.
+- An id is kept as written, including provider forms such as
+  `us.anthropic.claude-opus-4-6-v1:0`, `claude-opus-4-6@20250805` or a
+  `[1m]` suffix (`[A-Za-z0-9][A-Za-z0-9._:@[\]/-]{0,127}`). It is never
+  turned into `unknown`; an id the price table does not list is unpriced.
 
 ## 6. Time windows and time zones
 
@@ -146,6 +201,22 @@ its children's usage, so each thread's own differences are added once.
   different dates in UTC and in `America/New_York`. Team roll-ups default to UTC.
 - The windows of a partition add up to the whole. For example, the two halves
   of a day add up to the day.
+
+### Periods on screen
+
+Every view answers for one period at a time, and the same period in each:
+the Console headline and chart, Team, and Projects.
+
+- **1 hour, 24 hours, 7 days:** that many whole minutes ending with the
+  current one. The chart's bars are cut from exactly that span (1-minute,
+  15-minute and 2-hour steps), so they add up to the headline.
+- **30 days:** the last 30 **UTC calendar days**, today included, read from
+  the console's daily totals. The console keeps a per-day rollup (by machine,
+  model, project and price tier) for 400 days, long after its minute buckets
+  are pruned at the retention edge, so this period does not depend on
+  `--retention-days`. The rollup keeps no sessions, so a session count for 30
+  days is unknown, not zero. A console that has not kept daily totals for all
+  30 days says from which day it has (`since`).
 
 ## 7. Individual attribution
 
@@ -197,9 +268,18 @@ and `total = input + output + cache read + cache write`.
   an unknown lifetime use the table's stated assumption, and the figure says so.
 - A model with no verified rate, or a class with no rate, contributes **no
   dollars**. It is reported as unpriced tokens, never as $0.
+- **Price tier.** Claude Code writes `usage.speed` and `usage.service_tier`.
+  Fast mode (`speed: "fast"`) is priced at the row's `fast` rates, with the
+  published cache multipliers applied to the fast input rate, or at the
+  standard rates where the vendor says fast requests are billed as standard.
+  A model without either, and any service tier other than `standard`, is
+  unpriced: never priced at the standard rate. A transcript that names no tier
+  is priced at the standard rate, as the table's basis assumes.
+- Unpriced messages and records are different counts: a streamed response is
+  one message over several records. Each is named for what it counts.
 - A figure names the table it came from (its check date and digest). It is a
   standard API-list-price estimate, not an invoice. It cannot see
-  subscriptions, negotiated rates, batch or fast mode, data residency or taxes.
+  subscriptions, negotiated rates, batch, data residency or taxes.
 
 ## 10. Privacy
 
@@ -216,9 +296,10 @@ canary reaches a record, a report or the screen.
 | File | What it is |
 |---|---|
 | `manifest.json` | The organisation (synthetic salt), five devices, two people plus an unassigned account, the window, and seven deliveries in order: a first report, a second machine with a synced copy, a lost cursor, a shared box, a re-join, and a no-op. |
+| (1.1 cases) | A response copied into three forked subagents, one copy a mid-stream snapshot; Codex per-response records with a compaction the running total never shows, and a fork that replays them; a line longer than the collector under test holds (64 KiB); fast mode; a Vertex-style model id and a priority service tier, both counted and unpriced; and five lines that cannot be counted, which `expected.json` lists under `dropped` by machine and reason. |
 | `logs/` | Synthetic Claude Code and Codex transcripts, one tree per machine. Every rule above has at least one event that breaks a naive counter. |
 | `expected.json` | Exact totals for the window, for both halves of it, and for calendar days in UTC and in `America/New_York`. Per team, person, device, model, session and session tree, with every class and the cost at the pinned rates. **These are summed from the declared ground-truth events, not produced by any counter.** |
-| `collector-records.json` | Exactly what this package's collector sends at each delivery. A receiver in another codebase replays it to check its ingestion and roll-up against the same `expected.json`. |
+| `collector-records.json` | Exactly what this package's collector sends at each delivery, and the `coverage` it reports with it. A receiver in another codebase replays it to check its ingestion, roll-up and drop counts against the same `expected.json`. |
 
 `test/conformance/build.mjs` writes all of them. `node test/conformance/build.mjs --check`
 confirms that the files on disk are current. `test/conformance.test.js` runs
@@ -264,3 +345,13 @@ These are counts from one heavily used machine, taken read-only on
   invisible.
 - Attribution follows the enrolled device, not the human at the keyboard
   (§7).
+- Drops (§3.2) have no record identity, so a transcript copied to two machines
+  is counted as dropped by each machine that reads it.
+- A line rewritten with lower usage cannot un-count what was reported. Marks
+  are kept for six hours after a message's first line, so a rewrite later than
+  that is not recognised as one.
+- Codex `compacted` lines repeat the latest per-response record; they are
+  not read, because every one observed was a copy of a record already in the
+  rollout.
+- An over-long Claude Code line is recovered only when its usage, uuid and
+  time are outside the message content, where Claude Code writes them.

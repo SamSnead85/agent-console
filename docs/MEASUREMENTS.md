@@ -6,14 +6,23 @@ Claude Code: the JSONL transcripts under `~/.claude/projects`. Codex: the
 rollout JSONL under `~/.codex/sessions`. Both are read locally and read-only,
 on each machine, by the collector (`lib/collector/`). Only the transcripts
 written inside the console's retention window (8 days by default) are read.
+The console also keeps daily totals for 400 days, which answer the 30-day
+period after the minute detail is gone.
 The field-by-field rules are in [COLLECTOR-CONTRACT.md](COLLECTOR-CONTRACT.md).
 
 ## Tokens
 
-Four disjoint classes: **input** (fresh input, not from cache), **output**,
+Four disjoint classes: **uncached input** (fresh input, not from cache), **output**,
 **cache write** and **cache read**. Thinking tokens are already inside output;
-one-hour cache writes are already inside cache write. A class a tool did not
-report is unknown, not zero: the total is then a floor, and the screen says so.
+one-hour cache writes are already inside cache write (the cache-write tooltip
+shows the 5-minute, 1-hour and unreported-lifetime parts). A class a tool did
+not report is unknown, not zero: the total is then a floor, and the screen says
+so. A line that carries usage and cannot be counted is counted as a drop, by
+reason, and the screen says how many ([accounting.md](accounting.md) §3.2).
+
+**Periods.** One switch sets the period for every view: 1 hour, 24 hours and
+7 days are whole minutes ending now, and the chart's bars add up to the
+headline; 30 days are the last 30 UTC days, from the daily totals.
 
 **Cache read share** is cache reads divided by all four classes. The other
 common reading, cache reads as a share of input only (cache read ÷ (cache read
@@ -49,8 +58,10 @@ left out of the dollar figure and counted as unpriced: never priced at zero.
 Where some usage is unpriced, a figure is marked partial; where all of it is,
 the burn rate reads "unpriced" instead of a dollar amount.
 
-The estimate cannot see subscriptions, negotiated rates, batch or fast mode,
-data-residency premiums, taxes or tool fees. It is not an invoice.
+Fast mode is priced at its own published rates; another service tier, or fast
+mode on a model without published fast rates, is unpriced. The estimate cannot
+see subscriptions, negotiated rates, batch, data-residency premiums, taxes or
+tool fees. It is not an invoice.
 
 ## Projects (this machine only)
 

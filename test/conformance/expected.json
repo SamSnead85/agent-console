@@ -1,5 +1,5 @@
 {
- "suite": "1.0.0",
+ "suite": "1.1.0",
  "spec": "docs/accounting.md",
  "units": "tokens; usd is a standard API-list-price estimate from the pinned price table, never an invoice",
  "priceTable": {
@@ -29,7 +29,15 @@
     "cacheWrite": 5,
     "cacheWrite5m": 5,
     "cacheWrite1h": 8,
-    "cacheRead": 0.2
+    "cacheRead": 0.2,
+    "fast": {
+     "fresh": 8,
+     "output": 40,
+     "cacheWrite": 10,
+     "cacheWrite5m": 10,
+     "cacheWrite1h": 16,
+     "cacheRead": 0.4
+    }
    },
    "claude-sonnet-5": {
     "fresh": 2,
@@ -89,34 +97,49 @@
    "E28",
    "E29",
    "E30",
-   "E31"
+   "E31",
+   "E32",
+   "E33",
+   "E34",
+   "E35",
+   "E36",
+   "E37",
+   "E38",
+   "E39",
+   "E40",
+   "E41",
+   "E42"
   ],
   "team": {
-   "total": 170400,
-   "fresh": 3493,
-   "output": 5507,
-   "cacheRead": 100750,
-   "cacheWrite": 60650,
-   "cacheWrite5m": 45850,
+   "total": 198890,
+   "fresh": 13527,
+   "output": 8363,
+   "cacheRead": 114150,
+   "cacheWrite": 62850,
+   "cacheWrite5m": 47880,
    "cacheWrite1h": 13100,
-   "cacheWriteUnknownTtl": 1700,
-   "messages": 28,
-   "usd": 0.558855,
-   "usdExact": "0.55885500"
+   "cacheWriteUnknownTtl": 1870,
+   "messages": 39,
+   "unpricedMessages": 2,
+   "unpricedTokens": 780,
+   "usd": 0.6628835,
+   "usdExact": "0.66288350"
   },
   "people": {
    "Person A": {
-    "total": 162596,
-    "fresh": 2799,
-    "output": 4777,
-    "cacheRead": 97400,
-    "cacheWrite": 57620,
-    "cacheWrite5m": 43820,
+    "total": 188294,
+    "fresh": 12828,
+    "output": 6856,
+    "cacheRead": 108800,
+    "cacheWrite": 59810,
+    "cacheWrite5m": 45840,
     "cacheWrite1h": 13100,
-    "cacheWriteUnknownTtl": 700,
-    "messages": 22,
-    "usd": 0.544513,
-    "usdExact": "0.54451300"
+    "cacheWriteUnknownTtl": 870,
+    "messages": 32,
+    "unpricedMessages": 2,
+    "unpricedTokens": 780,
+    "usd": 0.644439,
+    "usdExact": "0.64443900"
    },
    "Person B": {
     "total": 3353,
@@ -128,75 +151,87 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 1000,
     "messages": 4,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.009511,
     "usdExact": "0.00951100"
    },
    "Unassigned": {
-    "total": 4451,
-    "fresh": 31,
-    "output": 420,
-    "cacheRead": 2000,
-    "cacheWrite": 2000,
-    "cacheWrite5m": 2000,
+    "total": 7243,
+    "fresh": 36,
+    "output": 1197,
+    "cacheRead": 4000,
+    "cacheWrite": 2010,
+    "cacheWrite5m": 2010,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
-    "messages": 2,
-    "usd": 0.004831,
-    "usdExact": "0.00483100"
+    "messages": 3,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.0089335,
+    "usdExact": "0.00893350"
    }
   },
   "devices": {
    "dev_personA-laptop01": {
-    "total": 22317,
-    "fresh": 30,
-    "output": 867,
-    "cacheRead": 11300,
-    "cacheWrite": 10120,
-    "cacheWrite5m": 10120,
+    "total": 23097,
+    "fresh": 40,
+    "output": 1017,
+    "cacheRead": 11600,
+    "cacheWrite": 10440,
+    "cacheWrite5m": 10440,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
-    "messages": 3,
+    "messages": 5,
+    "unpricedMessages": 2,
+    "unpricedTokens": 780,
     "usd": 0.170033,
     "usdExact": "0.17003300"
    },
    "dev_personA-studio01": {
-    "total": 139091,
-    "fresh": 2761,
-    "output": 3730,
-    "cacheRead": 86100,
-    "cacheWrite": 46500,
-    "cacheWrite5m": 32800,
+    "total": 162099,
+    "fresh": 12770,
+    "output": 5159,
+    "cacheRead": 96200,
+    "cacheWrite": 47970,
+    "cacheWrite5m": 34100,
     "cacheWrite1h": 13000,
-    "cacheWriteUnknownTtl": 700,
-    "messages": 18,
-    "usd": 0.365548,
-    "usdExact": "0.36554800"
+    "cacheWriteUnknownTtl": 870,
+    "messages": 25,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.440994,
+    "usdExact": "0.44099400"
    },
    "dev_personA-studio02": {
-    "total": 1188,
-    "fresh": 8,
-    "output": 180,
-    "cacheRead": 0,
-    "cacheWrite": 1000,
-    "cacheWrite5m": 900,
+    "total": 3098,
+    "fresh": 18,
+    "output": 680,
+    "cacheRead": 1000,
+    "cacheWrite": 1400,
+    "cacheWrite5m": 1300,
     "cacheWrite1h": 100,
     "cacheWriteUnknownTtl": 0,
-    "messages": 1,
-    "usd": 0.008932,
-    "usdExact": "0.00893200"
+    "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.033412,
+    "usdExact": "0.03341200"
    },
    "dev_sharedbox-build1": {
-    "total": 4451,
-    "fresh": 31,
-    "output": 420,
-    "cacheRead": 2000,
-    "cacheWrite": 2000,
-    "cacheWrite5m": 2000,
+    "total": 7243,
+    "fresh": 36,
+    "output": 1197,
+    "cacheRead": 4000,
+    "cacheWrite": 2010,
+    "cacheWrite5m": 2010,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
-    "messages": 2,
-    "usd": 0.004831,
-    "usdExact": "0.00483100"
+    "messages": 3,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.0089335,
+    "usdExact": "0.00893350"
    },
    "dev_sharedbox-userB1": {
     "total": 3353,
@@ -208,6 +243,8 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 1000,
     "messages": 4,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.009511,
     "usdExact": "0.00951100"
    }
@@ -223,47 +260,70 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.167855,
     "usdExact": "0.16785500"
    },
    "claude-haiku-4-5-20251001": {
-    "total": 4451,
-    "fresh": 31,
-    "output": 420,
-    "cacheRead": 2000,
-    "cacheWrite": 2000,
-    "cacheWrite5m": 2000,
+    "total": 7243,
+    "fresh": 36,
+    "output": 1197,
+    "cacheRead": 4000,
+    "cacheWrite": 2010,
+    "cacheWrite5m": 2010,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
-    "messages": 2,
-    "usd": 0.004831,
-    "usdExact": "0.00483100"
+    "messages": 3,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.0089335,
+    "usdExact": "0.00893350"
+   },
+   "claude-opus-4-6@20250805": {
+    "total": 396,
+    "fresh": 6,
+    "output": 90,
+    "cacheRead": 0,
+    "cacheWrite": 300,
+    "cacheWrite5m": 300,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 1,
+    "unpricedMessages": 1,
+    "unpricedTokens": 396,
+    "usd": 0,
+    "usdExact": "0.00000000"
    },
    "claude-opus-5-5": {
-    "total": 127980,
-    "fresh": 73,
-    "output": 3137,
-    "cacheRead": 81000,
-    "cacheWrite": 43770,
-    "cacheWrite5m": 30670,
+    "total": 134677,
+    "fresh": 91,
+    "output": 4096,
+    "cacheRead": 85300,
+    "cacheWrite": 45190,
+    "cacheWrite5m": 32090,
     "cacheWrite1h": 13100,
     "cacheWriteUnknownTtl": 0,
-    "messages": 11,
-    "usd": 0.337382,
-    "usdExact": "0.33738200"
+    "messages": 14,
+    "unpricedMessages": 1,
+    "unpricedTokens": 384,
+    "usd": 0.375458,
+    "usdExact": "0.37545800"
    },
    "claude-sonnet-5": {
-    "total": 8606,
-    "fresh": 16,
-    "output": 660,
-    "cacheRead": 3900,
-    "cacheWrite": 4030,
-    "cacheWrite5m": 3130,
+    "total": 15111,
+    "fresh": 21,
+    "output": 860,
+    "cacheRead": 9900,
+    "cacheWrite": 4330,
+    "cacheWrite5m": 3430,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 900,
-    "messages": 4,
-    "usd": 0.017487,
-    "usdExact": "0.01748700"
+    "messages": 6,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.021447,
+    "usdExact": "0.02144700"
    },
    "gpt-5.5": {
     "total": 2360,
@@ -275,21 +335,25 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 3,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.0086,
     "usdExact": "0.00860000"
    },
    "gpt-5.6-sol": {
-    "total": 6140,
-    "fresh": 2750,
-    "output": 340,
-    "cacheRead": 2250,
-    "cacheWrite": 800,
+    "total": 18240,
+    "fresh": 12750,
+    "output": 1170,
+    "cacheRead": 3350,
+    "cacheWrite": 970,
     "cacheWrite5m": 0,
     "cacheWrite1h": 0,
-    "cacheWriteUnknownTtl": 800,
-    "messages": 6,
-    "usd": 0.0227,
-    "usdExact": "0.02270000"
+    "cacheWriteUnknownTtl": 970,
+    "messages": 10,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.08059,
+    "usdExact": "0.08059000"
    }
   },
   "sessions": {
@@ -303,6 +367,8 @@
     "cacheWrite1h": 6000,
     "cacheWriteUnknownTtl": 0,
     "messages": 5,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.231792,
     "usdExact": "0.23179200"
    },
@@ -316,6 +382,8 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.012456,
     "usdExact": "0.01245600"
    },
@@ -329,6 +397,8 @@
     "cacheWrite1h": 7000,
     "cacheWriteUnknownTtl": 0,
     "messages": 1,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.066024,
     "usdExact": "0.06602400"
    },
@@ -342,6 +412,8 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.017248,
     "usdExact": "0.01724800"
    },
@@ -355,6 +427,8 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.167855,
     "usdExact": "0.16785500"
    },
@@ -368,6 +442,8 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 1,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.002178,
     "usdExact": "0.00217800"
    },
@@ -381,34 +457,100 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 900,
     "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.005031,
     "usdExact": "0.00503100"
    },
    "claude-code:c0000008-0000-4000-8000-000000000008": {
-    "total": 4451,
-    "fresh": 31,
-    "output": 420,
-    "cacheRead": 2000,
-    "cacheWrite": 2000,
-    "cacheWrite5m": 2000,
+    "total": 7243,
+    "fresh": 36,
+    "output": 1197,
+    "cacheRead": 4000,
+    "cacheWrite": 2010,
+    "cacheWrite5m": 2010,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 3,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.0089335,
+    "usdExact": "0.00893350"
+   },
+   "claude-code:c0000009-0000-4000-8000-000000000009": {
+    "total": 3098,
+    "fresh": 18,
+    "output": 680,
+    "cacheRead": 1000,
+    "cacheWrite": 1400,
+    "cacheWrite5m": 1300,
+    "cacheWrite1h": 100,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.033412,
+    "usdExact": "0.03341200"
+   },
+   "claude-code:c0000010-0000-4000-8000-000000000010": {
+    "total": 4403,
+    "fresh": 4,
+    "output": 399,
+    "cacheRead": 3000,
+    "cacheWrite": 1000,
+    "cacheWrite5m": 1000,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 1,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.013596,
+    "usdExact": "0.01359600"
+   },
+   "claude-code:c0000010-0000-4000-8000-000000000010:agent:f1": {
+    "total": 3323,
+    "fresh": 3,
+    "output": 120,
+    "cacheRead": 3000,
+    "cacheWrite": 200,
+    "cacheWrite5m": 200,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 1,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.002306,
+    "usdExact": "0.00230600"
+   },
+   "claude-code:c0000010-0000-4000-8000-000000000010:agent:f3": {
+    "total": 3182,
+    "fresh": 2,
+    "output": 80,
+    "cacheRead": 3000,
+    "cacheWrite": 100,
+    "cacheWrite5m": 100,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 1,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.001654,
+    "usdExact": "0.00165400"
+   },
+   "claude-code:c0000011-0000-4000-8000-000000000011": {
+    "total": 780,
+    "fresh": 10,
+    "output": 150,
+    "cacheRead": 300,
+    "cacheWrite": 320,
+    "cacheWrite5m": 320,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 2,
-    "usd": 0.004831,
-    "usdExact": "0.00483100"
-   },
-   "claude-code:c0000009-0000-4000-8000-000000000009": {
-    "total": 1188,
-    "fresh": 8,
-    "output": 180,
-    "cacheRead": 0,
-    "cacheWrite": 1000,
-    "cacheWrite5m": 900,
-    "cacheWrite1h": 100,
-    "cacheWriteUnknownTtl": 0,
-    "messages": 1,
-    "usd": 0.008932,
-    "usdExact": "0.00893200"
+    "unpricedMessages": 2,
+    "unpricedTokens": 780,
+    "usd": 0,
+    "usdExact": "0.00000000"
    },
    "claude-code:c0000012-0000-4000-8000-000000000012": {
     "total": 4037,
@@ -420,6 +562,8 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 1,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.011208,
     "usdExact": "0.01120800"
    },
@@ -433,6 +577,8 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 300,
     "messages": 5,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.0179,
     "usdExact": "0.01790000"
    },
@@ -446,8 +592,25 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 100,
     "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.00448,
     "usdExact": "0.00448000"
+   },
+   "codex:d0000008-0000-4000-8000-000000000008": {
+    "total": 11350,
+    "fresh": 9800,
+    "output": 800,
+    "cacheRead": 600,
+    "cacheWrite": 150,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 150,
+    "messages": 3,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.05619,
+    "usdExact": "0.05619000"
    },
    "codex:d0000033-0000-4000-8000-000000000033": {
     "total": 2250,
@@ -459,8 +622,25 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 400,
     "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.00892,
     "usdExact": "0.00892000"
+   },
+   "codex:d0000088-0000-4000-8000-000000000088": {
+    "total": 750,
+    "fresh": 200,
+    "output": 30,
+    "cacheRead": 500,
+    "cacheWrite": 20,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 20,
+    "messages": 1,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.0017,
+    "usdExact": "0.00170000"
    }
   },
   "sessionTrees": {
@@ -474,6 +654,8 @@
     "cacheWrite1h": 13000,
     "cacheWriteUnknownTtl": 0,
     "messages": 8,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.310272,
     "usdExact": "0.31027200"
    },
@@ -487,6 +669,8 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.017248,
     "usdExact": "0.01724800"
    },
@@ -500,6 +684,8 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.167855,
     "usdExact": "0.16785500"
    },
@@ -513,6 +699,8 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 1,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.002178,
     "usdExact": "0.00217800"
    },
@@ -526,34 +714,70 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 900,
     "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.005031,
     "usdExact": "0.00503100"
    },
    "claude-code:c0000008-0000-4000-8000-000000000008": {
-    "total": 4451,
-    "fresh": 31,
-    "output": 420,
-    "cacheRead": 2000,
-    "cacheWrite": 2000,
-    "cacheWrite5m": 2000,
+    "total": 7243,
+    "fresh": 36,
+    "output": 1197,
+    "cacheRead": 4000,
+    "cacheWrite": 2010,
+    "cacheWrite5m": 2010,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 3,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.0089335,
+    "usdExact": "0.00893350"
+   },
+   "claude-code:c0000009-0000-4000-8000-000000000009": {
+    "total": 3098,
+    "fresh": 18,
+    "output": 680,
+    "cacheRead": 1000,
+    "cacheWrite": 1400,
+    "cacheWrite5m": 1300,
+    "cacheWrite1h": 100,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.033412,
+    "usdExact": "0.03341200"
+   },
+   "claude-code:c0000010-0000-4000-8000-000000000010": {
+    "total": 10908,
+    "fresh": 9,
+    "output": 599,
+    "cacheRead": 9000,
+    "cacheWrite": 1300,
+    "cacheWrite5m": 1300,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0,
+    "messages": 3,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.017556,
+    "usdExact": "0.01755600"
+   },
+   "claude-code:c0000011-0000-4000-8000-000000000011": {
+    "total": 780,
+    "fresh": 10,
+    "output": 150,
+    "cacheRead": 300,
+    "cacheWrite": 320,
+    "cacheWrite5m": 320,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 2,
-    "usd": 0.004831,
-    "usdExact": "0.00483100"
-   },
-   "claude-code:c0000009-0000-4000-8000-000000000009": {
-    "total": 1188,
-    "fresh": 8,
-    "output": 180,
-    "cacheRead": 0,
-    "cacheWrite": 1000,
-    "cacheWrite5m": 900,
-    "cacheWrite1h": 100,
-    "cacheWriteUnknownTtl": 0,
-    "messages": 1,
-    "usd": 0.008932,
-    "usdExact": "0.00893200"
+    "unpricedMessages": 2,
+    "unpricedTokens": 780,
+    "usd": 0,
+    "usdExact": "0.00000000"
    },
    "claude-code:c0000012-0000-4000-8000-000000000012": {
     "total": 4037,
@@ -565,6 +789,8 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 1,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.011208,
     "usdExact": "0.01120800"
    },
@@ -578,6 +804,8 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 700,
     "messages": 7,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.02682,
     "usdExact": "0.02682000"
    },
@@ -591,8 +819,25 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 100,
     "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.00448,
     "usdExact": "0.00448000"
+   },
+   "codex:d0000008-0000-4000-8000-000000000008": {
+    "total": 12100,
+    "fresh": 10000,
+    "output": 830,
+    "cacheRead": 1100,
+    "cacheWrite": 170,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 170,
+    "messages": 4,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
+    "usd": 0.05789,
+    "usdExact": "0.05789000"
    }
   }
  },
@@ -623,6 +868,8 @@
     "cacheWrite1h": 13000,
     "cacheWriteUnknownTtl": 0,
     "messages": 11,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.329698,
     "usdExact": "0.32969800"
    },
@@ -637,6 +884,8 @@
      "cacheWrite1h": 13000,
      "cacheWriteUnknownTtl": 0,
      "messages": 11,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.329698,
      "usdExact": "0.32969800"
     }
@@ -652,6 +901,8 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 1,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.002178,
      "usdExact": "0.00217800"
     },
@@ -665,6 +916,8 @@
      "cacheWrite1h": 13000,
      "cacheWriteUnknownTtl": 0,
      "messages": 10,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.32752,
      "usdExact": "0.32752000"
     }
@@ -680,6 +933,8 @@
      "cacheWrite1h": 13000,
      "cacheWriteUnknownTtl": 0,
      "messages": 9,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.317242,
      "usdExact": "0.31724200"
     },
@@ -693,6 +948,8 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.012456,
      "usdExact": "0.01245600"
     }
@@ -708,6 +965,8 @@
      "cacheWrite1h": 6000,
      "cacheWriteUnknownTtl": 0,
      "messages": 5,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.231792,
      "usdExact": "0.23179200"
     },
@@ -721,6 +980,8 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.012456,
      "usdExact": "0.01245600"
     },
@@ -734,6 +995,8 @@
      "cacheWrite1h": 7000,
      "cacheWriteUnknownTtl": 0,
      "messages": 1,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.066024,
      "usdExact": "0.06602400"
     },
@@ -747,6 +1010,8 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.017248,
      "usdExact": "0.01724800"
     },
@@ -760,6 +1025,8 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 1,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.002178,
      "usdExact": "0.00217800"
     }
@@ -775,6 +1042,8 @@
      "cacheWrite1h": 13000,
      "cacheWriteUnknownTtl": 0,
      "messages": 8,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.310272,
      "usdExact": "0.31027200"
     },
@@ -788,6 +1057,8 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.017248,
      "usdExact": "0.01724800"
     },
@@ -801,6 +1072,8 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 1,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.002178,
      "usdExact": "0.00217800"
     }
@@ -826,34 +1099,49 @@
     "E28",
     "E29",
     "E30",
-    "E31"
+    "E31",
+    "E32",
+    "E33",
+    "E34",
+    "E35",
+    "E36",
+    "E37",
+    "E38",
+    "E39",
+    "E40",
+    "E41",
+    "E42"
    ],
    "team": {
-    "total": 41132,
-    "fresh": 3432,
-    "output": 2470,
-    "cacheRead": 19650,
-    "cacheWrite": 15580,
-    "cacheWrite5m": 13780,
+    "total": 69622,
+    "fresh": 13466,
+    "output": 5326,
+    "cacheRead": 33050,
+    "cacheWrite": 17780,
+    "cacheWrite5m": 15810,
     "cacheWrite1h": 100,
-    "cacheWriteUnknownTtl": 1700,
-    "messages": 17,
-    "usd": 0.229157,
-    "usdExact": "0.22915700"
+    "cacheWriteUnknownTtl": 1870,
+    "messages": 28,
+    "unpricedMessages": 2,
+    "unpricedTokens": 780,
+    "usd": 0.3331855,
+    "usdExact": "0.33318550"
    },
    "people": {
     "Person A": {
-     "total": 33328,
-     "fresh": 2738,
-     "output": 1740,
-     "cacheRead": 16300,
-     "cacheWrite": 12550,
-     "cacheWrite5m": 11750,
+     "total": 59026,
+     "fresh": 12767,
+     "output": 3819,
+     "cacheRead": 27700,
+     "cacheWrite": 14740,
+     "cacheWrite5m": 13770,
      "cacheWrite1h": 100,
-     "cacheWriteUnknownTtl": 700,
-     "messages": 11,
-     "usd": 0.214815,
-     "usdExact": "0.21481500"
+     "cacheWriteUnknownTtl": 870,
+     "messages": 21,
+     "unpricedMessages": 2,
+     "unpricedTokens": 780,
+     "usd": 0.314741,
+     "usdExact": "0.31474100"
     },
     "Person B": {
      "total": 3353,
@@ -865,75 +1153,87 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 1000,
      "messages": 4,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.009511,
      "usdExact": "0.00951100"
     },
     "Unassigned": {
-     "total": 4451,
-     "fresh": 31,
-     "output": 420,
-     "cacheRead": 2000,
-     "cacheWrite": 2000,
-     "cacheWrite5m": 2000,
+     "total": 7243,
+     "fresh": 36,
+     "output": 1197,
+     "cacheRead": 4000,
+     "cacheWrite": 2010,
+     "cacheWrite5m": 2010,
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
-     "messages": 2,
-     "usd": 0.004831,
-     "usdExact": "0.00483100"
+     "messages": 3,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.0089335,
+     "usdExact": "0.00893350"
     }
    },
    "devices": {
     "dev_personA-laptop01": {
-     "total": 20863,
-     "fresh": 23,
-     "output": 790,
-     "cacheRead": 10000,
-     "cacheWrite": 10050,
-     "cacheWrite5m": 10050,
+     "total": 21643,
+     "fresh": 33,
+     "output": 940,
+     "cacheRead": 10300,
+     "cacheWrite": 10370,
+     "cacheWrite5m": 10370,
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
-     "messages": 2,
+     "messages": 4,
+     "unpricedMessages": 2,
+     "unpricedTokens": 780,
      "usd": 0.167855,
      "usdExact": "0.16785500"
     },
     "dev_personA-studio01": {
-     "total": 11277,
-     "fresh": 2707,
-     "output": 770,
-     "cacheRead": 6300,
-     "cacheWrite": 1500,
-     "cacheWrite5m": 800,
+     "total": 34285,
+     "fresh": 12716,
+     "output": 2199,
+     "cacheRead": 16400,
+     "cacheWrite": 2970,
+     "cacheWrite5m": 2100,
      "cacheWrite1h": 0,
-     "cacheWriteUnknownTtl": 700,
-     "messages": 8,
-     "usd": 0.038028,
-     "usdExact": "0.03802800"
+     "cacheWriteUnknownTtl": 870,
+     "messages": 15,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.113474,
+     "usdExact": "0.11347400"
     },
     "dev_personA-studio02": {
-     "total": 1188,
-     "fresh": 8,
-     "output": 180,
-     "cacheRead": 0,
-     "cacheWrite": 1000,
-     "cacheWrite5m": 900,
+     "total": 3098,
+     "fresh": 18,
+     "output": 680,
+     "cacheRead": 1000,
+     "cacheWrite": 1400,
+     "cacheWrite5m": 1300,
      "cacheWrite1h": 100,
      "cacheWriteUnknownTtl": 0,
-     "messages": 1,
-     "usd": 0.008932,
-     "usdExact": "0.00893200"
+     "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.033412,
+     "usdExact": "0.03341200"
     },
     "dev_sharedbox-build1": {
-     "total": 4451,
-     "fresh": 31,
-     "output": 420,
-     "cacheRead": 2000,
-     "cacheWrite": 2000,
-     "cacheWrite5m": 2000,
+     "total": 7243,
+     "fresh": 36,
+     "output": 1197,
+     "cacheRead": 4000,
+     "cacheWrite": 2010,
+     "cacheWrite5m": 2010,
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
-     "messages": 2,
-     "usd": 0.004831,
-     "usdExact": "0.00483100"
+     "messages": 3,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.0089335,
+     "usdExact": "0.00893350"
     },
     "dev_sharedbox-userB1": {
      "total": 3353,
@@ -945,6 +1245,8 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 1000,
      "messages": 4,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.009511,
      "usdExact": "0.00951100"
     }
@@ -960,47 +1262,70 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.167855,
      "usdExact": "0.16785500"
     },
     "claude-haiku-4-5-20251001": {
-     "total": 4451,
-     "fresh": 31,
-     "output": 420,
-     "cacheRead": 2000,
-     "cacheWrite": 2000,
-     "cacheWrite5m": 2000,
+     "total": 7243,
+     "fresh": 36,
+     "output": 1197,
+     "cacheRead": 4000,
+     "cacheWrite": 2010,
+     "cacheWrite5m": 2010,
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
-     "messages": 2,
-     "usd": 0.004831,
-     "usdExact": "0.00483100"
+     "messages": 3,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.0089335,
+     "usdExact": "0.00893350"
+    },
+    "claude-opus-4-6@20250805": {
+     "total": 396,
+     "fresh": 6,
+     "output": 90,
+     "cacheRead": 0,
+     "cacheWrite": 300,
+     "cacheWrite5m": 300,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 1,
+     "unpricedMessages": 1,
+     "unpricedTokens": 396,
+     "usd": 0,
+     "usdExact": "0.00000000"
     },
     "claude-opus-5-5": {
-     "total": 5225,
-     "fresh": 15,
-     "output": 510,
-     "cacheRead": 2900,
-     "cacheWrite": 1800,
-     "cacheWrite5m": 1700,
+     "total": 11922,
+     "fresh": 33,
+     "output": 1469,
+     "cacheRead": 7200,
+     "cacheWrite": 3220,
+     "cacheWrite5m": 3120,
      "cacheWrite1h": 100,
      "cacheWriteUnknownTtl": 0,
-     "messages": 2,
-     "usd": 0.02014,
-     "usdExact": "0.02014000"
+     "messages": 5,
+     "unpricedMessages": 1,
+     "unpricedTokens": 384,
+     "usd": 0.058216,
+     "usdExact": "0.05821600"
     },
     "claude-sonnet-5": {
-     "total": 2093,
-     "fresh": 13,
-     "output": 250,
-     "cacheRead": 900,
-     "cacheWrite": 930,
-     "cacheWrite5m": 30,
+     "total": 8598,
+     "fresh": 18,
+     "output": 450,
+     "cacheRead": 6900,
+     "cacheWrite": 1230,
+     "cacheWrite5m": 330,
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 900,
-     "messages": 2,
-     "usd": 0.005031,
-     "usdExact": "0.00503100"
+     "messages": 4,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.008991,
+     "usdExact": "0.00899100"
     },
     "gpt-5.5": {
      "total": 2360,
@@ -1012,21 +1337,25 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 3,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.0086,
      "usdExact": "0.00860000"
     },
     "gpt-5.6-sol": {
-     "total": 6140,
-     "fresh": 2750,
-     "output": 340,
-     "cacheRead": 2250,
-     "cacheWrite": 800,
+     "total": 18240,
+     "fresh": 12750,
+     "output": 1170,
+     "cacheRead": 3350,
+     "cacheWrite": 970,
      "cacheWrite5m": 0,
      "cacheWrite1h": 0,
-     "cacheWriteUnknownTtl": 800,
-     "messages": 6,
-     "usd": 0.0227,
-     "usdExact": "0.02270000"
+     "cacheWriteUnknownTtl": 970,
+     "messages": 10,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.08059,
+     "usdExact": "0.08059000"
     }
    },
    "sessions": {
@@ -1040,6 +1369,8 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.167855,
      "usdExact": "0.16785500"
     },
@@ -1053,34 +1384,100 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 900,
      "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.005031,
      "usdExact": "0.00503100"
     },
     "claude-code:c0000008-0000-4000-8000-000000000008": {
-     "total": 4451,
-     "fresh": 31,
-     "output": 420,
-     "cacheRead": 2000,
-     "cacheWrite": 2000,
-     "cacheWrite5m": 2000,
+     "total": 7243,
+     "fresh": 36,
+     "output": 1197,
+     "cacheRead": 4000,
+     "cacheWrite": 2010,
+     "cacheWrite5m": 2010,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 3,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.0089335,
+     "usdExact": "0.00893350"
+    },
+    "claude-code:c0000009-0000-4000-8000-000000000009": {
+     "total": 3098,
+     "fresh": 18,
+     "output": 680,
+     "cacheRead": 1000,
+     "cacheWrite": 1400,
+     "cacheWrite5m": 1300,
+     "cacheWrite1h": 100,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.033412,
+     "usdExact": "0.03341200"
+    },
+    "claude-code:c0000010-0000-4000-8000-000000000010": {
+     "total": 4403,
+     "fresh": 4,
+     "output": 399,
+     "cacheRead": 3000,
+     "cacheWrite": 1000,
+     "cacheWrite5m": 1000,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 1,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.013596,
+     "usdExact": "0.01359600"
+    },
+    "claude-code:c0000010-0000-4000-8000-000000000010:agent:f1": {
+     "total": 3323,
+     "fresh": 3,
+     "output": 120,
+     "cacheRead": 3000,
+     "cacheWrite": 200,
+     "cacheWrite5m": 200,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 1,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.002306,
+     "usdExact": "0.00230600"
+    },
+    "claude-code:c0000010-0000-4000-8000-000000000010:agent:f3": {
+     "total": 3182,
+     "fresh": 2,
+     "output": 80,
+     "cacheRead": 3000,
+     "cacheWrite": 100,
+     "cacheWrite5m": 100,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 1,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.001654,
+     "usdExact": "0.00165400"
+    },
+    "claude-code:c0000011-0000-4000-8000-000000000011": {
+     "total": 780,
+     "fresh": 10,
+     "output": 150,
+     "cacheRead": 300,
+     "cacheWrite": 320,
+     "cacheWrite5m": 320,
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 2,
-     "usd": 0.004831,
-     "usdExact": "0.00483100"
-    },
-    "claude-code:c0000009-0000-4000-8000-000000000009": {
-     "total": 1188,
-     "fresh": 8,
-     "output": 180,
-     "cacheRead": 0,
-     "cacheWrite": 1000,
-     "cacheWrite5m": 900,
-     "cacheWrite1h": 100,
-     "cacheWriteUnknownTtl": 0,
-     "messages": 1,
-     "usd": 0.008932,
-     "usdExact": "0.00893200"
+     "unpricedMessages": 2,
+     "unpricedTokens": 780,
+     "usd": 0,
+     "usdExact": "0.00000000"
     },
     "claude-code:c0000012-0000-4000-8000-000000000012": {
      "total": 4037,
@@ -1092,6 +1489,8 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 1,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.011208,
      "usdExact": "0.01120800"
     },
@@ -1105,6 +1504,8 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 300,
      "messages": 5,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.0179,
      "usdExact": "0.01790000"
     },
@@ -1118,8 +1519,25 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 100,
      "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.00448,
      "usdExact": "0.00448000"
+    },
+    "codex:d0000008-0000-4000-8000-000000000008": {
+     "total": 11350,
+     "fresh": 9800,
+     "output": 800,
+     "cacheRead": 600,
+     "cacheWrite": 150,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 150,
+     "messages": 3,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.05619,
+     "usdExact": "0.05619000"
     },
     "codex:d0000033-0000-4000-8000-000000000033": {
      "total": 2250,
@@ -1131,8 +1549,25 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 400,
      "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.00892,
      "usdExact": "0.00892000"
+    },
+    "codex:d0000088-0000-4000-8000-000000000088": {
+     "total": 750,
+     "fresh": 200,
+     "output": 30,
+     "cacheRead": 500,
+     "cacheWrite": 20,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 20,
+     "messages": 1,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.0017,
+     "usdExact": "0.00170000"
     }
    },
    "sessionTrees": {
@@ -1146,6 +1581,8 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.167855,
      "usdExact": "0.16785500"
     },
@@ -1159,34 +1596,70 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 900,
      "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.005031,
      "usdExact": "0.00503100"
     },
     "claude-code:c0000008-0000-4000-8000-000000000008": {
-     "total": 4451,
-     "fresh": 31,
-     "output": 420,
-     "cacheRead": 2000,
-     "cacheWrite": 2000,
-     "cacheWrite5m": 2000,
+     "total": 7243,
+     "fresh": 36,
+     "output": 1197,
+     "cacheRead": 4000,
+     "cacheWrite": 2010,
+     "cacheWrite5m": 2010,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 3,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.0089335,
+     "usdExact": "0.00893350"
+    },
+    "claude-code:c0000009-0000-4000-8000-000000000009": {
+     "total": 3098,
+     "fresh": 18,
+     "output": 680,
+     "cacheRead": 1000,
+     "cacheWrite": 1400,
+     "cacheWrite5m": 1300,
+     "cacheWrite1h": 100,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.033412,
+     "usdExact": "0.03341200"
+    },
+    "claude-code:c0000010-0000-4000-8000-000000000010": {
+     "total": 10908,
+     "fresh": 9,
+     "output": 599,
+     "cacheRead": 9000,
+     "cacheWrite": 1300,
+     "cacheWrite5m": 1300,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 0,
+     "messages": 3,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.017556,
+     "usdExact": "0.01755600"
+    },
+    "claude-code:c0000011-0000-4000-8000-000000000011": {
+     "total": 780,
+     "fresh": 10,
+     "output": 150,
+     "cacheRead": 300,
+     "cacheWrite": 320,
+     "cacheWrite5m": 320,
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 2,
-     "usd": 0.004831,
-     "usdExact": "0.00483100"
-    },
-    "claude-code:c0000009-0000-4000-8000-000000000009": {
-     "total": 1188,
-     "fresh": 8,
-     "output": 180,
-     "cacheRead": 0,
-     "cacheWrite": 1000,
-     "cacheWrite5m": 900,
-     "cacheWrite1h": 100,
-     "cacheWriteUnknownTtl": 0,
-     "messages": 1,
-     "usd": 0.008932,
-     "usdExact": "0.00893200"
+     "unpricedMessages": 2,
+     "unpricedTokens": 780,
+     "usd": 0,
+     "usdExact": "0.00000000"
     },
     "claude-code:c0000012-0000-4000-8000-000000000012": {
      "total": 4037,
@@ -1198,6 +1671,8 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 0,
      "messages": 1,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.011208,
      "usdExact": "0.01120800"
     },
@@ -1211,6 +1686,8 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 700,
      "messages": 7,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.02682,
      "usdExact": "0.02682000"
     },
@@ -1224,8 +1701,25 @@
      "cacheWrite1h": 0,
      "cacheWriteUnknownTtl": 100,
      "messages": 2,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
      "usd": 0.00448,
      "usdExact": "0.00448000"
+    },
+    "codex:d0000008-0000-4000-8000-000000000008": {
+     "total": 12100,
+     "fresh": 10000,
+     "output": 830,
+     "cacheRead": 1100,
+     "cacheWrite": 170,
+     "cacheWrite5m": 0,
+     "cacheWrite1h": 0,
+     "cacheWriteUnknownTtl": 170,
+     "messages": 4,
+     "unpricedMessages": 0,
+     "unpricedTokens": 0,
+     "usd": 0.05789,
+     "usdExact": "0.05789000"
     }
    }
   }
@@ -1242,21 +1736,25 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 2,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.012036,
     "usdExact": "0.01203600"
    },
    "2026-09-20": {
-    "total": 170400,
-    "fresh": 3493,
-    "output": 5507,
-    "cacheRead": 100750,
-    "cacheWrite": 60650,
-    "cacheWrite5m": 45850,
+    "total": 198890,
+    "fresh": 13527,
+    "output": 8363,
+    "cacheRead": 114150,
+    "cacheWrite": 62850,
+    "cacheWrite5m": 47880,
     "cacheWrite1h": 13100,
-    "cacheWriteUnknownTtl": 1700,
-    "messages": 28,
-    "usd": 0.558855,
-    "usdExact": "0.55885500"
+    "cacheWriteUnknownTtl": 1870,
+    "messages": 39,
+    "unpricedMessages": 2,
+    "unpricedTokens": 780,
+    "usd": 0.6628835,
+    "usdExact": "0.66288350"
    },
    "2026-09-21": {
     "total": 1266,
@@ -1268,6 +1766,8 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 1,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.001464,
     "usdExact": "0.00146400"
    }
@@ -1283,21 +1783,25 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0,
     "messages": 3,
+    "unpricedMessages": 0,
+    "unpricedTokens": 0,
     "usd": 0.014214,
     "usdExact": "0.01421400"
    },
    "2026-09-20": {
-    "total": 170212,
-    "fresh": 3492,
-    "output": 5490,
-    "cacheRead": 100650,
-    "cacheWrite": 60580,
-    "cacheWrite5m": 45780,
+    "total": 198702,
+    "fresh": 13526,
+    "output": 8346,
+    "cacheRead": 114050,
+    "cacheWrite": 62780,
+    "cacheWrite5m": 47810,
     "cacheWrite1h": 13100,
-    "cacheWriteUnknownTtl": 1700,
-    "messages": 28,
-    "usd": 0.558141,
-    "usdExact": "0.55814100"
+    "cacheWriteUnknownTtl": 1870,
+    "messages": 39,
+    "unpricedMessages": 2,
+    "unpricedTokens": 780,
+    "usd": 0.6621695,
+    "usdExact": "0.66216950"
    }
   }
  },
@@ -1430,7 +1934,67 @@
    "tool": "claude-code",
    "device": "dev_personA-studio02",
    "person": "Person A",
-   "exercises": "new work after joining again"
+   "exercises": "new work after joining again; fast mode"
+  },
+  "claude-code:c0000010-0000-4000-8000-000000000010": {
+   "hash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14",
+   "parent": null,
+   "parentHash": null,
+   "root": "claude-code:c0000010-0000-4000-8000-000000000010",
+   "tool": "claude-code",
+   "device": "dev_personA-studio01",
+   "person": "Person A",
+   "exercises": "a response copied into three forked subagents, one copy a mid-stream snapshot"
+  },
+  "claude-code:c0000010-0000-4000-8000-000000000010:agent:f1": {
+   "hash": "7181ad90fc6217ace0f1d27fb6429c38a886498971f10605b7ffc1a5d83a72f2",
+   "parent": "claude-code:c0000010-0000-4000-8000-000000000010",
+   "parentHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14",
+   "root": "claude-code:c0000010-0000-4000-8000-000000000010",
+   "tool": "claude-code",
+   "device": "dev_personA-studio01",
+   "person": "Person A",
+   "exercises": "a fork: a snapshot of the parent's response, then its own work"
+  },
+  "claude-code:c0000010-0000-4000-8000-000000000010:agent:f3": {
+   "hash": "741a24dba90cce23f55956924c8fcb2cda8442c2741b20f7345492a8866b4eb3",
+   "parent": "claude-code:c0000010-0000-4000-8000-000000000010",
+   "parentHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14",
+   "root": "claude-code:c0000010-0000-4000-8000-000000000010",
+   "tool": "claude-code",
+   "device": "dev_personA-studio01",
+   "person": "Person A",
+   "exercises": "a fork: the parent's last line, then its own work"
+  },
+  "codex:d0000008-0000-4000-8000-000000000008": {
+   "hash": "d870934c9e96e9a0f59ff71adc4e287d629202df72b2aaff4e3d7fb261b52215",
+   "parent": null,
+   "parentHash": null,
+   "root": "codex:d0000008-0000-4000-8000-000000000008",
+   "tool": "codex",
+   "device": "dev_personA-studio01",
+   "person": "Person A",
+   "exercises": "per-response usage records, one of them a compaction the running total never shows"
+  },
+  "codex:d0000088-0000-4000-8000-000000000088": {
+   "hash": "a446140390b89adba063b3a8674f5c0b1264fa38a3b4c21e9da19ecb7c5f8e82",
+   "parent": "codex:d0000008-0000-4000-8000-000000000008",
+   "parentHash": "d870934c9e96e9a0f59ff71adc4e287d629202df72b2aaff4e3d7fb261b52215",
+   "root": "codex:d0000008-0000-4000-8000-000000000008",
+   "tool": "codex",
+   "device": "dev_personA-studio01",
+   "person": "Person A",
+   "exercises": "a fork that replays its parent's per-response records"
+  },
+  "claude-code:c0000011-0000-4000-8000-000000000011": {
+   "hash": "bd373be6bbf27c474be9170bc39ea8f72de5321a77d851defbdce5ee4105675c",
+   "parent": null,
+   "parentHash": null,
+   "root": "claude-code:c0000011-0000-4000-8000-000000000011",
+   "tool": "claude-code",
+   "device": "dev_personA-laptop01",
+   "person": "Person A",
+   "exercises": "a Vertex-style model id and a service tier the price table has no rate for"
   }
  },
  "events": [
@@ -1448,7 +2012,8 @@
     "cacheWrite5m": 20000,
     "cacheWrite1h": 4000,
     "cacheWriteUnknownTtl": 0
-   }
+   },
+   "tier": "standard"
   },
   {
    "id": "E02",
@@ -1465,6 +2030,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
    },
+   "tier": "standard",
    "note": "streamed over three lines across a minute boundary"
   },
   {
@@ -1482,6 +2048,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
    },
+   "tier": "standard",
    "note": "its line is written twice with the same uuid"
   },
   {
@@ -1499,6 +2066,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
    },
+   "tier": "standard",
    "note": "the retry that succeeded after a synthetic API-error line"
   },
   {
@@ -1516,6 +2084,7 @@
     "cacheWrite1h": 2000,
     "cacheWriteUnknownTtl": 0
    },
+   "tier": "standard",
    "note": "first response after compaction"
   },
   {
@@ -1532,7 +2101,8 @@
     "cacheWrite5m": 3000,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
-   }
+   },
+   "tier": "standard"
   },
   {
    "id": "E07",
@@ -1549,6 +2119,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
    },
+   "tier": "standard",
    "note": "streamed over two lines"
   },
   {
@@ -1565,7 +2136,8 @@
     "cacheWrite5m": 0,
     "cacheWrite1h": 7000,
     "cacheWriteUnknownTtl": 0
-   }
+   },
+   "tier": "standard"
   },
   {
    "id": "E09",
@@ -1581,7 +2153,8 @@
     "cacheWrite5m": 1500,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
-   }
+   },
+   "tier": "standard"
   },
   {
    "id": "E10",
@@ -1598,6 +2171,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
    },
+   "tier": "standard",
    "note": "streamed over two lines; both copied into the resumed file"
   },
   {
@@ -1614,7 +2188,8 @@
     "cacheWrite5m": 800,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
-   }
+   },
+   "tier": "standard"
   },
   {
    "id": "E12",
@@ -1630,7 +2205,8 @@
     "cacheWrite5m": 0,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 200
-   }
+   },
+   "tier": "standard"
   },
   {
    "id": "E13",
@@ -1647,6 +2223,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 100
    },
+   "tier": "standard",
    "note": "after a repeated, unchanged cumulative total"
   },
   {
@@ -1664,6 +2241,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
    },
+   "tier": "standard",
    "note": "after turn_context switched the model"
   },
   {
@@ -1681,6 +2259,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
    },
+   "tier": "standard",
    "note": "the counter restarted from zero"
   },
   {
@@ -1697,7 +2276,8 @@
     "cacheWrite5m": 0,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
-   }
+   },
+   "tier": "standard"
   },
   {
    "id": "E17",
@@ -1714,6 +2294,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 300
    },
+   "tier": "standard",
    "note": "the child's first own request; its counter starts below the inherited one"
   },
   {
@@ -1730,7 +2311,8 @@
     "cacheWrite5m": 0,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 100
-   }
+   },
+   "tier": "standard"
   },
   {
    "id": "E19",
@@ -1747,6 +2329,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
    },
+   "tier": "standard",
    "note": "timestamp written as 12:00 at -04:00"
   },
   {
@@ -1763,7 +2346,8 @@
     "cacheWrite5m": 50,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
-   }
+   },
+   "tier": "standard"
   },
   {
    "id": "E21",
@@ -1780,6 +2364,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
    },
+   "tier": "standard",
    "note": "before the window"
   },
   {
@@ -1797,6 +2382,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
    },
+   "tier": "standard",
    "note": "begins before the window, its last line lands inside: wholly before"
   },
   {
@@ -1814,6 +2400,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
    },
+   "tier": "standard",
    "note": "exactly at the window end: outside (half-open)"
   },
   {
@@ -1831,6 +2418,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
    },
+   "tier": "standard",
    "note": "inside the UTC day, on the previous New York day"
   },
   {
@@ -1848,6 +2436,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 900
    },
+   "tier": "standard",
    "note": "cache write reported without its lifetime split"
   },
   {
@@ -1864,7 +2453,8 @@
     "cacheWrite5m": 30,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
-   }
+   },
+   "tier": "standard"
   },
   {
    "id": "E27",
@@ -1880,7 +2470,8 @@
     "cacheWrite5m": 0,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 100
-   }
+   },
+   "tier": "standard"
   },
   {
    "id": "E28",
@@ -1897,6 +2488,7 @@
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
    },
+   "tier": "standard",
    "note": "token_count without an ordinal"
   },
   {
@@ -1913,7 +2505,8 @@
     "cacheWrite5m": 2000,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
-   }
+   },
+   "tier": "standard"
   },
   {
    "id": "E30",
@@ -1929,7 +2522,8 @@
     "cacheWrite5m": 0,
     "cacheWrite1h": 0,
     "cacheWriteUnknownTtl": 0
-   }
+   },
+   "tier": "standard"
   },
   {
    "id": "E31",
@@ -1945,13 +2539,251 @@
     "cacheWrite5m": 900,
     "cacheWrite1h": 100,
     "cacheWriteUnknownTtl": 0
-   }
+   },
+   "tier": "standard"
+  },
+  {
+   "id": "E32",
+   "session": "claude-code:c0000010-0000-4000-8000-000000000010",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-20T15:00:00.000Z",
+   "minute": "2026-09-20T15:00:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 4,
+    "output": 399,
+    "cacheRead": 3000,
+    "cacheWrite5m": 1000,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "tier": "standard",
+   "note": "streamed over three lines; copied into three forks, one copy a snapshot with 60 output tokens"
+  },
+  {
+   "id": "E33",
+   "session": "claude-code:c0000010-0000-4000-8000-000000000010:agent:f1",
+   "model": "claude-sonnet-5",
+   "at": "2026-09-20T15:02:00.000Z",
+   "minute": "2026-09-20T15:02:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 3,
+    "output": 120,
+    "cacheRead": 3000,
+    "cacheWrite5m": 200,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "tier": "standard"
+  },
+  {
+   "id": "E34",
+   "session": "claude-code:c0000010-0000-4000-8000-000000000010:agent:f3",
+   "model": "claude-sonnet-5",
+   "at": "2026-09-20T15:03:00.000Z",
+   "minute": "2026-09-20T15:03:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 2,
+    "output": 80,
+    "cacheRead": 3000,
+    "cacheWrite5m": 100,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "tier": "standard"
+  },
+  {
+   "id": "E35",
+   "session": "codex:d0000008-0000-4000-8000-000000000008",
+   "model": "gpt-5.6-sol",
+   "at": "2026-09-20T16:30:00.000Z",
+   "minute": "2026-09-20T16:30:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 500,
+    "output": 60,
+    "cacheRead": 0,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 100
+   },
+   "tier": "standard",
+   "note": "a per-response record, then the running total"
+  },
+  {
+   "id": "E36",
+   "session": "codex:d0000008-0000-4000-8000-000000000008",
+   "model": "gpt-5.6-sol",
+   "at": "2026-09-20T16:31:00.000Z",
+   "minute": "2026-09-20T16:31:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 9000,
+    "output": 700,
+    "cacheRead": 0,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "tier": "standard",
+   "note": "a compaction request: only a per-response record, the running total never moves"
+  },
+  {
+   "id": "E37",
+   "session": "codex:d0000008-0000-4000-8000-000000000008",
+   "model": "gpt-5.6-sol",
+   "at": "2026-09-20T16:32:00.000Z",
+   "minute": "2026-09-20T16:32:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 300,
+    "output": 40,
+    "cacheRead": 600,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 50
+   },
+   "tier": "standard"
+  },
+  {
+   "id": "E38",
+   "session": "codex:d0000088-0000-4000-8000-000000000088",
+   "model": "gpt-5.6-sol",
+   "at": "2026-09-20T16:40:00.000Z",
+   "minute": "2026-09-20T16:40:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 200,
+    "output": 30,
+    "cacheRead": 500,
+    "cacheWrite5m": 0,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 20
+   },
+   "tier": "standard",
+   "note": "the fork's own response, after its parent's replayed records"
+  },
+  {
+   "id": "E39",
+   "session": "claude-code:c0000008-0000-4000-8000-000000000008",
+   "model": "claude-haiku-4-5-20251001",
+   "at": "2026-09-20T20:02:00.000Z",
+   "minute": "2026-09-20T20:02:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 5,
+    "output": 777,
+    "cacheRead": 2000,
+    "cacheWrite5m": 10,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "tier": "standard",
+   "note": "a line longer than the collector holds (a huge tool input): its usage is recovered"
+  },
+  {
+   "id": "E40",
+   "session": "claude-code:c0000009-0000-4000-8000-000000000009",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-20T22:05:00.000Z",
+   "minute": "2026-09-20T22:05:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 10,
+    "output": 500,
+    "cacheRead": 1000,
+    "cacheWrite5m": 400,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "tier": "fast",
+   "note": "fast mode: priced at the fast rates"
+  },
+  {
+   "id": "E41",
+   "session": "claude-code:c0000011-0000-4000-8000-000000000011",
+   "model": "claude-opus-4-6@20250805",
+   "at": "2026-09-20T17:00:00.000Z",
+   "minute": "2026-09-20T17:00:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 6,
+    "output": 90,
+    "cacheRead": 0,
+    "cacheWrite5m": 300,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "tier": "standard",
+   "unpriced": "no verified rate for this exact id",
+   "note": "a Vertex-style id, kept exactly"
+  },
+  {
+   "id": "E42",
+   "session": "claude-code:c0000011-0000-4000-8000-000000000011",
+   "model": "claude-opus-5-5",
+   "at": "2026-09-20T17:01:00.000Z",
+   "minute": "2026-09-20T17:01:00.000Z",
+   "inWindow": true,
+   "usage": {
+    "fresh": 4,
+    "output": 60,
+    "cacheRead": 300,
+    "cacheWrite5m": 20,
+    "cacheWrite1h": 0,
+    "cacheWriteUnknownTtl": 0
+   },
+   "tier": "other",
+   "unpriced": "a service tier with no rate in the table",
+   "note": "service_tier priority: counted, left unpriced"
   }
  ],
+ "dropped": {
+  "total": 5,
+  "devices": {
+   "dev_personA-laptop01": {
+    "unreadableLine": 1,
+    "missingTimestamp": 1
+   },
+   "dev_sharedbox-userB1": {
+    "sidechainWithoutAgent": 1,
+    "unboundedReplay": 2
+   }
+  },
+  "lines": [
+   {
+    "device": "personA-laptop",
+    "kind": "unreadableLine",
+    "count": 1,
+    "note": "an assistant line cut off mid-write"
+   },
+   {
+    "device": "personA-laptop",
+    "kind": "missingTimestamp",
+    "count": 1,
+    "note": "an assistant line without a timestamp"
+   },
+   {
+    "device": "sharedbox-userB",
+    "kind": "sidechainWithoutAgent",
+    "count": 1,
+    "note": "a subagent line without its agentId"
+   },
+   {
+    "device": "sharedbox-userB",
+    "kind": "unboundedReplay",
+    "count": 2,
+    "note": "a forked Codex child without subagent_history_start_ordinal"
+   }
+  ]
+ },
  "invariants": [
   "team == sum(people) == sum(devices) == sum(models) == sum(sessions) == sum(sessionTrees)",
   "windows[0] + windows[1] == window",
   "total == fresh + output + cacheRead + cacheWrite; cacheWrite == cacheWrite5m + cacheWrite1h + cacheWriteUnknownTtl",
-  "every delivery after the first copy of an event adds nothing"
+  "every delivery after the first copy of an event adds nothing",
+  "every line that carries usage and cannot be counted is counted in dropped, by machine and reason"
  ]
 }

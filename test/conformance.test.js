@@ -16,8 +16,8 @@ import { build, collectDeliveries, CANARIES } from "./conformance/build.mjs";
 import * as conformance from "./conformance/index.js";
 import { createStore, MINUTE } from "../lib/hub/store.js";
 import { createRegistry } from "../lib/hub/registry.js";
-import { accountingReport, dailyTotals, personOf } from "../lib/hub/accounting.js";
-import { buildConsole } from "../lib/hub/aggregate.js";
+import { accountingReport, dailyTotals, personOf, rollupDailyTotals } from "../lib/hub/accounting.js";
+import { buildConsole, periodRange } from "../lib/hub/aggregate.js";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const prices = JSON.parse(fs.readFileSync(path.join(ROOT, "..", "lib", "collector", "prices.json"), "utf8"));
@@ -25,7 +25,7 @@ const { manifest, expected } = conformance;
 const W0 = Date.parse(manifest.window.from), W1 = Date.parse(manifest.window.to);
 const TOKEN_KEYS = ["total", "fresh", "output", "cacheRead", "cacheWrite", "cacheWrite5m", "cacheWrite1h", "cacheWriteUnknownTtl", "messages"];
 const RECORD_KEYS = ["id", "tool", "model", "sessionHash", "parentSessionHash", "isSubagent", "projectHash", "engagement", "at",
-  "reportingDevice", "executionOrigin", "ttl", "continuation", "fresh", "output", "cacheWrite", "cacheRead", "cacheWrite5m", "cacheWrite1h", "observed", "measurement"].sort();
+  "reportingDevice", "executionOrigin", "ttl", "continuation", "fresh", "output", "cacheWrite", "cacheRead", "cacheWrite5m", "cacheWrite1h", "observed", "measurement", "tier"].sort();
 
 function hub(order = manifest.deliveries.map((d) => d.step), deliveries) {
   const store = createStore({ dir: null, retentionMs: 30 * 86_400_000, prices, now: () => W1 - 1 });
@@ -35,6 +35,8 @@ function hub(order = manifest.deliveries.map((d) => d.step), deliveries) {
   for (const step of order) {
     const delivery = deliveries.find((d) => d.step === step);
     receipts.set(step, store.ingest(delivery.deviceId, delivery.records));
+    // What the collector could not count travels with each delivery (§3.2).
+    registry.touch(delivery.deviceId, { coverage: delivery.coverage, at: W1 - 1 });
   }
   return { store, registry, receipts };
 }
@@ -45,7 +47,9 @@ function same(actual, wanted, where) {
   for (const key of TOKEN_KEYS) assert.equal(actual[key], wanted[key], `${where}: ${key}`);
   assert.ok(Math.abs(actual.usd - wanted.usd) < 1e-9, `${where}: usd ${actual.usd} != ${wanted.usd}`);
   assert.equal(actual.unknownClassRecords ?? 0, 0, `${where}: a class went unreported`);
-  assert.equal(actual.unpricedRecords ?? 0, 0, `${where}: a record went unpriced`);
+  // A model or tier with no verified rate: its tokens count, its dollars do not.
+  assert.equal(actual.unpricedMessages ?? 0, wanted.unpricedMessages, `${where}: unpriced messages`);
+  assert.equal(actual.unpricedTokens ?? 0, wanted.unpricedTokens, `${where}: unpriced tokens`);
 }
 
 const byLabel = (hashMap) => {
@@ -71,7 +75,7 @@ const deliveries = await collectDeliveries({ fixtureRoot: conformance.root, mani
 test("the fixtures are what the builder writes, and the collector still sends exactly collector-records.json", async () => {
   assert.deepEqual(await build({ check: true }), [], "run `node test/conformance/build.mjs` and read the diff");
   assert.deepEqual(deliveries, conformance.collectorRecords.deliveries);
-  assert.equal(conformance.suite, "1.0.0");
+  assert.equal(conformance.suite, "1.1.0");
 });
 
 test("the hub's accounting reproduces every expected total for the window and both halves of it", () => {
@@ -151,7 +155,9 @@ test("the console's own screen shows the same day, people, machines, models and 
   for (const key of ["total", "fresh", "output", "cacheRead", "cacheWrite"]) assert.equal(view.day.tokens[key], w.team[key], `day ${key}`);
   assert.equal(view.day.messages, w.team.messages);
   assert.ok(Math.abs(view.day.cost.usd - w.team.usd) < 1e-9, "day cost");
-  assert.equal(view.day.cost.status, "estimated");
+  assert.equal(view.day.cost.status, w.team.unpricedMessages ? "partial" : "estimated");
+  assert.equal(view.day.cost.unpricedMessages, w.team.unpricedMessages, "messages, not records, are counted as unpriced");
+  assert.equal(view.day.cost.unpricedTokens, w.team.unpricedTokens);
   for (const [model, wanted] of Object.entries(w.models)) {
     const row = view.day.models.find((m) => m.model === model);
     assert.equal(row.tokens, wanted.total, `model ${model}`);
@@ -199,4 +205,85 @@ test("privacy canary: no prompt, reply, path, branch or file name from the logs 
     assert.deepEqual(Object.keys(record).sort(), RECORD_KEYS, "a record carries a field outside the documented projection");
     assert.equal(Date.parse(record.at) % MINUTE, 0, "a record's time is finer than a minute");
   }
+});
+
+test("A1: forked subagents' copies of a message count once, whatever order the files are read in", async () => {
+  // Reading each subagents/ folder as its own root, first, reverses the order:
+  // every fork copy is read before the transcript it was copied from.
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-conformance-reversed-"));
+  try {
+    const { runOnce } = await import("../lib/collector/collector.js");
+    const studio = manifest.devices["personA-studio"];
+    fs.writeFileSync(path.join(scratch, "enrollment.json"), JSON.stringify({ v: 1, orgSalt: manifest.organization.orgSalt,
+      organizationId: manifest.organization.id, device: { id: studio.id, label: studio.label } }), { mode: 0o600 });
+    const projects = path.join(conformance.logsRoot, "personA-studio", "claude", "projects");
+    const forks = [];
+    const walk = (dir) => { for (const e of fs.readdirSync(dir, { withFileTypes: true })) if (e.isDirectory()) { if (e.name === "subagents") forks.push(path.join(dir, e.name)); else walk(path.join(dir, e.name)); } };
+    walk(projects);
+    let sent = [];
+    await runOnce({ directory: scratch, sinkName: "reversed", roots: [...forks.map((directory) => ({ tool: "claude-code", directory })), { tool: "claude-code", directory: projects }],
+      deliver: async (_d, records) => { sent = records; return { accepted: records.length, duplicate: 0, rejected: [] }; } });
+    const labels = Object.entries(expected.sessions).filter(([label, s]) => s.device === studio.id && label.startsWith("claude-code:")).map(([, s]) => s.hash);
+    const tree = new Set(labels);
+    const got = sent.filter((r) => tree.has(r.sessionHash) || tree.has(r.parentSessionHash));
+    const want = expected.events.filter((e) => e.session.startsWith("claude-code:") && expected.sessions[e.session].device === studio.id);
+    const sum = (rows, key) => rows.reduce((a, r) => a + (r[key] ?? 0), 0);
+    assert.equal(sum(got, "fresh"), want.reduce((a, e) => a + e.usage.fresh, 0), "input");
+    assert.equal(sum(got, "output"), want.reduce((a, e) => a + e.usage.output, 0), "output");
+    assert.equal(sum(got, "cacheRead"), want.reduce((a, e) => a + e.usage.cacheRead, 0), "cache read");
+    assert.equal(sum(got, "cacheWrite"), want.reduce((a, e) => a + e.usage.cacheWrite5m + e.usage.cacheWrite1h + e.usage.cacheWriteUnknownTtl, 0), "cache write");
+    assert.equal(got.filter((r) => !r.continuation).length, want.length, "messages");
+  } finally { fs.rmSync(scratch, { recursive: true, force: true }); }
+});
+
+test("A2: every line that could not be counted is counted, by machine and reason, and shown", () => {
+  const { store, registry } = hub(undefined, deliveries);
+  const report = accountingReport({ store, registry, from: W0, to: W1, prices });
+  assert.deepEqual(report.coverage.devices, expected.dropped.devices);
+  assert.equal(report.coverage.dropped, expected.dropped.total);
+  const view = buildConsole({ store, registry, now: W1 - 1, hub: { version: "conformance" } });
+  assert.equal(view.coverage.dropped, expected.dropped.total);
+  for (const [deviceId, kinds] of Object.entries(expected.dropped.devices)) {
+    const row = view.devices.find((d) => d.id === deviceId);
+    assert.equal(row.coverage.dropped, Object.values(kinds).reduce((a, n) => a + n, 0), deviceId);
+    for (const r of row.coverage.reasons) assert.ok(typeof r.label === "string" && r.label.length > 0, r.kind);
+  }
+  // The recovered over-long line is not a drop.
+  assert.ok(view.coverage.recovered >= 1);
+});
+
+test("F3: every period's chart adds up to its headline, and the daily rollup matches the UTC days", () => {
+  const { store, registry } = hub(undefined, deliveries);
+  const now = W1 - 1;
+  const view = buildConsole({ store, registry, now, hub: { version: "conformance" } });
+  for (const key of ["1h", "24h", "7d", "30d"]) {
+    const bars = view.series[key].values.reduce((a, v) => a + v, 0);
+    assert.equal(bars, view.windows[key].tokens.total, `${key}: the bars add up to the headline`);
+  }
+  assert.equal(view.windows["24h"].tokens.total, expected.window.team.total);
+  assert.equal(view.windows["24h"].from, W0);
+  // 30 days: the last 30 UTC days, from the rollup.
+  const month = periodRange("30d", now);
+  const utc = expected.days.UTC;
+  const inMonth = Object.entries(utc).filter(([day]) => day >= month.fromDay && day <= month.toDay);
+  assert.equal(view.windows["30d"].tokens.total, inMonth.reduce((a, [, t]) => a + t.total, 0));
+  assert.ok(Math.abs(view.windows["30d"].cost.usd - inMonth.reduce((a, [, t]) => a + t.usd, 0)) < 1e-9);
+  const rolled = rollupDailyTotals({ store, fromDay: "2026-09-01", toDay: "2026-09-30" });
+  assert.deepEqual(Object.keys(rolled.days), Object.keys(utc));
+  for (const [day, wanted] of Object.entries(utc)) same(rolled.days[day], wanted, `rollup ${day}`);
+  // Team and people answer for the same period as the headline.
+  for (const key of ["1h", "24h", "7d", "30d"]) {
+    assert.equal(view.devices.reduce((a, d) => a + d.windows[key].tokens.total, 0), view.windows[key].tokens.total, `${key} machines`);
+    assert.equal(view.people.reduce((a, p) => a + p.windows[key].tokens.total, 0), view.windows[key].tokens.total, `${key} people`);
+  }
+});
+
+test("F5: fast mode is priced at the fast rates, and a tier with no rate is unpriced, never standard", () => {
+  const { store, registry } = hub(undefined, deliveries);
+  const report = accountingReport({ store, registry, from: W0, to: W1, prices });
+  const fast = expected.events.find((e) => e.tier === "fast");
+  const s = byLabel(report.sessions)[fast.session];
+  same(s, expected.window.sessions[fast.session], "fast-mode session");
+  const other = expected.events.find((e) => e.tier === "other");
+  assert.ok(expected.window.sessions[other.session].unpricedMessages >= 1);
 });
