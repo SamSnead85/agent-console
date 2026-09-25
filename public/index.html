@@ -27,6 +27,10 @@
     <!-- Vendor marks: the official paths (Simple Icons), drawn in the current ink. -->
     <symbol id="mk-anthropic" viewBox="0 0 24 24"><path fill="currentColor" d="M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5528h3.7442L10.5363 3.5409Zm-.3712 10.2232 2.2914-5.9456 2.2914 5.9456Z"/></symbol>
     <symbol id="mk-openai" viewBox="0 0 24 24"><path fill="currentColor" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></symbol>
+    <!-- the two presenter controls, as glyphs for the phone -->
+    <symbol id="ic-eye" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="ic-pause" viewBox="0 0 24 24"><path fill="currentColor" d="M7 5h4v14H7zM13 5h4v14h-4z"/></symbol>
+    <symbol id="ic-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></symbol>
     <pattern id="hatchfill" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
       <rect width="3" height="7" fill="var(--hatch)"/>
     </pattern>
@@ -49,7 +53,6 @@
       <button class="tab" data-view="projects"><span>Projects</span><em>this machine</em></button>
     </nav>
     <div class="right">
-      <span class="stamp demo-only" title="Every figure on this screen is generated. Nothing was read from any machine.">DEMO</span>
       <span class="reach" id="reach" title=""><i></i><span id="reachText">—</span></span>
       <button class="kbd" id="palBtn" type="button" title="Go anywhere: views, machines, lanes, actions" aria-label="Open the command palette">⌘K</button>
       <button class="themebtn" id="themeBtn" type="button" aria-label="Switch between light and dark">Light</button>
@@ -66,19 +69,20 @@
     <p class="fine" id="printSay" role="status" aria-live="polite" hidden></p>
   </section>
 
-  <!-- the instrument strip, shared by every view: what this is, where it reads, what is live, the clock, and the two presenter controls -->
+  <!-- the instrument strip, shared by every view: what this is, where it reads, what is live, the clock, and the two presenter controls.
+       In --demo this stamp is the one frame stamp; every generated row and figure carries its own. -->
   <div class="conhead" id="strip">
     <h1 id="h-console">Agent Console</h1>
     <span class="vt" id="stripView" hidden></span>
-    <span class="stamp demo-only">DEMO</span>
+    <span class="stamp demo-only" title="Every figure on this screen is generated. Nothing was read from any machine.">DEMO</span>
     <span class="cap live" id="liveCap"><i id="liveDot"></i><span id="liveCount">—</span></span>
     <span class="count" id="machineCount">—</span>
     <button class="alertchip" id="alertChip" type="button" hidden aria-describedby="alertPanel">—</button>
     <span class="clock"><span id="clockDate">—</span><b id="clockTime">—</b><em id="clockZone" title="Every time on this screen is in this zone">—</em></span>
     <span class="scan" id="scanNote" title="When the last reading arrived, and how long the hub took to answer">—</span>
     <span class="ctrls">
-      <button id="voidBtn" type="button" aria-pressed="false">Show unavailable</button>
-      <button id="motionBtn" type="button" aria-pressed="false">Pause motion</button>
+      <button id="voidBtn" type="button" aria-pressed="false" aria-label="Show unavailable" title="Draw the lanes and machines that are silent, removed or idle for more than an hour"><svg aria-hidden="true"><use href="#ic-eye"/></svg><span>Show unavailable</span></button>
+      <button id="motionBtn" type="button" aria-pressed="false" aria-label="Pause motion" title="Stop the animation; figures keep updating"><svg aria-hidden="true"><use href="#ic-pause"/></svg><span>Pause motion</span></button>
     </span>
   </div>
 
@@ -87,19 +91,22 @@
 
     <div class="console" id="band">
       <div class="col tokens">
-        <div class="cap"><span id="cCap">Tokens · last 24 hours</span><span class="stamp demo-only" data-sm>DEMO</span></div>
+        <div class="cap"><span id="cCap">Tokens · last 24 hours</span></div>
         <div id="cTotal" class="big" data-src="windows.tokens.total">—</div>
         <div class="tline"><span id="cSpend" data-src="windows.cost.usd">—</span><em><span id="cMsgs" data-src="windows.messages">—</span> messages</em></div>
         <div class="prov" id="cProv">—</div>
         <div class="mix" id="cMix" role="img" aria-label="Token composition"></div>
         <div class="chead" aria-hidden="true"><span></span><span>class</span><span>tokens</span><span>share</span><span>est.</span></div>
         <div class="classes" id="cClasses"></div>
-        <div class="week" title="The last seven days, every machine, in two-hour steps"><span class="wl">7 days</span><svg id="weekBars" viewBox="0 0 84 20" preserveAspectRatio="none" aria-hidden="true"></svg><b id="weekTotal" data-src="windows.7d.tokens.total">—</b></div>
+        <div class="week" title="The last seven days, every machine, in two-hour steps">
+          <div class="wrow"><span class="wl">7 days</span><span class="wp" id="weekPeak">—</span><b id="weekTotal" data-src="windows.7d.tokens.total">—</b></div>
+          <svg id="weekBars" viewBox="0 0 84 20" preserveAspectRatio="none" aria-hidden="true"></svg>
+        </div>
       </div>
       <div class="col flow">
         <div class="cap">Tokens over time <em class="by">by class</em><span class="peak" id="cPeak" hidden></span>
           <span class="seg" id="winSeg" role="group" aria-label="Period for every figure">
-            <button type="button" data-w="1h" aria-pressed="false">1H</button><button type="button" data-w="24h" class="on" aria-pressed="true">24H</button><button type="button" data-w="7d" aria-pressed="false">7D</button><button type="button" data-w="30d" aria-pressed="false">30D</button>
+            <button type="button" data-w="1h" aria-pressed="false" aria-label="Last hour">1H</button><button type="button" data-w="24h" class="on" aria-pressed="true" aria-label="Last 24 hours">24H</button><button type="button" data-w="7d" aria-pressed="false" aria-label="Last 7 days">7D</button><button type="button" data-w="30d" aria-pressed="false" aria-label="Last 30 days">30D</button>
           </span>
         </div>
         <div class="flowwrap inst" id="flowWrap">
@@ -108,7 +115,7 @@
             <defs><linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--chart-top)"/><stop offset="1" stop-color="var(--chart-bottom)"/></linearGradient></defs>
             <g id="cGridLines" aria-hidden="true"><line x1="0" x2="520" y1="25" y2="25"/><line x1="0" x2="520" y1="50" y2="50"/><line x1="0" x2="520" y1="75" y2="75"/></g>
             <rect id="cGap" x="0" y="0" width="0" height="100" fill="url(#hatchfill)"/>
-            <g id="cStack" aria-hidden="true"><path class="cacheRead"/><path class="cacheWrite"/><path class="output"/><path class="fresh"/></g>
+            <g id="cStack" aria-hidden="true"><path class="cacheRead"/><path class="fresh"/><path class="cacheWrite"/><path class="output"/></g>
             <path id="cArea" fill="url(#fg)"/>
             <path id="cLine" fill="none" stroke="var(--chart-line)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
             <line id="cHover" x1="0" x2="0" y1="0" y2="100" stroke="var(--quiet)" stroke-width="1" vector-effect="non-scaling-stroke" opacity="0"/>
@@ -116,7 +123,7 @@
           <div class="gaplabel" id="cGapLabel" hidden></div>
           <div class="tip" id="cTip" hidden></div>
         </div>
-        <div class="bx"><span id="axLeft">24 hours ago</span><span id="axMid">Claude Code · Codex</span><span>now</span></div>
+        <div class="bx"><span id="axLeft">24 hours ago</span><span id="axMid"></span><span>now</span></div>
         <div class="legend" id="cLegend" aria-label="Token classes in the chart"></div>
       </div>
       <div class="col models">
@@ -135,11 +142,16 @@
         <div class="aline" id="attnLine">—</div>
         <div class="afoot" id="attnFoot">—</div>
         <div class="alist" id="attnList"></div>
+        <div class="astrip" title="The last sixty minutes: one tick per alert, hatched from the moment a machine went silent">
+          <svg id="attnStrip" viewBox="0 0 520 18" preserveAspectRatio="none" role="img" aria-label="Alerts over the last sixty minutes"></svg>
+          <div class="bx"><span>60 min ago</span><span id="attnStripCap"></span><span>now</span></div>
+        </div>
       </div>
       <div class="col spectrum">
         <div class="cap">Spend spectrum <em class="by">cost share over token share</em><span class="capr" id="specCap">—</span></div>
         <div class="specwrap inst" id="specWrap">
           <div class="voidstate"><b>No estimate</b><span id="specReason">—</span></div>
+          <span class="slab top" aria-hidden="true">cost</span><span class="slab bot" aria-hidden="true">tokens</span>
           <svg id="cSpec" viewBox="0 0 520 60" preserveAspectRatio="none" role="img" aria-label="Cost share over token share, by class"></svg>
         </div>
         <div class="speclegend" id="specLegend"></div>
@@ -149,7 +161,7 @@
         <div class="cap">Burn · last 60 min<span class="capr" id="burnMedian">—</span><button type="button" class="unit" id="unitBtn" aria-label="Switch burn unit">per minute ⇄</button></div>
         <div id="cBurn" class="big mid" data-src="burn.tokensPerMinute">—</div>
         <div class="brate"><span id="cRate" data-src="burn.usdPerMinute">—</span></div>
-        <div class="bprov" id="cBurnNote">—</div>
+        <div class="bprov"><span id="cBurnNote">—</span><span id="burnGapNote"></span></div>
         <div class="bsparkwrap inst" id="burnWrap">
           <div class="voidstate"><b>No reading</b><span id="burnReason">—</span></div>
           <svg id="cBurnSpark" class="bspark" viewBox="0 0 520 44" preserveAspectRatio="none" role="img" aria-label="Tokens per minute over the last 60 minutes, every machine"></svg>
@@ -157,12 +169,12 @@
       </div>
     </div>
 
-    <!-- the canvas under the band scrolls itself; the band and the strip never leave the screen -->
+    <!-- the canvas under the band: the lanes scroll by themselves under their own header and over their own footer; the band never leaves the screen -->
     <div class="canvas" id="consoleCanvas">
       <section class="lanes" aria-label="Sessions">
         <h2 class="visually-hidden">Sessions</h2>
         <div class="lhead" aria-hidden="true"><span>State</span><span>Project / branch</span><span>Model</span><span>Activity · 1 h</span>
-          <span class="r">5 min</span><span class="r c-in">In · 24 h</span><span class="r c-out">Out</span><span class="r">24 h</span><span class="r c-usd">Est. $</span><span class="r c-ag">Agents</span><span class="r c-cx">Context</span><span class="c-dv">Machine</span><span class="r c-la">Last</span></div>
+          <span class="r">5 min</span><span class="r c-in">In</span><span class="r c-out">Out</span><span class="r">Total</span><span class="r c-usd">Est. $</span><span class="r c-ag">Agents</span><span class="r c-cx">Context</span><span class="c-do">Doing</span><span class="c-dv">Machine</span><span class="r c-la">Last</span></div>
         <div id="cLanes" class="lanescroll" tabindex="0" role="region" aria-label="Lanes, one per session, scrollable"></div>
         <div class="lfoot" id="lFoot"><span>—</span></div>
       </section>
@@ -176,7 +188,7 @@
       </section>
 
       <section class="interop-panel" id="interopPanel" aria-label="Optional telemetry" hidden>
-        <div class="interop-head"><h2>Telemetry</h2><span class="stamp demo-only">DEMO</span><span>local sources · separate from transcript totals</span></div>
+        <div class="interop-head"><h2>Telemetry</h2><span>local sources · separate from transcript totals</span></div>
         <div class="interop-rows" id="interopRows"></div>
       </section>
     </div>
@@ -184,36 +196,41 @@
 
   <!-- ─────────────── TEAM ─────────────── -->
   <section class="view" id="view-team" aria-labelledby="h-team" hidden>
-    <div class="head first">
-      <h2 id="h-team">Team</h2><span class="stamp demo-only">DEMO</span>
-      <span class="hcount" id="teamHeadCount">—</span>
-      <span class="seg big" id="periodSeg" role="group" aria-label="Period">
-        <button type="button" data-p="1h" aria-pressed="false">1 hour</button><button type="button" data-p="24h" class="on" aria-pressed="true">24 hours</button><button type="button" data-p="7d" aria-pressed="false">7 days</button><button type="button" data-p="30d" aria-pressed="false">30 days</button>
-      </span>
-    </div>
+    <h2 class="visually-hidden" id="h-team">Team</h2>
 
     <div class="console" id="teamBand">
       <div class="col tokens">
-        <div class="cap"><span id="tCap">Tokens · last 24 hours</span><span class="stamp demo-only" data-sm>DEMO</span></div>
+        <div class="cap"><span id="tCap">Tokens · last 24 hours</span></div>
         <div id="tTotal" class="big" data-src="windows.tokens.total">—</div>
         <div class="tline"><span id="tSpend" data-src="windows.cost.usd">—</span><em><span id="tMsgs" data-src="windows.messages">—</span> messages</em></div>
         <div class="prov" id="tProv">—</div>
         <div class="kv" id="teamTotals"></div>
+        <div class="week" title="The last seven days, every machine, in two-hour steps">
+          <div class="wrow"><span class="wl">7 days</span><span class="wp" id="tWeekPeak">—</span><b id="tWeekTotal" data-src="windows.7d.tokens.total">—</b></div>
+          <svg id="tWeekBars" viewBox="0 0 84 20" preserveAspectRatio="none" aria-hidden="true"></svg>
+        </div>
       </div>
       <div class="col flow">
-        <div class="cap">Activity · last hour <em class="by">by machine</em><span class="capr" id="tFlowCap">—</span></div>
+        <div class="cap">Activity · 1H <em class="by">by machine</em><span class="peak" id="tPeak" hidden></span>
+          <span class="seg" id="periodSeg" role="group" aria-label="Period for every figure">
+            <button type="button" data-p="1h" aria-pressed="false" aria-label="Last hour">1H</button><button type="button" data-p="24h" class="on" aria-pressed="true" aria-label="Last 24 hours">24H</button><button type="button" data-p="7d" aria-pressed="false" aria-label="Last 7 days">7D</button><button type="button" data-p="30d" aria-pressed="false" aria-label="Last 30 days">30D</button>
+          </span>
+        </div>
         <div class="flowwrap inst" id="tFlowWrap">
           <div class="voidstate"><b>No activity</b><span id="tFlowReason">—</span></div>
           <svg id="tFlow" viewBox="0 0 520 100" preserveAspectRatio="none" role="img" aria-label="Tokens in the last hour, stacked by machine, three-minute steps"></svg>
         </div>
-        <div class="bx"><span>60 min ago</span><span>3-minute steps · every session on the machine</span><span>now</span></div>
+        <div class="bx"><span>60 min ago</span><span id="tFlowCap">—</span><span>now</span></div>
         <div class="legend" id="tLegend"></div>
       </div>
       <div class="col models">
-        <div class="mhead machines"><span id="tMachineCap">by machine · 24 h</span><span>share</span><span>tokens</span><span>est.</span></div>
-        <div id="tMachines"></div>
-        <div class="mhead people"><span id="tPeopleCap">by person · 24 h</span><span>share</span><span>tokens</span><span>est.</span></div>
+        <div class="mhead"><span id="tModelCap">by model · 24 h</span><span>share</span><span>est.</span></div>
+        <div id="tModels"></div>
+        <div class="mhead tools"><span id="tToolCap">by tool · 24 h</span><span>share</span><span>tokens</span><span>sessions</span></div>
+        <div id="tTools"></div>
+        <div class="mhead people"><span id="tPeopleCap" title="How much each person's sessions asked of the models">by person · 24 h</span><span title="Share of every message in the period">share</span><span>messages</span><span title="Sessions in the last 24 hours">sessions</span></div>
         <div id="tPeople"></div>
+        <div class="mfoot"><span class="hint" id="tHint">—</span></div>
       </div>
     </div>
 
@@ -242,29 +259,28 @@
 
   <!-- ─────────────── PROJECTS ─────────────── -->
   <section class="view" id="view-projects" aria-labelledby="h-projects" hidden>
-    <div class="head first">
-      <h2 id="h-projects">Projects</h2><span class="stamp demo-only">DEMO</span>
-      <span class="hcount" id="projHeadCount" title="This machine only: read from its own transcripts and Git history, never reported to anyone">this machine</span>
-      <span class="seg big" id="projSeg" role="group" aria-label="Period">
-        <button type="button" data-p="1h" aria-pressed="false">1 hour</button><button type="button" data-p="24h" class="on" aria-pressed="true">24 hours</button><button type="button" data-p="7d" aria-pressed="false">7 days</button><button type="button" data-p="30d" aria-pressed="false">30 days</button>
-      </span>
-    </div>
+    <h2 class="visually-hidden" id="h-projects">Projects</h2>
 
     <div class="console" id="projBand">
       <div class="col tokens">
-        <div class="cap"><span id="pCap">Tokens · last 24 hours · this machine</span><span class="stamp demo-only" data-sm>DEMO</span></div>
+        <div class="cap"><span id="pCap">Tokens · last 24 hours · this machine</span></div>
         <div id="pTotal" class="big" data-src="projects.tokens">—</div>
         <div class="tline"><span id="pSpend" data-src="projects.usd">—</span><em><span id="pSessions" data-src="projects.sessions">—</span> sessions</em></div>
         <div class="prov" id="pProv">—</div>
         <div class="kv" id="pKv"></div>
+        <div class="effort" id="pEffort" title="The fleet on one line, this machine's own Git on the other; the two are never divided into each other"></div>
       </div>
       <div class="col flow">
-        <div class="cap">Activity · last hour <em class="by">by project</em><span class="capr" id="pFlowCap">—</span></div>
+        <div class="cap">Activity · 1H <em class="by">by project</em><span class="peak" id="pPeak" hidden></span>
+          <span class="seg" id="projSeg" role="group" aria-label="Period for every figure">
+            <button type="button" data-p="1h" aria-pressed="false" aria-label="Last hour">1H</button><button type="button" data-p="24h" class="on" aria-pressed="true" aria-label="Last 24 hours">24H</button><button type="button" data-p="7d" aria-pressed="false" aria-label="Last 7 days">7D</button><button type="button" data-p="30d" aria-pressed="false" aria-label="Last 30 days">30D</button>
+          </span>
+        </div>
         <div class="flowwrap inst" id="pFlowWrap">
           <div class="voidstate"><b>No activity</b><span id="pFlowReason">—</span></div>
           <svg id="pFlow" viewBox="0 0 520 100" preserveAspectRatio="none" role="img" aria-label="Tokens in the last hour, stacked by project, three-minute steps"></svg>
         </div>
-        <div class="bx"><span>60 min ago</span><span>3-minute steps · this machine's sessions</span><span>now</span></div>
+        <div class="bx"><span>60 min ago</span><span id="pFlowCap">—</span><span>now</span></div>
         <div class="legend" id="pLegend"></div>
       </div>
       <div class="col models">
@@ -281,29 +297,29 @@
         <div class="thead"><h3>Projects on this machine</h3><span class="hc" id="projTableCount">—</span></div>
         <div class="tablewrap" tabindex="0" role="region" aria-label="Projects on this machine, scrollable"><table class="grid" id="projTable">
           <caption class="visually-hidden">Projects on this machine</caption>
-          <thead><tr><th scope="col">Project</th><th scope="col" title="Sessions on this project that reported in the last two minutes">Live</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r" title="List-price estimate, not an invoice">Est.</th><th scope="col" class="r">Sessions</th><th scope="col" class="r" title="Local Git history in the period">Commits</th><th scope="col" class="r">Lines + / −</th><th scope="col" class="r" title="Commits whose subject ends (#N) or merges a pull request; #N may name an issue">PR-linked</th><th scope="col" class="r" title="Local default-branch integration commits">Merges</th><th scope="col" class="r" title="Spend in the window of the work per local commit — not attribution, not a productivity score">$ / commit</th><th scope="col" class="r" title="Spend in the window of the work per local default-branch integration">$ / merge</th><th scope="col">Branches</th></tr></thead>
+          <thead><tr><th scope="col">Project</th><th scope="col" title="Sessions on this project that reported in the last two minutes">Live</th><th scope="col">Activity · 1 h</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r" title="List-price estimate, not an invoice">Est.</th><th scope="col" class="r">Sessions</th><th scope="col" class="r" title="Local Git history in the period">Commits</th><th scope="col" class="r">Lines + / −</th><th scope="col" class="r" title="Commits whose subject ends (#N) or merges a pull request; #N may name an issue">PR-linked</th><th scope="col" class="r" title="Local default-branch integration commits">Merges</th><th scope="col" class="r" title="Spend in the window of the work per local commit — not attribution, not a productivity score">$ / commit</th><th scope="col" class="r" title="Spend in the window of the work per local default-branch integration">$ / merge</th><th scope="col">Branches</th></tr></thead>
           <tbody></tbody>
         </table></div>
       </section>
-      <section class="lanes tbl" aria-label="Effort">
-        <div class="thead"><h3>Effort</h3><span class="hc" id="projEffortCount">—</span></div>
-        <div id="projEffort" class="foldbody"></div>
-      </section>
-      <section class="lanes tbl" aria-label="Shipped">
-        <div class="thead"><h3>Shipped</h3><span class="hc" id="projShipCount">—</span></div>
-        <div id="projShip" class="foldbody"></div>
+      <!-- the sessions behind those projects: this machine's own lanes, by project, in the same row grammar as the Console -->
+      <section class="lanes" aria-label="Sessions on this machine">
+        <div class="thead"><h3>Sessions on this machine</h3><span class="hc" id="pLaneCount">—</span></div>
+        <div class="lhead" aria-hidden="true"><span>State</span><span>Project / branch</span><span>Model</span><span>Activity · 1 h</span>
+          <span class="r">5 min</span><span class="r c-in">In</span><span class="r c-out">Out</span><span class="r">Total</span><span class="r c-usd">Est. $</span><span class="r c-ag">Agents</span><span class="r c-cx">Context</span><span class="c-do">Doing</span><span class="c-dv">Machine</span><span class="r c-la">Last</span></div>
+        <div id="pLanes" class="lanescroll"></div>
       </section>
     </div>
   </section>
 
   </main>
 
+  <!-- the status bar carries the reading's provenance: version, price table, what was left out, how fresh -->
   <footer class="foot">
     <span>Agent Console <b id="ver">—</b></span>
-    <span class="promise">Only counts, model names, times and salted hashes leave a machine — never a prompt, a reply, a file path or file contents.</span>
+    <span class="prov" id="footProv">—</span>
     <span class="grow"></span>
     <button type="button" class="signout" id="signOutBtn">Sign out</button>
-    <a href="https://github.com/SamSnead85/agent-console" target="_blank" rel="noopener">Source · MIT</a>
+    <a href="https://github.com/SamSnead85/agent-console" target="_blank" rel="noopener" title="Only counts, model names, times and salted hashes leave a machine — never a prompt, a reply, a file path or file contents.">Source · MIT</a>
     <a href="https://lockedinlabs.ai" target="_blank" rel="noopener" title="lockedinlabs.ai">© LockedIn Labs</a>
   </footer>
 </div>
@@ -311,7 +327,7 @@
 <!-- ─────────────── ADD A MACHINE (docked beside the canvas) ─────────────── -->
 <dialog class="sheet dock" id="addDialog" aria-labelledby="addTitle">
   <form id="addForm" method="dialog" class="step" data-step="form">
-    <header><h2 id="addTitle">Add a machine</h2><button type="button" class="x" data-close aria-label="Close">×</button></header>
+    <header><h2 id="addTitle" tabindex="-1">Add a machine</h2><button type="button" class="x" data-close aria-label="Close">×</button></header>
     <p class="say">Runs on their machine and reports here within seconds. The link works once.</p>
     <label class="field"><span>Whose machine is it?</span>
       <input id="fPerson" name="person" type="text" maxlength="40" autocomplete="off" placeholder="You, or a teammate's name or role" list="peopleList"></label>
@@ -326,55 +342,46 @@
   </form>
 
   <div class="step" data-step="link" hidden>
-    <header><h2>Send this to them</h2><button type="button" class="x" data-close aria-label="Close">×</button></header>
+    <header><h2 tabindex="-1">Send this to them</h2><button type="button" class="x" data-close aria-label="Close">×</button></header>
     <p class="say" id="linkSay">—</p>
     <div class="field"><span>The command to send <em>they run it in a terminal on that machine</em></span>
-      <span class="copyrow"><code class="cmd" id="cmdShown">—</code><button type="button" class="btn" id="copyCmd">Copy command</button></span></div>
-    <label class="field"><span>Or the join link <em>single use · masked on screen</em></span>
+      <code class="cmd" id="cmdShown">—</code>
+      <button type="button" class="btn wide" id="copyCmd">Copy command</button></div>
+    <label class="field"><span>Or the join link <em>single use · masked</em></span>
       <span class="copyrow"><input id="linkField" type="password" readonly autocomplete="off" spellcheck="false" aria-describedby="linkExpiry"><button type="button" class="btn" id="copyLink">Copy link</button></span></label>
-    <div class="field"><span>No way to send a link? This is the same, typed by hand <em>short code · certificate fingerprint</em></span>
-      <span class="copyrow"><code class="cmd" id="typedShown">—</code><button type="button" class="btn" id="copyTyped">Copy</button></span></div>
     <p class="fine" id="linkExpiry">—</p>
-    <details class="why"><summary>Why a command, and what it checks</summary>
-      <p class="fine">Their machine needs Node.js 22 or newer (free from nodejs.org). The command downloads Agent Console from its GitHub release over HTTPS and runs nothing until the file matches the release's SHA256SUMS (that check is the part shown as '…'); the join itself travels over TLS pinned to this console's certificate. The link opens a page that shows the same command, but that page comes over plain HTTP, so on a network you do not fully trust, send the command.</p>
+    <details class="why"><summary>Why a command, what it checks, and the form to type by hand</summary>
+      <p class="fine">Their machine needs Node.js 22 or newer (free from nodejs.org). The command downloads Agent Console from its GitHub release over HTTPS and runs nothing until the file matches the release's SHA256SUMS (that check is the part shown as '…'); the join itself travels over TLS pinned to this console's certificate. The link opens a page that shows the same command, but that page comes over plain HTTP, so on a network you do not fully trust, send the command. Once joined, only counts, model names, times and salted hashes leave that machine — never a prompt, a reply, a file path or file contents.</p>
+      <div class="field"><span>No way to send a link? The same, typed by hand <em>short code · certificate fingerprint</em></span>
+        <span class="copyrow"><code class="cmd" id="typedShown">—</code><button type="button" class="btn" id="copyTyped">Copy</button></span></div>
     </details>
     <p class="waiting" id="joinStatus" role="status" aria-live="polite"><i></i>Waiting for the machine to join…</p>
     <footer><button type="button" class="btn" id="anotherBtn">Another machine</button><button type="button" class="btn primary" data-close>Done</button></footer>
   </div>
 </dialog>
 
-<dialog class="sheet small" id="revokeDialog" aria-labelledby="revokeTitle">
-  <div class="step">
-    <header><h2 id="revokeTitle">Remove this machine?</h2></header>
-    <p class="say" id="revokeSay">—</p>
-    <footer><button type="button" class="btn" data-close>Keep it</button><button type="button" class="btn danger" id="revokeGo">Remove</button></footer>
-  </div>
-</dialog>
-
 <dialog class="sheet dock" id="contextDialog" aria-labelledby="contextTitle">
   <div class="step">
-    <header><h2 id="contextTitle">Session context</h2><button type="button" class="x" data-close aria-label="Close">×</button></header>
+    <header><h2 id="contextTitle" tabindex="-1">Session context</h2><button type="button" class="x" data-close aria-label="Close">×</button></header>
     <div id="contextDetails" class="context-details"></div>
-    <footer><button type="button" class="btn" data-close>Close</button></footer>
   </div>
 </dialog>
 
-<!-- the inspector: a machine, a person, a project or the alert list, opened beside the canvas by its row -->
+<!-- the inspector: a machine, a person, a project or a lane, opened beside the canvas by its row; Remove confirms inside it -->
 <dialog class="sheet dock" id="inspectDialog" aria-labelledby="inspectTitle">
   <div class="step">
-    <header><h2 id="inspectTitle">—</h2><span class="stamp demo-only" data-sm>DEMO</span><button type="button" class="x" data-close aria-label="Close">×</button></header>
+    <header><h2 id="inspectTitle" tabindex="-1">—</h2><span class="stamp demo-only" data-sm>DEMO</span><button type="button" class="x" data-close aria-label="Close">×</button></header>
     <div id="inspectBody" class="inspect"></div>
-    <footer id="inspectFoot"><button type="button" class="btn" data-close>Close</button></footer>
+    <footer id="inspectFoot" hidden></footer>
   </div>
 </dialog>
 
 <!-- the alert list, opened from the strip's chip -->
 <dialog class="sheet dock" id="alertPanel" aria-labelledby="alertTitle">
   <div class="step">
-    <header><h2 id="alertTitle">Alerts</h2><span class="stamp demo-only" data-sm>DEMO</span><button type="button" class="x" data-close aria-label="Close">×</button></header>
+    <header><h2 id="alertTitle" tabindex="-1">Alerts</h2><button type="button" class="x" data-close aria-label="Close">×</button></header>
     <div class="alert-head"><span id="alertShown">this machine · last hour</span><button class="linkbtn" type="button" id="alertMore" hidden>—</button></div>
     <div id="alertRows" class="alert-rows"></div>
-    <footer><button type="button" class="btn" data-close>Close</button></footer>
   </div>
 </dialog>
 

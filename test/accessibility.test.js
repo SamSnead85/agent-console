@@ -39,9 +39,12 @@ test("the console is a semantic page with named regions", () => {
   assert.match(HTML, /id="cLanes"[^>]*tabindex="0"[^>]*role="region"[^>]*aria-label="[^"]+"/u);
   assert.match(HTML, /id="toast" role="status" aria-live="polite"/u);
   assert.match(HTML, /id="joinStatus" role="status" aria-live="polite"/u);
-  for (const id of ["addDialog", "revokeDialog"]) {
-    assert.match(HTML, new RegExp(`<dialog class="sheet[^"]*" id="${id}" aria-labelledby="[^"]+"`, "u"));
+  for (const id of ["addDialog", "inspectDialog", "contextDialog", "alertPanel"]) {
+    assert.match(HTML, new RegExp(`<dialog class="sheet dock" id="${id}" aria-labelledby="[^"]+"`, "u"), id + " is not a docked sheet");
   }
+  // Remove confirms inside the machine's inspector, never in a modal that blanks the frame.
+  assert.doesNotMatch(HTML, /id="revokeDialog"/u);
+  assert.match(JS, /data-revoke-go=/u);
   for (const table of ["peopleTable", "machineTable", "projTable"]) {
     assert.match(HTML, new RegExp(`id="${table}"[\\s\\S]*?<caption class="visually-hidden">`, "u"), table + " has no caption");
   }
@@ -59,12 +62,16 @@ test("a join link is a credential: masked, never revealable, cleared when the sh
 });
 
 test("every surface that can show generated figures carries the DEMO stamp", () => {
-  for (const view of ["view-console", "view-team", "view-projects"]) {
-    const start = HTML.indexOf(`id="${view}"`);
-    const end = HTML.indexOf("</section>", HTML.indexOf("<h2", start));
-    assert.match(HTML.slice(start, end + 400), /class="stamp demo-only"/u, view + " has no DEMO stamp");
+  // One frame stamp on the strip every view shares, then one per generated row and figure — never both on one pane, never neither.
+  const strip = HTML.slice(HTML.indexOf('id="strip"'), HTML.indexOf('id="view-console"'));
+  assert.match(strip, /<span class="stamp demo-only"[^>]*>DEMO<\/span>/u, "the strip has no DEMO stamp");
+  for (const rows of [/peopleTable[\s\S]*?\$\{demoStamp\(\)\}/u, /machineTable[\s\S]*?\$\{demoStamp\(\)\}/u, /projTable[\s\S]*?\$\{demoStamp\(\)\}/u, /class="stamp sm" title="Generated/u]) {
+    assert.match(JS, rows, "a generated row is not stamped");
   }
-  assert.match(HTML, /<span class="stamp demo-only"[^>]*>DEMO<\/span>/u, "the top bar has no DEMO stamp");
+  for (const view of ["view-console", "view-team", "view-projects"]) {
+    const section = HTML.slice(HTML.indexOf(`id="${view}"`), HTML.indexOf("</main>"));
+    assert.doesNotMatch(section.slice(0, section.indexOf("</section>")), /class="stamp demo-only"/u, view + " stamps its pane heads on top of its rows");
+  }
   assert.match(JOIN, /class="stamp" id="demoStamp"/u);
   assert.match(CSS, /body\[data-demo="false"\] \.demo-only \{ display: none; \}/u);
 });

@@ -2,6 +2,25 @@
 
 ## 0.3.0 — unreleased
 
+- The instrument is denser and says less twice. The lanes carry a Doing
+  column (the lane's newest alert, its subagents at work, a cache signal, a
+  growing context, or its state in a word — never a prompt or a path), the
+  lane burning hardest is outlined, and the lanes' footer stays in frame
+  while they scroll. The four token classes read in one order everywhere,
+  by price per token. The spend spectrum names its two bars; the burn chart
+  hatches the span after a machine went silent, the same way the tokens
+  chart does; Attention lists every alert as a row over a sixty-minute
+  strip; the week under the day's figure names its busiest day. Team's band
+  carries the team's models, tools and messages by person, its tables sit on
+  30px rows, Remove confirms inside the machine's inspector, and a silent
+  machine's figures are stamped last known. Projects folds Effort into the
+  figure pane, drops the Shipped restatement, gives each project its own
+  hour and lists the sessions behind it; a cell the hub cannot fill says
+  why in a word, never a dash. The status bar carries the reading's
+  provenance (price table, what was not counted, retention, scan time). The
+  URL carries every open sheet both ways. On a phone the strip is three
+  short rows with the presenter controls as glyphs, a lane row opens the
+  lane's own inspector, and the Team rows carry tokens, cache and cost.
 - The three views are one instrument on a graphite ground, not a navy page:
   panes step off the band with a rim and an inset, the strip is shared and
   names the view, and at desk width the page never scrolls — the canvas of
