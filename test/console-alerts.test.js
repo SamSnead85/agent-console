@@ -101,7 +101,7 @@ test("the burn median names active minutes and does not call empty history obser
   const values = new Array(60).fill(0);
   const D = { devices: [{}], burn: { reporting: 1 }, now: 59.5 * 60_000,
     series: { "1h": { start: 0, step: 60_000, values } } };
-  const paint = renderer("paintBurnSpark", "  // ── the rest of the day", { D, $, fmt: String });
+  const paint = renderer("paintBurnSpark", "  // ── the rest of the day", { D, $, fmt: String, smooth: () => "" });
   values[20] = 100;
   paint();
   assert.match($("burnMedian").innerHTML, /median active minute <b>100<\/b>/u);
@@ -125,7 +125,7 @@ test("the local Git estimate never divides fleet dollars by local commits", () =
     tokens: 100, sessions: 1, demo: false };
   let fleetUsd = 20;
   const paint = renderer("paintFold", "  // ── scrollable regions", { $, foldFetched: { data: local },
-    period: "1h", PERIOD_TEXT: { "1h": ["last hour", "1 h"] },
+    period: "1h", PERIOD_TEXT: { "1h": ["last hour", "1 h"] }, view: "console", pn: (kind, value) => value, hhmm: () => "",
     win: () => ({ tokens: { total: 200 }, cost: { usd: fleetUsd, status: "estimated" }, messages: 3 }),
     esc: String, fmt: String, money: (n) => "$" + n, plural: (n, word) => `${n} ${word}`,
   });

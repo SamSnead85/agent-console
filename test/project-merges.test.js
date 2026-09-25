@@ -35,10 +35,15 @@ const helpers = {
   demoStamp: () => "",
   shareBar: () => "",
   modelRows: () => "",
+  // presenting is off: names pass through; a project is keyed by its hash, or its name for a hub without one
+  pn: (kind, value) => value,
+  present: false,
+  projectKeyOf: (x) => x.projectHash || x.name,
+  hhmm: () => "",
 };
-const rows = vm.runInNewContext(slice("  const na = ", "  async function loadProjects(") + "\n({ projectRow, na, mergeReading: typeof mergeReading === \"function\" ? mergeReading : undefined })", { ...helpers });
+const rows = vm.runInNewContext(slice("  const na = ", "  async function loadProjects(") + "\n({ projectRow, na, mergeReading: typeof mergeReading === \"function\" ? mergeReading : undefined, projCost, projMoney, projMoneyWhy })", { ...helpers });
 const projectInspectBody = vm.runInNewContext(slice("  const ikv = ", "  function paintInspect(") + "\nprojectInspectBody",
-  { ...helpers, na: rows.na, mergeReading: rows.mergeReading });
+  { ...helpers, na: rows.na, mergeReading: rows.mergeReading, projCost: rows.projCost, projMoney: rows.projMoney, projMoneyWhy: rows.projMoneyWhy });
 
 const text = (html) => html.replace(/<[^>]*>/gu, "").replace(/&#39;/gu, "'").replace(/\s+/gu, " ").trim();
 function mergeCells(html) {

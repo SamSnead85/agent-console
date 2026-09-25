@@ -9,49 +9,66 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/house.css">
 <link rel="stylesheet" href="/join.css">
+<script src="/theme.js"></script>
 </head>
 <body>
-<main class="join">
-  <header>
+<div class="shell join">
+  <header class="top">
     <a class="lockup" href="https://lockedinlabs.ai" target="_blank" rel="noopener">
       <img src="/brand/mark.svg" alt="LockedIn Labs" width="22" height="22">
       <span class="p">Agent Console</span><span class="f">by LockedIn Labs</span>
     </a>
-    <span class="stamp" id="demoStamp" hidden>DEMO</span>
+    <button class="themebtn" id="themeBtn" type="button" aria-label="Switch between light and dark">Light</button>
   </header>
 
-  <h1>Add this computer to the Agent Console at <span id="hubName">—</span></h1>
-  <p class="say">Once it is added, this computer reports how much its AI coding agents use — tokens, models, cache reads and writes — to that console, every few seconds, until you close the window.</p>
+  <!-- the same strip the console wears: what this is, on the substrate, with the console it joins -->
+  <div class="conhead">
+    <h1>Agent Console</h1><span class="vt">Join</span>
+    <span class="stamp" id="demoStamp" hidden title="This console is a demonstration. Its links show the steps but cannot add a real computer.">DEMO</span>
+    <span class="count">console at <b id="hubName">—</b></span>
+  </div>
 
-  <section class="privacy" aria-labelledby="privacyTitle">
-    <h2 id="privacyTitle" class="lab">What leaves this computer</h2>
-    <p><b>Only</b> token counts, model names, times, and hashes of session and project identifiers.</p>
-    <p><b>Never</b> a prompt, a reply, a file path, or the contents of a file. The rule is enforced in code, and a test proves it.</p>
-  </section>
+  <main class="console" aria-label="Add this computer">
+    <section class="col" aria-labelledby="whatTitle">
+      <div class="cap" id="whatTitle">What this does</div>
+      <p class="say">Once it is added, this computer reports how much its AI coding agents use — tokens, models, cache reads and writes — to that console, every few seconds, until you close the window.</p>
+      <div class="privacy" aria-labelledby="privacyTitle">
+        <div class="cap" id="privacyTitle">What leaves this computer</div>
+        <p><b>Only</b> token counts, model names, times, and hashes of session and project identifiers.</p>
+        <p><b>Never</b> a prompt, a reply, a file path, or the contents of a file. The rule is enforced in code, and a test proves it.</p>
+      </div>
+    </section>
 
-  <p class="warnline" id="noCode" hidden>This link is missing its join code, or the code is mistyped. Ask whoever sent it for a new link.</p>
-  <p class="warnline" id="demoNote" hidden>This console is a demonstration. Its links show the steps but cannot add a real computer.</p>
-
-  <ol class="steps" id="steps">
-    <li>
-      <b>Check you have Node.js 22 or newer.</b>
-      <span>Open a terminal — <em>Terminal</em> on a Mac, <em>PowerShell</em> on Windows — type <code>node --version</code> and press Return. If it says v22 or higher, carry on. If not, install the LTS version from <a href="https://nodejs.org" target="_blank" rel="noopener">nodejs.org</a> first.</span>
-    </li>
-    <li>
-      <b>Paste this into the terminal and press Return.</b>
-      <span class="copyrow"><code class="cmd" id="cmd">—</code><button type="button" class="btn primary" id="copyBtn">Copy</button></span>
-      <span class="fine">The code in it (shown masked) works once and expires within the hour. The command downloads Agent Console <span class="verv">…</span> from its GitHub release over HTTPS and runs nothing until the file's SHA-256 matches the release's <code>SHA256SUMS</code>; that check is the text between the first two single quotes. Check that it starts with <code>node -e</code>, names <code>https://github.com/SamSnead85/agent-console/releases/download/</code>, and ends with your link in single quotes, with nothing after it, and that the check is the published one: its SHA-256 is listed in the project's README (“The check in every command”) and on the release page, with a short command that prints the SHA-256 of the check in a command you paste into it. The eight dots stand for your code; Copy gives it in full. This page reaches you over plain HTTP, so if whoever sent the link also sent the command, run theirs. The SHA-256 it prints is also on <a id="releasePage" href="https://github.com/SamSnead85/agent-console/releases" target="_blank" rel="noopener">its release page</a>. It then joins over TLS, accepting only the certificate named in your link.</span>
-    </li>
-    <li>
-      <b>Leave that window open.</b>
-      <span>This computer appears on the console within a few seconds. Closing the window stops reporting; this command starts it again, no new link needed:</span>
-      <span class="copyrow"><code class="cmd" id="restart">—</code><button type="button" class="btn" id="restartBtn" disabled>Copy</button></span>
-    </li>
-  </ol>
+    <ol class="steps" id="steps">
+      <li class="col">
+        <div class="cap"><span class="n">1</span>Check you have Node.js 22 or newer</div>
+        <p>Open a terminal — <em>Terminal</em> on a Mac, <em>PowerShell</em> on Windows — type <code>node --version</code> and press Return. If it says v22 or higher, carry on. If not, install the LTS version from <a href="https://nodejs.org" target="_blank" rel="noopener">nodejs.org</a> first.</p>
+      </li>
+      <li class="col">
+        <div class="cap"><span class="n">2</span>Paste this into the terminal and press Return</div>
+        <p class="warnline" id="noCode" hidden>This link is missing its join code, or the code is mistyped. Ask whoever sent it for a new link.</p>
+        <p class="warnline" id="demoNote" hidden>This console is a demonstration. Its links show the steps but cannot add a real computer.</p>
+        <div class="copyrow"><code class="cmd" id="cmd">—</code><button type="button" class="btn primary" id="copyBtn">Copy</button></div>
+        <p class="fine">The code in it (shown masked) works once and expires within the hour. The command downloads Agent Console <span class="verv">…</span> from its GitHub release over HTTPS and runs nothing until the file's SHA-256 matches the release's <code>SHA256SUMS</code>; that check is the part folded as '…'. <button type="button" class="linkbtn" id="checkBtn" aria-pressed="false" aria-controls="cmd">Show the check</button></p>
+        <details class="why">
+          <summary>What to look for before you paste it</summary>
+          <p class="fine">Check that it starts with <code>node -e</code>, names <code>https://github.com/SamSnead85/agent-console/releases/download/</code>, and ends with your link in single quotes, with nothing after it, and that the check is the published one: its SHA-256 is listed in the project's README (“The check in every command”) and on the release page, with a short command that prints the SHA-256 of the check in a command you paste into it. The eight dots stand for your code; Copy gives it in full. This page reaches you over plain HTTP, so if whoever sent the link also sent the command, run theirs. The SHA-256 it prints is also on <a id="releasePage" href="https://github.com/SamSnead85/agent-console/releases" target="_blank" rel="noopener">its release page</a>. It then joins over TLS, accepting only the certificate named in your link.</p>
+        </details>
+      </li>
+      <li class="col">
+        <div class="cap"><span class="n">3</span>Leave that window open</div>
+        <p>This computer appears on the console within a few seconds. Closing the window stops reporting.</p>
+        <details class="why">
+          <summary>Start reporting again after a restart — no new link needed</summary>
+          <div class="copyrow"><code class="cmd" id="restart">—</code><button type="button" class="btn" id="restartBtn" disabled>Copy</button></div>
+        </details>
+      </li>
+    </ol>
+  </main>
   <p class="fine" id="status" role="status" aria-live="polite"></p>
   <textarea id="clip" aria-hidden="true" tabindex="-1" readonly></textarea>
-  <footer>Agent Console <span id="ver"></span> · open source, MIT · <a href="https://lockedinlabs.ai" target="_blank" rel="noopener" title="lockedinlabs.ai">© LockedIn Labs</a></footer>
-</main>
+  <footer class="foot"><span>Agent Console <b id="ver"></b></span><span class="grow"></span><a href="https://github.com/SamSnead85/agent-console" target="_blank" rel="noopener">Source · MIT</a><a href="https://lockedinlabs.ai" target="_blank" rel="noopener" title="lockedinlabs.ai">© LockedIn Labs</a></footer>
+</div>
 <script src="/join.js" defer></script>
 </body>
 </html>

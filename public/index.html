@@ -37,6 +37,17 @@
     <pattern id="hatchwarn" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
       <rect width="2.5" height="6" fill="var(--warn)" opacity=".55"/>
     </pattern>
+    <!-- the projected part of the step still filling: the same hatch, in the chart's own light -->
+    <pattern id="hatchcap" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+      <rect width="2" height="6" fill="var(--chart-line)" opacity=".5"/>
+    </pattern>
+    <!-- the machines or projects beyond the top bands, folded into one band: hatched in the chart's own light, never the idle grey -->
+    <pattern id="hatchrest" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+      <rect width="6" height="6" fill="var(--lit)" opacity=".1"/><rect width="2" height="6" fill="var(--lit)" opacity=".38"/>
+    </pattern>
+    <!-- the area under every wave: the chart's light at the crest, nothing at the floor -->
+    <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--chart-top)"/><stop offset="1" stop-color="var(--chart-bottom)"/></linearGradient>
+    <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--lit)" stop-opacity=".55"/><stop offset="1" stop-color="var(--lit)" stop-opacity=".04"/></linearGradient>
   </defs>
 </svg>
 
@@ -70,11 +81,13 @@
   </section>
 
   <!-- the instrument strip, shared by every view: what this is, where it reads, what is live, the clock, and the two presenter controls.
+       It sits on the substrate, the approved band's ground; the copy stays on the dark side of it in both themes.
        In --demo this stamp is the one frame stamp; every generated row and figure carries its own. -->
   <div class="conhead" id="strip">
     <h1 id="h-console">Agent Console</h1>
     <span class="vt" id="stripView" hidden></span>
     <span class="stamp demo-only" title="Every figure on this screen is generated. Nothing was read from any machine.">DEMO</span>
+    <span class="stamp present" id="presentStamp" hidden title="Presenting: projects, branches, machines and people are shown under stable stand-in names. Press P to stop.">PRESENTING</span>
     <span class="cap live" id="liveCap"><i id="liveDot"></i><span id="liveCount">—</span></span>
     <span class="count" id="machineCount">—</span>
     <button class="alertchip" id="alertChip" type="button" hidden aria-describedby="alertPanel">—</button>
@@ -96,7 +109,7 @@
         <div class="tline"><span id="cSpend" data-src="windows.cost.usd">—</span><em><span id="cMsgs" data-src="windows.messages">—</span> messages</em></div>
         <div class="prov" id="cProv">—</div>
         <div class="mix" id="cMix" role="img" aria-label="Token composition"></div>
-        <div class="chead" aria-hidden="true"><span></span><span>class</span><span>tokens</span><span>share</span><span>est.</span></div>
+        <div class="chead" aria-hidden="true"><span></span><span>class</span><span>tokens</span><span>share</span><span>est. $</span></div>
         <div class="classes" id="cClasses"></div>
         <div class="week" title="The last seven days, every machine, in two-hour steps">
           <div class="wrow"><span class="wl">7 days</span><span class="wp" id="weekPeak">—</span><b id="weekTotal" data-src="windows.7d.tokens.total">—</b></div>
@@ -112,12 +125,12 @@
         <div class="flowwrap inst" id="flowWrap">
           <div class="voidstate"><b>Reading unavailable</b><span id="voidReason">No machine has reported yet. Nothing is estimated in its place.</span></div>
           <svg id="cFlow" viewBox="0 0 520 100" preserveAspectRatio="none" role="img" aria-label="Tokens over time, stacked by class">
-            <defs><linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--chart-top)"/><stop offset="1" stop-color="var(--chart-bottom)"/></linearGradient></defs>
             <g id="cGridLines" aria-hidden="true"><line x1="0" x2="520" y1="25" y2="25"/><line x1="0" x2="520" y1="50" y2="50"/><line x1="0" x2="520" y1="75" y2="75"/></g>
             <rect id="cGap" x="0" y="0" width="0" height="100" fill="url(#hatchfill)"/>
             <g id="cStack" aria-hidden="true"><path class="cacheRead"/><path class="fresh"/><path class="cacheWrite"/><path class="output"/></g>
             <path id="cArea" fill="url(#fg)"/>
             <path id="cLine" fill="none" stroke="var(--chart-line)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+            <rect id="cCap" class="cap-step" x="0" y="0" width="0" height="0" fill="url(#hatchcap)"><title>The step still filling: measured so far, hatched to what it would be at this pace</title></rect>
             <line id="cHover" x1="0" x2="0" y1="0" y2="100" stroke="var(--quiet)" stroke-width="1" vector-effect="non-scaling-stroke" opacity="0"/>
           </svg>
           <div class="gaplabel" id="cGapLabel" hidden></div>
@@ -127,20 +140,21 @@
         <div class="legend" id="cLegend" aria-label="Token classes in the chart"></div>
       </div>
       <div class="col models">
-        <div class="mhead"><span id="cModelCap">by model · 24 h</span><span>share</span><span>est.</span></div>
+        <div class="mhead"><span id="cModelCap">by model · 24 h</span><span>share</span><span>est. $</span></div>
         <div id="cModels"></div>
-        <div class="mhead machines"><span id="cMachineCap">by machine · 24 h</span><span>share</span><span>tokens</span><span>est.</span></div>
+        <div class="mhead machines"><span><span id="cMachineCap">by machine · 24 h</span><span class="visually-hidden" id="machinesHint">—</span></span><span>share</span><span>tokens</span><span>est. $</span></div>
         <div id="cMachines"></div>
-        <div class="mfoot"><span class="hint" id="machinesHint">—</span><button class="linkbtn" type="button" data-go="team">Team →</button></div>
       </div>
     </div>
 
     <div class="console two" id="band2">
       <div class="col attention" id="attention">
         <div class="cap">Attention<span class="capr" id="attnStat">—</span></div>
-        <div class="ahead" id="attnHead">—</div>
-        <div class="aline" id="attnLine">—</div>
-        <div class="afoot" id="attnFoot">—</div>
+        <div class="ahero" id="attnHero">
+          <div class="ahead" id="attnHead">—</div>
+          <div class="aline" id="attnLine">—</div>
+          <div class="afoot" id="attnFoot">—</div>
+        </div>
         <div class="alist" id="attnList"></div>
         <div class="astrip" title="The last sixty minutes: one tick per alert, hatched from the moment a machine went silent">
           <svg id="attnStrip" viewBox="0 0 520 18" preserveAspectRatio="none" role="img" aria-label="Alerts over the last sixty minutes"></svg>
@@ -158,9 +172,8 @@
         <div class="specmodels" id="specModels"></div>
       </div>
       <div class="col burn">
-        <div class="cap">Burn · last 60 min<span class="capr" id="burnMedian">—</span><button type="button" class="unit" id="unitBtn" aria-label="Switch burn unit">per minute ⇄</button></div>
-        <div id="cBurn" class="big mid" data-src="burn.tokensPerMinute">—</div>
-        <div class="brate"><span id="cRate" data-src="burn.usdPerMinute">—</span></div>
+        <div class="cap">Burn · last 60 min<span class="capr" id="burnMedian">—</span><button type="button" class="unit" id="unitBtn" aria-label="Burn per minute, switch to per second">per minute ⇄</button></div>
+        <div class="bigrow"><div id="cBurn" class="big mid" data-src="burn.tokensPerMinute">—</div><div class="brate"><span id="cRate" data-src="burn.usdPerMinute">—</span></div></div>
         <div class="bprov"><span id="cBurnNote">—</span><span id="burnGapNote"></span></div>
         <div class="bsparkwrap inst" id="burnWrap">
           <div class="voidstate"><b>No reading</b><span id="burnReason">—</span></div>
@@ -173,18 +186,24 @@
     <div class="canvas" id="consoleCanvas">
       <section class="lanes" aria-label="Sessions">
         <h2 class="visually-hidden">Sessions</h2>
-        <div class="lanebody"><div class="lhead" aria-hidden="true"><span class="c-st">State</span><span class="c-pr">Project / branch</span><span class="c-md">Model</span><span class="c-sp">Activity · 1 h</span>
-          <span class="r c-fm">5 min</span><span class="r c-in">In</span><span class="r c-out">Out</span><span class="r c-tot">Total</span><span class="r c-usd">Est. $</span><span class="r c-ag">Agents</span><span class="r c-cx">Context</span><span class="c-do">Doing</span><span class="c-dv">Machine</span><span class="r c-la">Last</span></div>
+        <div class="lanebody"><div class="lhead" aria-hidden="true"><span class="grp" title="Uncached input, output, total and estimate are the last 24 hours, whatever the period control says">24 h</span><span class="c-st">State</span><span class="c-pr">Project / branch</span><span class="c-md">Model</span><span class="c-sp">Activity · 1 h</span>
+          <span class="r c-fm">5 min</span><span class="r c-in" title="Uncached input tokens · last 24 h"><span class="long">Uncached</span><span class="short">In</span></span><span class="r c-out">Out</span><span class="r c-tot">Total</span><span class="r c-usd">Est. $</span><span class="r c-ag">Agents</span><span class="r c-cx">Context</span><span class="c-do">Doing</span><span class="c-dv">Machine</span><span class="r c-la">Last</span></div>
         <div id="cLanes" class="lanescroll" tabindex="0" role="region" aria-label="Lanes, one per session, scrollable"></div></div>
         <div class="lfoot" id="lFoot"><span>—</span></div>
       </section>
 
-      <!-- the rest of the day, folded: open a row to see it without leaving the tab -->
-      <section class="fold" id="fold" aria-label="The rest of the day">
-        <details class="foldrow" id="foldCold"><summary><span class="fk">Cold sessions</span><span class="fs" id="coldSum">—</span></summary><div id="coldLanes" class="coldlanes"></div></details>
-        <details class="foldrow" id="foldProjects"><summary><span class="fk">Projects</span><span class="fs" id="projSum">—</span></summary><div id="foldProjBody" class="foldbody"></div></details>
-        <details class="foldrow" id="foldEffort"><summary><span class="fk">Effort</span><span class="fs" id="effortSum">—</span></summary><div id="foldEffortBody" class="foldbody"></div></details>
-        <details class="foldrow" id="foldShipped"><summary><span class="fk">Shipped</span><span class="fs" id="shipSum">—</span></summary><div id="foldShipBody" class="foldbody"></div></details>
+      <!-- the rest of the day: one strip of summaries that stays in frame, each opening its fold below -->
+      <div class="foldstrip" id="foldStrip" aria-label="The rest of the day">
+        <button type="button" data-fold="foldCold"><span class="fk">Cold</span><span class="fs" id="coldSum">—</span></button>
+        <button type="button" data-fold="foldProjects"><span class="fk">Projects</span><span class="fs" id="projSum">—</span></button>
+        <button type="button" data-fold="foldEffort"><span class="fk">Effort</span><span class="fs" id="effortSum">—</span></button>
+        <button type="button" data-fold="foldShipped"><span class="fk">Shipped</span><span class="fs" id="shipSum">—</span></button>
+      </div>
+      <section class="fold" id="fold" aria-label="The rest of the day, opened">
+        <details class="foldrow" id="foldCold"><summary><span class="fk">Cold sessions</span><span class="fs">idle for more than an hour, or on an unavailable machine</span></summary><div id="coldLanes" class="coldlanes"></div></details>
+        <details class="foldrow" id="foldProjects"><summary><span class="fk">Projects</span><span class="fs">this machine's projects in the period</span></summary><div id="foldProjBody" class="foldbody"></div></details>
+        <details class="foldrow" id="foldEffort"><summary><span class="fk">Effort</span><span class="fs">every machine beside this machine's Git</span></summary><div id="foldEffortBody" class="foldbody"></div></details>
+        <details class="foldrow" id="foldShipped"><summary><span class="fk">Shipped</span><span class="fs">what Git recorded on this machine</span></summary><div id="foldShipBody" class="foldbody"></div></details>
       </section>
 
       <section class="interop-panel" id="interopPanel" aria-label="Optional telemetry" hidden>
@@ -215,16 +234,17 @@
         </div>
       </div>
       <div class="col flow">
-        <div class="cap">Activity · last hour <em class="by">by machine</em><span class="peak" id="tPeak" hidden></span></div>
+        <div class="cap"><span id="tFlowTitle">Activity · last 24 hours</span> <em class="by">by machine</em><span class="peak" id="tPeak" hidden></span></div>
         <div class="flowwrap inst" id="tFlowWrap">
           <div class="voidstate"><b>No activity</b><span id="tFlowReason">—</span></div>
-          <svg id="tFlow" viewBox="0 0 520 100" preserveAspectRatio="none" role="img" aria-label="Tokens in the last hour, stacked by machine, three-minute steps"></svg>
+          <svg id="tFlow" class="wave" viewBox="0 0 520 100" preserveAspectRatio="none" role="img" aria-label="Tokens over the period, stacked by machine"></svg>
+          <div class="tip" id="tTip" hidden></div>
         </div>
-        <div class="bx wrapcap"><span>60 min ago</span><span id="tFlowCap">—</span><span>now</span></div>
+        <div class="bx wrapcap"><span id="tAxLeft">24 hours ago</span><span id="tFlowCap">—</span><span>now</span></div>
         <div class="legend" id="tLegend"></div>
       </div>
       <div class="col models">
-        <div class="mhead"><span id="tModelCap">by model · 24 h</span><span>share</span><span>est.</span></div>
+        <div class="mhead"><span id="tModelCap">by model · 24 h</span><span>share</span><span>est. $</span></div>
         <div id="tModels"></div>
         <div class="mhead tools"><span id="tToolCap">by tool · 24 h</span><span>share</span><span>tokens</span><span>sessions</span></div>
         <div id="tTools"></div>
@@ -239,7 +259,7 @@
         <div class="thead"><h3>People</h3><span class="hc" id="peopleCount">—</span></div>
         <div class="tablewrap" tabindex="0" role="region" aria-label="Usage per person, scrollable"><table class="grid" id="peopleTable">
           <caption class="visually-hidden">Usage per person</caption>
-          <thead><tr><th scope="col">Person</th><th scope="col">Machines</th><th scope="col">Activity · 1 h</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r" title="Share of the person's tokens the cache served">Cache read</th><th scope="col" class="r" title="Share of the person's tokens written to the cache">Cache write</th><th scope="col">Models</th><th scope="col" class="r">Est. cost</th></tr></thead>
+          <thead><tr><th scope="col">Person</th><th scope="col">Machines</th><th scope="col">Activity · 1 h</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r" title="Share of the person's tokens the cache served">Cache read</th><th scope="col" class="r" title="Share of the person's tokens written to the cache">Cache write</th><th scope="col">Models</th><th scope="col" class="r" title="List-price estimate, not an invoice">Est. $</th></tr></thead>
           <tbody></tbody>
         </table></div>
       </section>
@@ -248,11 +268,13 @@
         <div class="thead"><h3>Machines</h3><span class="hc" id="machineCountHead">—</span></div>
         <div class="tablewrap" tabindex="0" role="region" aria-label="Usage per machine, scrollable"><table class="grid" id="machineTable">
           <caption class="visually-hidden">Usage per machine</caption>
-          <thead><tr><th scope="col">Machine</th><th scope="col" title="Machines with the same person roll up into one People row">Person</th><th scope="col" title="A machine that stops reporting keeps its last contact time; its silence is never counted as zero">Status</th><th scope="col">Activity · 1 h</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r">Cache read</th><th scope="col" class="r">Cache write</th><th scope="col">Models</th><th scope="col" class="r">Est. cost</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+          <thead><tr><th scope="col">Machine</th><th scope="col" title="Machines with the same person roll up into one People row">Person</th><th scope="col" title="A machine that stops reporting keeps its last contact time; its silence is never counted as zero">Status</th><th scope="col">Activity · 1 h</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r">Cache read</th><th scope="col" class="r">Cache write</th><th scope="col">Models</th><th scope="col" class="r" title="List-price estimate, not an invoice">Est. $</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
           <tbody></tbody>
         </table></div>
         <div class="thead sub"><h3>Join links</h3><span class="hc" id="inviteCount">—</span></div>
         <section class="invites" id="invites" aria-label="Join links"></section>
+        <div class="thead sub"><h3>Alerts today</h3><span class="hc" id="teamAlertCount">—</span></div>
+        <div class="alert-rows team" id="teamAlerts"></div>
       </section>
     </div>
   </section>
@@ -269,24 +291,25 @@
           </span>
         </div>
         <div id="pTotal" class="big" data-src="projects.tokens">—</div>
-        <div class="tline"><span id="pSpend" data-src="projects.usd">—</span><em><span id="pSessions" data-src="projects.sessions">—</span> sessions</em></div>
+        <div class="tline"><span id="pSpend" data-src="projects.usd">—</span><em><span id="pSessions" data-src="projects.sessions">—</span></em></div>
         <div class="prov" id="pProv">—</div>
         <div class="kv" id="pKv"></div>
         <div class="effort" id="pEffort" title="The fleet on one line, this machine's own Git on the other; the two are never divided into each other"></div>
       </div>
       <div class="col flow">
-        <div class="cap">Activity · last hour <em class="by">by project</em><span class="peak" id="pPeak" hidden></span></div>
+        <div class="cap"><span id="pFlowTitle">Activity · last 24 hours</span> <em class="by">by project</em><span class="peak" id="pPeak" hidden></span></div>
         <div class="flowwrap inst" id="pFlowWrap">
           <div class="voidstate"><b>No activity</b><span id="pFlowReason">—</span></div>
-          <svg id="pFlow" viewBox="0 0 520 100" preserveAspectRatio="none" role="img" aria-label="Tokens in the last hour, stacked by project, three-minute steps"></svg>
+          <svg id="pFlow" class="wave" viewBox="0 0 520 100" preserveAspectRatio="none" role="img" aria-label="Tokens over the period, stacked by project"></svg>
+          <div class="tip" id="pTip" hidden></div>
         </div>
-        <div class="bx wrapcap"><span>60 min ago</span><span id="pFlowCap">—</span><span>now</span></div>
+        <div class="bx wrapcap"><span id="pAxLeft">24 hours ago</span><span id="pFlowCap">—</span><span>now</span></div>
         <div class="legend" id="pLegend"></div>
       </div>
       <div class="col models">
-        <div class="mhead"><span id="pShareCap">tokens by project · 24 h</span><span>share</span><span>est.</span></div>
+        <div class="mhead"><span id="pShareCap">tokens by project · 24 h</span><span>share</span><span>est. $</span></div>
         <div id="pShare"></div>
-        <div class="mhead second"><span>spend per commit</span><span>commits</span><span>est.</span></div>
+        <div class="mhead second"><span>spend per commit</span><span>commits</span><span>est. $</span></div>
         <div id="pSpendRows"></div>
         <div class="mfoot"><span class="hint" id="pEffortHint">—</span></div>
       </div>
@@ -297,16 +320,22 @@
         <div class="thead"><h3>Projects on this machine</h3><span class="hc" id="projTableCount">—</span></div>
         <div class="tablewrap" tabindex="0" role="region" aria-label="Projects on this machine, scrollable"><table class="grid" id="projTable">
           <caption class="visually-hidden">Projects on this machine</caption>
-          <thead><tr><th scope="col">Project</th><th scope="col" title="Sessions on this project that reported in the last two minutes">Live</th><th scope="col">Activity · 1 h</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r" title="List-price estimate, not an invoice">Est.</th><th scope="col" class="r">Sessions</th><th scope="col" class="r" title="Local Git history in the period">Commits</th><th scope="col" class="r">Lines + / −</th><th scope="col" class="r" title="Commits whose subject ends (#N) or merges a pull request; #N may name an issue">PR-linked</th><th scope="col" class="r" title="Local default-branch integration commits">Merges</th><th scope="col" class="r" title="Spend in the window of the work per local commit — not attribution, not a productivity score">$ / commit</th><th scope="col" class="r" title="Spend in the window of the work per local default-branch integration">$ / merge</th><th scope="col">Branches</th></tr></thead>
+          <thead><tr><th scope="col">Project</th><th scope="col" title="Sessions on this project that reported in the last two minutes">Live</th><th scope="col">Activity · 1 h</th><th scope="col" class="r">Tokens</th><th scope="col">Share</th><th scope="col" class="r" title="List-price estimate, not an invoice">Est. $</th><th scope="col" class="r">Sessions</th><th scope="col" class="r" title="Local Git history in the period">Commits</th><th scope="col" class="r">Lines + / −</th><th scope="col" class="r" title="Commits whose subject ends (#N) or merges a pull request; #N may name an issue">PR-linked</th><th scope="col" class="r" title="Local default-branch integration commits">Merges</th><th scope="col" class="r" title="Spend in the window of the work per local commit — not attribution, not a productivity score">$ / commit</th><th scope="col" class="r" title="Spend in the window of the work per local default-branch integration">$ / merge</th><th scope="col">Branches</th></tr></thead>
           <tbody></tbody>
         </table></div>
       </section>
       <!-- the sessions behind those projects: this machine's own lanes, by project, in the same row grammar as the Console -->
       <section class="lanes" aria-label="Sessions on this machine">
         <div class="thead"><h3>Sessions on this machine</h3><span class="hc" id="pLaneCount">—</span></div>
-        <div class="lanebody"><div class="lhead" aria-hidden="true"><span class="c-st">State</span><span class="c-pr">Project / branch</span><span class="c-md">Model</span><span class="c-sp">Activity · 1 h</span>
-          <span class="r c-fm">5 min</span><span class="r c-in">In</span><span class="r c-out">Out</span><span class="r c-tot">Total</span><span class="r c-usd">Est. $</span><span class="r c-ag">Agents</span><span class="r c-cx">Context</span><span class="c-do">Doing</span><span class="c-dv">Machine</span><span class="r c-la">Last</span></div>
+        <div class="lanebody"><div class="lhead" aria-hidden="true"><span class="grp" title="Uncached input, output, total and estimate are the last 24 hours, whatever the period control says">24 h</span><span class="c-st">State</span><span class="c-pr">Project / branch</span><span class="c-md">Model</span><span class="c-sp">Activity · 1 h</span>
+          <span class="r c-fm">5 min</span><span class="r c-in" title="Uncached input tokens · last 24 h"><span class="long">Uncached</span><span class="short">In</span></span><span class="r c-out">Out</span><span class="r c-tot">Total</span><span class="r c-usd">Est. $</span><span class="r c-ag">Agents</span><span class="r c-cx">Context</span><span class="c-do">Doing</span><span class="c-dv">Machine</span><span class="r c-la">Last</span></div>
         <div id="pLanes" class="lanescroll"></div></div>
+      </section>
+      <section class="lanes tbl" aria-label="Effort and shipped" id="projEffortShipped">
+        <div class="thead"><h3>Effort</h3><span class="hc" id="pEffortCount">—</span></div>
+        <div id="pEffortBody" class="foldbody"></div>
+        <div class="thead sub"><h3>Shipped</h3><span class="hc" id="pShipCount">—</span></div>
+        <div id="pShipBody" class="foldbody"></div>
       </section>
     </div>
   </section>
@@ -381,16 +410,22 @@
   <div class="step">
     <header><h2 id="alertTitle" tabindex="-1">Alerts</h2><button type="button" class="x" data-close aria-label="Close">×</button></header>
     <div class="alert-head"><span id="alertShown">this machine · last hour</span><button class="linkbtn" type="button" id="alertMore" hidden>—</button></div>
+    <div class="astrip sheetstrip" title="The last sixty minutes: one tick per alert">
+      <svg id="alertStrip" viewBox="0 0 520 18" preserveAspectRatio="none" role="img" aria-label="Alerts over the last sixty minutes"></svg>
+      <div class="bx"><span>60 min ago</span><span id="alertStripCap"></span><span>now</span></div>
+    </div>
     <div id="alertRows" class="alert-rows"></div>
+    <div class="alert-head earlier" id="alertEarlierHead" hidden><span>earlier today</span></div>
+    <div id="alertEarlier" class="alert-rows"></div>
   </div>
 </dialog>
 
 <!-- ⌘K: the way to anywhere, from anywhere -->
 <dialog class="pal" id="pal" aria-label="Command palette">
   <div class="palbox">
-    <input id="palq" placeholder="Go anywhere — a view, a machine, a lane, an action" autocomplete="off" spellcheck="false" aria-label="Search views, machines, lanes and actions">
-    <div class="palres" id="palres" role="listbox" aria-label="Results"></div>
-    <div class="palfoot"><span><b>↑↓</b> move</span><span><b>↵</b> open</span><span><b>1–3</b> views</span><span><b>[ ]</b> period</span><span><b>J K</b> lanes</span><span><b>T</b> theme</span><span><b>?</b> keys</span><span><b>esc</b> close</span></div>
+    <input id="palq" placeholder="Go anywhere — a view, a machine, a lane, an action" autocomplete="off" spellcheck="false" aria-label="Search views, machines, lanes and actions" role="combobox" aria-controls="palres" aria-expanded="true" aria-autocomplete="list" aria-haspopup="listbox">
+    <div class="palres" id="palres" role="listbox" aria-label="Results" tabindex="-1"></div>
+    <div class="palfoot"><span><b>↑↓</b> move</span><span><b>↵</b> open</span><span><b>1–3</b> views</span><span><b>[ ]</b> period</span><span><b>J K</b> lanes</span><span><b>P</b> present</span><span><b>T</b> theme</span><span><b>?</b> keys</span><span><b>esc</b> close</span></div>
   </div>
 </dialog>
 

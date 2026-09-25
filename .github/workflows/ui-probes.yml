@@ -1,0 +1,44 @@
+name: UI probes
+# The console's mechanical bars in a real browser (scripts/ui-probes.mjs): axe-core
+# WCAG 2.2 AA on every page, theme and width; label-in-name; the composition at
+# 1440×900, 1920 and 390; no clipped text and no sideways scroll; keyboard and
+# palette semantics; presenting mode. Playwright is not a dependency of the
+# package: it is installed here, beside the checkout, for this job only.
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  probes:
+    name: Browser bars (Playwright + axe)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - name: Install Playwright and axe beside the checkout
+        run: |
+          mkdir -p "$RUNNER_TEMP/probes"
+          cd "$RUNNER_TEMP/probes"
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund playwright@1.59.1 @axe-core/playwright@4.10.2
+          npx playwright install --with-deps chromium
+      - name: Start a demo console
+        run: |
+          node bin/agent-console.mjs --demo --port 6970 --state-dir "$RUNNER_TEMP/state" > "$RUNNER_TEMP/server.log" 2>&1 &
+          for i in $(seq 1 40); do curl -sf -o /dev/null http://127.0.0.1:6970/ && break; sleep 0.5; done
+      - name: Run the probes
+        env:
+          AGENT_CONSOLE_PLAYWRIGHT_DIR: ${{ runner.temp }}/probes/node_modules
+        run: node scripts/ui-probes.mjs http://127.0.0.1:6970 "$RUNNER_TEMP/server.log" --out "$RUNNER_TEMP/shots"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: ui-probe-captures
+          path: ${{ runner.temp }}/shots
+          retention-days: 7

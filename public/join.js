@@ -16,13 +16,14 @@
  * console that served this page. It starts with a short check for `node -e`
  * (VERIFY, the same text as VERIFY_AND_RUN in lib/invocation.js) that runs
  * nothing until the file's SHA-256 matches the release's SHA256SUMS. The page
- * shows the whole command, check included, and Copy gives exactly what is
- * shown except the join code, which stays masked on screen. The check's SHA-256
- * is published in the README and on each release page for comparison. The
- * reporter then checks the console's
- * certificate against the fingerprint in the link before it sends anything.
- * This page itself arrives over plain HTTP, so the console's owner can also
- * send the command straight from the console (SECURITY.md, "The join page").
+ * carries the whole command, check included (its text is the command with the
+ * code masked); the check is folded on screen until "Show the check" opens it,
+ * and Copy gives exactly what is shown except the join code. The check's
+ * SHA-256 is published in the README and on each release page for comparison.
+ * The reporter then checks the console's certificate against the fingerprint in
+ * the link before it sends anything. This page itself arrives over plain HTTP,
+ * so the console's owner can also send the command straight from the console
+ * (SECURITY.md, "The join page").
  */
 (() => {
   "use strict";
@@ -41,6 +42,18 @@
   let command = null;
   let restart = null;
 
+  // The command on screen: its text is the whole command; the check between the first two quotes is folded
+  // behind "Show the check" so the eye lands on the file it fetches and the link it joins.
+  const text = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  function showCommand(el, shown) {
+    el.textContent = shown;
+    if (typeof el.innerHTML !== "string") return;
+    const at = shown.indexOf("' ", "node -e '".length);
+    if (!shown.startsWith("node -e '") || at < 0) return;
+    const check = shown.slice("node -e '".length, at);
+    el.innerHTML = `node -e '<span class="chk-fold" aria-hidden="true">…</span><span class="chk">${text(check)}</span>'${text(shown.slice(at + 1))}`;
+  }
+
   $("hubName").textContent = location.host;
   if (!valid) {
     $("noCode").hidden = false;
@@ -57,14 +70,22 @@
     $("releasePage").href = `${REPO}/releases/tag/v${version}`;
     const run = `node -e '${VERIFY}' ${asset}`;
     restart = `${run} report`;
-    $("restart").textContent = restart;
+    showCommand($("restart"), restart);
     $("restartBtn").disabled = false;
     if (valid) {
       command = `${run} join '${link}'`;
-      $("cmd").textContent = command.replace(code, "••••••••");
+      showCommand($("cmd"), command.replace(code, "••••••••"));
     }
+    // The DEMO stamp renders only when the console says it is a demonstration; a real console never shows it.
     if (info.demo) { $("demoStamp").hidden = false; $("demoNote").hidden = false; }
   }).catch(() => { $("status").textContent = "That console is not answering right now. Check you are on the same network, then reload."; });
+
+  $("checkBtn").addEventListener("click", () => {
+    const open = $("cmd").classList ? $("cmd").classList.toggle("open") : false;
+    if ($("restart").classList) $("restart").classList.toggle("open", open);
+    $("checkBtn").setAttribute("aria-pressed", String(open));
+    $("checkBtn").textContent = open ? "Fold the check" : "Show the check";
+  });
 
   // Not a secure context on a local network address, so the Clipboard API is
   // usually absent; a hidden text area and the copy command still work.
@@ -92,4 +113,16 @@
     $("status").textContent = ok ? "Copied the command that starts reporting again." : "Copying is blocked here. Select the command and copy it by hand.";
     $("restartBtn").textContent = ok ? "Copied" : "Copy";
   });
+
+  // The theme toggle, as the console has it; the choice is kept in this browser.
+  const root = document.documentElement;
+  const currentTheme = () => (root && root.getAttribute("data-theme")) || (typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const labelTheme = () => { const next = currentTheme() === "dark" ? "Light" : "Dark"; $("themeBtn").textContent = next; $("themeBtn").setAttribute("aria-label", "Switch to the " + next.toLowerCase() + " theme"); };
+  $("themeBtn").addEventListener("click", () => {
+    const next = currentTheme() === "dark" ? "light" : "dark";
+    if (root) root.setAttribute("data-theme", next);
+    try { localStorage.setItem("agent-console-theme", next); } catch { /* not kept */ }
+    labelTheme();
+  });
+  if (root) labelTheme();
 })();

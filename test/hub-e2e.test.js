@@ -112,7 +112,7 @@ const wholeAnswer = (a) => [a.status, JSON.stringify(a.headers), a.body].join("\
  * way for data to reach a screen or another machine cannot skip the canaries.
  */
 const CONSOLE_READS = ["/api/console", "/api/projects?period=24h", "/api/projects?period=3d", "/api/hello"];
-const REPORTING_READS = ["/join", "/join.js", "/join.css", "/house.css", "/brand/mark.svg", "/favicon.svg", "/api/join/info"];
+const REPORTING_READS = ["/join", "/join.js", "/join.css", "/house.css", "/theme.js", "/brand/mark.svg", "/brand/substrate.jpg", "/favicon.svg", "/api/join/info"];
 /** With --interop, read with the scrape token, never the cookie. */
 const METRICS_READS = ["/metrics"];
 

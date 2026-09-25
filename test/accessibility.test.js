@@ -114,8 +114,14 @@ test("the dark theme is declared twice, so the toggle and the system agree", () 
 
 test("each lane's buttons are named with their reading and their row", () => {
   assert.doesNotMatch(JS, /aria-label="Show agent tree"|aria-label="Session context details"/u, "every row's buttons share one name");
-  assert.match(JS, /agButton\.setAttribute\("aria-label", [^\n]*l\.agents\.live[^\n]*l\.project\.name/u);
-  assert.match(JS, /cx\.querySelector\("button"\)\.setAttribute\("aria-label"[\s\S]{0,200}Context \$\{fmt\(l\.context\.latest\)\}[\s\S]{0,120}l\.project\.name/u);
+  // the row's name goes through pn(), so presenting swaps it for a stand-in in the label too
+  assert.match(JS, /const projectName = pn\("project", l\.project\.name\);/u);
+  assert.match(JS, /agButton\.setAttribute\("aria-label", [^\n]*l\.agents\.live[^\n]*projectName/u);
+  assert.match(JS, /cx\.querySelector\("button"\)\.setAttribute\("aria-label"[\s\S]{0,200}Context \$\{fmt\(l\.context\.latest\)\}[\s\S]{0,120}projectName/u);
+  // every lane row is a button named for its lane, and the keyboard lands on it
+  assert.match(JS, /row\.setAttribute\("role", "button"\);/u);
+  assert.match(JS, /row\.setAttribute\("aria-label", `\$\{projectName\}/u);
+  assert.match(JS, /row\.focus\(\{ preventScroll: true \}\);/u);
 });
 
 test("the Machines panel names the chosen period, and the agent tree says when an outcome is unknown", () => {

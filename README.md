@@ -155,6 +155,15 @@ screen the link and its code stay masked; **Copy** puts them on the clipboard.
 
 ![The Team view in demo mode, light](docs/console-demo-team-light.png)
 
+![The Projects view in demo mode, dark: this machine's projects, their Git figures and the sessions behind them](docs/console-demo-projects-dark.png)
+
+**Presenting.** Press `P` (or choose *Present* in ⌘K) before sharing a screen:
+every project, branch, machine and person becomes a stable stand-in name
+(project A, machine 1), the estimates and the console's addresses step back,
+and the strip reads PRESENTING. Press `P` again to stop.
+
+![The Console presenting: stand-in names, no estimates](docs/console-demo-presenting-dark.png)
+
 ### Signing in
 
 The console only shows its figures to a browser that has signed in. `--open`

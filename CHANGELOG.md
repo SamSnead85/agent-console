@@ -2,6 +2,63 @@
 
 ## Unreleased
 
+- The console is a set of instruments on a tray, not a page: every pane is a
+  card with its own light, rim and shadow that lifts under the pointer and
+  settles under a press, in the dark theme and the light one; the strip that
+  names the console sits on the substrate the approved band used. Figures are
+  set in the display sans with tabular numerals and quieter units; mono is
+  kept for ids, models, branches, hashes and times.
+- Every series is a wave. Team's activity by machine and Projects' activity by
+  project are layered waves from the hub's own per-machine and per-project
+  series at the chart's resolution, and follow the period control with every
+  other figure (no more "kept for the hour only"). The burn's last hour and the
+  week under the day's figure are waves too. The step still filling is drawn
+  at what was measured, with a hatched cap up to what it would be at this
+  pace, and the hover says "so far" and "projected".
+- The first screen at 1440×900 holds eight lane rows under a real alert load:
+  the second band is one height and folds what does not fit behind "n more",
+  the lanes card takes the height the bands leave and scrolls inside itself,
+  and the four folds (Cold, Projects, Effort, Shipped) become one strip of
+  summaries under the lanes that opens each fold.
+- Attention leads with the worst alert as its hero — its lane, its tokens in
+  five minutes and how many times its own normal — then the rest as compact
+  rows; alerts raised earlier today sit under a rule and are never counted as
+  live; "no alert" is said only for the machines that share their alerts, and
+  the unwatched ones are named.
+- Every count is over every lane the hub knows, not the eighty it draws:
+  sessions by tool, by person and by project, subagents, and "80 of N shown"
+  when the list is cut. Per machine is the hub's own denominator (the
+  machines heard in the period, from their own estimates); per person names
+  the people with a current machine.
+- Every money figure carries its status: a floor is marked "+" and named
+  partial, an unpriced one is named, on Projects too; the lanes' four day
+  columns carry one "24 h" label whatever the period; coverage a machine's
+  version never reported is a void with its reason, never 0; branches and
+  sessions on 30 days say "not kept" with the reason; a folder outside Git
+  says so once across its Git cells.
+- Doing reads from tool activity where a machine shares it — "Edit · 31 s ·
+  2/min", "shell failing 3/5" — and says "tool not shared" where it does not;
+  the agent tree carries the lane's tool results (ok and error counts).
+- Presenting: P (or the palette) swaps every project, branch, machine and
+  person for a stable stand-in, hides internal figures and the console's
+  addresses, and stamps PRESENTING in the strip.
+- Keyboard and screen readers: every lane row is a named, focusable door
+  (Enter opens it), J/K and the arrows move focus between rows, closing a
+  sheet returns focus to what opened it, the palette is a combobox with a
+  listbox and an active descendant, the presenter controls keep one name each
+  with aria-pressed, every cell button is a 24px target, and axe-core WCAG
+  2.2 AA passes on every page, theme and width (`scripts/ui-probes.mjs`,
+  run in CI).
+- The join page is built in the console's grammar: the strip, one card per
+  step, the command with its check folded behind "Show the check", the
+  restart command folded, a theme toggle, and the DEMO stamp only when the
+  console says it is a demonstration.
+- The Team canvas lists today's alerts by machine under the join links;
+  Projects lists Effort and Shipped under the sessions, so no frame stands
+  empty. Docked sheets are sized to what they hold. The phone lane row leads
+  with the name (its branch on a second line) and fades its right edge while
+  there is more to the right.
+
 - Alerts are dated by the transcript line that raised them, not by when it
   was read, and the stall's five minutes are measured on that clock too. An
   alert older than the hour, or raised while a first run replays history, is
