@@ -8,10 +8,13 @@ apply and remove; optional local metrics; figures that follow one period
 everywhere; and reporters that keep going in the background and survive a
 console's restart.
 
-**Upgrading from 0.2.2.** Upgrade the console before its reporters: a 0.3.0
-reporter's records carry a `tier` key that a 0.2.x console refuses (joining
-pins a reporter to its console's version, so this happens only when a reporter
-is upgraded by hand). A console whose machines join over Tailscale or other
+**Upgrading from 0.2.1 or 0.2.2.** Coming from 0.2.1, this release includes
+0.2.2's security fixes (below): everyone signs in to the console once more
+after upgrading, and a second start proves it holds the console's key instead
+of sending it. Upgrade the console before its reporters: a 0.3.0 reporter's
+records carry `tier` and `cumulative` keys that a 0.2.x console refuses
+(joining pins a reporter to its console's version, so this happens only when a
+reporter is upgraded by hand). A console whose machines join over Tailscale or other
 carrier-grade NAT addresses (100.64.0.0/10) must now be started with
 `--allow-cgnat`. A Prometheus scraper of `/metrics` needs the token that
 `metrics-token` prints. The burn is now a fifteen-minute average.

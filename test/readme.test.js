@@ -48,3 +48,14 @@ test("the README's install line runs this version: every release link names pack
     assert.equal(file, version, `${link} is not this version (${version})`);
   }
 });
+
+test("a README install line whose release file is missing fails, except for the release event and a fresh version bump", async () => {
+  const { missingRelease, BUMP_GRACE_MS } = await import("../scripts/readme-install.mjs");
+  const now = Date.parse("2026-09-25T12:00:00Z");
+  assert.equal(missingRelease({ event: "schedule", now }).skip, false);
+  assert.equal(missingRelease({ event: "workflow_dispatch", now }).skip, false);
+  assert.equal(missingRelease({ event: "push", bumpedAt: now - 2 * BUMP_GRACE_MS, now }).skip, false, "a version bumped long ago");
+  assert.equal(missingRelease({ event: "push", bumpedAt: null, now }).skip, false);
+  assert.equal(missingRelease({ event: "push", bumpedAt: now - 3600_000, now }).skip, true);
+  assert.equal(missingRelease({ event: "release", now }).skip, true);
+});
