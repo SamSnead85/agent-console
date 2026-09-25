@@ -17,7 +17,8 @@ import { fileURLToPath } from "node:url";
 import { formulaMatches, nativeDownloads, parseSums, renderSite, shortDate } from "../scripts/site-facts.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const read = (file) => fs.readFileSync(path.join(ROOT, file), "utf8");
+// Windows checks the tree out with CRLF; the checks below read lines.
+const read = (file) => fs.readFileSync(path.join(ROOT, file), "utf8").replace(/\r\n/gu, "\n");
 const sha256 = (bytes) => crypto.createHash("sha256").update(bytes).digest("hex");
 
 /* ── install.sh, run for real against a stand-in for curl ── */
