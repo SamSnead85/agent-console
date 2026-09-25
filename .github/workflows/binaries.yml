@@ -54,15 +54,21 @@ jobs:
       # Signing is for releases only, and only when every Apple value exists.
       SIGN_MAC: ${{ inputs.ref != '' && secrets.APPLE_DEVELOPER_ID_P12 != '' && secrets.APPLE_DEVELOPER_ID_P12_PASSWORD != '' && secrets.APPLE_NOTARY_KEY_P8 != '' && secrets.APPLE_NOTARY_KEY_ID != '' && secrets.APPLE_NOTARY_ISSUER != '' }}
     steps:
+      # Byte for byte the files the release tarball has: no CRLF on Windows.
+      - name: Check out without line-ending conversion
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
           persist-credentials: false
       # The Node.js inside the executable: the current LTS line, at its latest
-      # patch when the release is built, so security fixes arrive by rebuilding.
+      # patch when the release is built (not whatever the runner has cached),
+      # so every platform gets the same one and security fixes arrive by rebuilding.
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
+          check-latest: true
       - name: Install the build tool (postject, pinned by its lockfile)
         run: npm ci --prefix packaging/sea --ignore-scripts --no-audit --no-fund
       - name: Load the Developer ID into a throwaway keychain

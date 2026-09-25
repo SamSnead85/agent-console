@@ -97,7 +97,10 @@ const files = packedFiles
   .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 if (!files.some((f) => f.path === entry)) fail(`the package has no ${entry}`);
 for (const f of files) f.sha256 = sha256(f.bytes);
-const digest = sha256(files.map((f) => `${f.path}\0${f.sha256}\n`).join(""));
+const digestOf = (list) => sha256(list.map((f) => `${f.path}\0${f.sha256}\n`).join(""));
+const digest = digestOf(files);
+// The package alone, without this platform's Node.js licence: equal on every platform, and to the release tarball.
+const packageDigest = digestOf(files.filter((f) => f.path !== "LICENSE.node"));
 
 /* ── the blob, injected into a copy of this Node.js ── */
 
@@ -226,4 +229,4 @@ for (const name of outputs) {
   const size = fs.statSync(path.join(distDir, name)).size;
   say(`${name}  ${(size / 1048576).toFixed(1)} MB  ${sha256(fs.readFileSync(path.join(distDir, name)))}`);
 }
-say(`${pkg.name} ${pkg.version} on Node.js ${process.version}, ${files.length} files, package digest ${digest.slice(0, 16)}${signing ? ", " + signing : ""}`);
+say(`${pkg.name} ${pkg.version} on Node.js ${process.version}, ${packedFiles.length} packed files, package digest ${packageDigest.slice(0, 16)}${signing ? ", " + signing : ""}`);
