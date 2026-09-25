@@ -340,7 +340,7 @@ if (config.json) {
   if (config.interop) {
     lines.push(config.demo
       ? "  /metrics scrape token for this demo (Authorization: Bearer …):  " + admin.demoScrapeToken()
-      : "  /metrics and telemetry ingest take a scrape token; print it with:  " + COMMAND + " metrics-token"
+      : "  Telemetry credentials: use metrics-token --scope read or --scope ingest. Command:  " + COMMAND + " metrics-token"
         + (config.stateDir === path.join(config.home, ".agent-console", "hub") ? "" : " --state-dir \"" + config.stateDir + "\""));
   }
   lines.push("", "  Sign in (the link works once):  " + signIn(), "  Ctrl+C stops the console.", "");

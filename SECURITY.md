@@ -49,10 +49,14 @@ token-checked reporting. Nothing of the console is on it, whatever `--listen`
 says.
 
 When `--interop` is enabled, its loopback `/metrics` and telemetry ingest
-paths take only a scrape token: HMAC-SHA256 of a fixed label under the console
-key, printed by `metrics-token` to the user who can read the key, compared in
-constant time, and replaced whenever the key is. The console key itself and
-the sign-in cookie are refused there (`401`). Ingest also requires
+paths require separate read and ingest bearer credentials. Domain-separated
+HMACs under the console key are printed by `metrics-token --scope read|ingest`
+to the user who can read that key and compared in constant time. `--rotate`
+revokes one scope immediately without changing the other scope or browser
+sessions. Corrupt rotation state refuses access; protect generation files
+alongside the key because deleting them restores initial credentials. The
+console key itself, wrong-scope credentials and sign-in cookies are refused
+there (`401`). Ingest also requires
 `X-Agent-Console-Interop: 1` and rejects browser `Origin` headers. These paths are disabled without `--interop` and never
 appear on the reporting listener.
 

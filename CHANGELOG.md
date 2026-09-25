@@ -2,6 +2,12 @@
 
 ## 0.3.0 — unreleased
 
+- Separate telemetry read and ingest credentials with independent live
+  rotation. Exporters must use `metrics-token --scope ingest`.
+- Add `policy status --json` for installed-file/source drift checks; protect
+  recognized policy writes and ask before uninspected interpreter execution.
+  Status explicitly distinguishes installed configuration from runtime proof.
+
 What your agents are doing, not only what they spent: context and cache
 health, live alerts and an agent tree in each lane; a project policy you can
 apply and remove; optional local metrics; figures that follow one period
@@ -61,9 +67,9 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
   AI-gateway token readings, kept apart from transcript totals so a request is
   never counted twice, a local Prometheus `/metrics` endpoint and a Grafana
   dashboard. [docs/INTEROP.md](docs/INTEROP.md) has setup and formats.
-- `/metrics` and the telemetry ingest take a **scrape token**: an HMAC of a
-  fixed label under the console's key, printed by the new `metrics-token`
-  command and replaced whenever the key is. The key itself is never accepted.
+- `/metrics` and telemetry ingest take **separate scoped credentials**, printed
+  by `metrics-token --scope read|ingest`. Each supports independent `--rotate`;
+  the console key itself is never accepted.
   A `--demo` console prints its token at start and stamps `/metrics` DEMO.
 
 **Joining and security**

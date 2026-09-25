@@ -211,8 +211,9 @@ transcript totals so the same request is never added twice. It is off for
 ordinary users. The synthetic demo shows an OpenTelemetry reading. See
 [setup, accepted formats and privacy rules](docs/INTEROP.md); the included
 [Grafana dashboard](docs/grafana-agent-console.json) can read `/metrics`.
-`/metrics` and ingest take a scrape token, derived from the console's key,
-that the `metrics-token` command prints.
+`/metrics` and ingest require separate credentials: `metrics-token --scope read`
+for scrapers and `metrics-token --scope ingest` for exporters. Add `--rotate`
+to revoke and replace one scope without restarting the console.
 
 ### Shared analysis core
 

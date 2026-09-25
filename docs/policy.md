@@ -52,6 +52,8 @@ gates:
   pipe_to_interpreter: ask
   credential_read: ask
   production_migration: block
+  policy_change: block
+  uninspected_execution: ask
 ```
 
 The defaults above are the version 1 defaults. `max` effort requires the task
@@ -64,6 +66,16 @@ cannot be inferred safely from an agent's launch prompt. The compiler can
 publish named role agents and flag overrides; it must not assert it proved a
 test or a failure count. An idle gap is an observed cache-health signal, not
 an API-enforced cache TTL.
+
+## Checking installed controls
+
+`agent-console policy status --project <path> --json` checks the installed
+manifest, generated file hashes and current repository/organization policy.
+It returns `installed`, `not-installed`, `drifted` or `invalid`, and exits
+nonzero unless installed files match. It does not execute hooks or prove the
+running agent uses them: `runtimeVerified` remains false. Hard budgets and
+gateway enforcement are reported as unavailable. Run this after installing
+or updating policy and use the exit status in local health checks.
 
 ## Native controls in `policy apply`
 
@@ -114,6 +126,13 @@ Code permissions and sandboxing remain in effect.
 On malformed hook input or a policy read error, `on_error` applies, defaulting
 to `ask`; no raw command or credential text is logged. If the hook cannot load
 its classifier it asks or denies, even when `on_error` is `allow`.
+
+The default `policy_change: block` gate rejects recognized writes to policy,
+hook and Claude settings files. `uninspected_execution: ask` requests approval
+for recognized interpreter/script execution whose effects cannot be inspected
+from the command alone. These gates reduce obvious bypasses but are not a
+shell sandbox. They do not prevent another process or the operator from
+changing files. Native permissions and managed settings remain necessary.
 
 Known limits: if `node` is not on `PATH`, or the hook file itself is missing or
 broken, Claude Code treats the failure as a non-blocking hook error and the

@@ -8,25 +8,35 @@
 | `/v1/metrics` | POST | Claude Code OTLP/HTTP JSON metric export |
 | `/ingest/gateway/kong`, `/ingest/gateway/litellm` | POST | Prometheus text from the named gateway |
 
-**All three paths take a scrape token** as `Authorization: Bearer <token>`
-and answer `401` to anything else, including the console's sign-in cookie.
-Print the token on the console's own computer, as the user that runs it,
-with the command you start the console with followed by `metrics-token`
-(add the same `--state-dir` if the console uses one; `--json` prints JSON).
-From a download:
+**Read and ingest use separate bearer credentials.** `/metrics` requires the
+`read` scope; both POST endpoints require `ingest`. Browser sign-in cookies,
+the raw console key, and credentials for the wrong scope receive `401`.
+Print the credential on the console's own computer as the user that runs it:
 
 ```sh
-node bin/agent-console.mjs metrics-token
+node bin/agent-console.mjs metrics-token --scope read
+node bin/agent-console.mjs metrics-token --scope ingest
 ```
 
-The token is HMAC-SHA256 of the fixed label `agent-console/metrics/v1` under
-the console's key (`admin.key` in its state directory). It is not the key and
-does not reveal it; the key itself is never accepted on these paths. It is
-compared in constant time. A new key (delete `admin.key` and start the console
-again) makes a new token, and the old one stops working. A `--demo` console
-keeps its key in memory, so it prints its token when it starts with
-`--interop`, and its `/metrics` answer starts with a `# DEMO` line and an
-`agent_console_demo 1` gauge. The POST paths also require
+Use the console's same `--state-dir` if configured. `--json` supports tooling;
+treat its output as a password. The credentials are domain-separated HMACs
+under `admin.key`, compared in constant time. They do not reveal the key.
+To revoke a credential and print its replacement:
+
+```sh
+node bin/agent-console.mjs metrics-token --scope ingest --rotate
+```
+
+Rotation takes effect on the next request without restarting the console.
+Update the corresponding exporter or scraper with the replacement. The other
+scope and browser sessions remain valid. Corrupt rotation state refuses
+access. Protect the state directory: deleting generation files restores the
+initial credential, so file deletion is not a revocation procedure.
+Existing integrations that used the old read credential for POST must switch
+to `--scope ingest`. Replacing the console key invalidates both scopes on
+restart and also ends browser sessions. A demo prints only its read token,
+marks `/metrics` with `# DEMO` and `agent_console_demo 1`, and refuses ingest.
+The POST paths also require
 `X-Agent-Console-Interop: 1`, reject browser `Origin` headers, and accept at
 most 256 KB per request. All paths are bound to
 the console's existing `127.0.0.1` listener. Nothing is installed, sent, or
@@ -45,7 +55,7 @@ export OTEL_METRICS_EXPORTER=otlp
 export OTEL_LOGS_EXPORTER=none
 export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/json
 export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://127.0.0.1:6787/v1/metrics
-# The token from metrics-token; the space after Bearer is written %20.
+# The token from metrics-token --scope ingest; the space after Bearer is written %20.
 export OTEL_EXPORTER_OTLP_METRICS_HEADERS='X-Agent-Console-Interop=1,Authorization=Bearer%20<token>'
 claude
 ```
@@ -58,7 +68,7 @@ output, cacheRead or cacheCreation). OTLP protobuf and gRPC are not supported
 by this dependency-free local adapter; select `http/json`. See
 [Claude Code Monitoring](https://code.claude.com/docs/en/monitoring-usage) and
 [the OTLP/HTTP specification](https://opentelemetry.io/docs/specs/otlp/),
-checked 24 September 2026. Without the scrape token the endpoint answers `401`
+checked 24 September 2026. Without the ingest token the endpoint answers `401`
 and accepts nothing.
 
 The adapter ignores user, repository, session, prompt and tool attributes,
@@ -74,7 +84,7 @@ documented counter families; comments and unrelated metrics are ignored.
 The local adapter discards all labels except `model` or `ai_model`, the token
 type, and a salted hash of the series for deduplication. Send the text with
 `Content-Type: text/plain`, `X-Agent-Console-Interop: 1`, and
-`Authorization: Bearer <token>`.
+`Authorization: Bearer <token>` using the `ingest` credential.
 Each endpoint
 accepts up to 1,000 matching series per request.
 
@@ -97,7 +107,7 @@ local adapter.
 ## Prometheus and Grafana
 
 Prometheus scrapes `http://127.0.0.1:6787/metrics` from the same machine
-with the scrape token as its bearer credential, kept in a file only its user
+with the read token (`metrics-token --scope read`) as its bearer credential, kept in a file only its user
 can read:
 
 ```yaml

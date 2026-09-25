@@ -44,7 +44,9 @@
         "delete_outside_repo": { "$ref": "#/$defs/action" },
         "pipe_to_interpreter": { "$ref": "#/$defs/action" },
         "credential_read": { "$ref": "#/$defs/action" },
-        "production_migration": { "$ref": "#/$defs/action" }
+        "production_migration": { "$ref": "#/$defs/action" },
+        "policy_change": { "$ref": "#/$defs/action" },
+        "uninspected_execution": { "$ref": "#/$defs/action" }
       }
     }
   },

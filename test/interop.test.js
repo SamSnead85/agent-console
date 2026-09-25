@@ -104,22 +104,22 @@ function metricsToken(root, extra = []) {
 const gatewayBody = { kong: 'ai_llm_tokens_total{ai_model="claude-sonnet-5",token_type="prompt_tokens"} 90',
   litellm: 'litellm_input_tokens_metric_total{model="claude-sonnet-5"} 27' };
 
-async function interopAnswers(base, auth, cookie) {
+async function interopAnswers(base, auth, cookie, ingestAuth = auth) {
   const scrape = await fetch(base + '/metrics', { headers: { ...auth, ...(cookie ? { cookie } : {}) } });
   const scraped = await scrape.text();
   const otel = await fetch(base + '/v1/metrics', { method: 'POST', headers: {
-    'content-type': 'application/json', 'x-agent-console-interop': '1', ...auth,
+    'content-type': 'application/json', 'x-agent-console-interop': '1', ...ingestAuth,
   }, body: JSON.stringify(otlp([point('input', 13)])) });
   const gateways = [];
   for (const gateway of ['kong', 'litellm']) {
     gateways.push((await fetch(base + '/ingest/gateway/' + gateway, { method: 'POST', headers: {
-      'content-type': 'text/plain', 'x-agent-console-interop': '1', ...auth,
+      'content-type': 'text/plain', 'x-agent-console-interop': '1', ...ingestAuth,
     }, body: gatewayBody[gateway] })).status);
   }
   return { scrape: scrape.status, scraped, otel: otel.status, gateways };
 }
 
-test('with --interop, /metrics and the telemetry ingest take only the scrape token that metrics-token prints', async (t) => {
+test('interop credentials separate read and ingest, rotate live, and cannot authenticate the console', async (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-console-interop-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const first = startInteropHub(t, root);
@@ -154,10 +154,18 @@ test('with --interop, /metrics and the telemetry ingest take only the scrape tok
 
   // Accepted with the token; the local-telemetry header is still required for ingest.
   const auth = { authorization: `Bearer ${token}` };
-  const noHeader = await fetch(base + '/v1/metrics', { method: 'POST', headers: { 'content-type': 'application/json', ...auth },
+  const ingest = JSON.parse(metricsToken(root, ['--scope', 'ingest', '--json']).stdout).token;
+  const ingestAuth = { authorization: `Bearer ${ingest}` };
+  assert.notEqual(ingest, token);
+  const readOnly = await interopAnswers(base, auth);
+  assert.equal(readOnly.scrape, 200);
+  assert.equal(readOnly.otel, 401);
+  assert.deepEqual(readOnly.gateways, [401, 401]);
+  assert.equal((await fetch(base + '/metrics', { headers: ingestAuth })).status, 401);
+  const noHeader = await fetch(base + '/v1/metrics', { method: 'POST', headers: { 'content-type': 'application/json', ...ingestAuth },
     body: JSON.stringify(otlp([point('input', 13)])) });
   assert.equal(noHeader.status, 403);
-  const answers = await interopAnswers(base, auth);
+  const answers = await interopAnswers(base, auth, undefined, ingestAuth);
   assert.equal(answers.otel, 200);
   assert.deepEqual(answers.gateways, [200, 200]);
   assert.equal(answers.scrape, 200);
@@ -170,6 +178,26 @@ test('with --interop, /metrics and the telemetry ingest take only the scrape tok
   // Only on the console's own loopback listener, never the reporting port.
   const report = await fetch(`http://127.0.0.1:${meta.reportPort}/metrics`, { headers: auth });
   assert.equal(report.status, 404);
+
+  // Rotate read access on the running hub; ingest and browser authentication survive.
+  const liveRotated = JSON.parse(metricsToken(root, ['--rotate', '--json']).stdout).token;
+  assert.notEqual(liveRotated, token);
+  assert.equal((await fetch(base + '/metrics', { headers: auth })).status, 401);
+  assert.equal((await fetch(base + '/metrics', { headers: { authorization: `Bearer ${liveRotated}` } })).status, 200);
+  assert.equal((await interopAnswers(base, ingestAuth)).otel, 200);
+  assert.equal((await fetch(base + '/api/console', { headers: { 'x-agent-console': '1', cookie } })).status, 200);
+  const rotatedIngest = JSON.parse(metricsToken(root, ['--rotate', '--scope', 'ingest', '--json']).stdout).token;
+  assert.equal((await interopAnswers(base, ingestAuth)).otel, 401);
+  assert.equal((await interopAnswers(base, { authorization: `Bearer ${rotatedIngest}` })).otel, 200);
+  assert.equal((await fetch(base + '/metrics', { headers: { authorization: `Bearer ${liveRotated}` } })).status, 200);
+
+  // Invalid generation state fails closed without resetting to an old credential.
+  const generationFile = path.join(root, 'state', 'interop-read-generation.json');
+  const savedGeneration = fs.readFileSync(generationFile);
+  fs.writeFileSync(generationFile, '{invalid');
+  assert.equal((await fetch(base + '/metrics', { headers: { authorization: `Bearer ${liveRotated}` } })).status, 401);
+  assert.equal(metricsToken(root, ['--json']).status, 1);
+  fs.writeFileSync(generationFile, savedGeneration);
 
   // A new key: the old token stops working and metrics-token prints the new one.
   first.child.kill('SIGKILL');
@@ -185,6 +213,11 @@ test('with --interop, /metrics and the telemetry ingest take only the scrape tok
 test('metrics-token needs a console key and says so; a demonstration prints its token at start', async (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-console-interop-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  for (const args of [['--scope'], ['--scope', 'admin'], ['--scope', '--rotate']]) {
+    const invalid = metricsToken(root, args);
+    assert.equal(invalid.status, 2);
+    assert.ok(!invalid.stdout);
+  }
   const none = metricsToken(root);
   assert.equal(none.status, 1);
   assert.match(none.stderr, /no console key/u);
