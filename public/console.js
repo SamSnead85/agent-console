@@ -681,9 +681,9 @@
     dv.title = `${l.device.label}${l.device.person ? " · " + l.device.person : ""}`;
     const la = row.querySelector(".la");
     la.textContent = l.state === "catching-up" ? "catching up" : l.state === "reconnecting" ? "reconnecting"
-      : l.state === "silent" || l.state === "revoked" ? `since ${hhmm(l.device.lastContactAt || l.lastAt)}`
+      : l.state === "silent" || l.state === "revoked" ? hhmm(l.device.lastContactAt || l.lastAt)   // the time alone: the state column says SILENT, and "since" does not fit the cell
       : l.state === "live" ? "now" : ago(l.lastAt + 60_000, now).replace(" ago", "");
-    la.title = l.state === "silent" || l.state === "revoked" ? "The machine's last report" : "When this session last reported · " + hhmm(l.lastAt);
+    la.title = l.state === "silent" || l.state === "revoked" ? "The machine's last report · silent since " + hhmm(l.device.lastContactAt || l.lastAt) : "When this session last reported · " + hhmm(l.lastAt);
   }
 
   function showContext(lane) {

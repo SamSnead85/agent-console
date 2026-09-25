@@ -150,8 +150,42 @@ test("on a phone the hour axis caption, the person's machine status and the lane
   assert.match(phone, /\.inspect \.irow\.mach \.status \{ grid-row: 2; grid-column: 1 \/ -1; \}/u);
   // the state column holds the dot, the longest word the console says and the stamp at every width: 124px
   // (SILENT · DEMO needs 113, REMOVED · DEMO 121, RECONNECTING alone 107), never the 104, 96 or 92 that cut the stamp to DEM
-  assert.match(phone, /\.lhead, \.lane \{[^}]*grid-template-columns: 124px 64px 64px 52px/u);
-  assert.equal((CSS.match(/grid-template-columns: calc\(124px \* var\(--k\)\) minmax\(calc\(1[59]0px \* var\(--k\)\)/gu) || []).length, 3, "desk, folded and wide lane grids");
-  assert.doesNotMatch(CSS, /grid-template-columns: calc\((96|104)px \* var\(--k\)\) minmax\(calc\(1[59]0px/u);
-  assert.doesNotMatch(phone, /grid-template-columns: (92|96|104)px 64px 64px 52px/u);
+  assert.match(phone, /\.lhead, \.lane \{[^}]*grid-template-columns: 124px 64px 64px 60px/u);
+  assert.equal((CSS.match(/grid-template-columns: calc\(124px \* var\(--k\)\) minmax\(calc\(1[3-9]\dpx \* var\(--k\)\)/gu) || []).length, 4, "desk, narrow, folded and wide lane grids");
+  assert.doesNotMatch(CSS, /grid-template-columns: calc\((96|104)px \* var\(--k\)\) minmax\(calc\(1[3-9]\dpx/u);
+  assert.doesNotMatch(phone, /grid-template-columns: (92|96|104)px 64px 64px (52|60)px/u);
+});
+
+/* The 124px state column made the desk grid's minimum 1356px, wider than the frame at 1366 (1314px): the header said L for
+   LAST and the Last values were hidden, and at 1241 the Machine column too. Between 1241 and 1439 the lane grid is held at
+   what each column's widest header or value needs, with nothing folded or cut. */
+test("between 1241 and 1439 every lane column fits the frame, header and value, with nothing hidden", () => {
+  const narrow = media("min-width: 1241px) and (max-width: 1439px");
+  assert.doesNotMatch(narrow, /display: none/u, "no lane column is hidden at this width");
+  const rule = narrow.match(/\.lhead, \.lane \{ gap: (\d+)px; grid-template-columns: ([^}]*); \}/u);
+  assert.ok(rule, "one lane grid rule, gap first");
+  const gap = Number(rule[1]);
+  // every track's minimum in px: a fixed calc(Npx * var(--k)) or the minimum of a minmax(calc(Npx * var(--k)), fr)
+  const mins = [...rule[2].matchAll(/(?:minmax\()?calc\((\d+)px \* var\(--k\)\)/gu)].map((m) => Number(m[1]));
+  assert.equal(mins.length, 14, "fourteen lane columns: state, project, model, activity, 5 min, in, out, total, est., agents, context, doing, machine, last");
+  // the state column still holds SILENT · DEMO (113) and REMOVED · DEMO (121); the last column holds a clock time (11:50 AM, 58)
+  assert.equal(mins[0], 124);
+  assert.ok(mins[13] >= 60, "Last holds a clock time");
+  // the widest header or value each column carries, measured in the demo at 1440 (Plex Sans 12px caps for headers, Plex Mono 12px for values)
+  const need = { st: 124, pr: 123, md: 97, sp: 93, fm: 41, in: 29, out: 29, tot: 39, usd: 51, ag: 51, cx: 59, do: 116, dv: 76, la: 58 };
+  Object.values(need).forEach((n, i) => assert.ok(mins[i] >= n, `column ${i} (${Object.keys(need)[i]}) is ${mins[i]}px for content that needs ${n}px`));
+  // the whole minimum fits the frame at 1241: 1241 − 2 × 24px shell − 2 × 2px canvas = 1189px for the row, less its own 20px + 16px padding
+  const minimum = mins.reduce((a, b) => a + b, 0) + 13 * gap + 36;
+  assert.ok(minimum <= 1189, `the lane grid's minimum is ${minimum}px, more than the 1189px the frame has at 1241`);
+  // the desk grid (1440 and up) keeps its own tracks, and its minimum fits 1440's 1388px
+  const desk = CSS.match(/\n\.lhead, \.lane \{ display: grid;[^}]*grid-template-columns: ([^}]*); \}/u);
+  assert.ok(desk, "the desk lane grid");
+  const deskMins = [...desk[1].matchAll(/(?:minmax\()?calc\((\d+)px \* var\(--k\)\)/gu)].map((m) => Number(m[1]));
+  assert.equal(deskMins.length, 14);
+  assert.ok(deskMins.reduce((a, b) => a + b, 0) + 13 * 12 + 36 <= 1388, "the desk grid fits the frame at 1440");
+  assert.ok(deskMins[13] >= 60, "the desk Last column holds a clock time");
+  // a silent lane's Last is the clock time alone — the state column already says SILENT — so it fits its 60px cell everywhere; the sentence stays on hover
+  assert.match(JS, /l\.state === "silent" \|\| l\.state === "revoked" \? hhmm\(l\.device\.lastContactAt \|\| l\.lastAt\)/u);
+  assert.doesNotMatch(JS, /la\.textContent = [^;]*`since \$\{hhmm/u, "the word since does not fit the Last cell");
+  assert.match(JS, /la\.title = l\.state === "silent" \|\| l\.state === "revoked" \? "The machine's last report · silent since " \+ hhmm/u);
 });

@@ -23,6 +23,15 @@
   whole, a person's machine row says its status whole under the name, and
   the lanes' state column holds the DEMO stamp inside it beside any
   state word — SILENT included — at every width.
+- The lane grid fits a 1241–1439px frame whole. The 124px state column
+  had pushed the desk grid past the frame at 1366, so the header read L
+  for LAST and the Last values were hidden, and at 1241 the Machine
+  column too. Between 1241 and 1439 every lane track is held at what its
+  widest header or value needs, with an 8px gap: all fourteen columns
+  stay, nothing is folded, cut or hidden, and the frame at 1241 still has
+  room. The Last column is 60px at every width, the width of a clock time,
+  and a silent lane's Last is that time alone — the state column already
+  says SILENT — with the sentence on hover.
 - The instrument is denser and says less twice. The lanes carry a Doing
   column (the lane's newest alert, its subagents at work, a cache signal, a
   growing context, or its state in a word — never a prompt or a path), the
