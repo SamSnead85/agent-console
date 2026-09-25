@@ -333,11 +333,12 @@ function startDemo(port) {
 }
 
 test("a demo console prints a new sign-in link on request, from its page or from a second start", async (t) => {
-  const probe = spawnSync(process.execPath, ["-e", "const s=require('net').createServer().listen(0,'127.0.0.1',()=>{console.log(s.address().port);s.close()})"], { encoding: "utf8" });
-  const port = Number(probe.stdout.trim());
-  const demo = startDemo(port);
+  // Let the console reserve its own port. A probe that closes before this
+  // child binds leaves a race with other tests and programs on the runner.
+  const demo = startDemo(0);
   t.after(() => demo.child.kill("SIGKILL"));
   const meta = await demo.ready;
+  const port = Number(new URL(meta.url).port);
   const asked = await fetch(meta.url + "/api/sign-in/print", { method: "POST", headers: INTENT });
   assert.equal(asked.status, 200);
   const answer = await asked.text();
