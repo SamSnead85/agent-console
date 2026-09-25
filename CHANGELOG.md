@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- The period control moves Team's and Projects' counts and sparklines too.
+  `/api/console` gives sessions and tokens by tool, machine and person for
+  every period (`laneTotals.periods`), and each machine and person a
+  sparkline per period at the chart's own resolution; each Projects row
+  carries its sparkline for the requested period. Thirty days are read from
+  the daily rollup, which keeps no sessions: their session counts are null
+  with the reason, never the day's count under a month's caption.
+- Git figures nobody could read are unknown, not zero: with no project in a
+  Git repository the console can read, the Projects totals (commits, lines,
+  PR-linked commits) are null with the reason, and the screen shows a dash.
+- `npm run lint`: every JavaScript file parses and every JSON file is valid.
 - Alerts are dated by the transcript line that raised them, not by when it
   was read, and the stall's five minutes are measured on that clock too. An
   alert older than the hour, or raised while a first run replays history, is

@@ -46,7 +46,7 @@
     "laneTotals": {
       "type": "object", "additionalProperties": false,
       "description": "Counts over every lane the console holds, not only the 80 sent (H05, H17).",
-      "required": ["total", "shown", "byTool", "byDevice", "byPerson", "byLocalProject", "subagentCount", "cold"],
+      "required": ["total", "shown", "byTool", "byDevice", "byPerson", "byLocalProject", "subagentCount", "cold", "periods"],
       "properties": {
         "total": { "type": "integer" },
         "shown": { "type": "integer" },
@@ -58,13 +58,20 @@
           "properties": { "sessions": { "type": "integer" }, "live": { "type": "integer" },
             "hourSpark": { "type": "array", "minItems": 20, "maxItems": 20, "items": { "type": "integer" } } } } },
         "subagentCount": { "type": "integer" },
+        "periods": {
+          "type": "object", "required": ["1h", "24h", "7d", "30d"], "additionalProperties": false,
+          "description": "The same counts for each period, so the period control moves them: sessions are lanes (top-level sessions, subagents folded in) with usage inside the period. 30 days are read from the daily rollup, which keeps no sessions: sessionsKept false, every sessions null, and reason says why — never the day's count under a month's caption.",
+          "properties": { "1h": { "$ref": "#/$defs/periodTally" }, "24h": { "$ref": "#/$defs/periodTally" },
+            "7d": { "$ref": "#/$defs/periodTally" }, "30d": { "$ref": "#/$defs/periodTally" } }
+        },
         "cold": { "type": "object", "required": ["sessions", "tokensDay"], "additionalProperties": false,
           "properties": { "sessions": { "type": "integer" }, "tokensDay": { "type": "integer" } } }
       }
     },
     "devices": { "type": "array", "items": {
-      "type": "object", "required": ["id", "label", "status", "coverage", "windows"],
+      "type": "object", "required": ["id", "label", "status", "coverage", "windows", "sparks"],
       "properties": {
+        "sparks": { "$ref": "#/$defs/sparks" },
         "coverage": {
           "type": "object", "required": ["dropped", "reasons", "recovered", "reported", "since"],
           "description": "reported:false means the machine's reporter version never sent coverage: dropped is null, never 0 (H10).",
@@ -78,7 +85,8 @@
         }
       }
     } },
-    "people": { "type": "array" },
+    "people": { "type": "array", "items": { "type": "object", "required": ["person", "devices", "windows", "sparks"],
+      "properties": { "sparks": { "$ref": "#/$defs/sparks" } } } },
     "team": {
       "type": "object", "required": ["perMachine"],
       "properties": {
@@ -141,6 +149,19 @@
       "type": "object", "required": ["start", "step", "values", "classes", "byDevice"],
       "properties": { "byDevice": { "$ref": "#/$defs/stack" } }
     },
+    "periodTallyRow": { "type": "object", "required": ["sessions", "tokens"], "additionalProperties": false,
+      "properties": { "sessions": { "type": ["integer", "null"] }, "tokens": { "type": "integer" } } },
+    "periodTally": { "type": "object", "required": ["basis", "sessionsKept", "reason", "sessions", "byTool", "byDevice", "byPerson"], "additionalProperties": false,
+      "properties": { "basis": { "enum": ["minutes", "utc-days"] }, "sessionsKept": { "type": "boolean" }, "reason": { "type": ["string", "null"] },
+        "sessions": { "type": ["integer", "null"] },
+        "byTool": { "type": "object", "additionalProperties": { "$ref": "#/$defs/periodTallyRow" } },
+        "byDevice": { "type": "object", "additionalProperties": { "$ref": "#/$defs/periodTallyRow" } },
+        "byPerson": { "type": "object", "additionalProperties": { "$ref": "#/$defs/periodTallyRow" } } } },
+    "spark": { "type": "object", "required": ["start", "step", "tokens"], "additionalProperties": false,
+      "description": "A row's tokens over a period at that period's stacked-series resolution (1h: 3 min, 24h: 15 min, 7d: 2 h, 30d: day); the same frame as series[period].byDevice.frame, and it adds up to the row's figure for the period.",
+      "properties": { "start": { "type": "integer" }, "step": { "type": "integer" }, "tokens": { "type": "array", "items": { "type": "integer" } } } },
+    "sparks": { "type": "object", "required": ["1h", "24h", "7d", "30d"], "additionalProperties": false,
+      "properties": { "1h": { "$ref": "#/$defs/spark" }, "24h": { "$ref": "#/$defs/spark" }, "7d": { "$ref": "#/$defs/spark" }, "30d": { "$ref": "#/$defs/spark" } } },
     "laneTally": { "type": "object", "required": ["sessions", "live", "tokensDay"], "additionalProperties": false,
       "properties": { "sessions": { "type": "integer" }, "live": { "type": "integer" }, "tokensDay": { "type": "integer" } } },
     "lane": {

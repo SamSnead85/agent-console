@@ -31,6 +31,9 @@
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   // ── formatting ───────────────────────────────────────────────────────
+  // A Git figure the hub could not read is null: a dash, never a measured 0.
+  const gitN = (v) => (v === null || v === undefined ? "—" : v.toLocaleString("en-US"));
+  const gitLines = (t) => (t.added === null || t.removed === null ? "—" : null);
   const fmt = (n) => {
     if (n === null || n === undefined || !Number.isFinite(n)) return "—";
     const a = Math.abs(n);
@@ -979,14 +982,14 @@
         <td class="num r">${x.costPerOutcome.perCommitUsd === null ? "—" : money(x.costPerOutcome.perCommitUsd) + " est."}</td>
         <td class="num">${esc((x.branches || []).slice(0, 3).join(", ") || "—")}</td></tr>`).join("") + `</tbody></table><div class="note">This machine only. Spend per commit is spend in the window of the work, not attribution. <button class="linkbtn" type="button" data-go="projects">Projects view →</button></div>`
       : `<div class="note">No project on this machine has transcripts in this period.</div>`;
-    $("effortSum").innerHTML = `${stamp}<b>${fmt(w.tokens.total)}</b> tokens<span class="sep">·</span><b>${w.cost.usd === null ? "—" : money(w.cost.usd)}</b> est.<span class="sep">·</span><b>${t.commits.toLocaleString("en-US")}</b> ${t.commits === 1 ? "commit" : "commits"} on this machine<span class="sep">·</span>${esc(label)}`;
+    $("effortSum").innerHTML = `${stamp}<b>${fmt(w.tokens.total)}</b> tokens<span class="sep">·</span><b>${w.cost.usd === null ? "—" : money(w.cost.usd)}</b> est.<span class="sep">·</span><b>${gitN(t.commits)}</b> ${t.commits === 1 ? "commit" : "commits"} on this machine<span class="sep">·</span>${esc(label)}`;
     $("foldEffortBody").innerHTML = `<table class="grid"><thead><tr><th scope="col">Effort · ${esc(label)}</th><th scope="col" class="r">Every machine</th><th scope="col" class="r">This machine's Git</th></tr></thead><tbody>
       <tr><td>Tokens</td><td class="num r">${fmt(w.tokens.total)}</td><td class="num r">${fmt(p.tokens)}<span class="sub">this machine's transcripts</span></td></tr>
       <tr><td>Estimate</td><td class="num r">${w.cost.usd === null ? "—" : money(w.cost.usd) + (w.cost.status === "partial" ? " · partial" : "")}</td><td class="num r">—<span class="sub">see each project's matched spend / commit above</span></td></tr>
       <tr><td>Messages</td><td class="num r">${w.messages.toLocaleString("en-US")}</td><td class="num r">${p.sessions === null ? "—" : plural(p.sessions, "session")}</td></tr>
-      <tr><td>Commits</td><td class="num r">—</td><td class="num r">${t.commits.toLocaleString("en-US")}${p.author === true ? `<span class="sub">yours, by this machine's Git email</span>` : p.author === false ? `<span class="sub">every author — no Git email set here</span>` : ""}</td></tr>
+      <tr><td>Commits</td><td class="num r">—</td><td class="num r">${gitN(t.commits)}${p.author === true ? `<span class="sub">yours, by this machine's Git email</span>` : p.author === false ? `<span class="sub">every author — no Git email set here</span>` : ""}</td></tr>
       </tbody></table><div class="note">Tokens measure usage, not value; this is not a productivity score. Git figures are this machine's local history only.</div>`;
-    $("shipSum").innerHTML = `${stamp}<b>${t.commits.toLocaleString("en-US")}</b> ${t.commits === 1 ? "commit" : "commits"}<span class="sep">·</span><b>${t.prsMerged === null ? "—" : t.prsMerged}</b> referencing #N<span class="sep">·</span><b>+${fmt(t.added)}</b> / <b>−${fmt(t.removed)}</b> lines<span class="sep">·</span>this machine · ${esc(label)}`;
+    $("shipSum").innerHTML = `${stamp}<b>${gitN(t.commits)}</b> ${t.commits === 1 ? "commit" : "commits"}<span class="sep">·</span><b>${t.prsMerged === null ? "—" : t.prsMerged}</b> referencing #N<span class="sep">·</span>${gitLines(t) ?? `<b>+${fmt(t.added)}</b> / <b>−${fmt(t.removed)}</b>`} lines<span class="sep">·</span>this machine · ${esc(label)}`;
     const shipped = p.projects.filter((x) => x.repo);
     $("foldShipBody").innerHTML = shipped.length ? `<table class="grid"><thead><tr><th scope="col">Repository</th><th scope="col" class="r">Commits</th><th scope="col" class="r">Lines + / −</th><th scope="col" class="r" title="Commits whose subject ends (#N) or merges a pull request; #N may name an issue">Referencing #N</th><th scope="col" class="r">Default merges</th><th scope="col" class="r">Spend / default merge</th></tr></thead><tbody>`
       + shipped.map((x) => `<tr><td><b>${esc(x.repo.name)}</b><span class="sub">${esc(x.name)}</span></td><td class="num r">${x.repo.commits}</td><td class="num r">+${fmt(x.repo.added)} / −${fmt(x.repo.removed)}</td>
@@ -1646,14 +1649,14 @@
       $("pProv").title = p.author === false ? "No Git email (user.email) is set in one of these repositories, so its Git figures count every author. None of this leaves this machine." : "Read from this machine only. None of this leaves this machine.";
       $("pKv").innerHTML = [
         [String(p.projects.length), "projects", `${p.withRepo} in Git`, "projects.length"],
-        [t.commits.toLocaleString("en-US"), "commits", "local Git · " + label, "projects.totals.commits"],
-        [`+${fmt(t.added)}<span class="u">−${fmt(t.removed)}</span>`, "lines", "added / removed", "projects.totals.added"],
+        [gitN(t.commits), "commits", "local Git · " + label, "projects.totals.commits"],
+        [gitLines(t) ?? `+${fmt(t.added)}<span class="u">−${fmt(t.removed)}</span>`, "lines", "added / removed", "projects.totals.added"],
         [t.prsMerged === null ? "—" : String(t.prsMerged), "PR-linked commits", t.prsMerged === null ? "needs a remote" : "(#N) or PR merge", "projects.totals.prsMerged", "Commits referencing #N: a subject ending (#N) or a pull-request merge; #N may name an issue rather than a merged pull request"],
       ].map(([v, l, s, src, why]) => `<div><div class="v" data-src="${src}" title="${esc(why || l + " · " + s)} · ${asOf()}">${v}</div><div class="l">${esc(l)}</div><div class="s">${esc(s)}</div></div>`).join("");
       // Effort: the fleet on one line, this machine's Git on the other — never divided into each other.
       const w = win();
       $("pEffort").innerHTML = `<div title="Every machine on the console · ${esc(label)} · ${w.messages.toLocaleString("en-US")} messages"><span class="el">every machine</span><span class="ev"><span class="eg"><b data-src="windows.tokens.total">${fmt(w.tokens.total)}</b><em>tokens</em></span> · <span class="eg"><b data-internal data-src="windows.cost.usd">${w.cost.usd === null ? "unpriced" : money(w.cost.usd)}</b><em>${w.cost.usd === null ? "" : "est." + (w.cost.status === "partial" ? "+" : "")}</em></span></span></div>
-        <div title="This machine's own transcripts and Git · ${esc(label)}${p.sessions === null ? "" : " · " + plural(p.sessions, "session")}"><span class="el">this machine</span><span class="ev"><span class="eg"><b data-src="projects.tokens">${fmt(p.tokens)}</b><em>tokens</em></span> · <span class="eg"><b data-src="projects.totals.commits">${t.commits.toLocaleString("en-US")}</b><em>commits</em></span></span></div>`;
+        <div title="This machine's own transcripts and Git · ${esc(label)}${p.sessions === null ? "" : " · " + plural(p.sessions, "session")}"><span class="el">this machine</span><span class="ev"><span class="eg"><b data-src="projects.tokens">${fmt(p.tokens)}</b><em>tokens</em></span> · <span class="eg"><b data-src="projects.totals.commits">${gitN(t.commits)}</b><em>commits</em></span></span></div>`;
       // Share of tokens per project, sorted, top five and "n more"; spend per commit as bars against the costliest.
       const ranked = p.projects.slice().sort((a, b) => b.tokens - a.tokens);
       const max = Math.max(...ranked.map((x) => x.tokens), 1);

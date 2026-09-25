@@ -378,3 +378,75 @@ test("H15: every model the bench generator writes resolves to a price, the alias
   assert.equal(priceRecord({ model: "claude-haiku-4", fresh: 1, output: 0, cacheRead: 0, cacheWrite: 0, ttl: "unknown" }, PRICES).status, "unpriced",
     "no guessing beyond a published alias");
 });
+
+// ---------------------------------------------------------------------------
+// F4 the period drives Team's counts and every row's sparkline
+// F6 Git figures nobody could read are unknown, never 0
+// ---------------------------------------------------------------------------
+
+test("F4: sessions and tokens by tool, machine and person follow the period; 30 days says sessions are not kept", () => {
+  const { store, registry } = hub({ devices: [{ id: "dev_a", label: "Studio", person: "You", local: true }, { id: "dev_b", label: "Laptop", person: "Platform engineer" }] });
+  store.ingest("dev_a", [
+    rec({ session: "now", at: NOW - MINUTE, tokens: 100 }),
+    rec({ session: "now-child", parent: "now", at: NOW - 2 * MINUTE, tokens: 50 }),
+    rec({ session: "three-hours", at: NOW - 3 * HOUR, tokens: 200 }),
+  ]);
+  store.ingest("dev_b", [rec({ device: "dev_b", session: "three-days", at: NOW - 3 * DAY, tokens: 400 })]);
+  store.seedDaily("dev_b", { ...rec({ device: "dev_b", session: "twenty-days", at: NOW - 20 * DAY, tokens: 800 }) });
+  const view = buildConsole({ store, registry, now: NOW, hub: {} });
+  const p = view.laneTotals.periods;
+  assert.deepEqual(Object.keys(p), ["1h", "24h", "7d", "30d"]);
+  assert.equal(p["1h"].byTool["claude-code"].sessions, 1, "a subagent is folded into its lane");
+  assert.equal(p["1h"].byTool["claude-code"].tokens, 150);
+  assert.equal(p["24h"].byTool["claude-code"].sessions, 2);
+  assert.equal(p["7d"].byTool["claude-code"].sessions, 3);
+  assert.equal(p["7d"].sessions, 3);
+  assert.equal(p["7d"].byPerson["Platform engineer"].sessions, 1);
+  assert.equal(p["7d"].byDevice.dev_a.tokens, 350);
+  assert.equal(p["30d"].sessionsKept, false);
+  assert.equal(p["30d"].sessions, null);
+  assert.equal(p["30d"].byTool["claude-code"].sessions, null, "never the day's count under a month's caption");
+  assert.ok(p["30d"].reason.length > 0);
+  assert.equal(p["30d"].byTool["claude-code"].tokens, view.windows["30d"].tokens.total);
+  for (const key of ["1h", "24h", "7d", "30d"]) {
+    assert.equal(Object.values(p[key].byTool).reduce((a, t) => a + t.tokens, 0), view.windows[key].tokens.total, key);
+    for (const d of view.devices) {
+      const spark = d.sparks[key];
+      assert.equal(spark.tokens.reduce((a, n) => a + n, 0), d.windows[key].tokens.total, `${key} ${d.id} spark adds up`);
+      assert.equal(spark.start, view.series[key].byDevice.frame.start);
+      assert.equal(spark.step, view.series[key].byDevice.frame.step);
+    }
+    for (const person of view.people) assert.equal(person.sparks[key].tokens.reduce((a, n) => a + n, 0), person.windows[key].tokens.total, `${key} ${person.person}`);
+  }
+  assert.equal(view.devices.find((d) => d.id === "dev_b").sparks["30d"].tokens.length, 30);
+});
+
+test("F4: each project row's sparkline covers the requested period", async () => {
+  const { store, registry } = hub();
+  const names = { project: () => "atlas", branch: () => null, path: () => null };
+  store.ingest("dev_a", [rec({ session: "a", at: NOW - 2 * DAY, tokens: 300 }), rec({ session: "a", at: NOW - MINUTE, tokens: 100 })]);
+  for (const [key, steps, total] of [["1h", 20, 100], ["24h", 96, 100], ["7d", 84, 400], ["30d", 30, 400]]) {
+    const p = await projectsPayload({ store, registry, names, period: key, demo: false, now: NOW });
+    const spark = p.projects[0].spark;
+    assert.equal(spark.tokens.length, steps, key);
+    assert.equal(spark.tokens.reduce((a, n) => a + n, 0), total, key);
+    assert.equal(spark.tokens.reduce((a, n) => a + n, 0), p.projects[0].tokens, key);
+  }
+  const legacy = await projectsPayload({ store, registry, names, period: "3d", demo: false, now: NOW });
+  assert.equal(legacy.projects[0].spark, null);
+});
+
+test("F6: with no project in Git the totals are unknown with a reason, never measured zeros", async () => {
+  const { store, registry } = hub();
+  const names = { project: () => "scratch", branch: () => null, path: () => null };
+  store.ingest("dev_a", [rec({ session: "a", tokens: 100 })]);
+  const p = await projectsPayload({ store, registry, names, period: "24h", demo: false, now: NOW });
+  assert.equal(p.withRepo, 0);
+  assert.deepEqual([p.totals.commits, p.totals.added, p.totals.removed, p.totals.prsMerged], [null, null, null, null]);
+  assert.match(p.totals.reason, /Git/u);
+  const { store: s2, registry: r2, demo } = demoHub();
+  const d = await projectsPayload({ store: s2, registry: r2, names: demo.names, period: "24h", demo: true, now: Date.now() });
+  assert.ok(d.withRepo > 0);
+  assert.ok(Number.isFinite(d.totals.commits));
+  assert.equal(d.totals.reason, null);
+});

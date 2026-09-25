@@ -128,6 +128,7 @@ test("the local Git estimate never divides fleet dollars by local commits", () =
     period: "1h", PERIOD_TEXT: { "1h": ["last hour", "1 h"] },
     win: () => ({ tokens: { total: 200 }, cost: { usd: fleetUsd, status: "estimated" }, messages: 3 }),
     esc: String, fmt: String, money: (n) => "$" + n, plural: (n, word) => `${n} ${word}`,
+    gitN: (v) => (v === null ? "—" : String(v)), gitLines: () => null,
   });
   paint();
   const estimate = () => $("foldEffortBody").innerHTML.match(/<tr><td>Estimate<\/td><td[^>]*>.*?<\/td><td[^>]*>(.*?)<\/td>/u)?.[1];

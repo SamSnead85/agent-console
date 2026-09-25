@@ -16,9 +16,15 @@
     },
     "cost": { "$ref": "#/$defs/cost" },
     "sessions": { "type": ["integer", "null"] },
+    "totals": {
+      "type": "object", "required": ["commits", "added", "removed", "prsMerged", "reason"], "additionalProperties": false,
+      "description": "Git figures summed once per repository. Unknown is null, never 0: every figure is null when no project is in a repository this console could read (reason says why), and a figure no repository reported is null.",
+      "properties": { "commits": { "type": ["integer", "null"] }, "added": { "type": ["integer", "null"] }, "removed": { "type": ["integer", "null"] },
+        "prsMerged": { "type": ["integer", "null"] }, "reason": { "type": ["string", "null"] } }
+    },
     "projects": { "type": "array", "items": {
       "type": "object",
-      "required": ["name", "projectHash", "parent", "repoHash", "tokens", "usd", "cost", "sessions", "branches", "repo", "costPerOutcome"],
+      "required": ["name", "projectHash", "parent", "repoHash", "tokens", "usd", "cost", "sessions", "branches", "spark", "repo", "costPerOutcome"],
       "properties": {
         "name": { "type": "string" },
         "projectHash": { "$ref": "#/$defs/hash64" },
@@ -29,6 +35,9 @@
         "cost": { "$ref": "#/$defs/cost" },
         "sessions": { "type": ["integer", "null"] },
         "branches": { "type": "array", "items": { "type": "string" } },
+        "spark": { "type": ["object", "null"], "required": ["start", "step", "tokens"], "additionalProperties": false,
+          "description": "The row's tokens over the requested period at its stacked resolution (1h: 3 min, 24h: 15 min, 7d: 2 h, 30d: day); adds up to tokens. null for the legacy 3d period.",
+          "properties": { "start": { "type": "integer" }, "step": { "type": "integer" }, "tokens": { "type": "array", "items": { "type": "integer" } } } },
         "repo": { "type": ["object", "null"] }
       }
     } },
