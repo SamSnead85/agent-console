@@ -238,6 +238,7 @@ if (config.demo) {
   local = startLocalCollection({
     registry, store, names, stateDir: config.stateDir, roots,
     intervalMs: 2_000, onTranscriptLine: (args) => { alertEngine.observeLine(args); activityBook.observeLine(args); },
+    journal: activityBook.journal,
     label: config.machineName, person: config.person,
     onError: (error) => process.stderr.write("  this machine: " + String(error && error.message) + "\n"),
   });
