@@ -4,7 +4,8 @@
  * schemas cannot drift from the code), and the fixtures carry every new case
  * at least once: a historical alert, a spike with its magnitude, a machine
  * not watched, stacked series, counts over every lane, tool activity shared
- * and not shared, unknown coverage, and a partial project estimate.
+ * and not shared, alert and activity coverage complete, partial, off and
+ * undeclared, unknown coverage, and a partial project estimate.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -47,6 +48,13 @@ test("H18: the fixtures exercise every new field", () => {
   assert.ok(CONSOLE.laneTotals.total >= CONSOLE.lanes.length && CONSOLE.laneTotals.subagentCount > 0);
   assert.ok(CONSOLE.lanes.some((l) => l.activityShared && l.lastTool), "shared tool activity");
   assert.ok(CONSOLE.lanes.some((l) => !l.activityShared && l.activity === null), "activity not shared");
+  for (const state of ["complete", "partial", "off", "undeclared"]) {
+    assert.ok(CONSOLE.lanes.some((l) => l.activityCoverage.state === state), `activity coverage ${state}`);
+  }
+  assert.ok(CONSOLE.lanes.every((l) => l.activityCoverage.state === "complete" || !l.activity || Object.values(l.activity.calls).some((n) => n > 0)
+    || l.activity.results.ok + l.activity.results.error > 0), "zero is drawn only under complete coverage");
+  assert.ok(CONSOLE.alertsCoverage.since !== null && CONSOLE.alertsCoverage.reason === "sharing-started", "a partial alert watch");
+  assert.ok(CONSOLE.devices.every((d) => d.sharing && d.sharing.alerts.state && Number.isInteger(d.sharing.rejectedFuture)));
   assert.ok(CONSOLE.devices.some((d) => d.coverage.reported === false && d.coverage.dropped === null), "coverage never reported");
   assert.ok(CONSOLE.devices.some((d) => d.coverage.dropped > 0), "coverage with drops");
   assert.ok(Object.values(CONSOLE.team.perMachine).every((p) => p.reporting > 0));

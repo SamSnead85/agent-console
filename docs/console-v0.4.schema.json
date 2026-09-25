@@ -69,9 +69,14 @@
       }
     },
     "devices": { "type": "array", "items": {
-      "type": "object", "required": ["id", "label", "status", "coverage", "windows", "sparks"],
+      "type": "object", "required": ["id", "label", "status", "coverage", "sharing", "windows", "sparks"],
       "properties": {
         "sparks": { "$ref": "#/$defs/sparks" },
+        "sharing": {
+          "type": "object", "required": ["alerts", "activity", "rejectedFuture"], "additionalProperties": false,
+          "description": "What the machine shares beyond its records: alerts over the last hour, tool activity over the last five minutes, and how many of its entries this console refused since it started for being dated more than two minutes ahead of its clock.",
+          "properties": { "alerts": { "$ref": "#/$defs/coverage" }, "activity": { "$ref": "#/$defs/coverage" }, "rejectedFuture": { "type": "integer" } }
+        },
         "coverage": {
           "type": "object", "required": ["dropped", "reasons", "recovered", "reported", "since"],
           "description": "reported:false means the machine's reporter version never sent coverage: dropped is null, never 0 (H10).",
@@ -106,10 +111,13 @@
     },
     "alerts": { "type": "array", "items": { "$ref": "#/$defs/alert" } },
     "alertsCoverage": {
-      "type": "object", "required": ["watched", "unwatched", "unwatchedDevices"], "additionalProperties": false,
-      "description": "Current machines (not removed) that watch for alerts: this console's own, and joined machines run with --share-alerts (H03).",
+      "type": "object", "required": ["watched", "unwatched", "unwatchedDevices", "since", "reason", "byDevice"], "additionalProperties": false,
+      "description": "Current machines (not removed) that watch for alerts: this console's own, and joined machines whose reporter declares share.alerts \"on\" (H03). since/reason: when some watched machine is covered for only part of the last hour, the latest time from which every watched machine's alerts are held, and why; before it \"no alert\" is not known. null when the hour is whole. byDevice: each current machine's coverage of the hour.",
       "properties": { "watched": { "type": "integer" }, "unwatched": { "type": "integer" },
-        "unwatchedDevices": { "type": "array", "items": { "type": "string" } } }
+        "unwatchedDevices": { "type": "array", "items": { "type": "string" } },
+        "since": { "type": ["integer", "null"] },
+        "reason": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/coverageReason" }] },
+        "byDevice": { "type": "object", "additionalProperties": { "$ref": "#/$defs/coverage" } } }
     },
     "interop": {
       "type": ["object", "null"],
@@ -123,6 +131,16 @@
   },
   "$defs": {
     "hash64": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "coverageReason": { "enum": ["console-restarted", "sharing-started", "sharing-off", "reporter-undeclared", "not-heard"] },
+    "coverage": {
+      "type": "object", "required": ["state", "since", "reason"], "additionalProperties": false,
+      "description": "How much of a window a machine's opt-in alerts or activity cover. complete: the whole window, so nothing held is a known zero. partial: only since `since` (the console restarted then, or the machine began sharing then); what is held is a floor and nothing held is unavailable. off: the machine's reporter says it does not share (since `since`). undeclared: an older reporter that does not say. unknown: nothing from the machine's reporter since the console started (`since`). Only complete may ever be drawn as zero.",
+      "properties": {
+        "state": { "enum": ["complete", "partial", "off", "undeclared", "unknown"] },
+        "since": { "type": ["integer", "null"] },
+        "reason": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/coverageReason" }] }
+      }
+    },
     "kinds": { "enum": ["read", "edit", "shell", "search", "web", "agent", "mcp", "other"] },
     "calls": {
       "type": "object", "additionalProperties": false,
@@ -166,16 +184,17 @@
       "properties": { "sessions": { "type": "integer" }, "live": { "type": "integer" }, "tokensDay": { "type": "integer" } } },
     "lane": {
       "type": "object",
-      "required": ["key", "state", "project", "tool", "model", "device", "tokensDay", "costDay", "agents", "agentTree", "lastAt", "activity", "lastTool", "activityShared"],
+      "required": ["key", "state", "project", "tool", "model", "device", "tokensDay", "costDay", "agents", "agentTree", "lastAt", "activity", "lastTool", "activityShared", "activityCoverage"],
       "properties": {
         "activity": {
           "type": ["object", "null"], "required": ["window", "calls", "results"], "additionalProperties": false,
-          "description": "Tool calls by kind and results in the last five minutes (H11). null when activityShared is false: unknown, not idle.",
+          "description": "Tool calls by kind and results in the last five minutes (H11). Zeros only when activityCoverage.state is complete; a floor when it is partial; null when nothing is held under partial coverage or the machine does not share: unavailable, not idle.",
           "properties": { "window": { "const": "5m" }, "calls": { "$ref": "#/$defs/calls" }, "results": { "$ref": "#/$defs/results" } }
         },
         "lastTool": { "type": ["object", "null"], "required": ["kind", "at"], "additionalProperties": false,
           "properties": { "kind": { "$ref": "#/$defs/kinds" }, "at": { "type": "integer" } } },
-        "activityShared": { "type": "boolean" },
+        "activityShared": { "type": "boolean", "description": "true when activityCoverage.state is complete or partial." },
+        "activityCoverage": { "$ref": "#/$defs/coverage" },
         "agentTree": { "type": "array", "items": { "type": "object", "required": ["sessionHash", "depth", "outcome", "results"],
           "properties": { "results": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/results" }] } } } }
       }

@@ -272,22 +272,27 @@ test("two machines join by link, report, roll up by person, and nothing private 
     assert.ok(!kept.includes(canary), `"${canary}" was kept by a reporter`);
     assert.ok(!shown.includes(canary), `"${canary}" reached the console`);
   }
-  const extrasSent = { alerts: 0, activity: 0 };
+  const extrasSent = { envelopes: 0, activity: 0 };
   for (const b of wire.bodies.filter((x) => x.url === "/api/ingest")) {
     const envelope = JSON.parse(b.body);
-    const optIn = envelope.device.label === "Workstation" && "alerts" in envelope;
-    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "coverage", ...(optIn ? ["alerts", "activity"] : []), "backlog"]);
-    if (optIn) {
-      extrasSent.alerts += 1; extrasSent.activity += envelope.activity.length;
+    const workstation = envelope.device.label === "Workstation";
+    const lists = ["alerts", "activity"].filter((k) => k in envelope);
+    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "coverage", "share", ...lists, "backlog"]);
+    // Every envelope says what its run shares; only the machine that opted in sends a list.
+    assert.deepEqual(envelope.share, workstation ? { alerts: "on", activity: "on" } : { alerts: "off", activity: "off" });
+    assert.ok(workstation || lists.length === 0, "a list from a machine that does not share it");
+    if (lists.length) {
+      extrasSent.envelopes += 1; extrasSent.activity += envelope.activity?.length ?? 0;
       // Alerts: a salted id, a kind, a minute, a salted session hash, a count and a flag.
-      for (const a of envelope.alerts) {
+      for (const a of envelope.alerts ?? []) {
         assert.deepEqual(Object.keys(a).sort(), ["at", "count", "historical", "id", "kind", "sessionHash"]);
         assert.match(a.at, /:00\.000Z$/u);
         assert.equal(a.historical, true, "raised while reading the backlog on a first join");
       }
       // Activity: per session and minute, eight kinds' counts, ok and error, and the last tool's kind.
-      for (const e of envelope.activity) {
-        assert.deepEqual(Object.keys(e).sort(), ["at", "calls", "lastTool", "results", "sessionHash"]);
+      for (const e of envelope.activity ?? []) {
+        assert.deepEqual(Object.keys(e).sort(), ["at", "calls", "id", "lastTool", "results", "sessionHash"]);
+        assert.match(e.id, /^[0-9a-f]{64}$/u, "a contribution is named by a salted hash");
         assert.deepEqual(Object.keys(e.calls).sort(), ["agent", "edit", "mcp", "other", "read", "search", "shell", "web"]);
         assert.match(e.at, /:00\.000Z$/u, "a time finer than a minute left the machine");
       }
@@ -307,7 +312,7 @@ test("two machines join by link, report, roll up by person, and nothing private 
       assert.match(r.at, /:00\.000Z$/u, "a time finer than a minute left the machine");
     }
   }
-  assert.equal(extrasSent.alerts, 1, "the opt-in extras ride on one envelope");
+  assert.equal(extrasSent.envelopes, 1, "the opt-in extras ride on one envelope");
   assert.ok(view.lanes.some((l) => l.device.label === "Workstation" && l.lastTool), "the shared activity lands on its own lane");
   assert.ok(extrasSent.activity > 0, "the workstation's tool activity was sent");
   // Project hashes use each reporter's own key, not the salt the hub holds, so

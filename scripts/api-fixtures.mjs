@@ -11,8 +11,10 @@
  * code the hub serves /api/console and /api/projects with — nothing is typed
  * in by hand. One synthetic response on a model the price table does not
  * list is added to the demo's own machine, so the fixtures carry a partial
- * estimate as well as priced ones. Every name in them is the demo's; every
- * figure is generated. docs/console-v0.4.schema.json and
+ * estimate as well as priced ones, and the demo's laptop is made to have
+ * begun sharing two minutes ago, so they carry partial alert and activity
+ * coverage beside complete, off and undeclared. Every name in them is the
+ * demo's; every figure is generated. docs/console-v0.4.schema.json and
  * docs/projects-v0.4.schema.json describe them (test/api-schema.test.js).
  */
 
@@ -45,6 +47,8 @@ export async function demoPayloads({ period = "24h" } = {}) {
   const demo = startDemo({ registry, store, fleet, activity, tickMs: 1e9 });
   demo.stop();
   const now = Date.now();
+  // The laptop began sharing two minutes ago: its coverage of the windows is partial.
+  fleet.markDemo("dev_demo_laptop", { alerts: "on", activity: "on" }, now - 2 * MINUTE);
   // One response on an unlisted model in the demo's docs-site lane: a partial estimate.
   const docs = [...store.sessions.values()].find((s) => s.deviceId === "dev_demo_studio" && demo.names.project(s.projectHash) === "docs-site" && !s.isSubagent);
   if (docs) {
