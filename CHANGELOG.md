@@ -2,6 +2,18 @@
 
 ## 0.3.0 — unreleased
 
+- The three views are one instrument on a graphite ground, not a navy page:
+  panes step off the band with a rim and an inset, the strip is shared and
+  names the view, and at desk width the page never scrolls — the canvas of
+  lanes and rows scrolls under the band. Team and Projects are bands too:
+  the figure, the last hour stacked by machine or by project (the lanes'
+  own sparks, regrouped), share bars, then dense rows where every row opens
+  its machine, person or project beside the canvas; sheets dock at the right
+  and carry the URL. ⌘K reaches every view, machine, lane and action with
+  the unreachable ones struck through and reasoned; 1–3, [ ], J/K, ↵, T and
+  ? work from anywhere. Every figure carries its source and as-of on hover,
+  every generated row its own DEMO stamp, and a phone gets one header line,
+  a bottom bar and lanes that scroll sideways under their own header.
 - Preserve missing token classes in lane totals, including subagents, and
   leave historical cost unsplit when current rates do not reconcile with its
   saved estimate. The burn chart labels its median as active minutes only;

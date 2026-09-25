@@ -67,6 +67,67 @@
   const vendorMark = (vendor) => vendor
     ? `<svg aria-label="${vendor === "anthropic" ? "Anthropic" : "OpenAI"}" role="img"><use href="#mk-${vendor}"/></svg>`
     : `<i class="none" title="No vendor mark for this model"></i>`;
+  // The viewer's zone, said once in the strip and on every hover: "6:24 AM EDT".
+  const zoneName = () => { try { return new Intl.DateTimeFormat([], { timeZoneName: "short" }).formatToParts(new Date()).find((p) => p.type === "timeZoneName")?.value || ""; } catch { return ""; } };
+  const asOf = () => D ? `as of ${hhmm(D.now)} ${zoneName()}`.trim() : "";
+  // A generated row is stamped where it is read: after the state word, beside the figure.
+  const demoStamp = () => (D && D.hub.demo ? `<span class="stamp sm" title="Generated: nothing was read from any machine">DEMO</span>` : "");
+  // Sparks summed by a key over the lanes the hub sent: a machine's, a person's or a project's own last hour.
+  const SPARK_N = 20;
+  function sparksBy(keyOf, lanes = (D && D.lanes) || []) {
+    const out = new Map();
+    for (const l of lanes) {
+      const key = keyOf(l);
+      if (key === null || key === undefined) continue;
+      let s = out.get(key);
+      if (!s) { s = { spark: new Array(SPARK_N).fill(0), live: 0, lanes: [] }; out.set(key, s); }
+      for (let i = 0; i < SPARK_N; i += 1) s.spark[i] += l.spark[i] || 0;
+      if (l.state === "live") s.live += 1;
+      s.lanes.push(l);
+    }
+    return out;
+  }
+  const sparkBars = (spark, hot, cls = "sp") => {
+    const top = Math.max(...spark, 1);
+    return `<span class="${cls}" aria-hidden="true">${spark.map((v, k) => `<i style="height:${(v > 0 ? 9 + (v / top) * 91 : 5).toFixed(0)}%"${hot && k === spark.length - 1 && v > 0 ? ' class="hot"' : ""}></i>`).join("")}</span>`;
+  };
+  // One ramp of the accent for a stacked-by-thing series: the four class steps, then the quiet ground for the rest.
+  const RAMP = ["var(--c-output)", "var(--c-cachewrite)", "var(--c-input)", "var(--c-cacheread)"];
+  const rampAt = (i) => RAMP[i] || "var(--spark-idle)";
+  /* A stacked bar series: one bar per three-minute step, one band per key, the
+     biggest at the bottom. Drawn from the lanes' own sparks, so it is the hub's
+     reading regrouped, never a figure the page invented. */
+  function drawStacked(svgId, wrapId, reasonId, legendId, groups, nameOf) {
+    const svg = $(svgId), wrap = $(wrapId);
+    const rows = [...groups.entries()].map(([key, g]) => ({ key, ...g, total: g.spark.reduce((a, b) => a + b, 0) })).sort((a, b) => b.total - a.total);
+    const shown = rows.slice(0, 4);
+    const rest = rows.slice(4);
+    if (rest.length) shown.push({ key: "__rest", total: rest.reduce((a, r) => a + r.total, 0), live: rest.reduce((a, r) => a + r.live, 0), n: rest.length,
+      spark: rest.reduce((acc, r) => acc.map((v, i) => v + r.spark[i]), new Array(SPARK_N).fill(0)) });
+    const all = rows.reduce((a, r) => a + r.total, 0);
+    wrap.classList.toggle("void", all <= 0);
+    if (all <= 0) { $(reasonId).textContent = rows.length ? "Nothing reported in the last hour. Nothing is estimated in its place." : "No session has reported. Nothing is estimated in its place."; svg.innerHTML = ""; $(legendId).innerHTML = ""; return; }
+    const W = 520, H = 100, bw = W / SPARK_N;
+    const totals = new Array(SPARK_N).fill(0);
+    for (const r of shown) for (let i = 0; i < SPARK_N; i += 1) totals[i] += r.spark[i];
+    const max = Math.max(...totals, 1) * 1.05;
+    const base = new Array(SPARK_N).fill(0);
+    let out = "";
+    for (let r = 0; r < shown.length; r += 1) {
+      const row = shown[r];
+      for (let i = 0; i < SPARK_N; i += 1) {
+        const v = row.spark[i];
+        if (v <= 0) continue;
+        const h = (v / max) * (H - 4);
+        const y = H - 2 - base[i] - h;
+        out += `<rect x="${(i * bw + 1).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw - 2).toFixed(1)}" height="${h.toFixed(1)}" fill="${rampAt(r)}" rx="1"><title>${esc(row.key === "__rest" ? `${row.n} more` : nameOf(row.key))} · ${fmt(v)} tokens</title></rect>`;
+        base[i] += h;
+      }
+    }
+    svg.innerHTML = out;
+    $(legendId).innerHTML = shown.map((r, i) => `<span title="${esc(r.key === "__rest" ? `${r.n} more` : nameOf(r.key))} · ${fmt(r.total)} tokens in the last hour · ${r.live} live"><i class="sw k" style="background:${rampAt(i)}"></i>${esc(r.key === "__rest" ? `${r.n} more` : nameOf(r.key))} <b>${fmt(r.total)}</b>${r.live ? `<em>${r.live} live</em>` : ""}</span>`).join("");
+    return all;
+  }
 
   // ── state ────────────────────────────────────────────────────────────
   let D = null;                 // the last payload
@@ -76,6 +137,9 @@
   let perSecond = false;
   let paused = false;
   let showUnavailable = false;
+  let laneFocus = null;         // the lane the keyboard is on (J/K)
+  const inspect = { open: false, kind: null, id: null };   // what the inspector beside the canvas shows
+  let projCache = null;         // the last /api/projects answer, for the Projects band and its inspector
   let pollTimer = null;
   let offline = false;
   let scanMs = null;            // how long the last /api/console answer took
@@ -125,6 +189,10 @@
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
     const current = currentDevices().length;
     $("tabTeam").textContent = current ? reporting + "/" + current : "0";
+    const liveNow = D.lanes.filter((l) => l.state === "live").length;
+    $("tabLive").textContent = liveNow ? liveNow + " live" : "";
+    $("clockZone").textContent = zoneName();
+    $("teamHeadCount").textContent = `times ${zoneName()}`;
 
     const w = win();
     target.total = w.tokens.total;
@@ -148,6 +216,8 @@
     paintBurnSpark();
     loadFold();
     if (view === "team") paintTeam();
+    if (view === "projects") paintProjectsLive();
+    if (inspect.open) paintInspect();
     watchJoin();
     if (reducedMotion.matches || paused) { paintText(); drawChart(); }
     paintClock();
@@ -185,14 +255,15 @@
     const live = D.lanes.filter((l) => l.state === "live").length;
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
     const catching = D.devices.filter((d) => d.status === "catching-up").length;
-    $("scope").textContent = D.hub.demo ? "synthetic team" : D.hub.listen.network ? "hub · this network" : "hub · this machine";
     $("liveDot").classList.toggle("on", live > 0);
     $("liveCount").textContent = live ? plural(live, "live session") : "no live session";
     $("liveCap").title = live ? "Sessions that reported within the last two minutes" : "No session has reported in the last two minutes";
+    // One line states the scope: machines reporting, sessions in the last 24 h, live now, subagents.
+    const subagents = Math.max(0, D.day.sessions - D.laneCount);
     $("machineCount").textContent = D.devices.length
-      ? `${plural(currentDevices().length, "machine")} · ${reporting} reporting` + (catching ? ` · ${catching} catching up` : "")
+      ? `${reporting} of ${currentDevices().length} reporting · ${plural(D.laneCount, "session")} · ${plural(subagents, "subagent")}` + (catching ? ` · ${catching} catching up` : "")
       : "no machine has joined yet";
-    $("machineCount").title = D.devices.length ? sessionWords() : "";
+    $("machineCount").title = D.devices.length ? sessionWords() + " · a session is one top-level Claude Code or Codex session; its subagents are counted apart" : "";
   }
   /* The clock and the freshness note tick with the loop (or with each poll
      when motion is paused): a paused screen is never a stale one. */
@@ -204,9 +275,9 @@
     if (time !== clockShown) {
       clockShown = time;
       $("clockTime").textContent = time;
-      $("clockDate").textContent = new Date(now).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+      $("clockDate").textContent = new Date(now).toLocaleDateString([], { day: "numeric", month: "short" });
       const age = Math.max(0, Math.round((performance.now() - receivedAt) / 1000));
-      $("scanNote").textContent = offline ? "connection lost · retrying" : `refreshed ${age}s ago · scan ${scanMs ?? "—"}ms`;
+      $("scanNote").textContent = offline ? "connection lost · retrying" : `${age}s · scan ${scanMs ?? "—"}ms`;
     }
   }
 
@@ -269,19 +340,22 @@
     const silent = D.devices.filter((d) => d.status === "silent");
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
     const current = currentDevices().length;
-    let prov;
-    if (!D.devices.length) prov = "no machine has joined yet";
-    else if (D.hub.demo) prov = `generated · ${D.devices.length} synthetic machines`;
-    else prov = `reported by ${reporting} of ${plural(current, "machine")}`;
-    if (silent.length) prov += `<br><b>${esc(silent[0].label)} silent since ${hhmm(silent[0].lastContactAt)}</b>` + (silent.length > 1 ? ` and ${silent.length - 1} more` : "");
+    // One provenance line under the figure; what it cannot say in one line it says on hover.
+    // The silent machine is named once on this screen — in the chart's gap — and counted here.
+    const parts = [], why = [];
+    if (!D.devices.length) parts.push("no machine has joined yet");
+    else if (D.hub.demo) parts.push("generated", `${D.devices.length} synthetic machines`);
+    else parts.push(`reported by ${reporting} of ${plural(current, "machine")}`);
+    if (silent.length) { parts.push(`<b>${silent.length} silent</b>`); why.push(silent.map((d) => `${d.label} silent since ${hhmm(d.lastContactAt)}`).join("; ")); }
     const catching = D.devices.filter((d) => d.status === "catching-up");
-    if (catching.length) prov += `<br><b>${esc(catching[0].label)} ${esc(catchUpText(catching[0]))}</b>` + (catching.length > 1 ? ` and ${catching.length - 1} more` : "") + " — incomplete until it has sent everything";
+    if (catching.length) { parts.push(`<b>${catching.length} catching up</b>`); why.push(catching.map((d) => `${d.label} ${catchUpText(d)} — incomplete until it has sent everything`).join("; ")); }
     const unknown = Math.max(...Object.values(w.unknown));
-    if (unknown) prov += ` · ${unknown} record${unknown === 1 ? "" : "s"} missing a class — a floor, not a total`;
+    if (unknown) { parts.push(`<b>floor</b>`); why.push(`${unknown} record${unknown === 1 ? "" : "s"} missing a token class, so the figure is a floor, not a total`); }
     // What could not be counted is said here, never left out quietly.
     const cov = D.coverage;
-    if (cov && cov.dropped) prov += `<br><b title="${esc(cov.reasons.map((r) => r.count + " × " + r.label).join("; "))}">${cov.dropped.toLocaleString("en-US")} transcript record${cov.dropped === 1 ? "" : "s"} could not be counted</b> — ${esc(cov.reasons.slice(0, 2).map((r) => r.label).join(", "))}${cov.reasons.length > 2 ? " and more" : ""}`;
-    $("cProv").innerHTML = prov;
+    if (cov && cov.dropped) { parts.push(`<b>${cov.dropped.toLocaleString("en-US")} not counted</b>`); why.push(`${cov.dropped} transcript record${cov.dropped === 1 ? "" : "s"} could not be counted: ${cov.reasons.map((r) => r.count + " × " + r.label).join("; ")}`); }
+    $("cProv").innerHTML = parts.join(" · ");
+    $("cProv").title = [why.join(". "), asOf()].filter(Boolean).join(" · ");
     const flow = $("flowWrap");
     const empty = D.day.tokens.total === 0 && D.series["7d"].values.every((v) => v === 0);
     flow.classList.toggle("void", empty || (showUnavailable && D.devices.length === 0));
@@ -294,22 +368,36 @@
   }
 
   // ── burn and models ───────────────────────────────────────────────────
-  function paintModels() {
-    const models = win().models.slice(0, 6);
-    const max = Math.max(...models.map((m) => m.tokens), 1);
-    $("cModels").innerHTML = models.length ? models.map((m) => `<div class="mrow">
-        <span class="mn" title="${esc(m.model)}">${vendorMark(m.vendor)}<span class="txt">${esc(m.label)}</span></span>
+  /* Top five by estimate, then a quiet "n more" that opens the rest in place: a model is never dropped without saying so. */
+  const moreOpen = new Set();
+  const MODELS_SHOWN = 5;
+  function modelRows(models, boxId, allModels) {
+    const open = moreOpen.has(boxId);
+    const shown = open ? allModels : allModels.slice(0, MODELS_SHOWN);
+    const max = Math.max(...allModels.map((m) => m.tokens), 1);
+    return shown.map((m) => `<div class="mrow">
+        <span class="mn" title="${esc(m.model)} · ${fmt(m.tokens)} tokens · ${pct(m.share)} of the period · ${asOf()}" data-src="windows.models.tokens">${vendorMark(m.vendor)}<span class="txt">${esc(m.label)}</span></span><span class="ms">${demoStamp()}</span>
         <span class="mbar" aria-hidden="true"><i style="width:${Math.max(1, Math.round((m.tokens / max) * 100))}%"></i></span>
-        <span class="mv">${pct(m.share, 0)}</span>
-        ${m.usd === null ? `<span class="mc unp" title="No verified list price for ${esc(m.model)}; left out of the dollar figure">UNPRICED</span>` : `<span class="mc">${money(m.usd)}</span>`}
-      </div>`).join("")
+        <span class="mv" data-src="windows.models.share">${pct(m.share, 0)}</span>
+        ${m.usd === null ? `<span class="mc unp" title="No verified list price for ${esc(m.model)}; left out of the dollar figure">unpriced</span>` : `<span class="mc" data-internal data-src="windows.models.usd" title="List-price estimate · ${asOf()}">${money(m.usd)}</span>`}
+      </div>`).join("") + (allModels.length > MODELS_SHOWN ? `<button type="button" class="more" data-more="${boxId}">${open ? "fewer" : `${allModels.length - MODELS_SHOWN} more`}</button>` : "");
+  }
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-more]"); if (!b) return;
+    if (moreOpen.has(b.dataset.more)) moreOpen.delete(b.dataset.more); else moreOpen.add(b.dataset.more);
+    if (D) { paintModels(); paintSpectrum(); if (inspect.open) paintInspect(); if (view === "projects") loadProjects(); }
+  });
+  function paintModels() {
+    const models = win().models;
+    $("cModels").innerHTML = models.length ? modelRows(models, "cModels", models)
       : `<div class="mrow"><span class="mn"><span class="none-text">no model has reported yet</span></span></div>`;
     const ex = D.burn.excluded;
     const reporting = D.burn.reporting;
+    // The machines left out of the burn are counted here and named on hover; the chart's gap names them on the screen.
     $("cBurnNote").innerHTML = D.devices.length === 0 ? "no machine yet"
       : `average of the last ${D.burn.windowMinutes} min · ${reporting} of ${plural(currentDevices().length, "machine")}` +
-        (ex.length ? ` · <b>${esc(ex.map((d) => d.label).join(", "))} left out</b>` : "");
-    $("cBurnNote").title = ex.length ? "Left out of the burn because what they are doing right now is unknown." : "";
+        (ex.length ? ` · <b>${ex.length} left out</b>` : "");
+    $("cBurnNote").title = ex.length ? `${ex.map((d) => d.label).join(", ")} left out of the burn because what ${ex.length === 1 ? "it is" : "they are"} doing right now is unknown` : "";
   }
 
   // ── lanes ────────────────────────────────────────────────────────────
@@ -372,11 +460,11 @@
   function makeLaneRow(l) {
     const row = document.createElement("div");
     row.className = "lane";
-    row.innerHTML = `<span class="st"><i></i><span></span></span><span class="pr"><b></b><em></em></span><span class="md"></span>
-      <span class="sp" aria-hidden="true">${"<i></i>".repeat(20)}</span><span class="fm r"></span>
-      <span class="nums"><span class="num in r" data-l="in"></span><span class="num out r" data-l="out"></span><span class="num tot r" data-l="24 h"></span><span class="num usd r" data-l="est."></span></span>
+    row.innerHTML = `<span class="st"><i></i><span></span><span class="stamp sm" title="Generated: nothing was read from any machine">DEMO</span></span><span class="pr"><b></b><em></em></span><span class="md"></span>
+      <span class="sp" aria-hidden="true">${"<i></i>".repeat(20)}</span><span class="fm r" data-src="lanes.tokens5m"></span>
+      <span class="nums"><span class="num in r" data-l="in" data-src="lanes.tokensDayByClass.fresh"></span><span class="num out r" data-l="out" data-src="lanes.tokensDayByClass.output"></span><span class="num tot r" data-l="24 h" data-src="lanes.tokensDay"></span><span class="num usd r" data-l="est." data-src="lanes.costDay.usd" data-internal></span></span>
       <span class="ag r"><button type="button" aria-expanded="false"><span class="l">agents</span><span class="v"></span></button></span>
-      <span class="cx r"><button type="button"><span class="l">context</span><span class="v"></span></button></span><span class="dv"></span><span class="la r"></span>`;
+      <span class="cx r"><button type="button"><span class="l">context</span><span class="v"></span></button></span><span class="dv"></span><span class="la r" data-src="lanes.lastAt"></span>`;
     row._tree = document.createElement("div");
     row._tree.className = "agent-tree";
     row._tree.hidden = true;
@@ -413,7 +501,7 @@
     // cobalt edge and the footer, never a substitute for the state word.
     const word = l.state === "live" ? "LIVE" : l.state === "idle" ? "IDLE" : l.state === "revoked" ? "REMOVED"
       : l.state === "catching-up" ? "CATCHING UP" : l.state === "reconnecting" ? "RECONNECTING" : "SILENT";
-    row.querySelector(".st span").textContent = word;
+    row.querySelector(".st span:not(.stamp)").textContent = word;
     row.querySelector(".st").title = l.state === "live" ? "Reported within the last two minutes" + (demo ? " (generated)" : "")
       : l.state === "idle" ? "The machine is reporting; this session has not worked for a while"
       : l.state === "catching-up" ? "The machine is still sending its backlog; what it is doing right now is not known yet"
@@ -477,7 +565,9 @@
     agButton.title = l.agents.total ? `${l.agents.live} subagents worked in the last five minutes, of ${l.agents.total} today. Open the agent tree.` : "No subagents";
     // The label carries the reading and the row, so a screen reader hears both.
     agButton.setAttribute("aria-label", l.agents.total ? `Agents ${l.agents.live} of ${l.agents.total} live, ${l.project.name}: show tree` : `No subagents, ${l.project.name}`);
-    row._tree.innerHTML = (l.agentTree || []).map((agent, index) => `<div class="agent-node" style="--depth:${Math.min(agent.depth, 8)}"><span>${index === 0 ? 'Orchestrator' : '↳ Subagent'}</span><span class="agent-model">${vendorMark(vendorOf(agent.model))}${esc(agent.modelLabel)}</span><span>${agent.tokens == null ? 'Tokens unavailable' : fmt(agent.tokens) + ' tokens · 24 h'}</span><span>${observedSpan(agent.durationMinutes)} · ${agent.outcome === 'unknown' ? 'outcome unknown · no result recorded' : esc(agent.outcome)}</span></div>`).join('');
+    // Each agent against the lane's day: a share bar, its tokens in mono, the observed span on hover, one phrase for an unknown outcome.
+    const laneTotal = Math.max(l.tokensDay || 0, 1);
+    row._tree.innerHTML = (l.agentTree || []).map((agent, index) => `<div class="agent-node" style="--depth:${Math.min(agent.depth, 8)}" title="${esc(observedSpan(agent.durationMinutes))}"><span>${index === 0 ? 'Orchestrator' : '↳ Subagent'}</span><span class="agent-model">${vendorMark(vendorOf(agent.model))}${esc(agent.modelLabel)}</span><span class="abar">${agent.tokens == null ? '<span>tokens unavailable</span>' : `<i><b style="width:${Math.min(100, Math.round((agent.tokens / laneTotal) * 100))}%"></b></i><span>${fmt(agent.tokens)}</span>`}</span><span>${agent.tokens == null ? '—' : pct(agent.tokens / laneTotal, 0) + ' of lane'}</span><span>${agent.outcome === 'unknown' ? 'outcome unknown · no result recorded' : esc(agent.outcome)}</span></div>`).join('');
     const cx = row.querySelector(".cx");
     cx.classList.toggle("bloated", l.context?.status === "bloated");
     cx.querySelector("button .v").textContent = l.context?.latest === null || l.context?.latest === undefined
@@ -486,8 +576,9 @@
     cx.querySelector("button").setAttribute("aria-label", (l.context?.latest === null || l.context?.latest === undefined
       ? "Context unavailable" : `Context ${fmt(l.context.latest)}${l.context.status === "bloated" ? ", growing" : ""}`) + `, ${l.project.name}: details`);
     // The machine and its person may be cut short; the time never is — it has its own cell.
+    // The machine only; its person on hover, so the cell never cuts a name short.
     const dv = row.querySelector(".dv");
-    dv.innerHTML = `<b>${esc(l.device.label)}</b>${l.device.person ? ` · ${esc(l.device.person)}` : ""}`;
+    dv.innerHTML = `<b>${esc(l.device.label)}</b>`;
     dv.title = `${l.device.label}${l.device.person ? " · " + l.device.person : ""}`;
     const la = row.querySelector(".la");
     la.textContent = l.state === "catching-up" ? "catching up" : l.state === "reconnecting" ? "reconnecting"
@@ -501,17 +592,20 @@
     $("contextTitle").textContent = "Context · " + lane.project.name;
     const samples = c?.samples || [];
     const breaks = c?.breaks || [];
+    // The responses drawn as bars, latest lit; a cache signal is a tick under the bar it followed; the extra write cost summed once.
+    const top = Math.max(...samples.map((s) => s.tokens), 1);
+    const breakAt = new Set(breaks.map((b) => b.at));
+    const extra = breaks.reduce((a, b) => a + (b.estimatedExtraUsd || 0), 0);
+    const unpricedBreaks = breaks.filter((b) => b.estimatedExtraUsd == null).length;
+    const kind = (b) => b.kind === "idle-gap" ? `idle gap past cache lifetime (${b.gapMinutes} min)` : b.kind === "lifetime-unknown" ? `cache lifetime unknown (${b.gapMinutes} min gap)` : "possible prefix rewrite";
     $("contextDetails").innerHTML = `<p>${c?.latest == null ? "No complete input reading is available." :
       `Latest response carried <b>${fmt(c.latest)} input tokens</b>. ${c.growth == null ? "Growth needs two readings." :
         `That is ${c.growth.toFixed(1)}× the first retained reading.`} ${c.status === "bloated" ? "This session is flagged for context weight." : ""}`}</p>` +
-      (samples.length ? `<p>Recent responses · input tokens</p><ol>${samples.map((s) => `<li>${hhmm(s.at)} · ${fmt(s.tokens)}</li>`).join("")}</ol>` : "") +
-      `<p>Cache signals · ${breaks.length ? breaks.length + " recent" : "none in retained readings"}</p>` +
-      (breaks.length ? `<ol>${breaks.map((b) => `<li>${hhmm(b.at)} · ${b.kind === "idle-gap" ?
-        `idle gap past cache lifetime (${b.gapMinutes} min)` : b.kind === "lifetime-unknown" ?
-          `cache lifetime unknown (${b.gapMinutes} min gap)` : "possible prefix rewrite"} · extra write cost ${b.estimatedExtraUsd == null ?
-          "unpriced" : b.estimatedExtraUsd > 0 && b.estimatedExtraUsd < 0.005 ? "&lt; $0.01 est." : money(b.estimatedExtraUsd) + " est."}</li>`).join("")}</ol>` : "") +
-      `<p>Signals are inferred from token counts and minute timestamps; they cannot prove the cause of a cache write. Extra cost compares observed writes with a hypothetical cache read at offline list prices (table v${esc(c?.priceTable?.version ?? "?")}, checked ${esc(c?.priceTable?.checkedOn ?? "unknown")}).</p>`;
-    $("contextDialog").showModal();
+      (samples.length ? `<div class="cbars" role="img" aria-label="${samples.length} recent responses, input tokens each">${samples.map((s, i) => `<i class="${i === samples.length - 1 ? "last" : ""}${breakAt.has(s.at) ? " brk" : ""}" style="height:${Math.max(4, Math.round((s.tokens / top) * 100))}%" title="${hhmm(s.at)} · ${fmt(s.tokens)} input tokens${breakAt.has(s.at) ? " · cache signal" : ""}"></i>`).join("")}</div><div class="cax"><span>${hhmm(samples[0].at)}</span><span>peak ${fmt(top)}</span><span>${hhmm(samples[samples.length - 1].at)}</span></div>` : "") +
+      `<p>Cache signals · <b>${breaks.length ? breaks.length + " recent" : "none in retained readings"}</b>${breaks.length ? ` · extra write cost ${extra > 0 && extra < 0.005 ? "&lt; $0.01" : money(extra)} est.${unpricedBreaks ? ` · ${unpricedBreaks} unpriced` : ""}` : ""}</p>` +
+      (breaks.length ? `<ol>${breaks.map((b) => `<li>${hhmm(b.at)} · ${kind(b)}</li>`).join("")}</ol>` : "") +
+      `<p class="iquiet">Inferred from token counts and minute timestamps; they cannot prove the cause of a cache write. Extra cost compares observed writes with a hypothetical cache read at offline list prices (table v${esc(c?.priceTable?.version ?? "?")}, checked ${esc(c?.priceTable?.checkedOn ?? "unknown")}).</p>`;
+    openSheet($("contextDialog"), `lane/${lane.key}/context`);
   }
 
   const ALERT_LABEL = { loop: "Repeated tool call", spike: "Burn spike", stall: "Spending without progress" };
@@ -528,14 +622,14 @@
     // The rail carries the count, the panel the words; the two always agree.
     const chip = $("alertChip");
     chip.hidden = !all.length;
-    chip.innerHTML = `<span aria-hidden="true">▲</span> ${plural(all.length, "alert")}${D.hub.demo ? " · DEMO" : ""}`;
+    chip.innerHTML = `<span aria-hidden="true">▲</span> ${plural(all.length, "alert")}`;
     chip.title = (D.hub.demo ? "Generated alerts. " : "Live alerts on this machine in the last hour. ") + "Open the panel.";
     const shown = alertsOpen ? all : all.slice(0, ALERT_SHOWN);
     $("alertShown").textContent = (shown.length < all.length ? `${shown.length} of ${all.length} shown · ` : "") + "this machine · last hour";
     const more = $("alertMore");
     more.hidden = all.length <= ALERT_SHOWN;
     more.textContent = alertsOpen ? "Show fewer" : `${all.length - ALERT_SHOWN} more`;
-    $("alertRows").innerHTML = shown.map((a) => `<div class="alert-row"><span class="sev" aria-hidden="true">▲</span><b>${ALERT_LABEL[a.kind] || "Alert"}</b>` +
+    $("alertRows").innerHTML = shown.map((a) => `<div class="alert-row" ${alertLane(a) ? `data-lane="${esc(alertLane(a).key)}" tabindex="0" role="button"` : ""}><span class="sev" aria-hidden="true">▲</span><b>${ALERT_LABEL[a.kind] || "Alert"}</b>` +
       `<span class="who">${esc(alertWho(a))}</span><span class="cause">${alertCause(a)}</span><time>${hhmm(a.at)}${D.hub.demo ? " · DEMO" : ""}</time></div>`).join("");
   }
   $("alertMore").addEventListener("click", () => { alertsOpen = !alertsOpen; if (D) paintAlerts(); });
@@ -588,14 +682,36 @@
     if (silent.length && top) stat.push(`<b>${silent.length}</b> silent`);
     if (catching.length && (top || unpriced.length || silent.length)) stat.push(`<b>${catching.length}</b> catching up`);
     $("attnStat").innerHTML = stat.join(" · ");
+    // Every current alert as a compact row, newest first, each the door to its lane; the pane does the list's work.
+    const rows = alerts.slice().sort((a, b) => b.at - a.at).filter((a) => a !== top).slice(0, 4);
+    $("attnList").innerHTML = rows.map((a) => {
+      const lane = alertLane(a);
+      return `<div class="arow" ${lane ? `data-lane="${esc(lane.key)}" tabindex="0" role="button"` : ""} title="${esc(alertCause(a))}"><span class="sev" aria-hidden="true"></span><b>${ALERT_LABEL[a.kind] || "Alert"}</b><em>${esc(alertWho(a))}</em><time>${hhmm(a.at)}${D.hub.demo ? " · DEMO" : ""}</time></div>`;
+    }).join("") + (alerts.length > rows.length + (top ? 1 : 0) ? `<button type="button" class="more" data-alerts>${alerts.length - rows.length - (top ? 1 : 0)} more</button>` : "");
+  }
+  function focusLane(key, open = false) {
+    const row = laneRows.get(key) || coldRows.get(key);
+    if (!row) return false;
+    if (coldRows.has(key)) $("foldCold").open = true;
+    if (view !== "console") show("console");
+    row.scrollIntoView({ behavior: reducedMotion.matches || paused ? "auto" : "smooth", block: "center" });
+    for (const r of document.querySelectorAll(".lane.focused")) r.classList.remove("focused");
+    row.classList.add("focused");
+    laneFocus = key;
+    if (open) { const lane = D.lanes.find((l) => l.key === key); if (lane) showContext(lane); }
+    return true;
   }
   document.addEventListener("click", (ev) => {
+    if (ev.target.closest("[data-alerts]")) { openAlerts(); return; }
     const go = ev.target.closest("[data-lane]"); if (!go) return;
-    const row = laneRows.get(go.dataset.lane) || coldRows.get(go.dataset.lane);
-    if (!row) return;
-    row.scrollIntoView({ behavior: reducedMotion.matches || paused ? "auto" : "smooth", block: "center" });
-    row.classList.add("focused");
-    setTimeout(() => row.classList.remove("focused"), 2600);
+    if (go.closest("dialog")) go.closest("dialog").close();
+    focusLane(go.dataset.lane);
+  });
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Enter" && ev.key !== " ") return;
+    const door = ev.target.closest && ev.target.closest("[role='button'][data-lane], [role='button'][data-inspect]");
+    if (!door || ev.target.tagName === "BUTTON") return;
+    ev.preventDefault(); door.click();
   });
 
   // ── spend spectrum: cost share over token share ───────────────────────
@@ -637,14 +753,15 @@
       svg.setAttribute("aria-label", "Cost share over token share: " + CLASSES.map((k) => `${CLASS_LABEL[k]} ${pct(byClass[k] / usd, 0)} of cost, ${pct(t[k] / total, 0)} of tokens`).join("; "));
       $("specLegend").innerHTML = CLASSES.map((k) => `<span title="${esc(CLASS_LABEL[k])}: ${money(byClass[k])} · ${pct(byClass[k] / usd)} of the estimate · ${pct(t[k] / total)} of tokens"><i class="sw ${k}"></i>${CLASS_LABEL[k]} <b>${pct(byClass[k] / usd, 0)}</b><em>/ ${pct(t[k] / total, 0)}</em></span>`).join("");
     }
-    // Per model: its share of the money over its share of the tokens; an unpriced model is hatched and named.
-    const models = w.models.slice(0, 5);
+    // Per model: its share of the money over its share of the tokens; an unpriced model is hatched and named; the rest opens in place.
+    const open = moreOpen.has("specModels");
+    const models = open ? w.models : w.models.slice(0, MODELS_SHOWN);
     const usdAll = w.cost.usd || 0;
-    $("specModels").innerHTML = models.map((m) => `<div class="srow" title="${esc(m.model)}: ${pct(m.share)} of tokens · ${m.usd === null ? "unpriced" : money(m.usd) + (usdAll ? " · " + pct(m.usd / usdAll) + " of the estimate" : "")}">
+    $("specModels").innerHTML = models.map((m) => `<div class="srow" title="${esc(m.model)}: ${pct(m.share)} of tokens · ${m.usd === null ? "unpriced" : money(m.usd) + (usdAll ? " · " + pct(m.usd / usdAll) + " of the estimate" : "")} · ${asOf()}" data-src="windows.models">
         <span class="mn"><span class="txt">${esc(m.label)}</span></span>
         <span class="sbars${m.usd === null ? " unp" : ""}" aria-hidden="true"><i><b style="width:${m.usd === null ? 100 : Math.round((usdAll ? m.usd / usdAll : 0) * 100)}%"></b></i><i><b style="width:${Math.round(m.share * 100)}%"></b></i></span>
-        ${m.usd === null ? `<span class="sc void">unpriced</span>` : `<span class="sc">${money(m.usd)}</span>`}
-      </div>`).join("");
+        ${m.usd === null ? `<span class="sc void">unpriced</span>` : `<span class="sc" data-internal>${money(m.usd)}</span>`}
+      </div>`).join("") + (w.models.length > MODELS_SHOWN ? `<button type="button" class="more" data-more="specModels">${open ? "fewer" : `${w.models.length - MODELS_SHOWN} more`}</button>` : "");
   }
 
   // ── burn: the last sixty minutes drawn ────────────────────────────────
@@ -696,7 +813,7 @@
     const cold = showUnavailable ? [] : D.lanes.filter((l) => !laneVisible(l, now));
     const coldTokens = cold.reduce((sum, l) => sum + (l.tokensDay || 0), 0);
     $("coldSum").innerHTML = showUnavailable ? "shown above · Show unavailable is on"
-      : cold.length ? `<b>${cold.length}</b> ${cold.length === 1 ? "session" : "sessions"} idle for more than an hour or on an unavailable machine<span class="sep">·</span><b>${fmt(coldTokens)}</b> tokens today`
+      : cold.length ? `<b>${cold.length}</b> ${cold.length === 1 ? "session" : "sessions"} idle for more than an hour or on an unavailable machine<span class="sep">·</span><b>${fmt(coldTokens)}</b> tokens · 24 h`
         + (D.laneCount > D.lanes.length ? `<span class="sep">·</span>${D.laneCount - D.lanes.length} more not sent by the hub` : "")
       : "none · every session of the day is above";
     const box = $("coldLanes");
@@ -801,22 +918,23 @@
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
     // The share of machines that left or were removed, when their cards are hidden.
     const goneShare = showUnavailable ? 0 : D.devices.filter((d) => d.status === "revoked").reduce((a, d) => a + (pw(d).shareOfWhole || 0), 0);
-    $("machinesHint").textContent = D.devices.length
-      ? `${reporting} of ${currentDevices().length} reporting · share of the ${PERIOD_TEXT[period][0]}`
-        + (goneShare > 0 ? ` · ${pct(goneShare)} from machines that left or were removed` : "")
-      : "none yet";
+    $("machinesHint").textContent = D.devices.length ? `${reporting} of ${currentDevices().length} reporting` + (goneShare > 0 ? ` · ${pct(goneShare)} left or removed` : "") : "none yet";
+    $("machinesHint").title = D.devices.length ? `share of the ${PERIOD_TEXT[period][0]}` + (goneShare > 0 ? `; ${pct(goneShare)} of it from machines that left or were removed, hidden unless Show unavailable is on` : "") : "";
     $("cMachineCap").textContent = "by machine · " + PERIOD_TEXT[period][1];
-    // One row per machine: name, person, its state as a dot, tokens, share, estimate.
-    // A machine that is not reporting says so on its own line, never as a zero.
-    $("cMachines").innerHTML = rows.length ? rows.map((d) => {
+    $("cMachines").innerHTML = machineRows(rows, now);
+  }
+  /* One row per machine, biggest first: its state as a ring or a lit dot, name, person, share, tokens, estimate.
+     A silent machine keeps its name in warn and says when it stopped on hover — never a zero. The row is the
+     door to the machine's inspector. Shared by the Console and Team bands. */
+  function machineRows(rows, now, withPerson = false) {
+    const sorted = rows.slice().sort((a, b) => pw(b).tokens.total - pw(a).tokens.total);
+    return sorted.length ? sorted.map((d) => {
       const a = pw(d);
-      const off = d.status !== "reporting";
-      return `<div class="xrow ${d.status}" title="${esc(statusText(d, now))}">
-        <span class="xn"><i aria-hidden="true"></i><b>${esc(d.label)}</b>${d.person ? `<em>${esc(d.person)}</em>` : ""}${d.local ? '<span class="here">HERE</span>' : ""}</span>
-        <span class="xp" title="${pct(a.shareOfWhole)} of the ${esc(PERIOD_TEXT[period][0])}">${pct(a.shareOfWhole, 0)}</span>
-        <span class="xv" title="${fmt(a.tokens.total)} tokens · ${esc(PERIOD_TEXT[period][1])}">${fmt(a.tokens.total)}</span>
-        ${a.cost.status === "none" ? `<span class="xc">—</span>` : a.cost.status === "unpriced" ? `<span class="xc void" title="No verified list price for what this machine ran">unpriced</span>` : `<span class="xc">${money(a.cost.usd)}${a.cost.status === "partial" ? "+" : ""}</span>`}
-        ${off ? `<span class="xs">${esc(statusText(d, now))}</span>` : ""}
+      return `<div class="xrow door ${d.status}" title="${esc(d.label)}${d.person ? " · " + esc(d.person) : ""} · ${esc(statusText(d, now))} · open" data-inspect="machine:${esc(d.id)}" tabindex="0" role="button">
+        <span class="xn"><i aria-hidden="true"></i><b>${esc(d.label)}</b>${withPerson && d.person ? `<em>${esc(d.person)}</em>` : ""}${d.local ? '<span class="here">HERE</span>' : ""}</span>
+        <span class="xp" data-src="devices.windows.shareOfWhole" title="${pct(a.shareOfWhole)} of the ${esc(PERIOD_TEXT[period][0])} · ${asOf()}">${pct(a.shareOfWhole, 0)}</span>
+        <span class="xv" data-src="devices.windows.tokens.total" title="${fmt(a.tokens.total)} tokens · ${esc(PERIOD_TEXT[period][1])} · ${asOf()}">${fmt(a.tokens.total)}</span>
+        ${a.cost.status === "none" ? `<span class="xc">—</span>` : a.cost.status === "unpriced" ? `<span class="xc void" title="No verified list price for what this machine ran">unpriced</span>` : `<span class="xc" data-internal data-src="devices.windows.cost.usd">${money(a.cost.usd)}${a.cost.status === "partial" ? "+" : ""}</span>`}
       </div>`;
     }).join("") : `<div class="xrow"><span class="xn"><em>no machine has joined yet</em></span></div>`;
   }
@@ -1044,6 +1162,7 @@
       paintClasses(); paintModels(); paintMachines(); setChartGoal(); drawChart(); paintText();
       paintAttention(); paintSpectrum(); loadFold();
       if (view === "team") paintTeam();
+      if (inspect.open) paintInspect();
     }
     if (view === "projects") loadProjects();
   }
@@ -1063,7 +1182,8 @@
     if (paused && D) { Object.assign(shown, target); setChartGoal(); paintText(); drawChart(); }
     if (!paused) startLoop();
   });
-  $("alertChip").addEventListener("click", () => $("alertPanel").scrollIntoView({ behavior: reducedMotion.matches || paused ? "auto" : "smooth", block: "start" }));
+  function openAlerts() { if (D && (D.alerts || []).length) openSheet($("alertPanel"), view + "/alerts"); else toast("No alert in the last hour."); }
+  $("alertChip").addEventListener("click", openAlerts);
   $("voidBtn").addEventListener("click", (ev) => {
     showUnavailable = !showUnavailable;
     const b = ev.currentTarget;
@@ -1099,31 +1219,43 @@
     }
     for (const v of ["console", "team", "projects"]) $("view-" + v).hidden = v !== next;
     document.body.dataset.view = next;
+    // The strip is shared: its title says which view is under it.
+    $("stripView").textContent = next === "team" ? "Team" : next === "projects" ? "Projects" : "";
+    $("stripView").hidden = next === "console";
     if (next === "team" && D) paintTeam();
-    if (next === "projects") loadProjects();
-    try { history.replaceState(null, "", next === "console" ? "/" : "#" + next); } catch { /* fine */ }
+    if (next === "projects") { loadProjects(); paintProjectsLive(); }
+    setHash(next === "console" ? "" : next);
+  }
+  // The URL carries the view and whatever is open beside it: #team, #team/machine/<id>, #lane/<key>/context, #console/add.
+  function setHash(h) { try { history.replaceState(null, "", h ? "#" + h : location.pathname); } catch { /* fine */ } }
+  function openSheet(dialog, hash) {
+    if (!dialog.open) dialog.showModal();
+    setHash(hash);
+    dialog.addEventListener("close", () => setHash(view === "console" ? "" : view), { once: true });
   }
   $("tabs").addEventListener("click", (ev) => { const t = ev.target.closest(".tab"); if (t) show(t.dataset.view); });
   document.addEventListener("click", (ev) => { const g = ev.target.closest("[data-go]"); if (g) show(g.dataset.go); });
 
   // ── team ─────────────────────────────────────────────────────────────
+  /* The Team view is the Console's instrument pointed at machines: the
+     figure, the last hour stacked by machine, machines and people as rows
+     with share bars — then two dense tables where every row is a door to the
+     machine's or the person's inspector. Nothing here is a strip of tiles. */
   $("periodSeg").addEventListener("click", (ev) => {
     const b = ev.target.closest("button[data-p]"); if (!b) return;
     setPeriod(b.dataset.p);
   });
-  const shareBar = (x) => `<span class="sharebar"><i><b style="width:${Math.round((x || 0) * 100)}%"></b></i><span>${pct(x)}</span></span>`;
+  const shareBar = (x, src) => `<span class="sharebar" ${src ? `data-src="${src}"` : ""}><i><b style="width:${Math.round((x || 0) * 100)}%"></b></i><span>${pct(x)}</span></span>`;
+  // The split reads in the ink ramp; the top two names and "+n" so no name is cut short.
   const modelSplit = (models) => models.length
-    ? `<span class="models"><span class="split">${models.map((m) => `<i style="flex-grow:${m.tokens}" title="${esc(m.model)} ${pct(m.share)}"></i>`).join("")}</span>
-       <span class="names">${models.slice(0, 3).map((m) => `<b>${esc(m.label)}</b> ${pct(m.share, 0)}`).join(" · ")}</span></span>`
+    ? `<span class="models" title="${esc(models.map((m) => `${m.label} ${pct(m.share)}`).join(" · "))}"><span class="split">${models.map((m) => `<i style="flex-grow:${m.tokens}"></i>`).join("")}</span>
+       <span class="names">${models.slice(0, 2).map((m) => `<b>${esc(m.label)}</b> ${pct(m.share, 0)}`).join(" · ")}${models.length > 2 ? ` · +${models.length - 2}` : ""}</span></span>`
     : `<span class="names">—</span>`;
-  const costCell = (c) => c.status === "none" ? "—" : c.status === "unpriced" ? "unpriced" : money(c.usd) + (c.status === "partial" ? `<span class="sub">partial</span>` : "");
-  /* On a phone a table becomes stacked rows, each cell under its own label:
-     the label is the column's header, carried on the cell so CSS can draw it. */
-  function labelCells(tableId) {
-    const table = $(tableId);
-    const heads = [...table.tHead.rows[0].cells].map((th) => th.textContent.trim());
-    for (const row of table.tBodies[0].rows) [...row.cells].forEach((td, i) => { td.dataset.label = td.colSpan > 1 ? "" : heads[i] || ""; });
-  }
+  const costCell = (c) => c.status === "none" ? "—" : c.status === "unpriced" ? "unpriced" : money(c.usd) + (c.status === "partial" ? "+" : "");
+  const costTitle = (c) => c.status === "none" ? "Nothing to price yet" : c.status === "unpriced" ? "No verified list price for what ran here" : c.status === "partial" ? "List-price estimate; some records are unpriced, so this is a floor" : "List-price estimate. Not an invoice.";
+  const deviceOf = (id) => D.devices.find((d) => d.id === id) || null;
+  const deviceKey = (l) => l.device.id;
+  const personOfDevice = (id) => (deviceOf(id) || {}).person || "Unassigned";
 
   function paintTeam() {
     if (!D) return;
@@ -1136,54 +1268,90 @@
     const cost = whole.cost;
     const msgs = whole.messages;
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
+    const silent = D.devices.filter((d) => d.status === "silent");
     const current = currentDevices().length;
     const none = D.devices.length === 0;   // nothing has reported: unknown, never 0
     const label = PERIOD_TEXT[period][1];
-    $("teamTotals").innerHTML = [
-      [none ? "—" : fmt(total), "Tokens · " + label, none ? "no machine yet" : "across " + plural(D.devices.length, "machine") + (() => {
-        const gone = D.devices.filter((d) => d.status === "revoked");
-        const left = gone.filter((d) => d.leftAt).length, removed = gone.length - left;
-        return [left ? `, ${left} since left` : "", removed ? `, ${removed} since removed` : ""].join("");
-      })()],
-      // Every model unpriced is "no priced model", never $0.00.
-      [none || cost.status === "unpriced" ? "—" : cost.status === "none" ? money(0) : money(cost.usd), "Est. cost",
-        none ? "no machine yet" : cost.status === "unpriced" ? "no priced model" : cost.status === "partial" ? "partial — some models unpriced" : "list-price estimate"],
-      [pct(total ? cr / total : null), "Cache read", "share of all tokens"],
-      [pct(total ? cw / total : null), "Cache write", "share of all tokens"],
-      // A session is a top-level session everywhere; outside the last 24 h the
-      // count kept per period includes subagents, and says so.
-      [none ? "—" : msgs.toLocaleString("en-US"), "Messages", none ? "no machine yet" : period === "24h" ? sessionWords()
-        : whole.sessions === null ? "sessions not kept past the minute detail"
-        : plural(whole.sessions, "session or subagent", "sessions and subagents")],
-      [`${reporting}<span class="u">/ ${current}</span>`, "Machines reporting", plural(D.people.length, "person", "people") + (D.devices.some((d) => d.status === "catching-up") ? " · some still catching up" : "")],
-    ].map(([v, l, s]) => `<div><div class="v">${v}</div><div class="l">${esc(l)}</div><div class="s">${esc(s)}</div></div>`).join("");
-
-    $("peopleTable").tBodies[0].innerHTML = D.people.length ? D.people.map((p) => {
+    $("teamTotals").innerHTML = "";
+    $("tCap").textContent = "Tokens · " + PERIOD_TEXT[period][0];
+    $("tTotal").textContent = none ? "—" : fmt(total);
+    $("tTotal").title = none ? "No machine has reported yet" : `${fmt(total)} tokens across ${plural(D.devices.length, "machine")} · ${asOf()}`;
+    // Every model unpriced is "no priced model", never $0.00.
+    $("tSpend").textContent = none ? "no reading yet" : cost.status === "unpriced" ? "no priced model" : cost.status === "none" ? "no spend yet" : money(cost.usd) + (cost.status === "partial" ? " est. · partial" : " est.");
+    $("tSpend").title = costTitle(cost);
+    $("tMsgs").textContent = none ? "—" : msgs.toLocaleString("en-US");
+    const gone = D.devices.filter((d) => d.status === "revoked");
+    $("tProv").innerHTML = none ? "no machine has joined yet"
+      : (D.hub.demo ? "generated · " : "") + `${reporting} of ${current} reporting` + (silent.length ? ` · <b>${silent.length} silent</b>` : "") + (gone.length ? ` · ${gone.length} left or removed` : "");
+    $("tProv").title = silent.length ? silent.map((d) => `${d.label} silent since ${hhmm(d.lastContactAt)} · not counted since`).join("; ") : "";
+    // A session is a top-level session everywhere; outside the last 24 h the
+    // count kept per period includes subagents, and says so.
+    const sessions = none ? "—" : period === "24h" ? sessionWords()
+      : whole.sessions === null ? "sessions not kept past the minute detail"
+      : plural(whole.sessions, "session or subagent", "sessions and subagents");
+    const kv = [
+      [`${reporting}<span class="u">/ ${current}</span>`, "reporting", plural(D.people.length, "person", "people"), "devices.status"],
+      [pct(total ? cr / total : null), "cache read", "of all tokens", "windows.shares.cacheRead"],
+      [pct(total ? cw / total : null), "cache write", "of all tokens", "windows.shares.cacheWrite"],
+      [none ? "—" : String(D.laneCount), "sessions", none ? "no machine yet" : period === "24h" ? plural(Math.max(0, D.day.sessions - D.laneCount), "subagent") : sessions.replace(/^[\d,]+ /u, ""), "laneCount"],
+    ];
+    $("teamTotals").innerHTML = kv.map(([v, l, s, src]) => `<div><div class="v" data-src="${src}" title="${esc(l)} · ${asOf()}">${v}</div><div class="l">${esc(l)}</div><div class="s">${esc(s)}</div></div>`).join("");
+    // The last hour stacked by machine, from the lanes' own sparks.
+    const byDevice = sparksBy(deviceKey);
+    const hourTotal = drawStacked("tFlow", "tFlowWrap", "tFlowReason", "tLegend", byDevice, (id) => (deviceOf(id) || { label: "Unknown machine" }).label);
+    $("tFlowCap").innerHTML = hourTotal ? `<b>${fmt(hourTotal)}</b> tokens · ${D.lanes.filter((l) => l.state === "live").length} live` : "—";
+    $("tMachineCap").textContent = "by machine · " + label;
+    $("tPeopleCap").textContent = "by person · " + label;
+    const rows = D.devices.filter((d) => d.status !== "revoked" || showUnavailable);
+    $("tMachines").innerHTML = machineRows(rows, now, true);
+    const people = D.people.slice().sort((a, b) => of(b).tokens.total - of(a).tokens.total);
+    $("tPeople").innerHTML = people.length ? people.map((p) => {
       const a = of(p);
-      return `<tr><td><b>${esc(p.person)}</b><span class="sub">${p.reporting} of ${p.devices.length} reporting</span></td>
-        <td>${p.devices.map((id) => esc((D.devices.find((d) => d.id === id) || {}).label || "")).join(", ")}</td>
-        <td class="num r">${fmt(a.tokens.total)}</td><td>${shareBar(a.shareOfWhole)}</td>
-        <td class="num r">${pct(a.shares.cacheRead)}</td><td class="num r">${pct(a.shares.cacheWrite)}</td>
-        <td>${modelSplit(a.models)}</td><td class="num r">${costCell(a.cost)}</td></tr>`;
-    }).join("") : `<tr><td colspan="8">Nobody yet — add a machine.</td></tr>`;
+      return `<div class="xrow door" data-inspect="person:${esc(p.person)}" tabindex="0" role="button" title="${esc(p.person)} · ${p.reporting} of ${p.devices.length} reporting · open">
+        <span class="xn"><b>${esc(p.person)}</b><em>${p.devices.map((id) => esc((deviceOf(id) || {}).label || "")).join(", ")}</em></span>
+        <span class="xp" data-src="people.windows.shareOfWhole">${pct(a.shareOfWhole, 0)}</span>
+        <span class="xv" data-src="people.windows.tokens.total">${fmt(a.tokens.total)}</span>
+        <span class="xc${a.cost.status === "unpriced" ? " void" : ""}" data-internal data-src="people.windows.cost.usd" title="${esc(costTitle(a.cost))}">${costCell(a.cost)}</span>
+      </div>`;
+    }).join("") : `<div class="xrow"><span class="xn"><em>nobody yet</em></span></div>`;
 
-    $("machineTable").tBodies[0].innerHTML = D.devices.length ? D.devices.map((d) => {
+    const byPerson = sparksBy((l) => personOfDevice(l.device.id));
+    $("peopleCount").textContent = `${plural(D.people.length, "person", "people")} · ${label}`;
+    $("peopleTable").tBodies[0].innerHTML = D.people.length ? people.map((p) => {
+      const a = of(p);
+      const s = byPerson.get(p.person);
+      return `<tr class="door" data-inspect="person:${esc(p.person)}">
+        <td class="k1"><button type="button" class="rowbtn" data-inspect="person:${esc(p.person)}" title="Open ${esc(p.person)}">${esc(p.person)}</button>${demoStamp()}</td>
+        <td>${p.devices.map((id) => esc((deviceOf(id) || {}).label || "")).join(", ")}<em class="q">${p.reporting} of ${p.devices.length} reporting</em></td>
+        <td>${s ? sparkBars(s.spark, s.live > 0) : `<span class="sp none">—</span>`}</td>
+        <td class="num r" data-src="people.windows.tokens.total">${fmt(a.tokens.total)}</td><td class="k2">${shareBar(a.shareOfWhole, "people.windows.shareOfWhole")}</td>
+        <td class="num r" data-src="people.windows.shares.cacheRead">${pct(a.shares.cacheRead)}</td><td class="num r" data-src="people.windows.shares.cacheWrite">${pct(a.shares.cacheWrite)}</td>
+        <td>${modelSplit(a.models)}</td><td class="num r" data-internal data-src="people.windows.cost.usd" title="${esc(costTitle(a.cost))}">${costCell(a.cost)}</td></tr>`;
+    }).join("") : `<tr><td colspan="9">Nobody yet — add a machine.</td></tr>`;
+
+    const devices = D.devices.slice().sort((a, b) => of(b).tokens.total - of(a).tokens.total);
+    $("machineCountHead").textContent = `${plural(current, "machine")} · ${reporting} reporting` + (silent.length ? ` · ${silent.length} silent` : "") + (gone.length ? ` · ${gone.length} left or removed` : "");
+    $("machineTable").tBodies[0].innerHTML = D.devices.length ? devices.map((d) => {
       const a = of(d);
+      const s = byDevice.get(d.id);
       const action = d.local ? `<span class="sub">this machine</span>`
         : d.status === "revoked" ? `<span class="sub">${d.leftAt ? "left" : "removed"}</span>`
         : `<button type="button" class="btn small danger" data-revoke="${esc(d.id)}" data-label="${esc(d.label)}">Remove</button>`;
-      // On its own line, so the machine column stays narrow enough for the row's action at 1440 wide.
+      // The dropped-record note stays beside the machine; the joined line is on hover and in the inspector.
       const lost = d.coverage && d.coverage.dropped ? `<span class="sub"><b title="${esc(d.coverage.reasons.map((r) => r.count + " × " + r.label).join("; "))}">${d.coverage.dropped} not counted</b></span>` : "";
-      return `<tr><td><b>${esc(d.label)}</b><span class="sub">${d.local ? "the hub itself" : "joined " + new Date(d.createdAt).toLocaleDateString([], { day: "numeric", month: "short" }) + " · " + hhmm(Date.parse(d.createdAt)) + (d.joinedVia === "link" ? " by link" : "")}</span>${lost}</td>
+      const joined = d.local ? "the hub itself" : "joined " + new Date(d.createdAt).toLocaleDateString([], { day: "numeric", month: "short" }) + " · " + hhmm(Date.parse(d.createdAt)) + (d.joinedVia === "link" ? " by link" : "");
+      return `<tr class="door ${d.status}" data-inspect="machine:${esc(d.id)}" title="${esc(d.label)} · ${esc(joined)}">
+        <td class="k1"><button type="button" class="rowbtn" data-inspect="machine:${esc(d.id)}" title="Open ${esc(d.label)} · ${esc(joined)}">${esc(d.label)}</button>${demoStamp()}<span class="sub joined">${d.local ? "the hub itself" : "joined " + new Date(d.createdAt).toLocaleDateString([], { day: "numeric", month: "short" }) + " · " + hhmm(Date.parse(d.createdAt)) + (d.joinedVia === "link" ? " by link" : "")}</span>${lost}</td>
         <td>${esc(d.person || "—")}</td>
         <td><span class="status ${d.status}"><i></i>${esc(statusText(d, now))}</span></td>
-        <td class="num r">${fmt(a.tokens.total)}</td><td>${shareBar(a.shareOfWhole)}</td>
-        <td class="num r">${pct(a.shares.cacheRead)}</td><td class="num r">${pct(a.shares.cacheWrite)}</td>
-        <td>${modelSplit(a.models)}</td><td class="num r">${costCell(a.cost)}</td><td class="r">${action}</td></tr>`;
-    }).join("") : `<tr><td colspan="10">No machine yet.</td></tr>`;
-    labelCells("peopleTable");
-    labelCells("machineTable");
+        <td>${s ? sparkBars(s.spark, s.live > 0 && d.status === "reporting") : `<span class="sp none">—</span>`}</td>
+        <td class="num r" data-src="devices.windows.tokens.total">${fmt(a.tokens.total)}</td><td class="k2">${shareBar(a.shareOfWhole, "devices.windows.shareOfWhole")}</td>
+        <td class="num r" data-src="devices.windows.shares.cacheRead">${pct(a.shares.cacheRead)}</td><td class="num r" data-src="devices.windows.shares.cacheWrite">${pct(a.shares.cacheWrite)}</td>
+        <td>${modelSplit(a.models)}</td><td class="num r" data-internal data-src="devices.windows.cost.usd" title="${esc(costTitle(a.cost))}">${costCell(a.cost)}</td><td class="r">${action}</td></tr>`;
+    }).join("") : `<tr><td colspan="11">No machine yet.</td></tr>`;
 
+    const open = D.invitations.filter((i) => i.state === "open");
+    $("inviteCount").textContent = D.invitations.length ? `${open.length} waiting` + (open.length ? ` · expires ${hhmm(Math.min(...open.map((i) => i.expiresAt)))}` : "") + ` · ${D.invitations.length - open.length} joined · 7 days` : "none · 7 days";
     $("invites").innerHTML = D.invitations.length ? D.invitations.map((i) => {
       const who = [i.person, i.machine].filter(Boolean).map(esc).join(" · ") || "Unnamed";
       const joined = i.state === "joined" ? D.devices.find((d) => d.id === i.deviceId) : null;
@@ -1191,7 +1359,7 @@
         <span class="w">${who}${joined ? ` <em>→ ${esc(joined.label)}</em>` : ""}</span>
         <span class="t">${i.state === "open" ? "expires " : "joined "}<b>${hhmm(i.state === "open" ? i.expiresAt : Date.parse(i.usedAt))}</b></span>
         ${i.state === "open" ? `<button type="button" class="btn small" data-cancel="${esc(i.id)}">Cancel link</button>` : "<span></span>"}</div>`;
-    }).join("") : `<div class="none">No join links in the last seven days.</div>`;
+    }).join("") : `<div class="none">No join link in the last seven days.</div>`;
   }
 
   document.addEventListener("click", async (ev) => {
@@ -1217,44 +1385,118 @@
   });
 
   // ── projects (this machine only) ─────────────────────────────────────
+  /* The Projects view is the same instrument pointed at this machine's own
+     transcripts and Git history: the figure, the last hour stacked by project
+     (from the local lanes' sparks), tokens and spend-per-commit as share bars
+     — then the dense table, every row the door to the project's inspector, and
+     the Effort and Shipped blocks under it. */
   $("projSeg").addEventListener("click", (ev) => {
     const b = ev.target.closest("button[data-p]"); if (!b) return;
     setPeriod(b.dataset.p);
   });
+  const localLanes = () => (D ? D.lanes.filter((l) => l.device.local) : []);
+  const projectKey = (l) => l.project.name;
+  /* The parts of the Projects view that come from the console payload — live
+     sessions and the last hour — repaint with every poll; the Git figures come
+     from /api/projects once a minute. */
+  function paintProjectsLive() {
+    if (!D) return;
+    const by = sparksBy(projectKey, localLanes());
+    const hourTotal = drawStacked("pFlow", "pFlowWrap", "pFlowReason", "pLegend", by, (name) => name);
+    $("pFlowCap").innerHTML = hourTotal ? `<b>${fmt(hourTotal)}</b> tokens · ${localLanes().filter((l) => l.state === "live").length} live` : "—";
+    for (const cell of document.querySelectorAll("#projTable [data-live]")) {
+      const s = by.get(cell.dataset.live);
+      const live = s ? s.live : 0;
+      cell.innerHTML = `<span class="live-dot${live ? " on" : ""}${D.hub.demo ? " sim" : ""}" title="${live ? plural(live, "session") + " reported within the last two minutes" : "No session reported within the last two minutes"}"><i></i>${live || "—"}</span>`;
+    }
+  }
   async function loadProjects() {
     const body = $("projTable").tBodies[0];
-    body.innerHTML = `<tr><td colspan="11">Reading this machine…</td></tr>`;
+    if (!projCache) body.innerHTML = `<tr><td colspan="13">Reading this machine…</td></tr>`;
     try {
       const r = await fetch("/api/projects?period=" + period, { headers: HEADERS });
       const p = await r.json();
       if (!r.ok) throw new Error(p.reason || String(r.status));
+      projCache = p;
       const t = p.totals;
-      $("projTotals").innerHTML = [
-        [fmt(p.tokens), "Tokens", p.demo ? "DEMO · generated" : "this machine's transcripts"],
-        [String(p.projects.length), "Projects", `${p.withRepo} in a Git repository`],
-        [t.commits.toLocaleString("en-US"), "Commits", p.author === true ? "yours, by this machine's Git email" : p.author === false ? "every author — no Git email set here" : "local Git history"],
-        [`+${fmt(t.added)} <span class="u">−${fmt(t.removed)}</span>`, "Lines changed", "added / removed"],
-        [t.prsMerged === null ? "—" : String(t.prsMerged), "Commits referencing #N", t.prsMerged === null ? "not read — needs a Git remote" : "subjects ending (#N) or merging a pull request"],
-        [p.sessions === null ? "—" : String(p.sessions), "Sessions", p.sessions === null ? "not kept past the minute detail" : "Claude Code and Codex"],
-      ].map(([v, l, s]) => `<div><div class="v">${v}</div><div class="l">${esc(l)}</div><div class="s">${esc(s)}</div></div>`).join("");
-      body.innerHTML = p.projects.length ? p.projects.map((x) => `<tr>
-        <td><b>${esc(x.name)}</b>${x.repo ? `<span class="sub">${esc(x.repo.name)}</span>` : `<span class="sub">not a Git repository</span>`}</td>
-        <td class="num r">${fmt(x.tokens)}</td><td class="num r">${x.usd === null ? "—" : money(x.usd)}</td><td class="num r">${x.sessions === null ? "—" : x.sessions}</td>
-        <td class="num r">${x.repo ? x.repo.commits : "—"}</td>
-        <td class="num r">${x.repo ? `+${x.repo.added.toLocaleString("en-US")} / −${x.repo.removed.toLocaleString("en-US")}` : "—"}</td>
-        <td class="num r">${x.repo && x.repo.prsMerged !== null ? x.repo.prsMerged : "—"}</td>
-        <td class="num r">${x.costPerOutcome.defaultMerges === null ? "—" : x.costPerOutcome.defaultMerges}</td>
-        <td class="num r" title="Spend in the work window per local commit, not attribution">${x.costPerOutcome.perCommitUsd === null ? "—" : money(x.costPerOutcome.perCommitUsd) + " est."}</td>
-        <td class="num r" title="Spend in the work window per local default-branch integration, not attribution">${x.costPerOutcome.perDefaultMergeUsd === null ? "—" : money(x.costPerOutcome.perDefaultMergeUsd) + " est."}</td>
+      const label = PERIOD_TEXT[period][1];
+      const usd = p.projects.some((x) => x.usd !== null) ? p.projects.reduce((a, x) => a + (x.usd || 0), 0) : null;
+      const unpriced = p.projects.filter((x) => x.usd === null && x.tokens > 0).length;
+      $("pCap").textContent = `Tokens · ${PERIOD_TEXT[period][0]}`;
+      $("pTotal").textContent = fmt(p.tokens);
+      $("pTotal").title = `${fmt(p.tokens)} tokens in this machine's transcripts · ${label} · ${asOf()}`;
+      $("pSpend").textContent = usd === null ? "no priced model" : money(usd) + (unpriced ? " est. · partial" : " est.");
+      $("pSpend").title = unpriced ? `${unpriced} ${unpriced === 1 ? "project has" : "projects have"} no verified list price and are not in this figure` : "List-price estimate. Not an invoice.";
+      $("pSessions").textContent = p.sessions === null ? "—" : String(p.sessions);
+      $("pProv").innerHTML = (p.demo ? "generated · " : "this machine's transcripts and Git · ") + (p.author === true ? "commits by this machine's Git email" : p.author === false ? "every author — no Git email set here" : "local Git history");
+      $("pProv").title = p.author === false ? "No Git email (user.email) is set in one of these repositories, so its Git figures count every author. None of this leaves this machine." : "Read from this machine only. None of this leaves this machine.";
+      $("pKv").innerHTML = [
+        [String(p.projects.length), "projects", `${p.withRepo} in Git`, "projects.length"],
+        [t.commits.toLocaleString("en-US"), "commits", "local Git · " + label, "projects.totals.commits"],
+        [`+${fmt(t.added)}<span class="u">−${fmt(t.removed)}</span>`, "lines", "added / removed", "projects.totals.added"],
+        [t.prsMerged === null ? "—" : String(t.prsMerged), "PR-linked commits", t.prsMerged === null ? "needs a remote" : "(#N) or PR merge", "projects.totals.prsMerged", "Commits referencing #N: a subject ending (#N) or a pull-request merge; #N may name an issue rather than a merged pull request"],
+      ].map(([v, l, s, src, why]) => `<div><div class="v" data-src="${src}" title="${esc(why || l + " · " + s)} · ${asOf()}">${v}</div><div class="l">${esc(l)}</div><div class="s">${esc(s)}</div></div>`).join("");
+      // Share of tokens per project, sorted, top five and "n more"; spend per commit as bars against the costliest.
+      const ranked = p.projects.slice().sort((a, b) => b.tokens - a.tokens);
+      const max = Math.max(...ranked.map((x) => x.tokens), 1);
+      const open = moreOpen.has("pShare");
+      const shown = open ? ranked : ranked.slice(0, MODELS_SHOWN);
+      $("pShareCap").textContent = "tokens by project · " + label;
+      $("pShare").innerHTML = shown.map((x) => `<div class="mrow door" data-inspect="project:${esc(x.name)}" tabindex="0" role="button" title="${esc(x.name)} · ${fmt(x.tokens)} tokens · ${pct(p.tokens ? x.tokens / p.tokens : null)} of this machine · open">
+          <span class="mn"><span class="txt">${esc(x.name)}</span></span><span class="ms">${demoStamp()}</span>
+          <span class="mbar" aria-hidden="true"><i style="width:${Math.max(1, Math.round((x.tokens / max) * 100))}%"></i></span>
+          <span class="mv" data-src="projects.tokens">${pct(p.tokens ? x.tokens / p.tokens : null, 0)}</span>
+          ${x.usd === null ? `<span class="mc unp" title="No verified list price for what ran here">unpriced</span>` : `<span class="mc" data-internal data-src="projects.usd">${money(x.usd)}</span>`}
+        </div>`).join("") + (ranked.length > MODELS_SHOWN ? `<button type="button" class="more" data-more="pShare">${open ? "fewer" : `${ranked.length - MODELS_SHOWN} more`}</button>` : "")
+        || `<div class="mrow"><span class="mn"><span class="none-text">no project has transcripts in this period</span></span></div>`;
+      const priced = ranked.filter((x) => x.costPerOutcome.perCommitUsd !== null).sort((a, b) => b.costPerOutcome.perCommitUsd - a.costPerOutcome.perCommitUsd);
+      const pmax = Math.max(...priced.map((x) => x.costPerOutcome.perCommitUsd), 0.01);
+      $("pSpendRows").innerHTML = priced.length ? priced.slice(0, MODELS_SHOWN).map((x) => `<div class="mrow door" data-inspect="project:${esc(x.name)}" tabindex="0" role="button" title="${esc(x.name)} · spend in the window of the work per local commit — not attribution · open">
+          <span class="mn"><span class="txt">${esc(x.name)}</span></span><span class="ms"></span>
+          <span class="mbar" aria-hidden="true"><i style="width:${Math.max(1, Math.round((x.costPerOutcome.perCommitUsd / pmax) * 100))}%"></i></span>
+          <span class="mv" data-src="projects.repo.commits">${x.repo ? x.repo.commits : "—"}</span>
+          <span class="mc" data-internal data-src="projects.costPerOutcome.perCommitUsd">${money(x.costPerOutcome.perCommitUsd)}</span>
+        </div>`).join("") : `<div class="xrow"><span class="xn"><em>${ranked.some((x) => x.repo) ? "no priced commit in this period" : "no project here is in a Git repository"}</em></span></div>`;
+      $("pEffortHint").textContent = "spend in the window of the work, not attribution";
+      $("pEffortHint").title = "Tokens measure usage, not value; this is not a productivity score.";
+
+      $("projTableCount").textContent = `${plural(p.projects.length, "project")} · ${p.withRepo} in Git · ${label}`;
+      body.innerHTML = p.projects.length ? ranked.map((x) => `<tr class="door" data-inspect="project:${esc(x.name)}">
+        <td class="k1"><button type="button" class="rowbtn" data-inspect="project:${esc(x.name)}" title="Open ${esc(x.name)}">${esc(x.name)}</button>${demoStamp()}${x.repo ? (x.repo.name !== x.name ? `<span class="sub">${esc(x.repo.name)}</span>` : "") : `<span class="sub"><b>not a Git repository</b></span>`}</td>
+        <td data-live="${esc(x.name)}"><span class="live-dot"><i></i>—</span></td>
+        <td class="num r" data-src="projects.tokens">${fmt(x.tokens)}</td><td class="k2">${shareBar(p.tokens ? x.tokens / p.tokens : null, "projects.tokens")}</td>
+        <td class="num r" data-internal data-src="projects.usd" title="${x.usd === null ? "No verified list price for what ran here" : "List-price estimate. Not an invoice."}">${x.usd === null ? "unpriced" : money(x.usd) + " est."}</td>
+        <td class="num r" data-src="projects.sessions">${x.sessions === null ? "—" : x.sessions}</td>
+        <td class="num r" data-src="projects.repo.commits">${x.repo ? x.repo.commits : "—"}</td>
+        <td class="num r" data-src="projects.repo.added">${x.repo ? `+${x.repo.added.toLocaleString("en-US")} / −${x.repo.removed.toLocaleString("en-US")}` : "—"}</td>
+        <td class="num r" data-src="projects.repo.prsMerged">${x.repo && x.repo.prsMerged !== null ? x.repo.prsMerged : "—"}</td>
+        <td class="num r" data-src="projects.costPerOutcome.defaultMerges">${x.costPerOutcome.defaultMerges === null ? "—" : x.costPerOutcome.defaultMerges}</td>
+        <td class="num r" data-internal data-src="projects.costPerOutcome.perCommitUsd" title="Spend in the work window per local commit, not attribution">${x.costPerOutcome.perCommitUsd === null ? "—" : money(x.costPerOutcome.perCommitUsd) + " est."}</td>
+        <td class="num r" data-internal data-src="projects.costPerOutcome.perDefaultMergeUsd" title="Spend in the work window per local default-branch integration, not attribution">${x.costPerOutcome.perDefaultMergeUsd === null ? "—" : money(x.costPerOutcome.perDefaultMergeUsd) + " est."}</td>
         <td class="num">${esc((x.branches || []).slice(0, 3).join(", ") || "—")}</td></tr>`).join("")
-        : `<tr><td colspan="11">No project on this machine has transcripts in this period.</td></tr>`;
-      labelCells("projTable");
-      $("projNote").textContent = (p.demo ? "DEMO — synthetic projects and Git figures. " : "") +
-        (p.author === true ? "Git figures count only commits authored with this machine's Git email (user.email). " : p.author === false ? "No Git email (user.email) is set in one of these repositories, so its Git figures count every author. " : "") +
-        "A commit referencing #N is a subject ending (#N) or a pull-request merge; it may name an issue rather than a merged pull request. " +
-        "Spend per outcome is spend in the window of the work, not attribution. This is not a productivity score. Tokens measure usage, not value. Default merges count local default-branch integration commits. A dash means no eligible count, verified price or local default-branch ref. None of this leaves this machine.";
+        : `<tr><td colspan="13">No project on this machine has transcripts in this period.</td></tr>`;
+      paintProjectsLive();
+
+      // Effort: the fleet on one side, this machine's Git on the other — never divided into each other.
+      const w = win();
+      $("projEffortCount").textContent = `every machine · this machine's Git · ${label}`;
+      $("projEffort").innerHTML = `<table class="grid"><thead><tr><th scope="col">Effort · ${esc(label)}</th><th scope="col" class="r">Every machine</th><th scope="col" class="r">This machine's Git</th></tr></thead><tbody>
+        <tr><td class="k1">Tokens</td><td class="num r k2" data-src="windows.tokens.total">${fmt(w.tokens.total)}</td><td class="num r k2" data-src="projects.tokens">${fmt(p.tokens)}</td></tr>
+        <tr><td class="k1">Estimate</td><td class="num r k2" data-internal data-src="windows.cost.usd">${w.cost.usd === null ? "—" : money(w.cost.usd) + (w.cost.status === "partial" ? " · partial" : "")}</td><td class="num r k2" title="See each project's spend per commit above">—</td></tr>
+        <tr><td class="k1">Messages</td><td class="num r k2" data-src="windows.messages">${w.messages.toLocaleString("en-US")}</td><td class="num r k2" data-src="projects.sessions">${p.sessions === null ? "—" : plural(p.sessions, "session")}</td></tr>
+        <tr><td class="k1">Commits</td><td class="num r k2">—</td><td class="num r k2" data-src="projects.totals.commits">${t.commits.toLocaleString("en-US")}</td></tr>
+        </tbody></table>`;
+      const shipped = p.projects.filter((x) => x.repo);
+      $("projShipCount").textContent = `${plural(t.commits, "commit")} · ${t.prsMerged === null ? "—" : t.prsMerged} PR-linked · +${fmt(t.added)} / −${fmt(t.removed)} lines · ${label}`;
+      $("projShip").innerHTML = shipped.length ? `<table class="grid"><thead><tr><th scope="col">Repository</th><th scope="col" class="r">Commits</th><th scope="col" class="r">Lines + / −</th><th scope="col" class="r" title="Commits whose subject ends (#N) or merges a pull request; #N may name an issue">PR-linked</th><th scope="col" class="r" title="Local default-branch integration commits">Merges</th><th scope="col" class="r" title="Spend in the window of the work per local default-branch integration, not attribution">$ / merge</th></tr></thead><tbody>`
+        + shipped.map((x) => `<tr class="door" data-inspect="project:${esc(x.name)}"><td class="k1"><button type="button" class="rowbtn" data-inspect="project:${esc(x.name)}" title="Open ${esc(x.name)}">${esc(x.repo.name)}</button>${x.repo.name !== x.name ? `<span class="sub">${esc(x.name)}</span>` : ""}</td><td class="num r k2">${x.repo.commits} commits</td><td class="num r">+${fmt(x.repo.added)} / −${fmt(x.repo.removed)}</td>
+          <td class="num r">${x.repo.prsMerged === null ? "—" : x.repo.prsMerged}</td><td class="num r">${x.costPerOutcome.defaultMerges === null ? "—" : x.costPerOutcome.defaultMerges}</td>
+          <td class="num r" data-internal>${x.costPerOutcome.perDefaultMergeUsd === null ? "—" : money(x.costPerOutcome.perDefaultMergeUsd) + " est."}</td></tr>`).join("")
+        + `</tbody></table>`
+        : `<div class="voidpanel"><b>No Git evidence</b>No project on this machine is in a Git repository${p.projects.length ? "" : ", or none has transcripts in this period"}. Nothing is estimated in its place.</div>`;
+      if (inspect.open && inspect.kind === "project") paintInspect();
     } catch (error) {
-      body.innerHTML = `<tr><td colspan="11">This machine's projects could not be read: ${esc(error.message)}</td></tr>`;
+      body.innerHTML = `<tr><td colspan="13">This machine's projects could not be read: ${esc(error.message)}</td></tr>`;
     }
   }
 
@@ -1307,7 +1549,7 @@
     const again = D && D.hub.networkCommand;
     $("networkCmd").hidden = !again;
     $("networkCmdShown").textContent = again || "";
-    addDialog.showModal();
+    openSheet(addDialog, view + "/add");
     $("fPerson").focus();
   }
   $("addBtn").addEventListener("click", openAdd);
@@ -1383,9 +1625,9 @@
 
   // ── small things ─────────────────────────────────────────────────────
   let toastTimer = null;
-  function toast(message) {
+  function toast(message, html = false) {
     const t = $("toast");
-    t.textContent = message;
+    if (html) t.innerHTML = message; else t.textContent = message;
     t.classList.add("show");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.classList.remove("show"), 4200);
@@ -1395,7 +1637,215 @@
     for (const c of d.querySelectorAll("[data-close]")) if (d.id !== "addDialog") c.addEventListener("click", () => d.close());
   }
 
-  const initial = (location.hash || "").replace("#", "");
+  // ── the inspector: a machine, a person or a project, opened beside the canvas by its row ──
+  /* Everything in it is the payload regrouped — the machine's own lanes, its
+     sparks summed, its models, its join record — never a figure the page made
+     up. Esc closes it; the URL carries it while it is open. */
+  const inspectDialog = $("inspectDialog");
+  function openInspect(kind, id) {
+    inspect.open = true; inspect.kind = kind; inspect.id = id;
+    paintInspect();
+    openSheet(inspectDialog, `${view}/${kind}/${encodeURIComponent(id)}`);
+  }
+  inspectDialog.addEventListener("close", () => { inspect.open = false; });
+  document.addEventListener("click", (ev) => {
+    const door = ev.target.closest("[data-inspect]"); if (!door) return;
+    const other = ev.target.closest("button, a");
+    if (other && !other.hasAttribute("data-inspect")) return;   // Remove and Cancel keep their own job
+    const [kind, ...rest] = door.dataset.inspect.split(":");
+    openInspect(kind, rest.join(":"));
+  });
+  const ikv = (cells) => `<div class="ikv">${cells.map(([v, l, cls, src]) => `<div><div class="v${cls ? " " + cls : ""}"${src ? ` data-src="${src}"` : ""}>${v}</div><div class="l">${esc(l)}</div></div>`).join("")}</div>`;
+  const isparkHtml = (s, dim) => s
+    ? `<div class="ispark${dim ? " dim" : ""}" role="img" aria-label="Tokens in the last hour, three-minute steps">${(() => { const top = Math.max(...s.spark, 1); return s.spark.map((v, k) => `<i style="height:${(v > 0 ? 9 + (v / top) * 91 : 5).toFixed(0)}%"${!dim && k === s.spark.length - 1 && v > 0 ? ' class="hot"' : ""}></i>`).join(""); })()}</div>`
+    : `<div class="iquiet">No session in the last 24 hours.</div>`;
+  const stateWord = (s) => s === "live" ? "LIVE" : s === "idle" ? "IDLE" : s === "revoked" ? "REMOVED" : s === "catching-up" ? "CATCHING UP" : s === "reconnecting" ? "RECONNECTING" : "SILENT";
+  const laneList = (lanes, cap = "24 h") => lanes.length
+    ? `<div class="ihead">Sessions <span>${lanes.length} · ${esc(cap)}</span></div>` + lanes.slice(0, 12).map((l) => `<div class="irow" data-lane="${esc(l.key)}" tabindex="0" role="button" title="Open the lane · ${esc(l.project.name)}${l.branch ? " · " + esc(l.branch) : ""}"><span class="nm"><b>${esc(l.project.name)}</b>${l.branch ? `<em>${esc(l.branch)}</em>` : ""}</span><span>${esc(l.modelLabel)}</span><span class="r" data-src="lanes.tokensDay">${l.tokensDay == null ? "—" : fmt(l.tokensDay)}</span><span class="st ${l.state}">${stateWord(l.state)}</span></div>`).join("")
+      + (lanes.length > 12 ? `<div class="iquiet">${lanes.length - 12} more in the lanes</div>` : "")
+    : `<div class="iquiet">No session in the last 24 hours.</div>`;
+  const modelList = (models, cap) => models.length ? `<div class="ihead">Models <span>${esc(cap)}</span></div>` + modelRows(models, "inspect", models) : "";
+  function paintInspect() {
+    if (!D || !inspect.open) return;
+    const now = serverNow();
+    const cap = PERIOD_TEXT[period][1];
+    const foot = $("inspectFoot");
+    let title = "—", body = "";
+    foot.innerHTML = `<button type="button" class="btn" data-close>Close</button>`;
+    if (inspect.kind === "machine") {
+      const d = D.devices.find((x) => x.id === inspect.id);
+      if (!d) { title = "Machine"; body = `<div class="iquiet">This machine is no longer on the console.</div>`; }
+      else {
+        const a = pw(d);
+        const s = sparksBy(deviceKey).get(d.id);
+        title = d.label;
+        const lost = d.coverage && d.coverage.dropped ? d.coverage.dropped : 0;
+        body = `<div class="ihero"><span class="big" data-src="devices.windows.tokens.total">${fmt(a.tokens.total)}</span><span class="u">tokens · ${esc(cap)}</span></div>
+          <div class="iline"><span class="status ${d.status}"><i></i>${esc(statusText(d, now))}</span>${d.person ? ` · <b>${esc(d.person)}</b>` : ""}${d.local ? " · this machine" : ""}</div>
+          ${ikv([[pct(a.shareOfWhole, 0), "share of every machine", "", "devices.windows.shareOfWhole"], [costCell(a.cost), "est.", a.cost.status === "unpriced" ? "warn" : "", "devices.windows.cost.usd"],
+            [pct(a.shares.cacheRead), "cache read", "", "devices.windows.shares.cacheRead"], [pct(a.shares.cacheWrite), "cache write", "", "devices.windows.shares.cacheWrite"],
+            [a.messages.toLocaleString("en-US"), "messages", "", "devices.windows.messages"], [String(lost), "not counted", lost ? "warn" : "", "devices.coverage.dropped"]])}
+          <div class="ihead">Last hour <span>${s ? fmt(s.spark.reduce((x, y) => x + y, 0)) + " tokens" : "—"}</span></div>${isparkHtml(s, d.status !== "reporting")}
+          ${modelList(a.models, cap)}
+          ${laneList(D.lanes.filter((l) => l.device.id === d.id))}
+          <div class="iquiet">${d.local ? "The hub itself." : `Joined ${new Date(d.createdAt).toLocaleDateString([], { day: "numeric", month: "short" })} · ${hhmm(Date.parse(d.createdAt))}${d.joinedVia === "link" ? " by link" : ""}.`}${lost ? ` <b>${lost} not counted</b>: ${esc(d.coverage.reasons.map((r) => r.count + " × " + r.label).join("; "))}.` : ""}</div>`;
+        if (!d.local && d.status !== "revoked") foot.innerHTML = `<button type="button" class="btn danger" data-revoke="${esc(d.id)}" data-label="${esc(d.label)}">Remove</button>` + foot.innerHTML;
+      }
+    } else if (inspect.kind === "person") {
+      const p = D.people.find((x) => x.person === inspect.id);
+      if (!p) { title = "Person"; body = `<div class="iquiet">Nobody by that name is on the console.</div>`; }
+      else {
+        const a = pw(p);
+        const s = sparksBy((l) => personOfDevice(l.device.id)).get(p.person);
+        title = p.person;
+        body = `<div class="ihero"><span class="big" data-src="people.windows.tokens.total">${fmt(a.tokens.total)}</span><span class="u">tokens · ${esc(cap)}</span></div>
+          <div class="iline">${p.reporting} of ${plural(p.devices.length, "machine")} reporting · <b>${p.devices.map((id) => esc((deviceOf(id) || {}).label || "")).join(", ")}</b></div>
+          ${ikv([[pct(a.shareOfWhole, 0), "share of every machine", "", "people.windows.shareOfWhole"], [costCell(a.cost), "est.", a.cost.status === "unpriced" ? "warn" : "", "people.windows.cost.usd"],
+            [pct(a.shares.cacheRead), "cache read", "", "people.windows.shares.cacheRead"], [pct(a.shares.cacheWrite), "cache write", "", "people.windows.shares.cacheWrite"],
+            [a.messages.toLocaleString("en-US"), "messages", "", "people.windows.messages"], [plural(p.devices.length, "machine"), "machines"]])}
+          <div class="ihead">Last hour <span>${s ? fmt(s.spark.reduce((x, y) => x + y, 0)) + " tokens" : "—"}</span></div>${isparkHtml(s, p.reporting === 0)}
+          ${modelList(a.models, cap)}
+          <div class="ihead">Machines <span>${p.devices.length}</span></div>
+          ${p.devices.map((id) => deviceOf(id)).filter(Boolean).map((d) => `<div class="irow" data-inspect="machine:${esc(d.id)}" tabindex="0" role="button" title="Open ${esc(d.label)}"><b>${esc(d.label)}</b><span class="status ${d.status}"><i></i>${esc(statusText(d, now))}</span><span class="r" data-src="devices.windows.tokens.total">${fmt(pw(d).tokens.total)}</span><span class="r">${pct(pw(d).shareOfWhole, 0)}</span></div>`).join("")}
+          ${laneList(D.lanes.filter((l) => p.devices.includes(l.device.id)))}`;
+      }
+    } else if (inspect.kind === "project") {
+      const x = projCache && projCache.projects.find((y) => y.name === inspect.id);
+      const lanes = localLanes().filter((l) => l.project.name === inspect.id);
+      const s = sparksBy(projectKey, lanes).get(inspect.id);
+      title = inspect.id;
+      if (!x) body = `<div class="iquiet">${projCache ? "This project has no transcripts in this period." : "Reading this machine…"}</div>` + laneList(lanes);
+      else {
+        const c = x.costPerOutcome;
+        body = `<div class="ihero"><span class="big" data-src="projects.tokens">${fmt(x.tokens)}</span><span class="u">tokens · ${esc(cap)} · this machine</span>${demoStamp()}</div>
+          <div class="iline">${x.repo ? `<b>${esc(x.repo.name)}</b> · ${plural(x.repo.commits, "commit")}` : "<b>not a Git repository</b>"}${x.branches && x.branches.length ? ` · ${x.branches.map(esc).join(", ")}` : ""}</div>
+          ${ikv([[x.usd === null ? "unpriced" : money(x.usd), "est.", x.usd === null ? "warn" : "", "projects.usd"], [x.sessions === null ? "—" : String(x.sessions), "sessions", "", "projects.sessions"],
+            [x.repo ? `+${fmt(x.repo.added)} <span class="u">−${fmt(x.repo.removed)}</span>` : "—", "lines", "", "projects.repo.added"], [x.repo && x.repo.prsMerged !== null ? String(x.repo.prsMerged) : "—", "PR-linked commits", "", "projects.repo.prsMerged"],
+            [c.perCommitUsd === null ? "—" : money(c.perCommitUsd), "$ / commit · est.", "", "projects.costPerOutcome.perCommitUsd"], [c.perDefaultMergeUsd === null ? "—" : money(c.perDefaultMergeUsd), `$ / merge · est.${c.defaultMerges === null ? "" : " · " + c.defaultMerges}`, "", "projects.costPerOutcome.perDefaultMergeUsd"]])}
+          <div class="ihead">Last hour <span>${s ? fmt(s.spark.reduce((a, b) => a + b, 0)) + " tokens" : "—"}</span></div>${isparkHtml(s, false)}
+          ${laneList(lanes)}
+          <div class="iquiet">Spend per outcome is spend in the window of the work, not attribution. Tokens measure usage, not value. None of this leaves this machine.</div>`;
+      }
+    }
+    $("inspectTitle").textContent = title;
+    $("inspectBody").innerHTML = body;
+  }
+
+  // ── ⌘K: the way to anywhere, from anywhere ────────────────────────────
+  /* Everything reachable is one keystroke away from every view, and what is
+     not reachable right now is listed too, struck through with the reason. */
+  const pal = $("pal"), palq = $("palq"), palres = $("palres");
+  let palSel = 0, palRows = [];
+  const PERIODS = ["1h", "24h", "7d", "30d"];
+  function palItems() {
+    const groups = [];
+    const now = serverNow();
+    groups.push(["Views", [
+      { name: "Console", run: () => show("console"), note: "1" },
+      { name: "Team", run: () => show("team"), note: "2" },
+      { name: "Projects", run: () => show("projects"), note: "3" },
+    ]]);
+    if (D) {
+      groups.push(["Machines", D.devices.map((d) => ({ name: d.label + (d.person ? " · " + d.person : ""), run: () => openInspect("machine", d.id),
+        note: d.status === "reporting" ? "reporting" : statusText(d, now), dot: d.status === "reporting" ? (D.hub.demo ? "sim" : "live") : d.status === "silent" ? "warn" : "" }))]);
+      groups.push(["People", D.people.map((p) => ({ name: p.person, run: () => openInspect("person", p.person), note: `${p.reporting}/${p.devices.length} reporting` }))]);
+      groups.push(["Lanes", D.lanes.filter((l) => laneVisible(l, now)).map((l) => ({ name: `${l.project.name}${l.branch ? " · " + l.branch : ""}`, run: () => focusLane(l.key),
+        note: `${l.state} · ${l.modelLabel}`, dot: l.state === "live" ? (D.hub.demo ? "sim" : "live") : "" }))]);
+      if (projCache) groups.push(["Projects", projCache.projects.map((x) => ({ name: x.name, run: () => openInspect("project", x.name), note: fmt(x.tokens) + " tokens" }))]);
+    }
+    const alerts = D ? (D.alerts || []).length : 0;
+    groups.push(["Actions", [
+      { name: "Add a machine", run: openAdd, note: D && D.hub.demo ? null : "join link", no: D && D.hub.demo ? "demo: no machine can join" : null },
+      { name: paused ? "Resume motion" : "Pause motion", run: () => $("motionBtn").click(), note: "strip" },
+      { name: showUnavailable ? "Hide unavailable" : "Show unavailable", run: () => $("voidBtn").click(), note: "strip" },
+      { name: "Alerts", run: openAlerts, note: alerts ? plural(alerts, "alert") : null, no: alerts ? null : "no alert in the last hour" },
+      { name: "Switch theme", run: () => $("themeBtn").click(), note: "T" },
+      ...PERIODS.map((p) => ({ name: `Period · ${PERIOD_TEXT[p][0]}`, run: () => setPeriod(p), note: p === period ? "current" : "[ ]" })),
+      { name: "Sign out", run: () => $("signOutBtn").click(), note: "" },
+    ]]);
+    return groups;
+  }
+  function palRender(q = "") {
+    const t = q.trim().toLowerCase();
+    palRows = []; let html = "";
+    for (const [group, items] of palItems()) {
+      const hits = items.filter((it) => !t || it.name.toLowerCase().includes(t));
+      if (!hits.length) continue;
+      html += `<div class="palg">${esc(group)}</div>`;
+      for (const it of hits) {
+        const i = palRows.push(it) - 1;
+        html += `<div class="palr${it.no ? " no" : ""}" data-i="${i}" role="option" aria-selected="false"><i class="${it.dot || ""}"></i><b>${esc(it.name)}</b><span>${esc(it.no || it.note || "")}</span></div>`;
+      }
+    }
+    palres.innerHTML = html || `<div class="palg">nothing matches</div>`;
+    palSel = Math.min(palSel, Math.max(0, palRows.length - 1));
+    palMark();
+  }
+  function palMark() {
+    palres.querySelectorAll(".palr").forEach((r, i) => { r.classList.toggle("on", i === palSel); r.setAttribute("aria-selected", String(i === palSel)); });
+    palres.querySelectorAll(".palr")[palSel]?.scrollIntoView({ block: "nearest" });
+  }
+  function palOpen(open) {
+    if (open && !pal.open) { pal.showModal(); palq.value = ""; palSel = 0; palRender(); palq.focus(); }
+    else if (!open && pal.open) pal.close();
+  }
+  function palRun(it) {
+    if (!it) return;
+    if (it.no) { toast(it.no); return; }
+    palOpen(false);
+    it.run();
+  }
+  palq.addEventListener("input", (ev) => { palSel = 0; palRender(ev.target.value); });
+  palq.addEventListener("keydown", (ev) => {
+    if (ev.key === "ArrowDown") { ev.preventDefault(); palSel = Math.min(palSel + 1, palRows.length - 1); palMark(); }
+    else if (ev.key === "ArrowUp") { ev.preventDefault(); palSel = Math.max(palSel - 1, 0); palMark(); }
+    else if (ev.key === "Enter") { ev.preventDefault(); palRun(palRows[palSel]); }
+  });
+  palres.addEventListener("click", (ev) => { const r = ev.target.closest(".palr"); if (r) palRun(palRows[Number(r.dataset.i)]); });
+  $("palBtn").addEventListener("click", () => palOpen(true));
+
+  /* Plain keys, and nothing fires while typing: 1–3 views, [ ] period, J/K the
+     lanes, ↵ the focused lane's context, T theme, ? this list, Esc back out. */
+  function moveLane(dir) {
+    const keys = [...$("cLanes").querySelectorAll(".lane")].map((r) => [...laneRows.entries()].find(([, row]) => row === r)?.[0]).filter(Boolean);
+    if (!keys.length) return;
+    const i = keys.indexOf(laneFocus);
+    const next = i < 0 ? (dir > 0 ? 0 : keys.length - 1) : Math.max(0, Math.min(keys.length - 1, i + dir));
+    if (view !== "console") show("console");
+    focusLane(keys[next]);
+  }
+  document.addEventListener("keydown", (ev) => {
+    if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === "k") { ev.preventDefault(); palOpen(!pal.open); return; }
+    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+    if (ev.target.closest && ev.target.closest("input, textarea, select, [contenteditable]")) return;
+    if (document.querySelector("dialog[open]")) return;   // Esc closes it natively; the rest waits
+    if (ev.target.closest && ev.target.closest("[role='button'], button, a, summary") && (ev.key === "Enter" || ev.key === " ")) return;
+    switch (ev.key) {
+      case "1": show("console"); break;
+      case "2": show("team"); break;
+      case "3": show("projects"); break;
+      case "[": case "]": { const i = PERIODS.indexOf(period); setPeriod(PERIODS[(i + (ev.key === "]" ? 1 : PERIODS.length - 1)) % PERIODS.length]); break; }
+      case "j": case "J": moveLane(1); break;
+      case "k": case "K": moveLane(-1); break;
+      case "Enter": if (!laneFocus) return; focusLane(laneFocus, true); break;
+      case "t": case "T": $("themeBtn").click(); break;
+      case "?": toast("Keys: <kbd>⌘K</kbd> anywhere · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> views · <kbd>[</kbd> <kbd>]</kbd> period · <kbd>J</kbd> <kbd>K</kbd> lanes · <kbd>↵</kbd> context · <kbd>T</kbd> theme · <kbd>esc</kbd> back", true); break;
+      case "Escape": for (const r of document.querySelectorAll(".lane.focused")) r.classList.remove("focused"); laneFocus = null; break;
+      default: return;
+    }
+    ev.preventDefault();
+  });
+
+  /* Provenance travels with the number: hover any figure for its source field
+     and when it was read, in the viewer's zone. */
+  document.addEventListener("mouseover", (ev) => {
+    const el = ev.target.closest && ev.target.closest("[data-src]"); if (!el || !D) return;
+    if (el.dataset.t === undefined) el.dataset.t = el.getAttribute("title") || "";
+    const base = el.dataset.t.replace(/ · as of .*$/u, "");
+    el.title = [base, el.dataset.src, asOf()].filter(Boolean).join(" · ");
+  });
+
+  const initial = (location.hash || "").replace("#", "").split("/")[0];
   if (initial === "team" || initial === "projects") show(initial);
   poll().then(startLoop);
 })();
