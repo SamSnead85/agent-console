@@ -43,3 +43,14 @@ tokens, and 500,000 tokens spent for five minutes without an observed tool
 success. These are configurable via `repeat`, `spikeFactor`, and
 `stallMinutes`. A tool failure is not a success event. The caller owns log
 tailing, hashing, notifications, and retention.
+
+## `agentTree(sessions)`
+
+Accepts plain session rows: `{ sessionHash, parentSessionHash,
+model, firstAt, lastAt, tokens, outcome? }`. Identifiers must be salted hashes;
+times are Unix milliseconds and `tokens` is a nonnegative observed count.
+Returns depth-ordered rows with a root session hash and observed duration in minutes. The console supplies first and last observed minutes within its 24-hour window, so its span and token count cover the same period. Missing parents
+become roots, and malformed parent cycles cannot recurse forever. `outcome`
+is `unknown` unless the caller provides the allowed `succeeded` or `failed`
+enum from a real result. The current reporter records usage but no outcome,
+so the console omits the outcome label instead of inventing success.

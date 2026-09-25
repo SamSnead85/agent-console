@@ -8,6 +8,9 @@
 - Added local live alerts for repeated tool calls, spend spikes and spend
   without observed tool success, with configurable thresholds and opt-in
   desktop notifications. Detection rules use the shared analysis subpath.
+- Added an expandable parent and subagent tree in each lane, showing each
+  agent's model, observed tokens and duration, and an honest unknown outcome
+  when the reporter has no result event.
 
 ## 0.2.2 — 2026-09-24
 

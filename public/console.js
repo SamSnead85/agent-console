@@ -54,6 +54,8 @@
     if (h < 36) return h + " h ago";
     return Math.round(h / 24) + " days ago";
   };
+  const observedSpan = (minutes) => minutes == null ? "Span unavailable" : minutes < 60
+    ? `${minutes} m observed` : `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60} m` : ""} observed`;
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const TOOL = { "claude-code": "Claude Code", codex: "Codex" };
   const CLASS_LABEL = { cacheRead: "cache read", cacheWrite: "cache write", output: "output", fresh: "input" };
@@ -244,7 +246,18 @@
           row = document.createElement("div");
           row.className = "lane";
           row.innerHTML = `<span class="st"><i></i><span></span></span><span class="pr"><b></b><em></em></span><span class="md"></span>
-            <span class="sp" aria-hidden="true">${"<i></i>".repeat(20)}</span><span class="fm r"></span><span class="ag r"></span><span class="cx"><button type="button" aria-label="Session context details"></button></span><span class="dv"></span>`;
+            <span class="sp" aria-hidden="true">${"<i></i>".repeat(20)}</span><span class="fm r"></span><span class="ag r"><button type="button" aria-label="Show agent tree" aria-expanded="false"></button></span><span class="cx"><button type="button" aria-label="Session context details"></button></span><span class="dv"></span>`;
+          row._tree = document.createElement("div");
+          row._tree.className = "agent-tree";
+          row._tree.hidden = true;
+          row.querySelector(".ag button").addEventListener("click", () => {
+            row._tree.hidden = !row._tree.hidden;
+            row.querySelector(".ag button").setAttribute("aria-expanded", String(!row._tree.hidden));
+            if (!row._tree.hidden && matchMedia('(max-width: 760px)').matches) {
+              row.closest('.lanes').scrollLeft = 0;
+              box.scrollLeft = 0;
+            }
+          });
           row.querySelector(".cx button").addEventListener("click", () => {
             const current = D?.lanes.find((item) => item.key === l.key);
             if (current) showContext(current);
@@ -260,8 +273,9 @@
           row._timer = setTimeout(() => fillLane(row, l, serverNow()), parseInt(l.key.slice(0, 6), 16) % 1700);
         }
         box.appendChild(row);   // moves it into sorted position
+        box.appendChild(row._tree);
       }
-      for (const [key, row] of laneRows) if (!keep.has(key)) { row.remove(); laneRows.delete(key); }
+      for (const [key, row] of laneRows) if (!keep.has(key)) { row.remove(); row._tree.remove(); laneRows.delete(key); }
     }
     const live = D.lanes.filter((l) => l.state === "live").length;
     const idle = D.lanes.filter((l) => l.state === "idle").length;
@@ -314,8 +328,11 @@
       fm.innerHTML = l.tokens5m > 0 ? `<u class="${up ? "" : "dn"}" aria-hidden="true">${up ? "▲" : "▼"}</u>${fmt(l.tokens5m)}` : "0";
     }
     const ag = row.querySelector(".ag");
-    ag.textContent = l.agents.total ? `${l.agents.live}/${l.agents.total}` : "—";
-    ag.title = l.agents.total ? `${l.agents.live} subagents worked in the last five minutes, of ${l.agents.total} today` : "No subagents";
+    const agButton = ag.querySelector("button");
+    agButton.textContent = l.agents.total ? `${l.agents.live}/${l.agents.total}` : "—";
+    agButton.disabled = !l.agents.total;
+    agButton.title = l.agents.total ? `${l.agents.live} subagents worked in the last five minutes, of ${l.agents.total} today. Open the agent tree.` : "No subagents";
+    row._tree.innerHTML = (l.agentTree || []).map((agent, index) => `<div class="agent-node" style="--depth:${Math.min(agent.depth, 8)}"><span>${index === 0 ? 'Orchestrator' : '↳ Subagent'}</span><span class="agent-model">${vendorMark(vendorOf(agent.model))}${esc(agent.modelLabel)}</span><span>${agent.tokens == null ? 'Tokens unavailable' : fmt(agent.tokens) + ' tokens · 24 h'}</span><span>${observedSpan(agent.durationMinutes)}${agent.outcome === 'unknown' ? '' : ` · ${esc(agent.outcome)}`}</span></div>`).join('');
     const cx = row.querySelector(".cx");
     cx.classList.toggle("bloated", l.context?.status === "bloated");
     cx.querySelector("button").textContent = l.context?.latest === null || l.context?.latest === undefined

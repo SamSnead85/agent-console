@@ -232,6 +232,14 @@ append through the local collector on this machine, the alert appeared after
 not a latency guarantee.
 The pure detection rules are exported from the shared analysis subpath.
 
+**Agent tree**: open the Agents count in a lane to see the orchestrator and
+its observed subagents in place. Each row shows its model, tokens observed in
+the last 24 hours, and the span between its first and last reported records.
+Outcome is **unknown · no result recorded** until a result is available in the
+privacy-safe record format; activity or a tool call is not treated as success.
+The synthetic team includes parent and child sessions. The same count-only
+tree builder is exported from the shared analysis subpath.
+
 **Machines** and **Team**: every machine and every person: tokens, share of the
 total, cache read and write shares, model split and cost, for 24 hours or
 7 days; every join link, who used it and when. Two machines with the same
