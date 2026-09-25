@@ -11,6 +11,8 @@
 - Added an expandable parent and subagent tree in each lane, showing each
   agent's model, observed tokens and duration, and an honest unknown outcome
   when the reporter has no result event.
+- Added same-window estimated spend per local commit and per default-branch
+  integration in Projects, labelled as correlation rather than attribution.
 
 ## 0.2.2 — 2026-09-24
 

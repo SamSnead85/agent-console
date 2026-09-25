@@ -54,3 +54,13 @@ become roots, and malformed parent cycles cannot recurse forever. `outcome`
 is `unknown` unless the caller provides the allowed `succeeded` or `failed`
 enum from a real result. The current reporter records usage but no outcome,
 so the console omits the outcome label instead of inventing success.
+
+## `costPerOutcome(input)`
+
+Input is `{ usd, pricedMessages, unpricedMessages, commits, defaultMerges }`:
+only counts and a local estimated amount. The result contains price coverage
+status, estimated spend per commit, estimated spend per default-branch
+integration, and the counted integrations. Ratios are `null` when any usage
+was unpriced, the denominator is zero or unavailable, or no usage was
+observed. The caller must label these ratios as **spend in the window of the
+work**: they correlate two totals in one window, not cost caused by a commit.

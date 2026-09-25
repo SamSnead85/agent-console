@@ -91,6 +91,7 @@ test("period stats from a real repository: merged PRs and lines are period-scope
     "the 10-day-old commit is outside the period",
   );
   assert.equal(day.totals.prsMerged, 1, "only #11 landed inside the period");
+  assert.equal(day.repos[0].defaultMerges, 1, "the squash integration on the local default branch is counted");
   // fix: tweak rewrites one line (+2 net of a modification) and adds two more,
   // chore adds one: numstat says 3+1 added / 1 removed for those two commits.
   assert.equal(day.totals.added, 4);
