@@ -22,6 +22,15 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const CHECK = path.join(ROOT, "scripts", "public-safety", "check.mjs");
 const rulesHit = (text) => scanText(text).map((f) => f.rule);
 
+test("GIF metadata is read at block boundaries, not inside compressed frames", () => {
+  const image = fs.readFileSync(path.join(ROOT, "site", "assets", "img", "hero-demo.gif"));
+  assert.equal(image.at(-1), 0x3b);
+  assert.deepEqual(inspect(image).findings, []);
+  const comment = Buffer.from([0x21, 0xfe, 0x03, 0x61, 0x62, 0x63, 0]);
+  const withComment = Buffer.concat([image.subarray(0, -1), comment, image.subarray(-1)]);
+  assert.deepEqual(inspect(withComment).findings.map((finding) => finding.kind), ["GIF comment"]);
+});
+
 // Pieces, joined only at runtime.
 const U = "/Us" + "ers/";
 const H = "/ho" + "me/";
