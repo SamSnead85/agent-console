@@ -185,12 +185,14 @@ flowchart TD
   PR[Pull request] --> Principles[Changelog and screenshot checks]
   Matrix --> Merge[Six required test checks for main]
   Publish[Maintainer publishes GitHub release] --> Tagged[Checkout release tag]
-  Tagged --> Test[Tests and package smoke]
+  Tagged --> Source[Verify main ancestry and exact-source push checks]
+  Source --> Test[Tests and package smoke]
   Test --> Pack[Check version; pack archive; calculate SHA-256]
   Pack --> Attest[Build provenance attestation]
   Attest --> Upload[Upload archive and SHA256SUMS]
-  Publish --> Install[Separate published-install workflow]
-  Install --> Result[Actual install result or missing-asset skip]
+  Upload --> Install[Strict published installation: 3 OS]
+  Install --> Result[Verified exact version or failed release acceptance]
+  Development[Main README or version change] --> Availability[Explicit pending-release availability check]
 ```
 
 The test matrix covers Linux, macOS and Windows on Node.js 22 and 24. It runs
@@ -203,12 +205,17 @@ test jobs on `main`. Public-safety, performance and PR-content checks exist,
 but their presence in workflow files does not make them required merge checks.
 Branch protection is repository configuration and must be checked separately.
 
-The current release workflow starts **after publication**, then tests, packs,
-attests and uploads the archive. Publication and a usable download are therefore
-separate states. The README-install workflow returns a successful skip when
-the archive is missing with HTTP 404. A green skipped job is not install
-acceptance: release completion needs the uploaded artifact and an actual
-successful installation of that version. See [download verification](../README.md#checking-a-download).
+The release workflow starts **after publication**. Before packaging, it verifies
+that the selected source belongs to `main` and that its latest required main-push
+CI runs succeeded. It then tests, packs, attests and uploads the archive. Only a
+successful upload starts strict installation acceptance on all three platforms.
+The tag, README archive and running package must agree on the version; a missing
+archive, timeout or failed startup fails acceptance.
+
+Publication and a usable download remain separate states. Development pushes
+can explicitly report a pending release; scheduled, manual and release checks
+require a working download. Pending availability does not establish a verified
+installation. See [download verification](../README.md#checking-a-download).
 
 ## Future integration context — not shipped in this package
 

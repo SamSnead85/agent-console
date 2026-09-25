@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Published installation checks fail on missing packages and run after release
+  assets upload. Development availability may explicitly report a pending
+  release; it no longer presents a missing download as a verified installation.
+- Release packaging verifies the selected source's main-branch ancestry and
+  successful CI, public-safety and performance checks before producing assets.
 - Usage batches are indexed only after successful persistence. Failed writes
   preserve earlier batches, allow safe retries, and recover incomplete final
   lines before rebuilding the index after a restart.
