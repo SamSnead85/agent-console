@@ -431,7 +431,9 @@ test("joining the same console again keeps the machine's entry; a second reporte
   assert.match(left.out, new RegExp(`Stopped the reporter that was running \\(process ${running.pid}\\)`, "u"));
   // The reporter says so in its own window.
   if (running.exitCode === null) await new Promise((r) => running.once("exit", r));
-  assert.match(runningOut, /stopped from another window/u);
+  // Windows ends a process on SIGTERM without running its handlers, so only
+  // POSIX reporters can say why they stopped.
+  if (process.platform !== "win32") assert.match(runningOut, /stopped from another window/u);
 
   // Joining again after leave, for the same person and machine name, brings the entry back.
   const back = await run(["join", (await invite(hub, "You", "Laptop")).link, "--once", "--json", "--home", home, "--state-dir", state]);
