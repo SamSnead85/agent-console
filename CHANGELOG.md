@@ -220,6 +220,42 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
 - [Architecture diagrams](docs/ARCHITECTURE.md) document collection, enrollment,
   trust boundaries, delivery controls and the separate future MCP integration.
 
+**Distribution**
+
+- **Standalone executables, for a computer without Node.js.** Each release
+  carries one file per platform — macOS (Apple silicon and Intel), Linux (x64
+  and arm64) and Windows (x64) — that is Node.js 24 with the release package
+  inside. Each is built and started on its own platform in CI, listed in
+  `SHA256SUMS` and covered by the release's build attestation. The macOS and
+  Windows files are unsigned until a signing identity is configured, and the
+  release page says so beside each one; `docs/executables.md` has the
+  Gatekeeper and SmartScreen steps.
+- Run as a standalone executable, the commands the console prints name the
+  executable instead of `node`, by its bare name when `PATH` finds it.
+- **Everything is built only after the release's source is authorized.** The
+  tag must be a main commit whose own main-push CI, public-safety and
+  performance checks passed; then the package, executables and hub image are
+  built from it. The package's published-install acceptance still runs if the
+  executables fail, and a separate check fails to say they are missing.
+- **Install scripts** (`install.sh`, `install.ps1`) fetch the executable for
+  the computer and the release's `SHA256SUMS`, and install nothing unless the
+  SHA-256 matches. Each release installs its executables with them on every
+  platform, checks the version they print, and on Linux their attestation.
+- **npm** receives the exact package file on the release, after it installed on
+  macOS, Linux and Windows, checked against `SHA256SUMS` and its attestation,
+  with npm provenance. A tag push alone publishes nothing; without the owner's
+  `NPM_TOKEN` the release says so and skips npm.
+- **A Homebrew formula** rendered only from a release's archive checksums
+  (`scripts/render-homebrew-formula.mjs`), for a tap the owner creates.
+- **A team hub image** for Linux amd64 and arm64 (arm64 built under QEMU), non-root,
+  with a `HEALTHCHECK` on its join page. Pull requests build and start both
+  architectures; a release pushes only the version tag, after starting it, and
+  attests the pushed digest.
+- **A download page** (`site/`), built from the latest release's verified facts.
+  The standalone executables, npm and Homebrew are shown as "coming" until the
+  release, the registry or the tap really serves them. It deploys only when
+  GitHub Pages is enabled for the repository.
+
 ## 0.2.2 — 2026-09-24
 
 Security fixes, accounting you can reconcile, and a console that is nearly

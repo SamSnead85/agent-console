@@ -1,0 +1,11 @@
+.git
+.github
+bench
+docs
+packaging
+scripts
+site
+test
+*.md
+*.tgz
+*.log
