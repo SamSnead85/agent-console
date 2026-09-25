@@ -111,3 +111,16 @@ test("burn on an unpriced model has no dollar rate at all, never $0.00", () => {
   // The screen draws a void with "unpriced" for a null rate, and never passes null to money().
   assert.match(CONSOLE_JS, /D\.burn\.usdPerMinute === null\s*\?\s*"—" \+ per \+ " · unpriced"/u);
 });
+
+test("a machine's uncounted lines are said on the Team row, on a line of their own", () => {
+  // Counted by reason and shown, never dropped silently; on its own line so the
+  // machine column does not push the row's Remove button out of view.
+  assert.match(CONSOLE_JS, /const lost = d\.coverage && d\.coverage\.dropped \? `<span class="sub"><b title=/u);
+  assert.ok(CONSOLE_JS.includes('" by link" : "")}</span>${lost}</td>'), "the note follows the joined line");
+});
+
+test("the Team totals name the selected period and keep sessions apart from subagents", () => {
+  assert.match(CONSOLE_JS, /const label = PERIOD_TEXT\[period\]\[1\];\s*\$\("teamTotals"\)/u);
+  assert.match(CONSOLE_JS, /period === "24h" \? sessionWords\(\)/u);
+  assert.match(CONSOLE_JS, /plural\(whole\.sessions, "session or subagent", "sessions and subagents"\)/u);
+});

@@ -48,6 +48,10 @@ test("a mistyped command is refused, not taken as a start of the console", () =>
   const json = spawnSync(process.execPath, [BIN, "reprot", "--json"], { encoding: "utf8" });
   assert.equal(json.status, 2);
   assert.equal(JSON.parse(json.stdout.trim()).kind, "usage");
+  // metrics-token is a command, so a near miss is pointed at it.
+  const near = spawnSync(process.execPath, [BIN, "metrics-tokn"], { encoding: "utf8" });
+  assert.equal(near.status, 2);
+  assert.match(near.stderr, /Did you mean "metrics-token"\?.*policy and metrics-token/su);
 });
 
 test("the console refuses unknown options and values out of range, and says which", () => {

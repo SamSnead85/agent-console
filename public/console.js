@@ -749,8 +749,9 @@
       const action = d.local ? `<span class="sub">this machine</span>`
         : d.status === "revoked" ? `<span class="sub">removed</span>`
         : `<button type="button" class="btn small danger" data-revoke="${esc(d.id)}" data-label="${esc(d.label)}">Remove</button>`;
-      const lost = d.coverage && d.coverage.dropped ? ` · <b title="${esc(d.coverage.reasons.map((r) => r.count + " × " + r.label).join("; "))}">${d.coverage.dropped} not counted</b>` : "";
-      return `<tr><td><b>${esc(d.label)}</b><span class="sub">${lost ? lost.slice(3) + " · " : ""}${d.local ? "the hub itself" : "joined " + new Date(d.createdAt).toLocaleDateString([], { day: "numeric", month: "short" }) + " · " + hhmm(Date.parse(d.createdAt)) + (d.joinedVia === "link" ? " by link" : "")}</span></td>
+      // On its own line, so the machine column stays narrow enough for the row's action at 1440 wide.
+      const lost = d.coverage && d.coverage.dropped ? `<span class="sub"><b title="${esc(d.coverage.reasons.map((r) => r.count + " × " + r.label).join("; "))}">${d.coverage.dropped} not counted</b></span>` : "";
+      return `<tr><td><b>${esc(d.label)}</b><span class="sub">${d.local ? "the hub itself" : "joined " + new Date(d.createdAt).toLocaleDateString([], { day: "numeric", month: "short" }) + " · " + hhmm(Date.parse(d.createdAt)) + (d.joinedVia === "link" ? " by link" : "")}</span>${lost}</td>
         <td>${esc(d.person || "—")}</td>
         <td><span class="status ${d.status}"><i></i>${esc(statusText(d, now))}</span></td>
         <td class="num r">${fmt(a.tokens.total)}</td><td>${shareBar(a.shareOfWhole)}</td>
