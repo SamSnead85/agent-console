@@ -200,6 +200,7 @@ test("two machines join by link, report, roll up by person, and nothing private 
   assert.match(again.err, /not valid/u);
 
   const view = await consoleView(hub);
+  assert.deepEqual(view.alerts, [], 'the network console exposes no raw local alert fields');
   assert.equal(view.devices.length, 2);
   for (const d of view.devices) {
     assert.equal(d.status, "reporting", d.label + " is not reporting");

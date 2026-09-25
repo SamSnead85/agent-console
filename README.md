@@ -213,6 +213,25 @@ No transcript text, paths, names or credentials enter the core. The console
 uses this same subpath. See [the API contract](docs/ANALYSIS.md) for fields
 and unknown-value behavior.
 
+**Live alerts**: as new local Claude Code or Codex transcript lines arrive,
+Agent Console flags repeated identical tool calls, a response spending at least
+50,000 tokens and three times its session's recent median, and 500,000 tokens
+spent over five minutes without an observed successful tool result. A repeated
+call needs five matching tool-and-argument hashes. These are signals, not proof
+that work is stuck. The alert panel covers this machine; alerts remain local
+and expire from the panel after an hour. `--demo` includes synthetic examples.
+Use `--alert-repeat`, `--alert-spike-factor`, and `--alert-stall-minutes` to
+change the thresholds. Add `--desktop-alerts` to opt in to native macOS,
+Linux, or Windows notifications; they name the signal but never include tool
+arguments. The existing collector tail checks for new lines every two seconds,
+and the UI polls every two seconds. The alerts use the collector's counted
+token deltas and salted session identities, including distinct subagents; they
+do not rescan transcripts or recompute Codex usage. In a synthetic five-call
+append through the local collector on this machine, the alert appeared after
+2,043 ms; the next UI poll can add up to two seconds. That is an observation,
+not a latency guarantee.
+The pure detection rules are exported from the shared analysis subpath.
+
 **Machines** and **Team**: every machine and every person: tokens, share of the
 total, cache read and write shares, model split and cost, for 24 hours or
 7 days; every join link, who used it and when. Two machines with the same

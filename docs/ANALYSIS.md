@@ -30,3 +30,16 @@ readings and price metadata.
 
 These are signals from counts, not proof of a changed prefix or a complete
 accounting of all request costs. The caller decides how to render them.
+
+## `emptyAlertState()` and `analyzeAlertEvent(state, event, options?)`
+
+`analyzeAlertEvent` is a pure reducer. Pass the previous state and a sanitized
+event `{ kind, sessionHash, at, sourceAt, callHash?, tokens? }`. Session and
+call identifiers must be salted hashes made outside the core. Kinds are
+`call`, `usage`, and `success`. It returns a new `state` and count-only
+`signals` with `loop`, `spike`, or `stall` kinds. Defaults are five identical
+calls, three times the recent session median for a response of at least 50,000
+tokens, and 500,000 tokens spent for five minutes without an observed tool
+success. These are configurable via `repeat`, `spikeFactor`, and
+`stallMinutes`. A tool failure is not a success event. The caller owns log
+tailing, hashing, notifications, and retention.
