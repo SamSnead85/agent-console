@@ -3,7 +3,8 @@
  * Start a built executable the way a person would, on the machine it was built
  * for, with a Node.js-free PATH, and check what npm run smoke:pack checks of
  * the package: it prints its version, starts in demo mode, serves the console,
- * signs a browser in and serves the join page. Also: it unpacks into its cache
+ * signs a browser in and serves the join page, and a reporter it starts in
+ * the background (join --background) runs until stop. Also: it unpacks into its cache
  * once, repairs a file changed there, and names itself (not node) in the
  * commands it prints.
  *
@@ -90,8 +91,64 @@ try {
     child.kill("SIGTERM");
     await closed;
   }
+
+  // Background reporting, from the executable alone: a console on this
+  // machine makes an invitation, the executable joins it with --background,
+  // and the reporter it starts again from itself must be running (it holds
+  // the reporter lock) before `join` returns. Then `stop` ends it. Nothing is
+  // read from the runner's home: the reporter reads an empty folder.
+  const hubState = path.join(scratch, "hub");
+  const reporterState = path.join(scratch, "reporter");
+  const reporterHome = path.join(scratch, "reporter-home");
+  fs.mkdirSync(reporterHome);
+  const hub = spawn(exe, ["--json", "--port", "0", "--no-local", "--state-dir", hubState], { env, cwd: scratch, stdio: ["ignore", "pipe", "pipe"] });
+  const hubClosed = once(hub, "close");
+  let hubErrors = "";
+  hub.stderr.on("data", (chunk) => { hubErrors += chunk; });
+  let background = null;
+  try {
+    const meta = await new Promise((resolve, reject) => {
+      let output = "";
+      const timer = setTimeout(() => reject(new Error("console startup timed out\n" + hubErrors)), 30_000);
+      const finish = (error, value) => { clearTimeout(timer); error ? reject(error) : resolve(value); };
+      hub.once("error", (error) => finish(error));
+      hub.once("exit", (code) => finish(new Error(`console exited early: ${code}\n${hubErrors}`)));
+      hub.stdout.on("data", (chunk) => {
+        output += chunk.toString();
+        if (!output.includes("\n")) return;
+        try { finish(null, JSON.parse(output.split("\n")[0]).dashboard); } catch (error) { finish(error); }
+      });
+    });
+    const timeout = () => AbortSignal.timeout(10_000);
+    const login = await fetch(meta.signIn, { redirect: "manual", signal: timeout() });
+    assert.equal(login.status, 303);
+    const cookie = login.headers.get("set-cookie").split(";")[0];
+    const invited = await fetch(meta.url + "/api/invitations", {
+      method: "POST", signal: timeout(),
+      headers: { "X-Agent-Console": "1", cookie, "content-type": "application/json" },
+      body: JSON.stringify({ person: "Platform engineer", machine: "Build box", minutes: 10 }),
+    });
+    assert.equal(invited.status, 200);
+    const { link } = await invited.json();
+    const joined = runExe(["join", link, "--background", "--json", "--home", reporterHome, "--state-dir", reporterState]);
+    let log = "";
+    try { log = fs.readFileSync(path.join(reporterState, "reporter.log"), "utf8"); } catch { /* none */ }
+    assert.equal(joined.status, 0, `join --background failed\n${joined.stdout}${joined.stderr}\nreporter.log:\n${log}`);
+    background = joined.stdout.trim().split("\n").map((line) => JSON.parse(line)).find((event) => event.event === "background");
+    assert.ok(background && Number.isInteger(background.pid) && background.pid > 0, `no background event:\n${joined.stdout}`);
+    const stopped = runExe(["stop", "--json", "--state-dir", reporterState]);
+    assert.equal(stopped.status, 0, stopped.stdout + stopped.stderr);
+    const stop = JSON.parse(stopped.stdout.trim().split("\n").pop());
+    assert.equal(stop.pid, background.pid, "stop found the background reporter");
+    assert.equal(stop.stopped, true);
+    background = null;
+  } finally {
+    if (background) try { process.kill(background.pid); } catch { /* already gone */ }
+    hub.kill("SIGTERM");
+    await hubClosed;
+  }
   const size = (fs.statSync(exe).size / 1048576).toFixed(1);
-  process.stdout.write(`${path.basename(exe)} (${size} MB): version, unpack, repair, own name in commands, demo console, sign-in, join page: all fine\n`);
+  process.stdout.write(`${path.basename(exe)} (${size} MB): version, unpack, repair, own name in commands, demo console, sign-in, join page, background reporter: all fine\n`);
 } finally {
   fs.rmSync(scratch, { recursive: true, force: true });
 }
