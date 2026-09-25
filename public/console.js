@@ -138,8 +138,8 @@
     if (segs[0] && el.scrollWidth > el.clientWidth + 1) segs[0].hidden = true;
   }
   window.addEventListener("resize", () => { for (const el of fitted) fitOne(el); });
-  /* A caption that names its window: the window drops where the frame is tight (.win), the head stays. */
-  const capWin = (id, head, win) => { const el = $(id); if (el) el.innerHTML = `${esc(head)}<span class="win"> · ${esc(win)}</span>`; };
+  /* A caption that names its window in its shortest form ("30 d"; the pressed period button says the words): the window drops where the frame is tight (.win), the head stays. */
+  const capWin = (id, head, win) => { const el = $(id); if (el) el.innerHTML = `${esc(head)}<span class="win"> · ${esc(String(win).replace(/ days$/u, " d"))}</span>`; };
   /* A money figure that is a floor says so with the number: "+" for records the hub priced only in part, and the count it could
      not count at all on hover; the word "partial" where the cell has room (tables), the mark alone where it does not (band rows). */
   function costMark(c, dropped = 0, word = true) {
