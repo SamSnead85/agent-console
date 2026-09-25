@@ -29,7 +29,7 @@ import { createStore } from "./lib/hub/store.js";
 import { createNames, startLocalCollection } from "./lib/hub/local.js";
 import { startDemo } from "./lib/hub/demo.js";
 import { createAlerts, demoAlerts } from "./lib/hub/alerts.js";
-import { createConsoleHandler, createReportingHandler, hubAddresses, joinAssetsPresent } from "./lib/hub/routes.js";
+import { createConsoleHandler, createReportingHandler, hubAddresses, joinAssetsPresent, isCgnatAddress } from "./lib/hub/routes.js";
 import { choosePort, chooseFreePort } from "./lib/hub/port.js";
 import { createAdmin, readAdminKey, requestSignIn } from "./lib/hub/admin.js";
 import { hubCertificate } from "./lib/hub/tls.js";
@@ -235,6 +235,8 @@ if (config.json) {
       demo: config.demo,
       local: Boolean(local),
       stateDir: config.stateDir,
+      // A demonstration's key lives in memory, so its scrape token is shown here; a real one's by metrics-token.
+      ...(config.demo && config.interop ? { metricsToken: admin.demoScrapeToken() } : {}),
     },
   }) + "\n");
 } else {
@@ -254,8 +256,19 @@ if (config.json) {
     if (reportChoice.movedFrom && registry.list().some((d) => !d.local && !d.revokedAt)) {
       lines.push("  port " + reportChoice.movedFrom + " was in use: machines that joined earlier report there, and reach this console again once it runs on it");
     }
+    const cgnat = reach.urls.filter((u) => isCgnatAddress(new URL(u).hostname));
+    if (cgnat.length && !config.allowCgnat && !config.allowPublic) {
+      lines.push("  " + cgnat.map((u) => new URL(u).hostname).join(", ") + " is in 100.64.0.0/10 (Tailscale or carrier-grade NAT): machines",
+        "  there are refused unless you restart with --allow-cgnat");
+    }
   } else if (!config.demo) {
     lines.push("  this machine only — to connect other machines, restart with --listen 0.0.0.0");
+  }
+  if (config.interop) {
+    lines.push(config.demo
+      ? "  /metrics scrape token for this demo (Authorization: Bearer …):  " + admin.demoScrapeToken()
+      : "  /metrics and telemetry ingest take a scrape token; print it with:  " + COMMAND + " metrics-token"
+        + (config.stateDir === path.join(config.home, ".agent-console", "hub") ? "" : " --state-dir \"" + config.stateDir + "\""));
   }
   lines.push("", "  Sign in (the link works once):  " + signIn(), "  Ctrl+C stops the console.", "");
   process.stdout.write(lines.join("\n") + "\n");

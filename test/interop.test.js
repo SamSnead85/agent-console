@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
+import crypto from 'node:crypto';
+import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { summarizeInterop, formatInteropMetrics } from '../lib/analysis/index.js';
 import { parseOtlpMetrics, parseGatewayMetrics, createInteropStore } from '../lib/interop/ingest.js';
+import { readAdminKey, scrapeToken } from '../lib/hub/admin.js';
 
 const bin = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'bin', 'agent-console.mjs');
 const time = () => String(BigInt(Date.now()) * 1_000_000n);
@@ -71,19 +73,18 @@ test('the interop store keeps sources apart and holds only projected fields', ()
   assert.equal(snapshot.litellm.available, false);
 });
 
-// The scrape token is pending: until it exists, /metrics and the telemetry
-// ingest refuse every request, and the console's own key is never accepted
-// as a credential on them.
-test('with --interop, /metrics and the telemetry ingest refuse every request until a scrape token exists', async (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-console-interop-'));
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+// The scrape token: /metrics and the telemetry ingest take a bearer token
+// derived from the console's key, shown by `metrics-token`. Nothing else gets
+// in: not the sign-in cookie, not a wrong token, not the console's key itself.
+// A new key makes a new token, and the old one stops working.
+function startInteropHub(t, root) {
   const child = spawn(process.execPath, [bin, '--no-local', '--interop', '--json', '--port', '0', '--home', root,
     '--state-dir', path.join(root, 'state')], { stdio: ['ignore', 'pipe', 'pipe'] });
   t.after(() => child.kill('SIGKILL'));
   let output = '';
   child.stdout.on('data', (chunk) => { output += chunk; });
   child.stderr.on('data', (chunk) => { output += chunk; });
-  const meta = await new Promise((resolve, reject) => {
+  const ready = new Promise((resolve, reject) => {
     const timer = setInterval(() => {
       if (!output.includes('\n')) return;
       clearInterval(timer);
@@ -92,28 +93,101 @@ test('with --interop, /metrics and the telemetry ingest refuse every request unt
     const deadline = setTimeout(() => { clearInterval(timer); reject(new Error(output || 'startup timeout')); }, 10_000);
     child.once('exit', (code) => { clearTimeout(deadline); clearInterval(timer); reject(new Error(`exited ${code}: ${output}`)); });
   });
+  return { child, ready };
+}
+
+function metricsToken(root, extra = []) {
+  const run = spawnSync(process.execPath, [bin, 'metrics-token', '--state-dir', path.join(root, 'state'), ...extra], { encoding: 'utf8' });
+  return run;
+}
+
+const gatewayBody = { kong: 'ai_llm_tokens_total{ai_model="claude-sonnet-5",token_type="prompt_tokens"} 90',
+  litellm: 'litellm_input_tokens_metric_total{model="claude-sonnet-5"} 27' };
+
+async function interopAnswers(base, auth, cookie) {
+  const scrape = await fetch(base + '/metrics', { headers: { ...auth, ...(cookie ? { cookie } : {}) } });
+  const scraped = await scrape.text();
+  const otel = await fetch(base + '/v1/metrics', { method: 'POST', headers: {
+    'content-type': 'application/json', 'x-agent-console-interop': '1', ...auth,
+  }, body: JSON.stringify(otlp([point('input', 13)])) });
+  const gateways = [];
+  for (const gateway of ['kong', 'litellm']) {
+    gateways.push((await fetch(base + '/ingest/gateway/' + gateway, { method: 'POST', headers: {
+      'content-type': 'text/plain', 'x-agent-console-interop': '1', ...auth,
+    }, body: gatewayBody[gateway] })).status);
+  }
+  return { scrape: scrape.status, scraped, otel: otel.status, gateways };
+}
+
+test('with --interop, /metrics and the telemetry ingest take only the scrape token that metrics-token prints', async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-console-interop-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const first = startInteropHub(t, root);
+  const meta = await first.ready;
   const base = meta.url;
   const key = fs.readFileSync(path.join(root, 'state', 'admin.key'), 'utf8').trim();
   const login = await fetch(meta.signIn, { redirect: 'manual' });
   const cookie = login.headers.get('set-cookie').split(';')[0];
-  for (const authorization of [undefined, 'Bearer incorrect', `Bearer ${key}`]) {
+
+  // The CLI prints the token: an HMAC under the key, never the key.
+  const printed = metricsToken(root);
+  assert.equal(printed.status, 0, printed.stderr);
+  const token = scrapeToken(readAdminKey(path.join(root, 'state')));
+  assert.equal(token, crypto.createHmac('sha256', Buffer.from(key, 'base64url')).update('agent-console/metrics/v1').digest('base64url'));
+  assert.ok(printed.stdout.includes(token));
+  assert.ok(!printed.stdout.includes(key), 'metrics-token printed the console key');
+  const json = metricsToken(root, ['--json']);
+  assert.equal(JSON.parse(json.stdout).token, token);
+  assert.notEqual(token, key);
+
+  // Refused: no credential, the cookie alone, a wrong token, a wrong scheme, the console key itself.
+  for (const authorization of [undefined, 'Bearer incorrect', `Bearer ${'A'.repeat(43)}`, `Basic ${token}`, `Bearer ${token}x`, `Bearer ${key}`]) {
     const auth = authorization ? { authorization } : {};
-    const scrape = await fetch(base + '/metrics', { headers: { ...auth, cookie } });
-    assert.equal(scrape.status, 401, `/metrics with ${authorization ? 'a bearer' : 'no'} credential`);
-    assert.ok(!(await scrape.text()).includes('agent_console_'));
-    const otel = await fetch(base + '/v1/metrics', { method: 'POST', headers: {
-      'content-type': 'application/json', 'x-agent-console-interop': '1', ...auth,
-    }, body: JSON.stringify(otlp([point('input', 13)])) });
-    assert.equal(otel.status, 401);
-    for (const gateway of ['kong', 'litellm']) {
-      const posted = await fetch(base + '/ingest/gateway/' + gateway, { method: 'POST', headers: {
-        'content-type': 'text/plain', 'x-agent-console-interop': '1', ...auth,
-      }, body: 'ai_llm_tokens_total{ai_model="claude-sonnet-5",token_type="prompt_tokens"} 90' });
-      assert.equal(posted.status, 401);
-    }
+    const answers = await interopAnswers(base, auth, cookie);
+    assert.equal(answers.scrape, 401, `/metrics with ${authorization || 'no credential'}`);
+    assert.ok(!answers.scraped.includes('agent_console_'));
+    assert.equal(answers.otel, 401);
+    assert.deepEqual(answers.gateways, [401, 401]);
   }
-  const data = await (await fetch(base + '/api/console', { headers: { 'x-agent-console': '1', cookie } })).json();
+  let data = await (await fetch(base + '/api/console', { headers: { 'x-agent-console': '1', cookie } })).json();
   assert.equal(data.interop.otel.available, false, 'nothing was accepted');
-  const report = await fetch(`http://127.0.0.1:${meta.reportPort}/metrics`);
+
+  // Accepted with the token; the local-telemetry header is still required for ingest.
+  const auth = { authorization: `Bearer ${token}` };
+  const noHeader = await fetch(base + '/v1/metrics', { method: 'POST', headers: { 'content-type': 'application/json', ...auth },
+    body: JSON.stringify(otlp([point('input', 13)])) });
+  assert.equal(noHeader.status, 403);
+  const answers = await interopAnswers(base, auth);
+  assert.equal(answers.otel, 200);
+  assert.deepEqual(answers.gateways, [200, 200]);
+  assert.equal(answers.scrape, 200);
+  const again = await (await fetch(base + '/metrics', { headers: auth })).text();
+  assert.match(again, /agent_console_interop_tokens\{source="otel",kind="input"\} 13/u);
+  assert.match(again, /agent_console_interop_tokens\{source="kong",kind="input"\} 90/u);
+  data = await (await fetch(base + '/api/console', { headers: { 'x-agent-console': '1', cookie } })).json();
+  assert.equal(data.interop.otel.available, true);
+
+  // Only on the console's own loopback listener, never the reporting port.
+  const report = await fetch(`http://127.0.0.1:${meta.reportPort}/metrics`, { headers: auth });
   assert.equal(report.status, 404);
+
+  // A new key: the old token stops working and metrics-token prints the new one.
+  first.child.kill('SIGKILL');
+  await new Promise((resolve) => first.child.once('exit', resolve));
+  fs.writeFileSync(path.join(root, 'state', 'admin.key'), crypto.randomBytes(32).toString('base64url') + '\n', { mode: 0o600 });
+  const second = await startInteropHub(t, root).ready;
+  assert.equal((await fetch(second.url + '/metrics', { headers: auth })).status, 401, 'the old token outlived its key');
+  const rotated = JSON.parse(metricsToken(root, ['--json']).stdout).token;
+  assert.notEqual(rotated, token);
+  assert.equal((await fetch(second.url + '/metrics', { headers: { authorization: `Bearer ${rotated}` } })).status, 200);
+});
+
+test('metrics-token needs a console key and says so; a demonstration prints its token at start', async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-console-interop-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const none = metricsToken(root);
+  assert.equal(none.status, 1);
+  assert.match(none.stderr, /no console key/u);
+  const demo = spawnSync(process.execPath, [bin, 'metrics-token', '--demo'], { encoding: 'utf8' });
+  assert.equal(demo.status, 2);
 });

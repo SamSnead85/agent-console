@@ -49,10 +49,11 @@ token-checked reporting. Nothing of the console is on it, whatever `--listen`
 says.
 
 When `--interop` is enabled, its loopback `/metrics` and telemetry ingest
-paths refuse every request (`401`) until a dedicated scrape token, derived
-from the console key, is available; the console key itself is never accepted
-on them. Ingest will also require `X-Agent-Console-Interop: 1` and rejects browser
-`Origin` headers. These paths are disabled without `--interop` and never
+paths take only a scrape token: HMAC-SHA256 of a fixed label under the console
+key, printed by `metrics-token` to the user who can read the key, compared in
+constant time, and replaced whenever the key is. The console key itself and
+the sign-in cookie are refused there (`401`). Ingest also requires
+`X-Agent-Console-Interop: 1` and rejects browser `Origin` headers. These paths are disabled without `--interop` and never
 appear on the reporting listener.
 
 **Signing in.** The console makes a random key on first start (`admin.key` in
@@ -93,20 +94,26 @@ network, so the page is not what to trust. **Add a machine** leads with the
 command itself: it is built on the console's own computer, and its owner sends
 it over whatever channel they already trust to carry the link. On a network you
 do not trust, send the command rather than the link. Whoever joins should run
-the command they were sent, and check that it starts with
-`npx --yes https://github.com/SamSnead85/agent-console/releases/download/` and
-ends with the link in single quotes, with nothing after it.
+the command they were sent, and check that it starts with `node -e`, names
+`https://github.com/SamSnead85/agent-console/releases/download/`, and ends
+with the link in single quotes, with nothing after it.
 
 **No code from the console.** The console never serves Agent Console itself.
 Every command it prints installs the package from its GitHub release over
-HTTPS. From 0.2.1 on, CI builds each release's package, attaches its SHA-256
+HTTPS, and starts with a short check for `node -e` that downloads the file
+and the release's `SHA256SUMS` and runs nothing unless the file's SHA-256
+matches. The check holds no quote, backslash or dollar sign, so it pastes
+literally into sh, bash, zsh, fish and PowerShell. Release files are uploaded
+without replacing one that exists. From 0.2.1 on, CI builds each release's package, attaches its SHA-256
 checksum and records a signed build provenance attestation for it (see the
 README's "Checking a download").
 
 **Joining.** A join link carries a 128-bit code; the eight-character code for
 typing by hand exists too. Either works once and lives at most an hour. Join
-attempts are counted before they are read, ten per address and sixty in total
-per ten minutes. The console stores only SHA-256 verifiers of codes and device
+attempts are counted before they are read, ten per address (an IPv6 address by
+its /64) and sixty in total per ten minutes; an address over its own limit is
+refused without counting toward the total, so one device cannot hold off
+everyone else's joins. The console stores only SHA-256 verifiers of codes and device
 tokens, in files with mode 600.
 
 **Reporting.** Each machine has its own bearer token; **Remove** revokes it at
@@ -114,8 +121,10 @@ once. Every record is checked for its exact shape before it is stored: exact
 keys, ids and hashes of exactly 64 hex characters, plain model ids and labels,
 minute timestamps, non-negative counts. Each machine may send 600 batches a
 minute and 250,000 records a day. Callers outside private networks (RFC 1918,
-CGNAT ranges such as Tailscale, link-local, IPv6 unique-local) are refused
-unless the console was started with `--allow-public`.
+link-local, IPv6 unique-local) are refused unless the console was started with
+`--allow-public`. Carrier-grade NAT (100.64.0.0/10, which Tailscale also
+uses) is shared with other customers of the same provider, so it counts as
+private only with `--allow-cgnat`.
 
 **Storage.** Usage is kept one file per day for the retention period (8 days by
 default), read back line by line with over-long or malformed lines skipped, and

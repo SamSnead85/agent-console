@@ -8,10 +8,25 @@
 | `/v1/metrics` | POST | Claude Code OTLP/HTTP JSON metric export |
 | `/ingest/gateway/kong`, `/ingest/gateway/litellm` | POST | Prometheus text from the named gateway |
 
-**Not yet available: all three paths answer `401` to every request until a
-dedicated scrape token ships.** That token will be derived from the console's
-key; the console's key itself is never accepted on these paths, because it is
-never sent over the wire. Once the token is available, the POST paths will also require
+**All three paths take a scrape token** as `Authorization: Bearer <token>`
+and answer `401` to anything else, including the console's sign-in cookie.
+Print the token on the console's own computer, as the user that runs it,
+with the command you start the console with followed by `metrics-token`
+(add the same `--state-dir` if the console uses one; `--json` prints JSON).
+From a download:
+
+```sh
+node bin/agent-console.mjs metrics-token
+```
+
+The token is HMAC-SHA256 of the fixed label `agent-console/metrics/v1` under
+the console's key (`admin.key` in its state directory). It is not the key and
+does not reveal it; the key itself is never accepted on these paths. It is
+compared in constant time. A new key (delete `admin.key` and start the console
+again) makes a new token, and the old one stops working. A `--demo` console
+keeps its key in memory, so it prints its token when it starts with
+`--interop`, and its `/metrics` answer starts with a `# DEMO` line and an
+`agent_console_demo 1` gauge. The POST paths also require
 `X-Agent-Console-Interop: 1`, reject browser `Origin` headers, and accept at
 most 256 KB per request. All paths are bound to
 the console's existing `127.0.0.1` listener. Nothing is installed, sent, or
@@ -30,8 +45,8 @@ export OTEL_METRICS_EXPORTER=otlp
 export OTEL_LOGS_EXPORTER=none
 export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/json
 export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://127.0.0.1:6787/v1/metrics
-# The scrape token header is added here once it is available.
-export OTEL_EXPORTER_OTLP_METRICS_HEADERS='X-Agent-Console-Interop=1'
+# The token from metrics-token; the space after Bearer is written %20.
+export OTEL_EXPORTER_OTLP_METRICS_HEADERS='X-Agent-Console-Interop=1,Authorization=Bearer%20<token>'
 claude
 ```
 
@@ -43,8 +58,8 @@ output, cacheRead or cacheCreation). OTLP protobuf and gRPC are not supported
 by this dependency-free local adapter; select `http/json`. See
 [Claude Code Monitoring](https://code.claude.com/docs/en/monitoring-usage) and
 [the OTLP/HTTP specification](https://opentelemetry.io/docs/specs/otlp/),
-checked 24 September 2026. Until the scrape token is available the endpoint answers
-`401` and accepts nothing.
+checked 24 September 2026. Without the scrape token the endpoint answers `401`
+and accepts nothing.
 
 The adapter ignores user, repository, session, prompt and tool attributes,
 keeps only count, model ID, timestamp and a salted series hash in bounded
@@ -58,8 +73,8 @@ The gateway endpoints accept Prometheus exposition lines for the following
 documented counter families; comments and unrelated metrics are ignored.
 The local adapter discards all labels except `model` or `ai_model`, the token
 type, and a salted hash of the series for deduplication. Send the text with
-`Content-Type: text/plain`, `X-Agent-Console-Interop: 1`, and, once available,
-the scrape token.
+`Content-Type: text/plain`, `X-Agent-Console-Interop: 1`, and
+`Authorization: Bearer <token>`.
 Each endpoint
 accepts up to 1,000 matching series per request.
 
@@ -81,9 +96,16 @@ local adapter.
 
 ## Prometheus and Grafana
 
-Once the scrape token is available, Prometheus will scrape
-`http://127.0.0.1:6787/metrics` from the same machine with that token as its
-`authorization` credential; until then the endpoint answers `401`.
+Prometheus scrapes `http://127.0.0.1:6787/metrics` from the same machine
+with the scrape token as its bearer credential, kept in a file only its user
+can read:
+
+```yaml
+scrape_configs:
+  - job_name: agent-console
+    static_configs: [{ targets: ["127.0.0.1:6787"] }]
+    authorization: { type: Bearer, credentials_file: /path/to/agent-console-scrape-token }
+```
 Only aggregate token counts and the fixed `kind`/`source` labels leave the
 console in that response. The endpoint is deliberately not on the reporting
 port and is off unless `--interop` is passed. Import

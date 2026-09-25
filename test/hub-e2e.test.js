@@ -23,6 +23,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { CANARIES, writeHome } from "./fixtures/transcripts.js";
+import { readAdminKey, scrapeToken } from "../lib/hub/admin.js";
 
 const BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "bin", "agent-console.mjs");
 const INTENT = { "x-agent-console": "1" };
@@ -112,6 +113,19 @@ const wholeAnswer = (a) => [a.status, JSON.stringify(a.headers), a.body].join("\
  */
 const CONSOLE_READS = ["/api/console", "/api/projects?period=24h", "/api/projects?period=3d", "/api/hello"];
 const REPORTING_READS = ["/join", "/join.js", "/join.css", "/house.css", "/brand/mark.svg", "/favicon.svg", "/api/join/info"];
+/** With --interop, read with the scrape token, never the cookie. */
+const METRICS_READS = ["/metrics"];
+
+async function metricsReads(hub, stateDir) {
+  let text = "";
+  const authorization = "Bearer " + scrapeToken(readAdminKey(stateDir));
+  for (const url of METRICS_READS) {
+    const r = await fetch(hub.url + url, { headers: { authorization } });
+    assert.equal(r.status, 200, url);
+    text += `${url}\n${JSON.stringify([...r.headers])}\n${await r.text()}\n`;
+  }
+  return text;
+}
 
 async function consoleReads(hub) {
   let text = "";
@@ -183,7 +197,7 @@ test("two machines join by link, report, roll up by person, and nothing private 
   const a = await invite(hub, "You", "Laptop");
   const b = await invite(hub, "Platform engineer", "Workstation");
   // The command installs from the GitHub release, never from the hub.
-  assert.match(a.command, /^npx --yes https:\/\/github\.com\/SamSnead85\/agent-console\/releases\/download\/v\d+\.\d+\.\d+\/lockedinlabs-agent-console-\d+\.\d+\.\d+\.tgz join 'http:\/\/127\.0\.0\.1:\d+\/join#[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}'$/u);
+  assert.match(a.command, /^node -e '[^']+' https:\/\/github\.com\/SamSnead85\/agent-console\/releases\/download\/v\d+\.\d+\.\d+\/lockedinlabs-agent-console-\d+\.\d+\.\d+\.tgz join 'http:\/\/127\.0\.0\.1:\d+\/join#[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}'$/u);
   const via = (inv) => through(inv.link, wire.port);
 
   const joinA = await run(["join", via(a), "--once", "--json", "--home", laptop, "--state-dir", path.join(root, "laptop-state")]);
@@ -383,7 +397,7 @@ test("the hub's own machine: nothing of it leaves through the reporting port", a
     claude: [{ sessionId: "efefefef-0000-4000-8000-000000000001", cwd: "/home/dev/other", start: now - 5 * 60_000, turns: 2 }],
   });
   const hubState = path.join(root, "hub");
-  const started = startHub(["--state-dir", hubState, "--home", hubHome]);
+  const started = startHub(["--state-dir", hubState, "--home", hubHome, "--interop"]);
   t.after(() => started.child.kill("SIGKILL"));
   const hub = await started.ready;
   let view;
@@ -403,6 +417,10 @@ test("the hub's own machine: nothing of it leaves through the reporting port", a
   // Everything the reporting port gave another machine: the join exchange, the
   // receipts, the join page and its assets, and the join info.
   const given = wire.answers.map(wholeAnswer).join("\n") + await reportingReads(hub);
+  // What a local scraper is given: counts only, though this hub read the canaries itself.
+  const scraped = await metricsReads(hub, hubState);
+  assert.match(scraped, /agent_console_transcript_tokens_last_24h\{kind="input"\} [1-9]/u);
+  for (const canary of CANARIES) assert.ok(!scraped.includes(canary), `"${canary}" reached /metrics`);
   const kept = readTree(path.join(root, "reporter-state")) + joined.out + joined.err;
   assert.ok(wire.answers.some((a) => a.url === "/api/join" && a.status === 200));
   for (const canary of CANARIES) {
@@ -416,11 +434,9 @@ test("every GET route the hub serves is read by the privacy checks above", () =>
   const routes = new Set();
   for (const m of source.matchAll(/url === (["'])(\/[^"']+)\1 && req\.method === (["'])GET\3/gu)) routes.add(m[2]);
   for (const m of source.matchAll(/\[(["'])(\/[^"']+)\1, (["'])[^"']+\3\]/gu)) routes.add(m[2]);   // the join page's assets
-  const read = new Set([...CONSOLE_READS, ...REPORTING_READS].map((u) => u.split("?")[0]));
+  const read = new Set([...CONSOLE_READS, ...REPORTING_READS, ...METRICS_READS].map((u) => u.split("?")[0]));
   // /login answers a single-use ticket with a redirect or a fixed refusal: no data.
-  // /metrics refuses every request until its scrape token exists (test/interop.test.js
-  // proves it); when the token lands, /metrics joins the canary reads above.
-  const unchecked = [...routes].filter((r) => !read.has(r) && r !== "/login" && r !== "/metrics");
+  const unchecked = [...routes].filter((r) => !read.has(r) && r !== "/login");
   assert.ok(routes.has("/api/console") && routes.has("/join"), "the route pattern no longer matches lib/hub/routes.js");
   assert.deepEqual(unchecked, [], "add these to CONSOLE_READS or REPORTING_READS so the canaries cover them");
 });
