@@ -266,3 +266,19 @@ test("A5: the chart for each minute period is cut from the same minutes as its h
   }
   assert.equal(view.windows["24h"].tokens.total, view.day.tokens.total);
 });
+
+test("a session's context readings stay in time order and keep the newest 128, whatever order they arrive in", () => {
+  const now = Date.UTC(2026, 8, 22, 12);
+  const store = createStore({ dir: null, retentionMs: 8 * DAY, prices: PRICES, now: () => now });
+  // 150 readings, one a minute; every seventh arrives late, after its successor.
+  const minutes = Array.from({ length: 150 }, (_, i) => i);
+  for (let i = 0; i + 1 < minutes.length; i += 7) [minutes[i], minutes[i + 1]] = [minutes[i + 1], minutes[i]];
+  for (const m of minutes) {
+    store.ingest("dev_a", [record({ id: "ctx" + m, device: "dev_a", session: "ctx", at: now - (150 - m) * 60_000, fresh: 1000 + m })]);
+  }
+  const samples = store.sessions.get(h("sctx")).contextSamples;
+  assert.equal(samples.length, 128);
+  for (let i = 1; i < samples.length; i += 1) assert.ok(samples[i - 1].at <= samples[i].at, "in time order");
+  assert.equal(samples.at(-1).at, Math.floor((now - 60_000) / 60_000) * 60_000, "the newest is kept");
+  assert.equal(samples[0].at, Math.floor((now - 128 * 60_000) / 60_000) * 60_000, "the oldest 22 are gone");
+});
