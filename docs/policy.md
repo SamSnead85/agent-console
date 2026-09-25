@@ -67,11 +67,13 @@ an API-enforced cache TTL.
 
 ## Native controls in `policy apply`
 
-Run `agent-console policy diff` from the repository root to preview each
-create or update. `agent-console policy apply` writes repo-scoped `.claude/agents/*.md`,
+Run `policy diff` from the repository root to preview each create or update
+(the full command is the release's `npx --yes <release link> policy diff`, or
+`node bin/agent-console.mjs policy diff` from a download; never a bare
+`agent-console`, which names an unrelated package). `policy apply` writes repo-scoped `.claude/agents/*.md`,
 `.claude/settings.json`, and a local command hook under `.claude/hooks/`.
-`agent-console policy remove` restores the exact prior settings and deletes
-only generated files. Use `--project <path>` to choose another repository or
+`policy remove` restores the exact prior settings and deletes only generated
+files, and the directories apply created once they are empty. Use `--project <path>` to choose another repository or
 `--org-policy <file>` with `diff` and `apply` to overlay organization rules.
 The first apply stores original bytes in a private backup under
 `~/.agent-console/policy/`; a changed generated file must be reviewed before
@@ -90,15 +92,29 @@ The compiler writes named role agents with pinned model and effort, a separate
 verified-code-edit role, and a named escalation role. A `PreToolUse` hook
 checks explicit `Agent` model overrides and action gates on shell and file
 tools; `PreModelSwitch` checks model allow-list and switches inside an active
-agent. The hook classifies commands locally after shell quote removal, per
-simple command, including environment prefixes, wrappers such as `command`,
-`env` and `sudo`, path-qualified binaries, command substitution, and the
-command string passed to `sh -c`, `bash -c` or `eval`. It catches force pushes
-with `--force`, `--force-with-lease`, `-f` or a `+refspec`, including after
-git options such as `git -C <path>`; reads of `.env*` (not `.example`,
-`.sample`, `.template` or `.dist` copies), `*.pem`, `*.key`, `id_*` private
-keys and credentials files; and outside deletes through `~`, `$HOME`,
-`%USERPROFILE%`, separate `rm -r -f` flags, and long options. Its local decision log contains only a timestamp,
+agent. The hook classifies commands locally after shell quote removal
+(including `$'…'` and `$"…"`), per simple command, including environment
+prefixes, wrappers such as `command`, `env`, `sudo` and `nice`, path-qualified
+binaries, command substitution, here-strings given to a shell, and the command
+string passed to `sh -c` or `bash -c` (after options such as `-o pipefail` or
+`+e`), `eval`, or PowerShell's `-Command` and `-EncodedCommand`. It catches
+force pushes with `--force`, `--force-with-lease`, `-f` or a `+refspec`,
+including after git options such as `git -C <path>`, through a git alias or
+push setting given with `-c`, and through a substituted `git`; a program that
+reads standard input from a pipe when it is a shell or interpreter (`sh`,
+`bash`, `dash`, `zsh`, `fish`, `node`, `python`, `pwsh`, `iex` and others),
+quoted or wrapped; secret files (`.env*`, not `.example`, `.sample`,
+`.template` or `.dist` copies, `*.pem`, `*.key`, `id_*` private keys and
+credentials files) handed to any program other than a short list that only
+names them (`ls`, `test`, `chmod`, `rm` and similar), a recursive `grep` over a
+folder that holds one, and `-c`/`-e` code that names one; and outside deletes
+through `~`, `~name`, `$HOME`, `%USERPROFILE%`, separate `rm -r -f` flags and
+long options, resolved against `cd`, `pushd` and `popd` earlier in the command
+and through symbolic links. The lists are best effort: a program that reads a
+file some other way is not seen. The hook runs the classifier on a worker
+thread with its own five-second budget, well inside Claude Code's hook
+timeout; past it, it answers as for an error (`hook_timeout`), asking even
+when `on_error` is `allow`. Its local decision log contains only a timestamp,
 rule name, and action. Set `AGENT_CONSOLE_HOME` if this log should live under a
 different private home. Hooks do not use the network.
 

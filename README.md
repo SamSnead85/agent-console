@@ -308,13 +308,21 @@ suite that checks them to the token, are in [docs/accounting.md](docs/accounting
 
 ## Project policy
 
-Add `agent-policy.yaml` at your repository root, then run
-`agent-console policy diff` to inspect the proposed Claude Code agents,
-settings and hooks. `agent-console policy apply` installs those project files
-with private backups; `agent-console policy remove` restores them. All three
-refuse a symlinked `.claude` path and never write your user-level Claude
-settings, and the installed hook asks or denies when it cannot classify a
-command. Nothing is
+Add `agent-policy.yaml` at your repository root, then, from that root:
+
+```sh
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy diff
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy apply
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy remove
+```
+
+`policy diff` shows the proposed Claude Code agents, settings and hooks;
+`policy apply` installs those project files with private backups; `policy
+remove` restores what was there before and deletes what apply created. From a
+download, use `node bin/agent-console.mjs policy …`; `policy --help` prints the
+usage. All three refuse a symlinked `.claude` path and never write your
+user-level Claude settings. The installed hook decides within five seconds,
+and asks or denies when it cannot classify a command in time. Nothing is
 installed by starting the dashboard. The optional policy covers model roles,
 effort, action gates, and budget thresholds; hard token and dollar budget
 enforcement is not available from the native launch hook. See
@@ -379,7 +387,8 @@ a restart, with no new link. `stop` stops a reporter running in the background
 and keeps the enrolment. `leave` stops any reporter, tells the console this
 computer has left, and deletes everything the enrolment left on this computer.
 Joining the same console again keeps this computer's entry and history, rather
-than adding a second machine with the same name. From a download, use `node bin/agent-console.mjs` in place
+than adding a second machine with the same name; after `leave`, that holds when
+the new link names the same person and machine. From a download, use `node bin/agent-console.mjs` in place
 of `npx --yes <release link>`. Always use the full command: the short name on
 its own would fetch a different, unrelated package from the public registry.
 
