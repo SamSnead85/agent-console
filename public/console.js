@@ -243,7 +243,11 @@
           row = document.createElement("div");
           row.className = "lane";
           row.innerHTML = `<span class="st"><i></i><span></span></span><span class="pr"><b></b><em></em></span><span class="md"></span>
-            <span class="sp" aria-hidden="true">${"<i></i>".repeat(20)}</span><span class="fm r"></span><span class="ag r"></span><span class="dv"></span>`;
+            <span class="sp" aria-hidden="true">${"<i></i>".repeat(20)}</span><span class="fm r"></span><span class="ag r"></span><span class="cx"><button type="button" aria-label="Session context details"></button></span><span class="dv"></span>`;
+          row.querySelector(".cx button").addEventListener("click", () => {
+            const current = D?.lanes.find((item) => item.key === l.key);
+            if (current) showContext(current);
+          });
           laneRows.set(l.key, row);
         }
         // Every lane takes its new reading at its own moment inside the poll
@@ -311,12 +315,35 @@
     const ag = row.querySelector(".ag");
     ag.textContent = l.agents.total ? `${l.agents.live}/${l.agents.total}` : "—";
     ag.title = l.agents.total ? `${l.agents.live} subagents worked in the last five minutes, of ${l.agents.total} today` : "No subagents";
+    const cx = row.querySelector(".cx");
+    cx.classList.toggle("bloated", l.context?.status === "bloated");
+    cx.querySelector("button").textContent = l.context?.latest === null || l.context?.latest === undefined
+      ? "—" : fmt(l.context.latest) + (l.context.status === "bloated" ? " ↑" : "");
+    cx.title = l.context?.latest === null ? "Context unavailable: input classes were not reported" : "Latest reported input tokens per API response. Open for history and cache signals.";
     const dv = row.querySelector(".dv");
     const who = l.device.person ? ` · ${esc(l.device.person)}` : "";
     dv.innerHTML = `<b>${esc(l.device.label)}</b>${who} · ` + (l.state === "catching-up" ? "catching up"
       : l.state === "silent" || l.state === "revoked"
       ? `silent since ${hhmm(l.device.lastContactAt || l.lastAt)}`
       : l.state === "live" ? "now" : ago(l.lastAt + 60_000, now));
+  }
+
+  function showContext(lane) {
+    const c = lane.context;
+    $("contextTitle").textContent = "Context · " + lane.project.name;
+    const samples = c?.samples || [];
+    const breaks = c?.breaks || [];
+    $("contextDetails").innerHTML = `<p>${c?.latest == null ? "No complete input reading is available." :
+      `Latest response carried <b>${fmt(c.latest)} input tokens</b>. ${c.growth == null ? "Growth needs two readings." :
+        `That is ${c.growth.toFixed(1)}× the first retained reading.`} ${c.status === "bloated" ? "This session is flagged for context weight." : ""}`}</p>` +
+      (samples.length ? `<p>Recent responses · input tokens</p><ol>${samples.map((s) => `<li>${hhmm(s.at)} · ${fmt(s.tokens)}</li>`).join("")}</ol>` : "") +
+      `<p>Cache signals · ${breaks.length ? breaks.length + " recent" : "none in retained readings"}</p>` +
+      (breaks.length ? `<ol>${breaks.map((b) => `<li>${hhmm(b.at)} · ${b.kind === "idle-gap" ?
+        `idle gap past cache lifetime (${b.gapMinutes} min)` : b.kind === "lifetime-unknown" ?
+          `cache lifetime unknown (${b.gapMinutes} min gap)` : "possible prefix rewrite"} · extra write cost ${b.estimatedExtraUsd == null ?
+          "unpriced" : b.estimatedExtraUsd > 0 && b.estimatedExtraUsd < 0.005 ? "&lt; $0.01 est." : money(b.estimatedExtraUsd) + " est."}</li>`).join("")}</ol>` : "") +
+      `<p>Signals are inferred from token counts and minute timestamps; they cannot prove the cause of a cache write. Extra cost compares observed writes with a hypothetical cache read at offline list prices (table v${esc(c?.priceTable?.version ?? "?")}, checked ${esc(c?.priceTable?.checkedOn ?? "unknown")}).</p>`;
+    $("contextDialog").showModal();
   }
 
   const vendorOf = (model) => /^claude-/.test(model) ? "anthropic" : /^(gpt-|codex-|o\d)/.test(model) ? "openai" : null;

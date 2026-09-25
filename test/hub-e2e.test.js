@@ -211,6 +211,16 @@ test("two machines join by link, report, roll up by person, and nothing private 
   assert.ok(view.day.shares.cacheRead > 0.5 && view.day.shares.cacheWrite > 0);
   assert.ok(view.day.models.some((m) => m.model === "gpt-5.6-sol") && view.day.models.some((m) => m.model === "claude-opus-5"));
   assert.equal(view.invitations.filter((i) => i.state === "joined").length, 2, "the console shows who joined");
+  for (const lane of view.lanes) {
+    assert.deepEqual(Object.keys(lane.context).sort(), ["breaks", "growth", "latest", "priceTable", "samples", "status"]);
+    for (const sample of lane.context.samples) {
+      assert.deepEqual(Object.keys(sample).sort(), ["at", "tokens"]);
+      assert.ok(Number.isFinite(sample.at) && Number.isSafeInteger(sample.tokens));
+    }
+    for (const signal of lane.context.breaks) {
+      assert.deepEqual(Object.keys(signal).sort(), ["at", "estimatedExtraUsd", "gapMinutes", "kind"]);
+    }
+  }
 
   // Privacy: nothing private in anything that crossed the wire, in anything
   // the hub stored, or in what the reporters keep on their own disks.

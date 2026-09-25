@@ -180,6 +180,39 @@ the day, with real Anthropic and OpenAI marks.
 model, its last hour of activity, tokens in the last five minutes, how many
 subagents it is running, and which machine it is on.
 
+**Context and cache health**: the Context column shows the latest complete
+input reading for an API response in each session. Open it to see the last 16
+readings, growth, and possible cache breaks. A session is flagged when a
+reading reaches 160,000 input tokens, or when it reaches 80,000 and doubles
+from the first retained reading. The hub keeps at most 128 recent readings per
+session. Streaming continuation rows are excluded, so some responses without
+a complete first reading cannot be shown. A gap past the previous write's
+known lifetime (five minutes or one hour), followed by a new cache write and
+falling cache reads, is marked an idle-gap signal. With an unknown lifetime,
+the drill-down says so; a large write within a known lifetime is marked a
+possible prefix rewrite. The logs do not prove the cause. Extra cost is an estimate of the
+observed cache write over a hypothetical cache read, using the offline price
+table version and check date shown in the drill-down. Unpriced estimates stay
+unknown. In `--demo`, the existing docs-site lane includes a synthetic break.
+
+### Shared analysis core
+
+The dependency-free analysis functions are available to other Node.js consumers
+through the versioned `@lockedinlabs/agent-console/analysis` subpath:
+
+```js
+import { ANALYSIS_VERSION, contextHealth } from '@lockedinlabs/agent-console/analysis';
+const health = contextHealth(samples, prices);
+```
+
+`ANALYSIS_VERSION` is 1. `contextHealth` accepts only plain usage data:
+`samples` contains timestamps, token counts and model IDs; `prices` contains
+offline model rates, table version and check date. It returns a plain object
+with context weight, growth, possible cache breaks and estimated extra cost.
+No transcript text, paths, names or credentials enter the core. The console
+uses this same subpath. See [the API contract](docs/ANALYSIS.md) for fields
+and unknown-value behavior.
+
 **Machines** and **Team**: every machine and every person: tokens, share of the
 total, cache read and write shares, model split and cost, for 24 hours or
 7 days; every join link, who used it and when. Two machines with the same

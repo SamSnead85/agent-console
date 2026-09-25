@@ -82,6 +82,23 @@ test("the hub's accounting reproduces every expected total for the window and bo
   }
 });
 
+test("context readings reconcile with the conformance suite's per-event input totals", () => {
+  const { store } = hub(undefined, deliveries);
+  const bySession = new Map();
+  for (const event of expected.events) {
+    const hash = expected.sessions[event.session].hash;
+    const input = event.usage.fresh + event.usage.cacheRead + event.usage.cacheWrite5m
+      + event.usage.cacheWrite1h + event.usage.cacheWriteUnknownTtl;
+    if (!bySession.has(hash)) bySession.set(hash, []);
+    bySession.get(hash).push(input);
+  }
+  assert.equal(bySession.size, store.sessions.size);
+  for (const [hash, inputs] of bySession) {
+    const readings = store.sessions.get(hash)?.contextSamples.map((s) => s.tokens);
+    assert.deepEqual(readings?.sort((a, b) => a - b), inputs.sort((a, b) => a - b), hash);
+  }
+});
+
 test("calendar days are counted in a named time zone", () => {
   const { store } = hub(undefined, deliveries);
   for (const [timeZone, days] of Object.entries(expected.days)) {

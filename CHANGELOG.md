@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Added per-session context weight and cache health signals in the existing
+  Lanes view, with a dated list-price estimate for possible cache breaks.
+  The signals describe observed usage patterns, not a proven cache cause.
+
 ## 0.2.2 — 2026-09-24
 
 Security fixes, accounting you can reconcile, and a console that is nearly
