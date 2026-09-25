@@ -96,7 +96,16 @@ it over whatever channel they already trust to carry the link. On a network you
 do not trust, send the command rather than the link. Whoever joins should run
 the command they were sent, and check that it starts with `node -e`, names
 `https://github.com/SamSnead85/agent-console/releases/download/`, and ends
-with the link in single quotes, with nothing after it.
+with the link in single quotes, with nothing after it. Those parts alone do not
+pin what runs: the check between the first two single quotes must be the
+published one. Its SHA-256 is `114422b34fdc2721cd70e125908fe2ef381b4afddf6c7317d3e540710ec03737`, listed in the README
+("The check in every command") and in each release's notes. This command
+prints the SHA-256 of the check in a command pasted into it, without running
+anything (paste, Return, then Ctrl+D; Ctrl+Z and Return in PowerShell):
+
+```sh
+node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(require('crypto').createHash('sha256').update(s.split(String.fromCharCode(39))[1]).digest('hex')))"
+```
 
 **No code from the console.** The console never serves Agent Console itself.
 Every command it prints installs the package from its GitHub release over

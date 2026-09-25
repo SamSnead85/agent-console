@@ -15,9 +15,11 @@
  * The command installs Agent Console from its GitHub release, never from the
  * console that served this page. It starts with a short check for `node -e`
  * (VERIFY, the same text as VERIFY_AND_RUN in lib/invocation.js) that runs
- * nothing until the file's SHA-256 matches the release's SHA256SUMS. On screen
- * that check is shortened to '…'; Copy gives the whole command. The reporter
- * then checks the console's
+ * nothing until the file's SHA-256 matches the release's SHA256SUMS. The page
+ * shows the whole command, check included, and Copy gives exactly what is
+ * shown except the join code, which stays masked on screen. The check's SHA-256
+ * is published in the README and on each release page for comparison. The
+ * reporter then checks the console's
  * certificate against the fingerprint in the link before it sends anything.
  * This page itself arrives over plain HTTP, so the console's owner can also
  * send the command straight from the console (SECURITY.md, "The join page").
@@ -37,6 +39,7 @@
   const link = rebuilt && SAFE_LINK.test(rebuilt) ? rebuilt : null;
   const valid = link !== null;
   let command = null;
+  let restart = null;
 
   $("hubName").textContent = location.host;
   if (!valid) {
@@ -53,28 +56,40 @@
     for (const el of document.querySelectorAll(".verv")) el.textContent = version;
     $("releasePage").href = `${REPO}/releases/tag/v${version}`;
     const run = `node -e '${VERIFY}' ${asset}`;
-    for (const el of document.querySelectorAll(".restart")) el.textContent = `node -e '…' ${asset} report`;
+    restart = `${run} report`;
+    $("restart").textContent = restart;
+    $("restartBtn").disabled = false;
     if (valid) {
       command = `${run} join '${link}'`;
-      $("cmd").textContent = command.replace(code, "••••••••").replace(VERIFY, "…");
+      $("cmd").textContent = command.replace(code, "••••••••");
     }
     if (info.demo) { $("demoStamp").hidden = false; $("demoNote").hidden = false; }
   }).catch(() => { $("status").textContent = "That console is not answering right now. Check you are on the same network, then reload."; });
 
   // Not a secure context on a local network address, so the Clipboard API is
   // usually absent; a hidden text area and the copy command still work.
-  $("copyBtn").addEventListener("click", async () => {
-    if (!command) return;
+  const copy = async (text) => {
     let ok = false;
-    try { await navigator.clipboard.writeText(command); ok = true; } catch { /* fall through */ }
+    try { await navigator.clipboard.writeText(text); ok = true; } catch { /* fall through */ }
     if (!ok) {
       const area = $("clip");
-      area.value = command;
+      area.value = text;
       area.select();
       try { ok = document.execCommand("copy"); } catch { ok = false; }
       area.value = "";
     }
+    return ok;
+  };
+  $("copyBtn").addEventListener("click", async () => {
+    if (!command) return;
+    const ok = await copy(command);
     $("status").textContent = ok ? "Copied. Paste it into the terminal and press Return." : "Copying is blocked here. Ask whoever sent the link for the command instead.";
     $("copyBtn").textContent = ok ? "Copied" : "Copy";
+  });
+  $("restartBtn").addEventListener("click", async () => {
+    if (!restart) return;
+    const ok = await copy(restart);
+    $("status").textContent = ok ? "Copied the command that starts reporting again." : "Copying is blocked here. Select the command and copy it by hand.";
+    $("restartBtn").textContent = ok ? "Copied" : "Copy";
   });
 })();
