@@ -271,7 +271,7 @@ test("two machines join by link, report, roll up by person, and nothing private 
     assert.deepEqual(Object.keys(envelope.backlog), ["delivered", "total"]);
     assert.ok(Number.isSafeInteger(envelope.backlog.delivered) && Number.isSafeInteger(envelope.backlog.total));
     for (const r of envelope.records) {
-      assert.deepEqual(Object.keys(r).sort(), ["at", "cacheRead", "cacheWrite", "cacheWrite1h", "cacheWrite5m", "continuation", "engagement", "executionOrigin", "fresh",
+      assert.deepEqual(Object.keys(r).sort(), ["at", "cacheRead", "cacheWrite", "cacheWrite1h", "cacheWrite5m", "continuation", "cumulative", "engagement", "executionOrigin", "fresh",
         "id", "isSubagent", "measurement", "model", "observed", "output", "parentSessionHash", "projectHash", "reportingDevice", "sessionHash", "tier", "tool", "ttl"]);
       assert.equal(typeof r.continuation, "boolean");
       assert.match(r.sessionHash, /^[0-9a-f]{64}$/u);

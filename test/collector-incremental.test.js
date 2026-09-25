@@ -16,6 +16,7 @@ import path from "node:path";
 
 import { runOnce, pruneParserState, STATE_WINDOW_MS } from "../lib/collector/collector.js";
 import { generate } from "../bench/generate.mjs";
+import { settle } from "./helpers/settle.js";
 
 function setup(t, { lines = 3000, days = 0.2, now = Date.now() } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-incremental-"));
@@ -49,7 +50,7 @@ function setup(t, { lines = 3000, days = 0.2, now = Date.now() } = {}) {
 
 const sorted = (records) => records.map((r) => JSON.stringify(r)).sort();
 
-test("a transcript read in two passes, split mid-response, gives exactly the records of one pass", async (t) => {
+test("a transcript read in two passes, split mid-response, gives a receiver exactly what one pass gives it", async (t) => {
   const s = setup(t);
   const whole = new Map(s.files().map((f) => [f, fs.readFileSync(f)]));
   const once = await s.pass(s.state("once"));
@@ -58,8 +59,10 @@ test("a transcript read in two passes, split mid-response, gives exactly the rec
   const first = await s.pass(twice);
   for (const [f, b] of whole) fs.appendFileSync(f, b.subarray(Math.floor(b.length * 0.53)));
   const second = await s.pass(twice);
-  assert.ok(once.length > 500 && once.some((r) => r.continuation), "the history has streamed responses");
-  assert.deepEqual(sorted([...first, ...second]), sorted(once));
+  assert.ok(once.length > 500 && once.some((r) => r.cumulative), "the history has streamed responses");
+  // A message split between the passes is sent twice, as a smaller and then
+  // its final running maximum; what the receiver keeps is identical.
+  assert.deepEqual(sorted(settle([...first, ...second])), sorted(settle(once)));
 });
 
 test("a pass with nothing new rewrites nothing and reopens no transcript", async (t) => {

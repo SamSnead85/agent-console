@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import { parseLine } from '../lib/collector/parsers.js';
+import { totals } from './helpers/settle.js';
 
 const hashIdentity = (kind, value) => createHmac('sha256', 'synthetic-local-test-salt').update(`${kind}\0${value}`).digest('hex');
 const recordId = (tool, sessionId, messageId) => createHmac('sha256', 'synthetic-org-salt').update(`${tool}|${sessionId}|${messageId}`).digest('hex');
@@ -35,16 +36,26 @@ test('Claude classes are disjoint, timestamp is minute precision, and intrinsic 
   assert.equal(row.observed, true);
   assert.equal(row.id, call('claude-code', assistant(usage)).records[0].id);
   assert.equal(row.id, call('claude-code', assistant(usage), {}, 123).records[0].id);
-  assert.notEqual(row.id, call('claude-code', assistant(usage, { uuid: 'another-line' })).records[0].id);
+  // One id per API message: another line of the same message carries it too.
+  assert.equal(row.id, call('claude-code', assistant(usage, { uuid: 'another-line' })).records[0].id);
+  assert.equal(row.id, recordId('claude-code', 'synthetic-session', 'message:synthetic-message'));
+  const other = assistant(usage);
+  other.message.id = 'another-synthetic-message';
+  assert.notEqual(row.id, call('claude-code', other).records[0].id);
 });
 
-test('Claude repeated content blocks and growing outputs emit only high-water deltas', () => {
+test('Claude repeated content blocks add nothing; growing output sends the message\'s new running maximum', () => {
   const first = call('claude-code', assistant(usage));
+  assert.equal(first.records[0].cumulative, true);
+  assert.equal(first.records[0].continuation, false);
   const duplicate = call('claude-code', assistant(usage), first.state, 100);
   assert.deepEqual(duplicate.records, []);
   const grown = call('claude-code', assistant({ ...usage, output_tokens: 12 }), duplicate.state, 200);
   assert.deepEqual(Object.fromEntries(['fresh', 'output', 'cacheWrite', 'cacheRead'].map(k => [k, grown.records[0][k]])),
-    { fresh: 0, output: 7, cacheWrite: 0, cacheRead: 0 });
+    { fresh: 10, output: 12, cacheWrite: 20, cacheRead: 30 });
+  assert.equal(grown.records[0].id, first.records[0].id);
+  assert.equal(grown.records[0].continuation, true);
+  assert.deepEqual(totals([...first.records, ...grown.records]), { fresh: 10, output: 12, cacheWrite: 20, cacheRead: 30, messages: 1 });
   const regressed = call('claude-code', assistant({ ...usage, output_tokens: 1 }), grown.state, 300);
   assert.deepEqual(regressed.records, []);
   const restored = call('claude-code', assistant({ ...usage, output_tokens: 12 }), regressed.state, 400);
@@ -165,7 +176,7 @@ test('redaction: records contain no raw identifiers; private state contains no p
   assert.doesNotMatch(JSON.stringify(updated.records), /SENTINEL_PRIVATE_DATA|\/private\/|response and command/);
   assert.doesNotMatch(JSON.stringify(updated.state), /\/private\/|response and command/);
   assert.deepEqual(Object.keys(updated.records[0]).sort(), ['id','tool','model','sessionHash','parentSessionHash',
-    'isSubagent','projectHash','reportingDevice','executionOrigin','at','fresh','output','cacheWrite','cacheRead','cacheWrite5m','cacheWrite1h','ttl','observed','measurement','continuation','tier'].sort());
+    'isSubagent','projectHash','reportingDevice','executionOrigin','at','fresh','output','cacheWrite','cacheRead','cacheWrite5m','cacheWrite1h','ttl','observed','measurement','continuation','tier','cumulative'].sort());
 });
 
 test('copied transcripts have portable organization IDs and unchanged consumption on another reporting device', () => {
@@ -190,7 +201,7 @@ test('copied transcripts have portable organization IDs and unchanged consumptio
   const a = collect('a');
   const b = collect('b');
   assert.equal(a.length, 3);
-  assert.equal(a[0].id, recordId('claude-code', 'synthetic-session', transcript[0].uuid));
+  assert.equal(a[0].id, recordId('claude-code', 'synthetic-session', 'message:synthetic-message'));
   for (let i = 0; i < a.length; i++) {
     assert.deepEqual({ ...a[i], reportingDevice: undefined }, { ...b[i], reportingDevice: undefined });
     assert.notEqual(a[i].reportingDevice, b[i].reportingDevice);
@@ -244,10 +255,11 @@ test('TTL splits retain their own high-water deltas and explicit origin is separ
   assert.notEqual(first.records[0].executionOrigin, first.records[0].reportingDevice);
   const grown = call('claude-code', assistant({ ...splitUsage, output_tokens: 6, cache_creation_input_tokens: 25,
     cache_creation: { ephemeral_5m_input_tokens: 15, ephemeral_1h_input_tokens: 10 } }), first.state);
+  // The message's running maximum, each lifetime its own.
   assert.equal(grown.records[0].ttl, 'split');
-  assert.equal(grown.records[0].cacheWrite, 5);
-  assert.equal(grown.records[0].cacheWrite5m, 3);
-  assert.equal(grown.records[0].cacheWrite1h, 2);
+  assert.equal(grown.records[0].cacheWrite, 25);
+  assert.equal(grown.records[0].cacheWrite5m, 15);
+  assert.equal(grown.records[0].cacheWrite1h, 10);
   const totalOnly = call('claude-code', assistant(usage)).records[0];
   assert.equal(totalOnly.ttl, 'unknown');
   assert.equal(totalOnly.cacheWrite5m, null);
@@ -303,8 +315,8 @@ test('a streamed Claude response is dated by its first line, even when later lin
   const first = call('claude-code', at('2026-09-19T23:59:30.000Z', 3));
   const later = call('claude-code', at('2026-09-20T00:00:20.000Z', 250), first.state);
   assert.equal(first.records[0].at, '2026-09-19T23:59:00.000Z');
-  assert.equal(later.records[0].at, '2026-09-19T23:59:00.000Z', 'the increment moved to the minute its line was written');
-  assert.equal(later.records[0].output, 247);
+  assert.equal(later.records[0].at, '2026-09-19T23:59:00.000Z', 'the reading moved to the minute its line was written');
+  assert.equal(later.records[0].output, 250);
   assert.equal(later.records[0].continuation, true);
 });
 
@@ -344,19 +356,16 @@ test('A1: a message copied into forked subagent files counts once, whatever orde
   };
   const read = (order) => {
     const shared = {};
-    const accepted = new Map();
+    const sent = [];
     for (const name of order) {
       let state;
       for (const row of files[name]) {
         const next = parseLine('claude-code', JSON.stringify(row), { ...context, shared }, state);
         state = next.state;
-        for (const record of next.records) if (!accepted.has(record.id)) accepted.set(record.id, record);
+        sent.push(...next.records);
       }
     }
-    const rows = [...accepted.values()];
-    const sum = (key) => rows.reduce((a, r) => a + r[key], 0);
-    return { fresh: sum('fresh'), output: sum('output'), cacheWrite: sum('cacheWrite'), cacheRead: sum('cacheRead'),
-      messages: rows.filter((r) => !r.continuation).length };
+    return totals(sent);
   };
   const truth = { fresh: 4, output: 399, cacheWrite: 100, cacheRead: 1000, messages: 1 };
   for (const order of [['parent', 'f1', 'f2', 'f3'], ['f1', 'f2', 'f3', 'parent'], ['f3', 'f1', 'parent', 'f2'], ['f2', 'f1', 'f3', 'parent']]) {
@@ -371,8 +380,13 @@ test('A4: a line rewritten with lower usage is counted as coverage debt, never s
   assert.equal(lower.state.coverageDebt.revisedDown, 1);
   const higher = call('claude-code', assistant({ ...usage, output_tokens: 55 }, { uuid: 'rewritten' }), lower.state);
   assert.equal(higher.records.length, 1);
-  assert.equal(higher.records[0].output, 15);
-  assert.notEqual(higher.records[0].id, first.records[0].id, 'growth on a known line is a new increment the hub will not drop');
+  assert.equal(higher.records[0].output, 55, 'the running maximum; the receiver adds the 15 it grew by');
+  assert.equal(totals([...first.records, ...higher.records]).output, 55);
+  // A rewrite that carries no usage at all takes nothing away and is not debt.
+  const zeroed = call('claude-code', assistant({ input_tokens: 0, output_tokens: 0, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
+    { uuid: 'rewritten' }), higher.state);
+  assert.deepEqual(zeroed.records, []);
+  assert.equal(zeroed.state.coverageDebt.revisedDown, 1);
 });
 
 test('A4: Bedrock and Vertex model ids are kept exactly, not turned into unknown', () => {

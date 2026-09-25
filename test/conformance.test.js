@@ -25,7 +25,7 @@ const { manifest, expected } = conformance;
 const W0 = Date.parse(manifest.window.from), W1 = Date.parse(manifest.window.to);
 const TOKEN_KEYS = ["total", "fresh", "output", "cacheRead", "cacheWrite", "cacheWrite5m", "cacheWrite1h", "cacheWriteUnknownTtl", "messages"];
 const RECORD_KEYS = ["id", "tool", "model", "sessionHash", "parentSessionHash", "isSubagent", "projectHash", "engagement", "at",
-  "reportingDevice", "executionOrigin", "ttl", "continuation", "fresh", "output", "cacheWrite", "cacheRead", "cacheWrite5m", "cacheWrite1h", "observed", "measurement", "tier"].sort();
+  "reportingDevice", "executionOrigin", "ttl", "continuation", "fresh", "output", "cacheWrite", "cacheRead", "cacheWrite5m", "cacheWrite1h", "observed", "measurement", "tier", "cumulative"].sort();
 
 function hub(order = manifest.deliveries.map((d) => d.step), deliveries) {
   const store = createStore({ dir: null, retentionMs: 30 * 86_400_000, prices, now: () => W1 - 1 });

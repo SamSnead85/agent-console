@@ -10,7 +10,7 @@
    "coverage": {},
    "records": [
     {
-     "id": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+     "id": "dc0e5226282df0be5ff0e7e8d4f085a6eb094443787ccaea32fedde945d39505",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -24,6 +24,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 12,
      "output": 340,
      "cacheWrite": 24000,
@@ -35,7 +36,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+       "recordId": "dc0e5226282df0be5ff0e7e8d4f085a6eb094443787ccaea32fedde945d39505",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -49,7 +50,7 @@
      }
     },
     {
-     "id": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+     "id": "af3d7e8d460354d38c6a09fc457f5889c42f3c6f2c591e70fd4fe33a042e8045",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -63,8 +64,9 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 3,
-     "output": 7,
+     "output": 410,
      "cacheWrite": 500,
      "cacheRead": 24000,
      "cacheWrite5m": 500,
@@ -74,7 +76,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+       "recordId": "af3d7e8d460354d38c6a09fc457f5889c42f3c6f2c591e70fd4fe33a042e8045",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -88,85 +90,7 @@
      }
     },
     {
-     "id": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T09:00:00.000Z",
-     "reportingDevice": "dev_personA-studio01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 113,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
-       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T09:00:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T09:00:00.000Z",
-     "reportingDevice": "dev_personA-studio01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 290,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
-       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T09:00:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+     "id": "8da3c852fe93d8886e2292f9945469e5d7e229bb6bedbc85c16132141e345a10",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -180,6 +104,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 5,
      "output": 90,
      "cacheWrite": 300,
@@ -191,7 +116,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+       "recordId": "8da3c852fe93d8886e2292f9945469e5d7e229bb6bedbc85c16132141e345a10",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -205,7 +130,7 @@
      }
     },
     {
-     "id": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+     "id": "1bab57d27d79e675f6ceaba1bb030d8e5a48a60396ce8f5aba53c91534a5e5de",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -219,6 +144,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 4,
      "output": 60,
      "cacheWrite": 200,
@@ -230,7 +156,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+       "recordId": "1bab57d27d79e675f6ceaba1bb030d8e5a48a60396ce8f5aba53c91534a5e5de",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -244,7 +170,7 @@
      }
     },
     {
-     "id": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+     "id": "47f88a27ea7ce7397f7f88d7ac5065240191d3ba4b75a1f2782e0f8975d82fe9",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -258,6 +184,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 9,
      "output": 800,
      "cacheWrite": 8000,
@@ -269,7 +196,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+       "recordId": "47f88a27ea7ce7397f7f88d7ac5065240191d3ba4b75a1f2782e0f8975d82fe9",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -283,7 +210,7 @@
      }
     },
     {
-     "id": "876bd6afa34fd073d05d94e464b850486bcab158e04a42abc10e51e8d73bd809",
+     "id": "eec47e87d5f81b7b844a4e04b8f551aa89eaf1230ec8995dfe449bbb19d68845",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
@@ -297,6 +224,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 10,
      "output": 200,
      "cacheWrite": 1500,
@@ -308,7 +236,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "876bd6afa34fd073d05d94e464b850486bcab158e04a42abc10e51e8d73bd809",
+       "recordId": "eec47e87d5f81b7b844a4e04b8f551aa89eaf1230ec8995dfe449bbb19d68845",
        "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
       },
       "window": {
@@ -322,7 +250,7 @@
      }
     },
     {
-     "id": "4181fd27abe09a1c0c9d6bd5528b9ec1669c0aa768653c2cec3b950d037065e8",
+     "id": "25898bb37062ad10032ccba9066a415c4bf7fe7c9e7f85864f390d6033563836",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
@@ -336,8 +264,9 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 2,
-     "output": 50,
+     "output": 150,
      "cacheWrite": 400,
      "cacheRead": 2500,
      "cacheWrite5m": 400,
@@ -347,7 +276,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "4181fd27abe09a1c0c9d6bd5528b9ec1669c0aa768653c2cec3b950d037065e8",
+       "recordId": "25898bb37062ad10032ccba9066a415c4bf7fe7c9e7f85864f390d6033563836",
        "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
       },
       "window": {
@@ -361,46 +290,7 @@
      }
     },
     {
-     "id": "fd20c99ead4064c3f6637a0c0cac432c3c74733f48660caca61993827b94d0f0",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T11:01:00.000Z",
-     "reportingDevice": "dev_personA-studio01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 100,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "fd20c99ead4064c3f6637a0c0cac432c3c74733f48660caca61993827b94d0f0",
-       "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T11:01:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "29597fc35dad8e50e2bf11c53941f84b24f0de33ec093e64439f9ee123033128",
+     "id": "9bf9d9303076fc409c4dc868647ca517385d116bdc9db3fd695eb552dc6aa891",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14",
@@ -414,8 +304,9 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 4,
-     "output": 2,
+     "output": 399,
      "cacheWrite": 1000,
      "cacheRead": 3000,
      "cacheWrite5m": 1000,
@@ -425,7 +316,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "29597fc35dad8e50e2bf11c53941f84b24f0de33ec093e64439f9ee123033128",
+       "recordId": "9bf9d9303076fc409c4dc868647ca517385d116bdc9db3fd695eb552dc6aa891",
        "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14"
       },
       "window": {
@@ -439,85 +330,7 @@
      }
     },
     {
-     "id": "665ff7c83f65275d0647993e72c0949c1e055dab384ec7545bfa0b46c3f68343",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T15:00:00.000Z",
-     "reportingDevice": "dev_personA-studio01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 148,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "665ff7c83f65275d0647993e72c0949c1e055dab384ec7545bfa0b46c3f68343",
-       "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T15:00:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "5e1afb1263282fd69603a0f3d5bf6f7acd9744f11ec40935ee3b37c8dc67df4c",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T15:00:00.000Z",
-     "reportingDevice": "dev_personA-studio01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 249,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "5e1afb1263282fd69603a0f3d5bf6f7acd9744f11ec40935ee3b37c8dc67df4c",
-       "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T15:00:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "03984beb1398af3a989e46600fc4a4b40951e39036c474aabfa747ee3575c894",
+     "id": "56452fc755f3daa1c981041257d44abb8b2b12ab954c2ec96304c3e16e158a07",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "0ba6d71c086461b68ec3257e89e14c49f5d813a2df3bdedc7e3fd3510ce2af57",
@@ -531,6 +344,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 7,
      "output": 330,
      "cacheWrite": 800,
@@ -542,7 +356,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "03984beb1398af3a989e46600fc4a4b40951e39036c474aabfa747ee3575c894",
+       "recordId": "56452fc755f3daa1c981041257d44abb8b2b12ab954c2ec96304c3e16e158a07",
        "sessionHash": "0ba6d71c086461b68ec3257e89e14c49f5d813a2df3bdedc7e3fd3510ce2af57"
       },
       "window": {
@@ -556,7 +370,7 @@
      }
     },
     {
-     "id": "1cb0b1286aa5c7cec176650b37effbec689e898ef562623705fed57ccf3fe315",
+     "id": "4152b5435dcaacd483e7a90c0322b4cc0a420c07e29e4eca8054f36e878b2438",
      "tool": "claude-code",
      "model": "claude-sonnet-5",
      "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
@@ -570,6 +384,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 2,
      "output": 150,
      "cacheWrite": 3000,
@@ -581,7 +396,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "1cb0b1286aa5c7cec176650b37effbec689e898ef562623705fed57ccf3fe315",
+       "recordId": "4152b5435dcaacd483e7a90c0322b4cc0a420c07e29e4eca8054f36e878b2438",
        "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
       },
       "window": {
@@ -595,7 +410,7 @@
      }
     },
     {
-     "id": "e084345a73440160f273974fb6726200b71a3c32d509181ee4854cfed5cf0e3b",
+     "id": "2539902c98b719a818c356a430d4c439f0b99fb54fbc71062bad057087ee1fcd",
      "tool": "claude-code",
      "model": "claude-sonnet-5",
      "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
@@ -609,8 +424,9 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 1,
-     "output": 30,
+     "output": 260,
      "cacheWrite": 100,
      "cacheRead": 3000,
      "cacheWrite5m": 100,
@@ -620,7 +436,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "e084345a73440160f273974fb6726200b71a3c32d509181ee4854cfed5cf0e3b",
+       "recordId": "2539902c98b719a818c356a430d4c439f0b99fb54fbc71062bad057087ee1fcd",
        "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
       },
       "window": {
@@ -634,46 +450,7 @@
      }
     },
     {
-     "id": "c0460e199906afdc48446e163e4e26057f0bb10e216effcf4d4f4d68b682f7e9",
-     "tool": "claude-code",
-     "model": "claude-sonnet-5",
-     "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
-     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
-     "isSubagent": true,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T09:05:00.000Z",
-     "reportingDevice": "dev_personA-studio01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 230,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "c0460e199906afdc48446e163e4e26057f0bb10e216effcf4d4f4d68b682f7e9",
-       "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T09:05:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "69bf1acc2959d66f7114bf59ddc7736526eb1c48ba619a59e3ecda7abed83230",
+     "id": "f5dafcd4499c11db3dbf71036b1cf7da4cc864f47a56c4cf0061f7eb48a7f6f2",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "a6b16a71df949693887ee87e30c49aef2d4aeb4b144416162435ca0e3829b1d3",
@@ -687,6 +464,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 6,
      "output": 500,
      "cacheWrite": 7000,
@@ -698,7 +476,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "69bf1acc2959d66f7114bf59ddc7736526eb1c48ba619a59e3ecda7abed83230",
+       "recordId": "f5dafcd4499c11db3dbf71036b1cf7da4cc864f47a56c4cf0061f7eb48a7f6f2",
        "sessionHash": "a6b16a71df949693887ee87e30c49aef2d4aeb4b144416162435ca0e3829b1d3"
       },
       "window": {
@@ -712,7 +490,7 @@
      }
     },
     {
-     "id": "edc79e3db81c478900672cca4d004de6dfc899c5bdee38eb8dbe5e7a8a79b4f7",
+     "id": "bf29d93d821f6231a65033d854f7875cb060e870d8302924abd32f452e8acfec",
      "tool": "claude-code",
      "model": "claude-sonnet-5",
      "sessionHash": "7181ad90fc6217ace0f1d27fb6429c38a886498971f10605b7ffc1a5d83a72f2",
@@ -726,6 +504,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 3,
      "output": 120,
      "cacheWrite": 200,
@@ -737,7 +516,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "edc79e3db81c478900672cca4d004de6dfc899c5bdee38eb8dbe5e7a8a79b4f7",
+       "recordId": "bf29d93d821f6231a65033d854f7875cb060e870d8302924abd32f452e8acfec",
        "sessionHash": "7181ad90fc6217ace0f1d27fb6429c38a886498971f10605b7ffc1a5d83a72f2"
       },
       "window": {
@@ -751,7 +530,7 @@
      }
     },
     {
-     "id": "ae77708bbe3bd486f30531a2711103c88e38f8d0c2f11770cd857eb405fea649",
+     "id": "958b464b3d31cafdffa63a524070244895ddea9189477c909e2bd499e311efa0",
      "tool": "claude-code",
      "model": "claude-sonnet-5",
      "sessionHash": "741a24dba90cce23f55956924c8fcb2cda8442c2741b20f7345492a8866b4eb3",
@@ -765,6 +544,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 2,
      "output": 80,
      "cacheWrite": 100,
@@ -776,7 +556,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "ae77708bbe3bd486f30531a2711103c88e38f8d0c2f11770cd857eb405fea649",
+       "recordId": "958b464b3d31cafdffa63a524070244895ddea9189477c909e2bd499e311efa0",
        "sessionHash": "741a24dba90cce23f55956924c8fcb2cda8442c2741b20f7345492a8866b4eb3"
       },
       "window": {
@@ -804,6 +584,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 800,
      "output": 50,
      "cacheWrite": 200,
@@ -843,6 +624,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 400,
      "output": 80,
      "cacheWrite": 100,
@@ -882,6 +664,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 100,
      "output": 60,
      "cacheWrite": 0,
@@ -921,6 +704,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 200,
      "output": 40,
      "cacheWrite": 0,
@@ -960,6 +744,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 300,
      "output": 60,
      "cacheWrite": 0,
@@ -999,6 +784,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 600,
      "output": 70,
      "cacheWrite": 300,
@@ -1038,6 +824,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 300,
      "output": 80,
      "cacheWrite": 100,
@@ -1077,6 +864,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 500,
      "output": 60,
      "cacheWrite": 100,
@@ -1116,6 +904,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 9000,
      "output": 700,
      "cacheWrite": 0,
@@ -1155,6 +944,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 300,
      "output": 40,
      "cacheWrite": 50,
@@ -1194,6 +984,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 200,
      "output": 30,
      "cacheWrite": 20,
@@ -1230,7 +1021,7 @@
    },
    "records": [
     {
-     "id": "2979b85ce480637a91fc720c351a8e636ec5ed16f941456d64fc1767a12263eb",
+     "id": "aa1e64a25ad51a4a09ac56758419671332aa6503ad211ca7d28d29cff0f47d98",
      "tool": "claude-code",
      "model": "claude-fable-5-1",
      "sessionHash": "22dece1cd2d699d6f52b91b4a4c09fd0dcdfb5bb7059cdbd42bc5cd0f2e9d4f9",
@@ -1244,6 +1035,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 20,
      "output": 700,
      "cacheWrite": 10000,
@@ -1255,7 +1047,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "2979b85ce480637a91fc720c351a8e636ec5ed16f941456d64fc1767a12263eb",
+       "recordId": "aa1e64a25ad51a4a09ac56758419671332aa6503ad211ca7d28d29cff0f47d98",
        "sessionHash": "22dece1cd2d699d6f52b91b4a4c09fd0dcdfb5bb7059cdbd42bc5cd0f2e9d4f9"
       },
       "window": {
@@ -1269,7 +1061,7 @@
      }
     },
     {
-     "id": "4179388f883430a7837b6e6f4763f4641b6ed300ac3423b230ca04c154882069",
+     "id": "679ee0d04e337d039ff7260c46a78a3e4db0e1b390b9e8cb6b53c8db9e3951fd",
      "tool": "claude-code",
      "model": "claude-fable-5-1",
      "sessionHash": "22dece1cd2d699d6f52b91b4a4c09fd0dcdfb5bb7059cdbd42bc5cd0f2e9d4f9",
@@ -1283,6 +1075,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 3,
      "output": 90,
      "cacheWrite": 50,
@@ -1294,7 +1087,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "4179388f883430a7837b6e6f4763f4641b6ed300ac3423b230ca04c154882069",
+       "recordId": "679ee0d04e337d039ff7260c46a78a3e4db0e1b390b9e8cb6b53c8db9e3951fd",
        "sessionHash": "22dece1cd2d699d6f52b91b4a4c09fd0dcdfb5bb7059cdbd42bc5cd0f2e9d4f9"
       },
       "window": {
@@ -1308,7 +1101,7 @@
      }
     },
     {
-     "id": "a4255eb6b45cb18576eae98d197d28fbea5d337943934a572ece39e6332979f4",
+     "id": "d89428fdb9734cbb6922d0888cac2d258905bd10977caa632c778d1cbde9db55",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd",
@@ -1322,6 +1115,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 4,
      "output": 40,
      "cacheWrite": 1000,
@@ -1333,7 +1127,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "a4255eb6b45cb18576eae98d197d28fbea5d337943934a572ece39e6332979f4",
+       "recordId": "d89428fdb9734cbb6922d0888cac2d258905bd10977caa632c778d1cbde9db55",
        "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd"
       },
       "window": {
@@ -1347,7 +1141,7 @@
      }
     },
     {
-     "id": "d1ec7267c3a0f930402187bce48f37c64cc71ce534798c43eafc5eb707caa5a6",
+     "id": "59b91eac626e84e72595a3ebfbfb388f7063e88996a797bf1d50d003b813bbb1",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd",
@@ -1361,8 +1155,9 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 5,
-     "output": 3,
+     "output": 250,
      "cacheWrite": 200,
      "cacheRead": 1000,
      "cacheWrite5m": 200,
@@ -1372,7 +1167,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "d1ec7267c3a0f930402187bce48f37c64cc71ce534798c43eafc5eb707caa5a6",
+       "recordId": "59b91eac626e84e72595a3ebfbfb388f7063e88996a797bf1d50d003b813bbb1",
        "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd"
       },
       "window": {
@@ -1386,46 +1181,7 @@
      }
     },
     {
-     "id": "db4a6754de49b43544382f84faa87b79ef05fc3ec2c1b0cb5c8e640d8ffea09a",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "ae6e1849f6116304dcb83a570186fafaa88b70deadb16a23e59c757fd4c8f382",
-     "engagement": null,
-     "at": "2026-09-19T23:59:00.000Z",
-     "reportingDevice": "dev_personA-laptop01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 247,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "db4a6754de49b43544382f84faa87b79ef05fc3ec2c1b0cb5c8e640d8ffea09a",
-       "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-19T23:59:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "5b14796da1a4d4666c622469543299637153354c99875a25a5a4b0a20443c348",
+     "id": "d7ce1056ca822ce9201c9e3819bb76974fa90d316f3d01794d31abb879019877",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd",
@@ -1439,6 +1195,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 7,
      "output": 77,
      "cacheWrite": 70,
@@ -1450,7 +1207,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "5b14796da1a4d4666c622469543299637153354c99875a25a5a4b0a20443c348",
+       "recordId": "d7ce1056ca822ce9201c9e3819bb76974fa90d316f3d01794d31abb879019877",
        "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd"
       },
       "window": {
@@ -1464,7 +1221,7 @@
      }
     },
     {
-     "id": "e5dd633fac93c367e7cc094f6b039ac3c094d4ec211f6e26eec93fc178ca406c",
+     "id": "56448f6e55f3a163d9ef9c314393b6e831cb5a7ce90cdbf4d0126ad8fd0e5b76",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd",
@@ -1478,6 +1235,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 6,
      "output": 60,
      "cacheWrite": 0,
@@ -1489,7 +1247,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "e5dd633fac93c367e7cc094f6b039ac3c094d4ec211f6e26eec93fc178ca406c",
+       "recordId": "56448f6e55f3a163d9ef9c314393b6e831cb5a7ce90cdbf4d0126ad8fd0e5b76",
        "sessionHash": "ec02b75d923cb41b42a333062129d127893106744981def2eb68b2a15600bdcd"
       },
       "window": {
@@ -1503,7 +1261,7 @@
      }
     },
     {
-     "id": "1e9b149b933b6d07154c857565f9c50264a6ea2a37358509345a076aeb4e92dc",
+     "id": "6f6bd9915fafa84cb6cf8eac231391c0d9ab984009eb8e23e2b33b3a95ff9e8c",
      "tool": "claude-code",
      "model": "claude-opus-4-6@20250805",
      "sessionHash": "bd373be6bbf27c474be9170bc39ea8f72de5321a77d851defbdce5ee4105675c",
@@ -1517,6 +1275,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 6,
      "output": 90,
      "cacheWrite": 300,
@@ -1528,7 +1287,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "1e9b149b933b6d07154c857565f9c50264a6ea2a37358509345a076aeb4e92dc",
+       "recordId": "6f6bd9915fafa84cb6cf8eac231391c0d9ab984009eb8e23e2b33b3a95ff9e8c",
        "sessionHash": "bd373be6bbf27c474be9170bc39ea8f72de5321a77d851defbdce5ee4105675c"
       },
       "window": {
@@ -1542,7 +1301,7 @@
      }
     },
     {
-     "id": "e2dc6cded7b0b1b766a69a0a938441071e1c136d292de6e77023c229d29b9e47",
+     "id": "0556e7dd90733b597868a1f78aec5f31372020b1a676111d5432cbafcd8c8e48",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "bd373be6bbf27c474be9170bc39ea8f72de5321a77d851defbdce5ee4105675c",
@@ -1556,6 +1315,7 @@
      "ttl": "split",
      "tier": "other",
      "continuation": false,
+     "cumulative": true,
      "fresh": 4,
      "output": 60,
      "cacheWrite": 20,
@@ -1567,7 +1327,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "e2dc6cded7b0b1b766a69a0a938441071e1c136d292de6e77023c229d29b9e47",
+       "recordId": "0556e7dd90733b597868a1f78aec5f31372020b1a676111d5432cbafcd8c8e48",
        "sessionHash": "bd373be6bbf27c474be9170bc39ea8f72de5321a77d851defbdce5ee4105675c"
       },
       "window": {
@@ -1581,7 +1341,7 @@
      }
     },
     {
-     "id": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+     "id": "dc0e5226282df0be5ff0e7e8d4f085a6eb094443787ccaea32fedde945d39505",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -1595,6 +1355,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 12,
      "output": 340,
      "cacheWrite": 24000,
@@ -1606,7 +1367,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+       "recordId": "dc0e5226282df0be5ff0e7e8d4f085a6eb094443787ccaea32fedde945d39505",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -1620,7 +1381,7 @@
      }
     },
     {
-     "id": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+     "id": "af3d7e8d460354d38c6a09fc457f5889c42f3c6f2c591e70fd4fe33a042e8045",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -1634,8 +1395,9 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 3,
-     "output": 7,
+     "output": 410,
      "cacheWrite": 500,
      "cacheRead": 24000,
      "cacheWrite5m": 500,
@@ -1645,7 +1407,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+       "recordId": "af3d7e8d460354d38c6a09fc457f5889c42f3c6f2c591e70fd4fe33a042e8045",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -1659,85 +1421,7 @@
      }
     },
     {
-     "id": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T09:00:00.000Z",
-     "reportingDevice": "dev_personA-laptop01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 113,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
-       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T09:00:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T09:00:00.000Z",
-     "reportingDevice": "dev_personA-laptop01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 290,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
-       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T09:00:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+     "id": "8da3c852fe93d8886e2292f9945469e5d7e229bb6bedbc85c16132141e345a10",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -1751,6 +1435,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 5,
      "output": 90,
      "cacheWrite": 300,
@@ -1762,7 +1447,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+       "recordId": "8da3c852fe93d8886e2292f9945469e5d7e229bb6bedbc85c16132141e345a10",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -1776,7 +1461,7 @@
      }
     },
     {
-     "id": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+     "id": "1bab57d27d79e675f6ceaba1bb030d8e5a48a60396ce8f5aba53c91534a5e5de",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -1790,6 +1475,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 4,
      "output": 60,
      "cacheWrite": 200,
@@ -1801,7 +1487,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+       "recordId": "1bab57d27d79e675f6ceaba1bb030d8e5a48a60396ce8f5aba53c91534a5e5de",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -1815,7 +1501,7 @@
      }
     },
     {
-     "id": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+     "id": "47f88a27ea7ce7397f7f88d7ac5065240191d3ba4b75a1f2782e0f8975d82fe9",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -1829,6 +1515,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 9,
      "output": 800,
      "cacheWrite": 8000,
@@ -1840,7 +1527,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+       "recordId": "47f88a27ea7ce7397f7f88d7ac5065240191d3ba4b75a1f2782e0f8975d82fe9",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -1862,7 +1549,7 @@
    "coverage": {},
    "records": [
     {
-     "id": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+     "id": "dc0e5226282df0be5ff0e7e8d4f085a6eb094443787ccaea32fedde945d39505",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -1876,6 +1563,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 12,
      "output": 340,
      "cacheWrite": 24000,
@@ -1887,7 +1575,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+       "recordId": "dc0e5226282df0be5ff0e7e8d4f085a6eb094443787ccaea32fedde945d39505",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -1901,7 +1589,7 @@
      }
     },
     {
-     "id": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+     "id": "af3d7e8d460354d38c6a09fc457f5889c42f3c6f2c591e70fd4fe33a042e8045",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -1915,8 +1603,9 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 3,
-     "output": 7,
+     "output": 410,
      "cacheWrite": 500,
      "cacheRead": 24000,
      "cacheWrite5m": 500,
@@ -1926,7 +1615,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+       "recordId": "af3d7e8d460354d38c6a09fc457f5889c42f3c6f2c591e70fd4fe33a042e8045",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -1940,85 +1629,7 @@
      }
     },
     {
-     "id": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T09:00:00.000Z",
-     "reportingDevice": "dev_personA-studio01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 113,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
-       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T09:00:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T09:00:00.000Z",
-     "reportingDevice": "dev_personA-studio01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 290,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
-       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T09:00:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+     "id": "8da3c852fe93d8886e2292f9945469e5d7e229bb6bedbc85c16132141e345a10",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -2032,6 +1643,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 5,
      "output": 90,
      "cacheWrite": 300,
@@ -2043,7 +1655,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+       "recordId": "8da3c852fe93d8886e2292f9945469e5d7e229bb6bedbc85c16132141e345a10",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -2057,7 +1669,7 @@
      }
     },
     {
-     "id": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+     "id": "1bab57d27d79e675f6ceaba1bb030d8e5a48a60396ce8f5aba53c91534a5e5de",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -2071,6 +1683,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 4,
      "output": 60,
      "cacheWrite": 200,
@@ -2082,7 +1695,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+       "recordId": "1bab57d27d79e675f6ceaba1bb030d8e5a48a60396ce8f5aba53c91534a5e5de",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -2096,7 +1709,7 @@
      }
     },
     {
-     "id": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+     "id": "47f88a27ea7ce7397f7f88d7ac5065240191d3ba4b75a1f2782e0f8975d82fe9",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -2110,6 +1723,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 9,
      "output": 800,
      "cacheWrite": 8000,
@@ -2121,7 +1735,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+       "recordId": "47f88a27ea7ce7397f7f88d7ac5065240191d3ba4b75a1f2782e0f8975d82fe9",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -2135,7 +1749,7 @@
      }
     },
     {
-     "id": "876bd6afa34fd073d05d94e464b850486bcab158e04a42abc10e51e8d73bd809",
+     "id": "eec47e87d5f81b7b844a4e04b8f551aa89eaf1230ec8995dfe449bbb19d68845",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
@@ -2149,6 +1763,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 10,
      "output": 200,
      "cacheWrite": 1500,
@@ -2160,7 +1775,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "876bd6afa34fd073d05d94e464b850486bcab158e04a42abc10e51e8d73bd809",
+       "recordId": "eec47e87d5f81b7b844a4e04b8f551aa89eaf1230ec8995dfe449bbb19d68845",
        "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
       },
       "window": {
@@ -2174,7 +1789,7 @@
      }
     },
     {
-     "id": "4181fd27abe09a1c0c9d6bd5528b9ec1669c0aa768653c2cec3b950d037065e8",
+     "id": "25898bb37062ad10032ccba9066a415c4bf7fe7c9e7f85864f390d6033563836",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
@@ -2188,8 +1803,9 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 2,
-     "output": 50,
+     "output": 150,
      "cacheWrite": 400,
      "cacheRead": 2500,
      "cacheWrite5m": 400,
@@ -2199,7 +1815,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "4181fd27abe09a1c0c9d6bd5528b9ec1669c0aa768653c2cec3b950d037065e8",
+       "recordId": "25898bb37062ad10032ccba9066a415c4bf7fe7c9e7f85864f390d6033563836",
        "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
       },
       "window": {
@@ -2213,46 +1829,7 @@
      }
     },
     {
-     "id": "fd20c99ead4064c3f6637a0c0cac432c3c74733f48660caca61993827b94d0f0",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T11:01:00.000Z",
-     "reportingDevice": "dev_personA-studio01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 100,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "fd20c99ead4064c3f6637a0c0cac432c3c74733f48660caca61993827b94d0f0",
-       "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T11:01:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "29597fc35dad8e50e2bf11c53941f84b24f0de33ec093e64439f9ee123033128",
+     "id": "9bf9d9303076fc409c4dc868647ca517385d116bdc9db3fd695eb552dc6aa891",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14",
@@ -2266,8 +1843,9 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 4,
-     "output": 2,
+     "output": 399,
      "cacheWrite": 1000,
      "cacheRead": 3000,
      "cacheWrite5m": 1000,
@@ -2277,7 +1855,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "29597fc35dad8e50e2bf11c53941f84b24f0de33ec093e64439f9ee123033128",
+       "recordId": "9bf9d9303076fc409c4dc868647ca517385d116bdc9db3fd695eb552dc6aa891",
        "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14"
       },
       "window": {
@@ -2291,85 +1869,7 @@
      }
     },
     {
-     "id": "665ff7c83f65275d0647993e72c0949c1e055dab384ec7545bfa0b46c3f68343",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T15:00:00.000Z",
-     "reportingDevice": "dev_personA-studio01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 148,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "665ff7c83f65275d0647993e72c0949c1e055dab384ec7545bfa0b46c3f68343",
-       "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T15:00:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "5e1afb1263282fd69603a0f3d5bf6f7acd9744f11ec40935ee3b37c8dc67df4c",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T15:00:00.000Z",
-     "reportingDevice": "dev_personA-studio01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 249,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "5e1afb1263282fd69603a0f3d5bf6f7acd9744f11ec40935ee3b37c8dc67df4c",
-       "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T15:00:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "03984beb1398af3a989e46600fc4a4b40951e39036c474aabfa747ee3575c894",
+     "id": "56452fc755f3daa1c981041257d44abb8b2b12ab954c2ec96304c3e16e158a07",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "0ba6d71c086461b68ec3257e89e14c49f5d813a2df3bdedc7e3fd3510ce2af57",
@@ -2383,6 +1883,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 7,
      "output": 330,
      "cacheWrite": 800,
@@ -2394,7 +1895,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "03984beb1398af3a989e46600fc4a4b40951e39036c474aabfa747ee3575c894",
+       "recordId": "56452fc755f3daa1c981041257d44abb8b2b12ab954c2ec96304c3e16e158a07",
        "sessionHash": "0ba6d71c086461b68ec3257e89e14c49f5d813a2df3bdedc7e3fd3510ce2af57"
       },
       "window": {
@@ -2408,7 +1909,7 @@
      }
     },
     {
-     "id": "1cb0b1286aa5c7cec176650b37effbec689e898ef562623705fed57ccf3fe315",
+     "id": "4152b5435dcaacd483e7a90c0322b4cc0a420c07e29e4eca8054f36e878b2438",
      "tool": "claude-code",
      "model": "claude-sonnet-5",
      "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
@@ -2422,6 +1923,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 2,
      "output": 150,
      "cacheWrite": 3000,
@@ -2433,7 +1935,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "1cb0b1286aa5c7cec176650b37effbec689e898ef562623705fed57ccf3fe315",
+       "recordId": "4152b5435dcaacd483e7a90c0322b4cc0a420c07e29e4eca8054f36e878b2438",
        "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
       },
       "window": {
@@ -2447,7 +1949,7 @@
      }
     },
     {
-     "id": "e084345a73440160f273974fb6726200b71a3c32d509181ee4854cfed5cf0e3b",
+     "id": "2539902c98b719a818c356a430d4c439f0b99fb54fbc71062bad057087ee1fcd",
      "tool": "claude-code",
      "model": "claude-sonnet-5",
      "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
@@ -2461,8 +1963,9 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 1,
-     "output": 30,
+     "output": 260,
      "cacheWrite": 100,
      "cacheRead": 3000,
      "cacheWrite5m": 100,
@@ -2472,7 +1975,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "e084345a73440160f273974fb6726200b71a3c32d509181ee4854cfed5cf0e3b",
+       "recordId": "2539902c98b719a818c356a430d4c439f0b99fb54fbc71062bad057087ee1fcd",
        "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
       },
       "window": {
@@ -2486,46 +1989,7 @@
      }
     },
     {
-     "id": "c0460e199906afdc48446e163e4e26057f0bb10e216effcf4d4f4d68b682f7e9",
-     "tool": "claude-code",
-     "model": "claude-sonnet-5",
-     "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
-     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
-     "isSubagent": true,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T09:05:00.000Z",
-     "reportingDevice": "dev_personA-studio01",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 230,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "c0460e199906afdc48446e163e4e26057f0bb10e216effcf4d4f4d68b682f7e9",
-       "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T09:05:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "69bf1acc2959d66f7114bf59ddc7736526eb1c48ba619a59e3ecda7abed83230",
+     "id": "f5dafcd4499c11db3dbf71036b1cf7da4cc864f47a56c4cf0061f7eb48a7f6f2",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "a6b16a71df949693887ee87e30c49aef2d4aeb4b144416162435ca0e3829b1d3",
@@ -2539,6 +2003,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 6,
      "output": 500,
      "cacheWrite": 7000,
@@ -2550,7 +2015,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "69bf1acc2959d66f7114bf59ddc7736526eb1c48ba619a59e3ecda7abed83230",
+       "recordId": "f5dafcd4499c11db3dbf71036b1cf7da4cc864f47a56c4cf0061f7eb48a7f6f2",
        "sessionHash": "a6b16a71df949693887ee87e30c49aef2d4aeb4b144416162435ca0e3829b1d3"
       },
       "window": {
@@ -2564,7 +2029,7 @@
      }
     },
     {
-     "id": "edc79e3db81c478900672cca4d004de6dfc899c5bdee38eb8dbe5e7a8a79b4f7",
+     "id": "bf29d93d821f6231a65033d854f7875cb060e870d8302924abd32f452e8acfec",
      "tool": "claude-code",
      "model": "claude-sonnet-5",
      "sessionHash": "7181ad90fc6217ace0f1d27fb6429c38a886498971f10605b7ffc1a5d83a72f2",
@@ -2578,6 +2043,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 3,
      "output": 120,
      "cacheWrite": 200,
@@ -2589,7 +2055,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "edc79e3db81c478900672cca4d004de6dfc899c5bdee38eb8dbe5e7a8a79b4f7",
+       "recordId": "bf29d93d821f6231a65033d854f7875cb060e870d8302924abd32f452e8acfec",
        "sessionHash": "7181ad90fc6217ace0f1d27fb6429c38a886498971f10605b7ffc1a5d83a72f2"
       },
       "window": {
@@ -2603,7 +2069,7 @@
      }
     },
     {
-     "id": "ae77708bbe3bd486f30531a2711103c88e38f8d0c2f11770cd857eb405fea649",
+     "id": "958b464b3d31cafdffa63a524070244895ddea9189477c909e2bd499e311efa0",
      "tool": "claude-code",
      "model": "claude-sonnet-5",
      "sessionHash": "741a24dba90cce23f55956924c8fcb2cda8442c2741b20f7345492a8866b4eb3",
@@ -2617,6 +2083,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 2,
      "output": 80,
      "cacheWrite": 100,
@@ -2628,7 +2095,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "ae77708bbe3bd486f30531a2711103c88e38f8d0c2f11770cd857eb405fea649",
+       "recordId": "958b464b3d31cafdffa63a524070244895ddea9189477c909e2bd499e311efa0",
        "sessionHash": "741a24dba90cce23f55956924c8fcb2cda8442c2741b20f7345492a8866b4eb3"
       },
       "window": {
@@ -2656,6 +2123,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 800,
      "output": 50,
      "cacheWrite": 200,
@@ -2695,6 +2163,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 400,
      "output": 80,
      "cacheWrite": 100,
@@ -2734,6 +2203,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 100,
      "output": 60,
      "cacheWrite": 0,
@@ -2773,6 +2243,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 200,
      "output": 40,
      "cacheWrite": 0,
@@ -2812,6 +2283,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 300,
      "output": 60,
      "cacheWrite": 0,
@@ -2851,6 +2323,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 600,
      "output": 70,
      "cacheWrite": 300,
@@ -2890,6 +2363,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 300,
      "output": 80,
      "cacheWrite": 100,
@@ -2929,6 +2403,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 500,
      "output": 60,
      "cacheWrite": 100,
@@ -2968,6 +2443,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 9000,
      "output": 700,
      "cacheWrite": 0,
@@ -3007,6 +2483,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 300,
      "output": 40,
      "cacheWrite": 50,
@@ -3046,6 +2523,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 200,
      "output": 30,
      "cacheWrite": 20,
@@ -3082,7 +2560,7 @@
    },
    "records": [
     {
-     "id": "19f67466010d3dc5acc9c124ffbf756229458266e1eb73fdd73837144ce62776",
+     "id": "0e55b97e9fd487a7c1ec175591e761baa65cf46b6cc584b691fe2c903efea40f",
      "tool": "claude-code",
      "model": "claude-sonnet-5",
      "sessionHash": "1531b0d86129f133f587cb5c649d251bab2c0a4084495a70bafaf02be3c2a998",
@@ -3096,6 +2574,7 @@
      "ttl": "unknown",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 11,
      "output": 210,
      "cacheWrite": 900,
@@ -3107,7 +2586,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "19f67466010d3dc5acc9c124ffbf756229458266e1eb73fdd73837144ce62776",
+       "recordId": "0e55b97e9fd487a7c1ec175591e761baa65cf46b6cc584b691fe2c903efea40f",
        "sessionHash": "1531b0d86129f133f587cb5c649d251bab2c0a4084495a70bafaf02be3c2a998"
       },
       "window": {
@@ -3121,7 +2600,7 @@
      }
     },
     {
-     "id": "6face6cc5d7c7d1aa0b2a53f458d01f498fb71504f974a8836932147076ca5a3",
+     "id": "259eb27fb3b1e8a0eed3f31115e62bb3003b3e3b7a403dfa74beb915209a3c75",
      "tool": "claude-code",
      "model": "claude-sonnet-5",
      "sessionHash": "1531b0d86129f133f587cb5c649d251bab2c0a4084495a70bafaf02be3c2a998",
@@ -3135,6 +2614,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 2,
      "output": 40,
      "cacheWrite": 30,
@@ -3146,7 +2626,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "6face6cc5d7c7d1aa0b2a53f458d01f498fb71504f974a8836932147076ca5a3",
+       "recordId": "259eb27fb3b1e8a0eed3f31115e62bb3003b3e3b7a403dfa74beb915209a3c75",
        "sessionHash": "1531b0d86129f133f587cb5c649d251bab2c0a4084495a70bafaf02be3c2a998"
       },
       "window": {
@@ -3174,6 +2654,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 400,
      "output": 20,
      "cacheWrite": 100,
@@ -3213,6 +2694,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 250,
      "output": 40,
      "cacheWrite": 0,
@@ -3248,7 +2730,7 @@
    },
    "records": [
     {
-     "id": "e00e27ae79fd142f274d3a690485ea1d6016b552f3d2833319d6ed6a9fcf89e3",
+     "id": "398a8fef5d7c9f3fed629c7fef5490104ef4dd03872027ab3f05706e6911bc8b",
      "tool": "claude-code",
      "model": "claude-haiku-4-5-20251001",
      "sessionHash": "2faacce92ab4a5d8e7ef2513b780aebda4b843d8173b39068ff156753a44e0ee",
@@ -3262,6 +2744,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 30,
      "output": 400,
      "cacheWrite": 2000,
@@ -3273,7 +2756,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "e00e27ae79fd142f274d3a690485ea1d6016b552f3d2833319d6ed6a9fcf89e3",
+       "recordId": "398a8fef5d7c9f3fed629c7fef5490104ef4dd03872027ab3f05706e6911bc8b",
        "sessionHash": "2faacce92ab4a5d8e7ef2513b780aebda4b843d8173b39068ff156753a44e0ee"
       },
       "window": {
@@ -3287,7 +2770,7 @@
      }
     },
     {
-     "id": "602bbf8bb3a06c24f6997083af636c47eb9abbfeaa95d9e64f1844606d07f8fb",
+     "id": "462ccb5cd94048c3ff628bd54a3f1ee4d96bddc66647132198ef3e66b9b92f5c",
      "tool": "claude-code",
      "model": "claude-haiku-4-5-20251001",
      "sessionHash": "2faacce92ab4a5d8e7ef2513b780aebda4b843d8173b39068ff156753a44e0ee",
@@ -3301,6 +2784,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 1,
      "output": 20,
      "cacheWrite": 0,
@@ -3312,7 +2796,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "602bbf8bb3a06c24f6997083af636c47eb9abbfeaa95d9e64f1844606d07f8fb",
+       "recordId": "462ccb5cd94048c3ff628bd54a3f1ee4d96bddc66647132198ef3e66b9b92f5c",
        "sessionHash": "2faacce92ab4a5d8e7ef2513b780aebda4b843d8173b39068ff156753a44e0ee"
       },
       "window": {
@@ -3326,7 +2810,7 @@
      }
     },
     {
-     "id": "a9890781fbd9fff8fecca6a6470cabe6e3d2128725acdec3fdb32273e8bd38bd",
+     "id": "d8e08a298ff6d98b1b41788ac53893167e0e96c6de6f515ddd14d1307a77290d",
      "tool": "claude-code",
      "model": "claude-haiku-4-5-20251001",
      "sessionHash": "2faacce92ab4a5d8e7ef2513b780aebda4b843d8173b39068ff156753a44e0ee",
@@ -3340,6 +2824,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 5,
      "output": 777,
      "cacheWrite": 10,
@@ -3351,7 +2836,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "a9890781fbd9fff8fecca6a6470cabe6e3d2128725acdec3fdb32273e8bd38bd",
+       "recordId": "d8e08a298ff6d98b1b41788ac53893167e0e96c6de6f515ddd14d1307a77290d",
        "sessionHash": "2faacce92ab4a5d8e7ef2513b780aebda4b843d8173b39068ff156753a44e0ee"
       },
       "window": {
@@ -3373,7 +2858,7 @@
    "coverage": {},
    "records": [
     {
-     "id": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+     "id": "dc0e5226282df0be5ff0e7e8d4f085a6eb094443787ccaea32fedde945d39505",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -3387,6 +2872,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 12,
      "output": 340,
      "cacheWrite": 24000,
@@ -3398,7 +2884,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "0f75ab9ab891725393f8e50059cafa306a74af1595688c084d17a57b5b9573f5",
+       "recordId": "dc0e5226282df0be5ff0e7e8d4f085a6eb094443787ccaea32fedde945d39505",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -3412,7 +2898,7 @@
      }
     },
     {
-     "id": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+     "id": "af3d7e8d460354d38c6a09fc457f5889c42f3c6f2c591e70fd4fe33a042e8045",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -3426,8 +2912,9 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 3,
-     "output": 7,
+     "output": 410,
      "cacheWrite": 500,
      "cacheRead": 24000,
      "cacheWrite5m": 500,
@@ -3437,7 +2924,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "589b66e6aaa6f2e944d19198feeeb6b0dd669bd1aadc4a11cd6518161f6f0d2a",
+       "recordId": "af3d7e8d460354d38c6a09fc457f5889c42f3c6f2c591e70fd4fe33a042e8045",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -3451,85 +2938,7 @@
      }
     },
     {
-     "id": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T09:00:00.000Z",
-     "reportingDevice": "dev_personA-studio02",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 113,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "69a1f6c2abebae9d87f0107146383c77fb754af1a72edf532481a985844745c7",
-       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T09:00:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T09:00:00.000Z",
-     "reportingDevice": "dev_personA-studio02",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 290,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "5f5ba44f212b9cae4ad5726df40e35a0a8dbc8c46d43e39cdf512cc355eb2f45",
-       "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T09:00:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+     "id": "8da3c852fe93d8886e2292f9945469e5d7e229bb6bedbc85c16132141e345a10",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -3543,6 +2952,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 5,
      "output": 90,
      "cacheWrite": 300,
@@ -3554,7 +2964,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "60193fa61ed973fede9b3813091724f0491c89338124c15771d646fe2953eb76",
+       "recordId": "8da3c852fe93d8886e2292f9945469e5d7e229bb6bedbc85c16132141e345a10",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -3568,7 +2978,7 @@
      }
     },
     {
-     "id": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+     "id": "1bab57d27d79e675f6ceaba1bb030d8e5a48a60396ce8f5aba53c91534a5e5de",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -3582,6 +2992,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 4,
      "output": 60,
      "cacheWrite": 200,
@@ -3593,7 +3004,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "b494d53334f363d79c9228f396f6ad56a8cb2175a66b6b6d52cee885843617b6",
+       "recordId": "1bab57d27d79e675f6ceaba1bb030d8e5a48a60396ce8f5aba53c91534a5e5de",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -3607,7 +3018,7 @@
      }
     },
     {
-     "id": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+     "id": "47f88a27ea7ce7397f7f88d7ac5065240191d3ba4b75a1f2782e0f8975d82fe9",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
@@ -3621,6 +3032,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 9,
      "output": 800,
      "cacheWrite": 8000,
@@ -3632,7 +3044,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "341acdabb30b221d114f5a71c74cde995b70340642479387a9dd49add7f57cf6",
+       "recordId": "47f88a27ea7ce7397f7f88d7ac5065240191d3ba4b75a1f2782e0f8975d82fe9",
        "sessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b"
       },
       "window": {
@@ -3646,7 +3058,7 @@
      }
     },
     {
-     "id": "876bd6afa34fd073d05d94e464b850486bcab158e04a42abc10e51e8d73bd809",
+     "id": "eec47e87d5f81b7b844a4e04b8f551aa89eaf1230ec8995dfe449bbb19d68845",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
@@ -3660,6 +3072,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 10,
      "output": 200,
      "cacheWrite": 1500,
@@ -3671,7 +3084,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "876bd6afa34fd073d05d94e464b850486bcab158e04a42abc10e51e8d73bd809",
+       "recordId": "eec47e87d5f81b7b844a4e04b8f551aa89eaf1230ec8995dfe449bbb19d68845",
        "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
       },
       "window": {
@@ -3685,7 +3098,7 @@
      }
     },
     {
-     "id": "4181fd27abe09a1c0c9d6bd5528b9ec1669c0aa768653c2cec3b950d037065e8",
+     "id": "25898bb37062ad10032ccba9066a415c4bf7fe7c9e7f85864f390d6033563836",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
@@ -3699,8 +3112,9 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 2,
-     "output": 50,
+     "output": 150,
      "cacheWrite": 400,
      "cacheRead": 2500,
      "cacheWrite5m": 400,
@@ -3710,7 +3124,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "4181fd27abe09a1c0c9d6bd5528b9ec1669c0aa768653c2cec3b950d037065e8",
+       "recordId": "25898bb37062ad10032ccba9066a415c4bf7fe7c9e7f85864f390d6033563836",
        "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
       },
       "window": {
@@ -3724,46 +3138,7 @@
      }
     },
     {
-     "id": "fd20c99ead4064c3f6637a0c0cac432c3c74733f48660caca61993827b94d0f0",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T11:01:00.000Z",
-     "reportingDevice": "dev_personA-studio02",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 100,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "fd20c99ead4064c3f6637a0c0cac432c3c74733f48660caca61993827b94d0f0",
-       "sessionHash": "6505bb8719dfb88047cf70ce035ad336a9c49777b08a191bb77e7012acb44790"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T11:01:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "29597fc35dad8e50e2bf11c53941f84b24f0de33ec093e64439f9ee123033128",
+     "id": "9bf9d9303076fc409c4dc868647ca517385d116bdc9db3fd695eb552dc6aa891",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14",
@@ -3777,8 +3152,9 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 4,
-     "output": 2,
+     "output": 399,
      "cacheWrite": 1000,
      "cacheRead": 3000,
      "cacheWrite5m": 1000,
@@ -3788,7 +3164,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "29597fc35dad8e50e2bf11c53941f84b24f0de33ec093e64439f9ee123033128",
+       "recordId": "9bf9d9303076fc409c4dc868647ca517385d116bdc9db3fd695eb552dc6aa891",
        "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14"
       },
       "window": {
@@ -3802,85 +3178,7 @@
      }
     },
     {
-     "id": "665ff7c83f65275d0647993e72c0949c1e055dab384ec7545bfa0b46c3f68343",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T15:00:00.000Z",
-     "reportingDevice": "dev_personA-studio02",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 148,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "665ff7c83f65275d0647993e72c0949c1e055dab384ec7545bfa0b46c3f68343",
-       "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T15:00:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "5e1afb1263282fd69603a0f3d5bf6f7acd9744f11ec40935ee3b37c8dc67df4c",
-     "tool": "claude-code",
-     "model": "claude-opus-5-5",
-     "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14",
-     "parentSessionHash": null,
-     "isSubagent": false,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T15:00:00.000Z",
-     "reportingDevice": "dev_personA-studio02",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 249,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "5e1afb1263282fd69603a0f3d5bf6f7acd9744f11ec40935ee3b37c8dc67df4c",
-       "sessionHash": "93c6e25b44a914a523b618669122915100b133c21fdbbe9fb37a379db6dc5d14"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T15:00:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "03984beb1398af3a989e46600fc4a4b40951e39036c474aabfa747ee3575c894",
+     "id": "56452fc755f3daa1c981041257d44abb8b2b12ab954c2ec96304c3e16e158a07",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "0ba6d71c086461b68ec3257e89e14c49f5d813a2df3bdedc7e3fd3510ce2af57",
@@ -3894,6 +3192,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 7,
      "output": 330,
      "cacheWrite": 800,
@@ -3905,7 +3204,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "03984beb1398af3a989e46600fc4a4b40951e39036c474aabfa747ee3575c894",
+       "recordId": "56452fc755f3daa1c981041257d44abb8b2b12ab954c2ec96304c3e16e158a07",
        "sessionHash": "0ba6d71c086461b68ec3257e89e14c49f5d813a2df3bdedc7e3fd3510ce2af57"
       },
       "window": {
@@ -3919,7 +3218,7 @@
      }
     },
     {
-     "id": "1cb0b1286aa5c7cec176650b37effbec689e898ef562623705fed57ccf3fe315",
+     "id": "4152b5435dcaacd483e7a90c0322b4cc0a420c07e29e4eca8054f36e878b2438",
      "tool": "claude-code",
      "model": "claude-sonnet-5",
      "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
@@ -3933,6 +3232,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 2,
      "output": 150,
      "cacheWrite": 3000,
@@ -3944,7 +3244,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "1cb0b1286aa5c7cec176650b37effbec689e898ef562623705fed57ccf3fe315",
+       "recordId": "4152b5435dcaacd483e7a90c0322b4cc0a420c07e29e4eca8054f36e878b2438",
        "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
       },
       "window": {
@@ -3958,7 +3258,7 @@
      }
     },
     {
-     "id": "e084345a73440160f273974fb6726200b71a3c32d509181ee4854cfed5cf0e3b",
+     "id": "2539902c98b719a818c356a430d4c439f0b99fb54fbc71062bad057087ee1fcd",
      "tool": "claude-code",
      "model": "claude-sonnet-5",
      "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
@@ -3972,8 +3272,9 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 1,
-     "output": 30,
+     "output": 260,
      "cacheWrite": 100,
      "cacheRead": 3000,
      "cacheWrite5m": 100,
@@ -3983,7 +3284,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "e084345a73440160f273974fb6726200b71a3c32d509181ee4854cfed5cf0e3b",
+       "recordId": "2539902c98b719a818c356a430d4c439f0b99fb54fbc71062bad057087ee1fcd",
        "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
       },
       "window": {
@@ -3997,46 +3298,7 @@
      }
     },
     {
-     "id": "c0460e199906afdc48446e163e4e26057f0bb10e216effcf4d4f4d68b682f7e9",
-     "tool": "claude-code",
-     "model": "claude-sonnet-5",
-     "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c",
-     "parentSessionHash": "96b53c15d2b8a2258011a85de12eff44c68dd059cd2d386dc72aaf66c3c4c73b",
-     "isSubagent": true,
-     "projectHash": "10b3adb62cf774182fb58bfcd93c9ac61c1f9734cc3d808de5dc360dae99e40e",
-     "engagement": null,
-     "at": "2026-09-20T09:05:00.000Z",
-     "reportingDevice": "dev_personA-studio02",
-     "executionOrigin": "unknown",
-     "ttl": "split",
-     "tier": "standard",
-     "continuation": true,
-     "fresh": 0,
-     "output": 230,
-     "cacheWrite": 0,
-     "cacheRead": 0,
-     "cacheWrite5m": 0,
-     "cacheWrite1h": 0,
-     "observed": true,
-     "measurement": {
-      "provenance": "deviceReported",
-      "population": {
-       "kind": "usageEvent",
-       "recordId": "c0460e199906afdc48446e163e4e26057f0bb10e216effcf4d4f4d68b682f7e9",
-       "sessionHash": "9fad6e901b8ad9367e4c2bf6e32ad39bfe73d83495d3f28dc6c76023d17a179c"
-      },
-      "window": {
-       "kind": "event",
-       "at": "2026-09-20T09:05:00.000Z"
-      },
-      "source": {
-       "kind": "localTranscript",
-       "tool": "claude-code"
-      }
-     }
-    },
-    {
-     "id": "69bf1acc2959d66f7114bf59ddc7736526eb1c48ba619a59e3ecda7abed83230",
+     "id": "f5dafcd4499c11db3dbf71036b1cf7da4cc864f47a56c4cf0061f7eb48a7f6f2",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "a6b16a71df949693887ee87e30c49aef2d4aeb4b144416162435ca0e3829b1d3",
@@ -4050,6 +3312,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 6,
      "output": 500,
      "cacheWrite": 7000,
@@ -4061,7 +3324,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "69bf1acc2959d66f7114bf59ddc7736526eb1c48ba619a59e3ecda7abed83230",
+       "recordId": "f5dafcd4499c11db3dbf71036b1cf7da4cc864f47a56c4cf0061f7eb48a7f6f2",
        "sessionHash": "a6b16a71df949693887ee87e30c49aef2d4aeb4b144416162435ca0e3829b1d3"
       },
       "window": {
@@ -4075,7 +3338,7 @@
      }
     },
     {
-     "id": "edc79e3db81c478900672cca4d004de6dfc899c5bdee38eb8dbe5e7a8a79b4f7",
+     "id": "bf29d93d821f6231a65033d854f7875cb060e870d8302924abd32f452e8acfec",
      "tool": "claude-code",
      "model": "claude-sonnet-5",
      "sessionHash": "7181ad90fc6217ace0f1d27fb6429c38a886498971f10605b7ffc1a5d83a72f2",
@@ -4089,6 +3352,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 3,
      "output": 120,
      "cacheWrite": 200,
@@ -4100,7 +3364,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "edc79e3db81c478900672cca4d004de6dfc899c5bdee38eb8dbe5e7a8a79b4f7",
+       "recordId": "bf29d93d821f6231a65033d854f7875cb060e870d8302924abd32f452e8acfec",
        "sessionHash": "7181ad90fc6217ace0f1d27fb6429c38a886498971f10605b7ffc1a5d83a72f2"
       },
       "window": {
@@ -4114,7 +3378,7 @@
      }
     },
     {
-     "id": "ae77708bbe3bd486f30531a2711103c88e38f8d0c2f11770cd857eb405fea649",
+     "id": "958b464b3d31cafdffa63a524070244895ddea9189477c909e2bd499e311efa0",
      "tool": "claude-code",
      "model": "claude-sonnet-5",
      "sessionHash": "741a24dba90cce23f55956924c8fcb2cda8442c2741b20f7345492a8866b4eb3",
@@ -4128,6 +3392,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 2,
      "output": 80,
      "cacheWrite": 100,
@@ -4139,7 +3404,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "ae77708bbe3bd486f30531a2711103c88e38f8d0c2f11770cd857eb405fea649",
+       "recordId": "958b464b3d31cafdffa63a524070244895ddea9189477c909e2bd499e311efa0",
        "sessionHash": "741a24dba90cce23f55956924c8fcb2cda8442c2741b20f7345492a8866b4eb3"
       },
       "window": {
@@ -4167,6 +3432,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 800,
      "output": 50,
      "cacheWrite": 200,
@@ -4206,6 +3472,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 400,
      "output": 80,
      "cacheWrite": 100,
@@ -4245,6 +3512,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 100,
      "output": 60,
      "cacheWrite": 0,
@@ -4284,6 +3552,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 200,
      "output": 40,
      "cacheWrite": 0,
@@ -4323,6 +3592,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 300,
      "output": 60,
      "cacheWrite": 0,
@@ -4362,6 +3632,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 600,
      "output": 70,
      "cacheWrite": 300,
@@ -4401,6 +3672,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 300,
      "output": 80,
      "cacheWrite": 100,
@@ -4440,6 +3712,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 500,
      "output": 60,
      "cacheWrite": 100,
@@ -4479,6 +3752,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 9000,
      "output": 700,
      "cacheWrite": 0,
@@ -4518,6 +3792,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 300,
      "output": 40,
      "cacheWrite": 50,
@@ -4557,6 +3832,7 @@
      "ttl": "unknown",
      "tier": null,
      "continuation": false,
+     "cumulative": false,
      "fresh": 200,
      "output": 30,
      "cacheWrite": 20,
@@ -4582,7 +3858,7 @@
      }
     },
     {
-     "id": "2e71b8f4920eec7a07d02b22d0bc7e1979359b2e9ccfa283211f91882a3e51f5",
+     "id": "d9bf994152c9b0712fd3c282bbbad2325675b9614b39ebbd648264d30a39ac2e",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "6243ca525fa994e4d382f00d8cea810cc65d97b32b94a7d4f55292b718c002f4",
@@ -4596,6 +3872,7 @@
      "ttl": "split",
      "tier": "standard",
      "continuation": false,
+     "cumulative": true,
      "fresh": 8,
      "output": 180,
      "cacheWrite": 1000,
@@ -4607,7 +3884,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "2e71b8f4920eec7a07d02b22d0bc7e1979359b2e9ccfa283211f91882a3e51f5",
+       "recordId": "d9bf994152c9b0712fd3c282bbbad2325675b9614b39ebbd648264d30a39ac2e",
        "sessionHash": "6243ca525fa994e4d382f00d8cea810cc65d97b32b94a7d4f55292b718c002f4"
       },
       "window": {
@@ -4621,7 +3898,7 @@
      }
     },
     {
-     "id": "62dd08efb7ca84c0844e8f667c0ecc71d50b14bf66c636f3e4aa2b6192cbd589",
+     "id": "e6cfeb2a932c1aa8d167d9953fa0f5dece1b938b3cb4f2410e5179b4ff76031f",
      "tool": "claude-code",
      "model": "claude-opus-5-5",
      "sessionHash": "6243ca525fa994e4d382f00d8cea810cc65d97b32b94a7d4f55292b718c002f4",
@@ -4635,6 +3912,7 @@
      "ttl": "split",
      "tier": "fast",
      "continuation": false,
+     "cumulative": true,
      "fresh": 10,
      "output": 500,
      "cacheWrite": 400,
@@ -4646,7 +3924,7 @@
       "provenance": "deviceReported",
       "population": {
        "kind": "usageEvent",
-       "recordId": "62dd08efb7ca84c0844e8f667c0ecc71d50b14bf66c636f3e4aa2b6192cbd589",
+       "recordId": "e6cfeb2a932c1aa8d167d9953fa0f5dece1b938b3cb4f2410e5179b4ff76031f",
        "sessionHash": "6243ca525fa994e4d382f00d8cea810cc65d97b32b94a7d4f55292b718c002f4"
       },
       "window": {

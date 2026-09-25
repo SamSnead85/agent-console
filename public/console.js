@@ -196,7 +196,11 @@
   function paintPeriod() {
     const [label, short] = PERIOD_TEXT[period];
     const w = win();
-    const since = period === "30d" && w.partial && w.since ? " · daily totals kept since " + new Date(w.since + "T00:00:00Z").toLocaleDateString([], { day: "numeric", month: "short", timeZone: "UTC" }) : "";
+    const day = (iso) => new Date(iso).toLocaleDateString([], { day: "numeric", month: "short", timeZone: "UTC" });
+    const since = !w.partial ? ""
+      : period === "30d" ? (w.since && Date.parse(w.since + "T00:00:00Z") > w.from ? " · daily totals kept since " + day(w.since + "T00:00:00Z")
+        : " · partial: some usage arrived after its day's detail was gone")
+      : w.since ? " · minute detail kept since " + day(w.since) : " · partial";
     $("cCap").textContent = "Tokens · " + label + since;
     $("cCap").title = period === "30d" ? "The last 30 calendar days in UTC, today included, from the daily totals the console keeps after its minute-by-minute detail."
       : "The whole minutes of the " + label + ", ending with the current one. The chart's bars add up to this figure.";
