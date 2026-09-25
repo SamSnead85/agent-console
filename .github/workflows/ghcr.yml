@@ -1,0 +1,42 @@
+name: Publish team hub image
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+      - name: Match the release tag
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: test "$TAG" = "v$(node -p "require('./package.json').version")"
+      - name: Test the release source
+        run: npm test
+      - name: Log in to GHCR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+      - name: Build and push both Linux architectures
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          docker buildx create --use
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            --provenance=true \
+            --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.version=$TAG" \
+            --tag "$image:$TAG" --push .
