@@ -220,3 +220,65 @@ test("device status: waiting, reporting, silent, removed — and hourly reporter
   assert.equal(deviceStatus({ lastContactAt: now - 50 * 60_000, mode: "periodic" }, now), "reporting");
   assert.equal(deviceStatus({ lastContactAt: now, revokedAt: "x" }, now), "revoked");
 });
+
+test("F3: the daily rollup outlives the minute detail, survives a restart, and answers 30 days", (t) => {
+  const dir = scratch(t);
+  let now = Date.UTC(2026, 8, 1, 12);
+  const open = () => { const s = createStore({ dir, retentionMs: 2 * DAY, prices: PRICES, now: () => now }); s.load(); return s; };
+  let store = open();
+  store.ingest("dev_a", [record({ id: "old", device: "dev_a", session: 1, at: now - 60_000, fresh: 7, output: 11, cacheWrite: 0, cacheRead: 0 })]);
+  store.flush();
+  // Twenty days later the minute detail is long gone, and the hub has restarted.
+  now += 20 * DAY;
+  store = open();
+  store.ingest("dev_a", [record({ id: "new", device: "dev_a", session: 2, at: now - 60_000, fresh: 1, output: 2, cacheWrite: 0, cacheRead: 0 })]);
+  const registry = createRegistry({ dir: null, now: () => now });
+  registry.addSynthetic({ id: "dev_a", label: "A", person: "Role A", createdAt: new Date(now - 30 * DAY).toISOString() });
+  const view = buildConsole({ store, registry, now, hub: {} });
+  assert.equal(view.windows["7d"].tokens.total, 3, "the minute periods hold only what retention keeps");
+  assert.equal(view.windows["30d"].tokens.total, 21, "30 days include a day whose minutes were pruned");
+  assert.equal(view.windows["30d"].sessions, null, "the rollup keeps no sessions, and says so");
+  assert.equal(view.windows["30d"].partial, true, "the hub has not been keeping daily totals for 30 days yet, and says so");
+  assert.equal(view.series["30d"].values.reduce((a, v) => a + v, 0), 21);
+});
+
+test("A2: records the hub cannot keep are counted, not silently dropped", (t) => {
+  const now = Date.UTC(2026, 8, 22, 12);
+  const store = createStore({ dir: scratch(t), retentionMs: 8 * DAY, prices: PRICES, now: () => now });
+  store.ingest("dev_a", [record({ id: "ahead", device: "dev_a", session: 1, at: now + 3 * DAY })]);
+  assert.equal(store.dropped.future, 1);
+  const registry = createRegistry({ dir: null, now: () => now });
+  const view = buildConsole({ store, registry, now, hub: {} });
+  assert.equal(view.coverage.dropped, 1);
+  assert.equal(view.coverage.reasons[0].kind, "future");
+});
+
+test("A5: the chart for each minute period is cut from the same minutes as its headline", () => {
+  const now = Date.UTC(2026, 8, 22, 12, 7, 30);
+  const store = createStore({ dir: null, retentionMs: 8 * DAY, prices: PRICES, now: () => now });
+  const rows = [];
+  for (let m = 0; m < 7 * 24 * 60; m += 37) rows.push(record({ id: "m" + m, device: "dev_a", session: m % 5, at: now - m * 60_000 }));
+  for (let i = 0; i < rows.length; i += 500) store.ingest("dev_a", rows.slice(i, i + 500));
+  const view = buildConsole({ store, registry: createRegistry({ dir: null, now: () => now }), now, hub: {} });
+  for (const key of ["1h", "24h", "7d"]) {
+    assert.equal(view.series[key].values.reduce((a, v) => a + v, 0), view.windows[key].tokens.total, key);
+    assert.equal(view.windows[key].to - view.windows[key].from, { "1h": 3_600_000, "24h": DAY, "7d": 7 * DAY }[key]);
+  }
+  assert.equal(view.windows["24h"].tokens.total, view.day.tokens.total);
+});
+
+test("a session's context readings stay in time order and keep the newest 128, whatever order they arrive in", () => {
+  const now = Date.UTC(2026, 8, 22, 12);
+  const store = createStore({ dir: null, retentionMs: 8 * DAY, prices: PRICES, now: () => now });
+  // 150 readings, one a minute; every seventh arrives late, after its successor.
+  const minutes = Array.from({ length: 150 }, (_, i) => i);
+  for (let i = 0; i + 1 < minutes.length; i += 7) [minutes[i], minutes[i + 1]] = [minutes[i + 1], minutes[i]];
+  for (const m of minutes) {
+    store.ingest("dev_a", [record({ id: "ctx" + m, device: "dev_a", session: "ctx", at: now - (150 - m) * 60_000, fresh: 1000 + m })]);
+  }
+  const samples = store.sessions.get(h("sctx")).contextSamples;
+  assert.equal(samples.length, 128);
+  for (let i = 1; i < samples.length; i += 1) assert.ok(samples[i - 1].at <= samples[i].at, "in time order");
+  assert.equal(samples.at(-1).at, Math.floor((now - 60_000) / 60_000) * 60_000, "the newest is kept");
+  assert.equal(samples[0].at, Math.floor((now - 128 * 60_000) / 60_000) * 60_000, "the oldest 22 are gone");
+});

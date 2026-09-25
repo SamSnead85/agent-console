@@ -59,7 +59,7 @@ test('redaction covers emitted records and persistent parser/cursor state', asyn
   assert.doesNotMatch(text, /SENTINEL_PRIVATE|synthetic\.jsonl/);
   assert.doesNotMatch(out.value(), /synthetic-session/);
   const record = JSON.parse(out.value());
-  assert.deepEqual(Object.keys(record).sort(), ['id','tool','model','sessionHash','parentSessionHash','isSubagent','projectHash','engagement','at','fresh','output','cacheWrite','cacheRead','cacheWrite5m','cacheWrite1h','ttl','reportingDevice','executionOrigin','observed','measurement','continuation'].sort());
+  assert.deepEqual(Object.keys(record).sort(), ['id','tool','model','sessionHash','parentSessionHash','isSubagent','projectHash','engagement','at','fresh','output','cacheWrite','cacheRead','cacheWrite5m','cacheWrite1h','ttl','reportingDevice','executionOrigin','observed','measurement','continuation','tier','cumulative'].sort());
   assert.equal(record.continuation, false);
   assert.equal(record.engagement, null);
   assert.equal(record.observed, true);

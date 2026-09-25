@@ -28,7 +28,7 @@
 [The same screen in the light theme.](docs/console-demo-light.png)*
 
 ```sh
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz --open
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --open
 ```
 
 You need Node.js 22 or newer. There is no account to create, nothing else to
@@ -38,8 +38,9 @@ this computer, and opens the console in your browser, signed in, normally at
 `http://127.0.0.1:6787`. To look around first without reading anything of
 yours, add `--demo` before `--open`.
 
-**In the first thirty seconds you see:** the last 24 hours of tokens, split
-into cache read, cache write, output and input; their list-price estimate;
+**In the first thirty seconds you see:** the last 24 hours of tokens (or the
+last hour, 7 days or 30 days), split into cache read, cache write, output and
+uncached input; their list-price estimate;
 burn right now, in tokens per minute and dollars per hour; one lane per
 session with its model, its subagents and its last hour of activity; and every
 machine and person reporting, each with a share of the total.
@@ -63,7 +64,7 @@ You need a Mac, a Linux machine or a Windows PC, and about two minutes.
 2. **Start it.** Paste this into the terminal and press Return:
 
    ```sh
-   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz --open
+   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --open
    ```
 
    That fetches Agent Console from this project's GitHub release (nothing to
@@ -163,31 +164,136 @@ connections on the machine running the console, allow it on private networks.
 
 ## What you see
 
-**Tokens · last 24 hours**: the total across every machine, the list-price
-estimate, the number of messages (API responses, not transcript lines), and the
-split into **cache read**, **cache write**, **output** and **input**, each with
-its share of all tokens. (Cache read as a share of *input tokens only*, the
+**Tokens · last 24 hours**, or the last hour, 7 days or 30 days from the period
+switch: the total across every machine, the list-price estimate, the number of
+messages (API responses, not transcript lines), and the split into **cache
+read**, **cache write** (by cache lifetime), **output** and **uncached input**,
+each with its share of all tokens. The chart, the model list and the machine
+list follow the same period, and the chart's bars add up to the headline. 30
+days come from daily totals the console keeps for 400 days. Transcript lines
+that carry usage but could not be counted are counted by reason and shown
+beside the figures, never silently dropped. (Cache read as a share of *input tokens only*, the
 other common reading, is in the cache-read tooltip, labelled as such.)
 
-**Tokens over time**: the last hour, day or week. Where a machine has stopped
+**Tokens over time**: the last hour, day, week or 30 days. Where a machine has stopped
 reporting, the chart says from when it is incomplete.
 
-**Burn · right now**: tokens per minute (or per second) over the last five
-minutes, the dollars per hour it implies, and each model's share and spend over
-the day, with real Anthropic and OpenAI marks.
+**By model** and **by machine**: each model's share and spend over the period,
+with real Anthropic and OpenAI marks, and each machine's share, tokens and
+estimate, one row each, a silent machine saying since when.
+
+**Attention**: the one thing that needs it — a burn spike, spending without
+progress, a repeated tool call, an unpriced model in the estimate, a silent
+machine — or, when nothing does, that nothing does.
+
+**Spend spectrum**: the estimate's share by class over the tokens' share by
+class, so a small share of tokens that is a large share of the money shows as
+such; then each model's share of the money over its share of the tokens.
+
+**Burn · last 60 min**: tokens per minute (or per second) right now, averaged
+over the last fifteen minutes so one burst of agent traffic does not swing it,
+the dollars per hour it implies, and the last sixty minutes drawn one bar per
+minute with their median.
 
 **Lanes**: one row per session: whether it is live, the project and branch, the
-model, its last hour of activity, tokens in the last five minutes, how many
-subagents it is running, and which machine it is on.
+model, its last hour of activity, tokens in the last five minutes, uncached
+input and output for the day, the day's tokens and their estimate, how many
+subagents it is running, its context, which machine it is on and when it last
+reported. The rest of the day folds under the lanes: cold sessions, projects,
+effort and what was shipped.
 
-**Machines** and **Team**: every machine and every person: tokens, share of the
-total, cache read and write shares, model split and cost, for 24 hours or
-7 days; every join link, who used it and when. Two machines with the same
+**Context and cache health**: the Context column shows the latest complete
+input reading for an API response in each session. Open it to see the last 16
+readings, growth, and possible cache breaks. A session is flagged when a
+reading reaches 160,000 input tokens, or when it reaches 80,000 and doubles
+from the first retained reading. The hub keeps at most 128 recent readings per
+session. Streaming continuation rows are excluded, so some responses without
+a complete first reading cannot be shown. A gap past the previous write's
+known lifetime (five minutes or one hour), followed by a new cache write and
+falling cache reads, is marked an idle-gap signal. With an unknown lifetime,
+the drill-down says so; a large write within a known lifetime is marked a
+possible prefix rewrite. The logs do not prove the cause. Extra cost is an estimate of the
+observed cache write over a hypothetical cache read, using the offline price
+table version and check date shown in the drill-down. Unpriced estimates stay
+unknown. In `--demo`, the existing docs-site lane includes a synthetic break.
+
+### Optional telemetry and metrics
+
+Start with `--interop` to enable a local Prometheus `/metrics` endpoint and
+local ingest of Claude Code OpenTelemetry and Kong or LiteLLM token metrics.
+The console shows those readings in a Telemetry panel, separate from the
+transcript totals so the same request is never added twice. It is off for
+ordinary users. The synthetic demo shows an OpenTelemetry reading. See
+[setup, accepted formats and privacy rules](docs/INTEROP.md); the included
+[Grafana dashboard](docs/grafana-agent-console.json) can read `/metrics`.
+`/metrics` and ingest require separate credentials: `metrics-token --scope read`
+for scrapers and `metrics-token --scope ingest` for exporters. Add `--rotate`
+to revoke and replace one scope without restarting the console.
+
+### Shared analysis core
+
+The dependency-free analysis functions are available to other Node.js consumers
+through the versioned `@lockedinlabs/agent-console/analysis` subpath:
+
+```js
+import { ANALYSIS_VERSION, contextHealth } from '@lockedinlabs/agent-console/analysis';
+const health = contextHealth(samples, prices);
+```
+
+`ANALYSIS_VERSION` is 1. `contextHealth` accepts only plain usage data:
+`samples` contains timestamps, token counts and model IDs; `prices` contains
+offline model rates, table version and check date. It returns a plain object
+with context weight, growth, possible cache breaks and estimated extra cost.
+No transcript text, paths, names or credentials enter the core. The console
+uses this same subpath. See [the API contract](docs/ANALYSIS.md) for fields
+and unknown-value behavior.
+
+**Live alerts**: as new local Claude Code or Codex transcript lines arrive,
+Agent Console flags repeated identical tool calls, a response spending at least
+50,000 tokens and three times its session's recent median, and 500,000 tokens
+spent over five minutes without an observed successful tool result. A repeated
+call needs five matching tool-and-argument hashes. These are signals, not proof
+that work is stuck. The alert panel covers this machine; alerts remain local
+and expire from the panel after an hour. `--demo` includes synthetic examples.
+Use `--alert-repeat`, `--alert-spike-factor`, and `--alert-stall-minutes` to
+change the thresholds. Add `--desktop-alerts` to opt in to native macOS,
+Linux, or Windows notifications; they name the signal but never include tool
+arguments. The existing collector tail checks for new lines every two seconds,
+and the UI polls every two seconds. The alerts use the collector's counted
+token deltas and salted session identities, including distinct subagents; they
+do not rescan transcripts or recompute Codex usage. In a synthetic five-call
+append through the local collector on this machine, the alert appeared after
+2,043 ms; the next UI poll can add up to two seconds. That is an observation,
+not a latency guarantee.
+The pure detection rules are exported from the shared analysis subpath.
+
+**Agent tree**: open the Agents count in a lane to see the orchestrator and
+its observed subagents in place. Each row shows its model, tokens observed in
+the last 24 hours, and the span between its first and last reported records.
+Outcome is **unknown · no result recorded** until a result is available in the
+privacy-safe record format; activity or a tool call is not treated as success.
+The synthetic team includes parent and child sessions. The same count-only
+tree builder is exported from the shared analysis subpath.
+
+**Team**: every machine and every person: tokens, share of the
+total, cache read and write shares, model split and cost, for the same periods as the headline; every join link, who used it and when. Two machines with the same
 person roll up into one row.
 
 **Projects**: this computer only: tokens per project, and what Git recorded in
-the same period (commits, lines changed, pull requests merged). It is read on
-this computer and never sent anywhere.
+the same period (commits, lines changed, and commits referencing a pull request
+or issue number). Git figures count only commits by this computer's Git email
+(`user.email`); where none is set, the page says it counts every author. It is
+read on this computer and never sent anywhere.
+
+**Spend in the window of the work**: Projects also shows estimated spend per
+local commit and per integration into a locally known default branch. The
+denominator is Git evidence in the selected period (1 hour to 30 days); the
+numerator is this machine's usage estimate in that same window. These are
+correlations, not attribution to a commit or a merge. Squash subjects with a
+pull-request number and merge commits on the default branch count as
+integrations. A missing default-branch ref, zero outcomes or any unpriced
+usage leaves the ratio unknown, shown as a dash. No GitHub token or network
+request is involved. The synthetic team includes demonstration ratios.
 
 ### What the numbers promise
 
@@ -216,6 +322,28 @@ The full definitions are in [docs/MEASUREMENTS.md](docs/MEASUREMENTS.md). The
 accounting rules for people, teams, models and sessions, and the conformance
 suite that checks them to the token, are in [docs/accounting.md](docs/accounting.md).
 
+## Project policy
+
+Add `agent-policy.yaml` at your repository root, then, from that root:
+
+```sh
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy diff
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy apply
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy remove
+```
+
+`policy diff` shows the proposed Claude Code agents, settings and hooks;
+`policy apply` installs those project files with private backups; `policy
+remove` restores what was there before and deletes what apply created. From a
+download, use `node bin/agent-console.mjs policy …`; `policy --help` prints the
+usage. All three refuse a symlinked `.claude` path and never write your
+user-level Claude settings. The installed hook decides within five seconds,
+and asks or denies when it cannot classify a command in time. Nothing is
+installed by starting the dashboard. The optional policy covers model roles,
+effort, action gates, and budget thresholds; hard token and dollar budget
+enforcement is not available from the native launch hook. See
+[the policy format and current enforcement limits](docs/policy.md).
+
 ## How the machines connect
 
 One computer runs the console: the **hub**. Every other computer runs a small
@@ -234,8 +362,9 @@ removing machines) are on `127.0.0.1:6787`: this computer only, whatever
 reporting port, `6788`, which serves only the join page, the join exchange and
 reporting. By default it listens on this computer only; `--listen 0.0.0.0` (or
 a specific address) opens it to your network. It accepts callers on private
-networks only (home and office ranges, Tailscale, IPv6 unique-local) unless you
-pass `--allow-public`. To look at the console from elsewhere, tunnel to it:
+networks only (home and office ranges, IPv6 unique-local) unless you pass
+`--allow-public`. Tailscale's addresses (100.64.0.0/10) are shared with
+strangers on carrier-grade NAT, so they count only with `--allow-cgnat`. To look at the console from elsewhere, tunnel to it:
 `ssh -L 6787:127.0.0.1:6787 you@hub-computer`, then open `http://127.0.0.1:6787`.
 
 **Encrypted and pinned.** The console makes its own TLS certificate the first
@@ -264,24 +393,37 @@ Nothing leaves that directory.
 out, with the release link:
 
 ```sh
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz join '<join link>'
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz report
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.2/lockedinlabs-agent-console-0.2.2.tgz leave
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz join '<join link>'
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz report
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz leave
 ```
 
 `join` enrols this computer, then keeps reporting. `report` keeps reporting after
-a restart, with no new link. `leave` stops, and deletes everything the enrolment
-left on this computer. From a download, use `node bin/agent-console.mjs` in place
+a restart, with no new link. `stop` stops a reporter running in the background
+and keeps the enrolment. `leave` stops any reporter, tells the console this
+computer has left, and deletes everything the enrolment left on this computer.
+Joining the same console again keeps this computer's entry and history, rather
+than adding a second machine with the same name; after `leave`, that holds when
+the new link names the same person and machine. From a download, use `node bin/agent-console.mjs` in place
 of `npx --yes <release link>`. Always use the full command: the short name on
 its own would fetch a different, unrelated package from the public registry.
 
-Options: `--name` (what to call this computer), `--interval <seconds>`, `--once`,
-`--state-dir`, `--home`, `--claude-root`, `--codex-root`,
-`--share-project-names`, `--json`.
+The command **Add a machine** gives, and the join page's, starts with
+`node -e '<check>'`: a short check that downloads the release file and its
+`SHA256SUMS` from GitHub, runs nothing unless the file's SHA-256 matches,
+keeps the checked file in `~/.agent-console/releases/`, and then runs it.
+Before running a command you were sent, compare its check with the published
+one ([The check in every command](#the-check-in-every-command)). The
+reporter's own restart line names that checked file.
 
-The reporter keeps going only while its window is open. To start it at login,
-add the `report` command to your system's startup items (launchd, systemd or
-Task Scheduler); this release does not install a background service for you.
+Options: `--name` (what to call this computer), `--interval <seconds>` (2 to
+3600; over 60 the console shows it as reporting periodically), `--background`,
+`--once`, `--state-dir`, `--home`, `--claude-root`, `--codex-root`,
+`--share-project-names`, `--json`. An unknown option is refused, not ignored.
+
+`--background` keeps reporting after the window closes. To start reporting at
+every login, [docs/BACKGROUND.md](docs/BACKGROUND.md) has launchd, systemd and
+Task Scheduler examples.
 
 ## Privacy, precisely
 
@@ -320,9 +462,9 @@ opens that one instead, once that console has proved it is yours (it never sends
 it the console's key). A port you choose with `--port` is never changed: if
 it is busy you are told to pick another.
 
-**The console says "Sign in to this console".** Use the sign-in link the
-terminal printed when the console started, or run the start command again with
-`--open`.
+**The console says "Sign in to this console".** Press **Print a new sign-in
+link** on that page, and use the link that appears in the console's terminal
+window. Running the start command again with `--open` works too.
 
 **The reporter says "the hub is pacing uploads" or "catching up".** A computer
 joining with a lot of history sends it in batches, and the hub paces them. Leave
@@ -351,6 +493,17 @@ closed, the computer slept, or it changed networks. On that computer run the
 `report` command (the join page shows it), with no new link. If it says the hub
 no longer accepts it, it was removed: send it a new link.
 
+**A machine shows "Reconnecting".** The console restarted moments ago, and the
+machine was reporting when it stopped. Its reporter comes back within about a
+minute; nothing needs doing.
+
+**The console's reporting port changed.** Reporters look for the console on
+the ten ports either side of the one they joined on, and move by themselves.
+Beyond that, start the console with `--report-port` set to the old port, or send
+new links. A reporter that says the console's certificate changed has found a
+different console at that address (or one set up again from scratch): send it
+a new link.
+
 **A machine shows "Joined — waiting for its first report."** It has joined but
 its reporter has not delivered yet; if it stays that way, the reporter window
 was closed right after joining.
@@ -377,6 +530,7 @@ node bin/agent-console.mjs join --help     # the reporter
 | `--report-port <n>` | the port above it (`6788`): where other computers join and report |
 | `--listen <address>` | `127.0.0.1`; `0.0.0.0` lets other computers reach the reporting port |
 | `--allow-public` | accept reports from outside private networks |
+| `--allow-cgnat` | also accept 100.64.0.0/10 (Tailscale, carrier-grade NAT) |
 | `--demo` | a synthetic team; reads nothing, accepts no machine |
 | `--name <text>`, `--person <text>` | this computer's name, and whose it is, on the console (`This machine`, `You`) |
 | `--no-local` | do not read this computer (a hub on a server) |
@@ -388,6 +542,14 @@ node bin/agent-console.mjs join --help     # the reporter
 
 Environment equivalents use the `AGENT_CONSOLE_` prefix.
 
+## Upgrading a hub
+
+Stop its running console processes before upgrading. Keep each hub's state
+directory on a local disk that supports hard links. One running hub owns a
+state directory, even if another start chooses different ports; use a separate
+`--state-dir` for a separate hub. Older versions must be stopped because they
+do not honor the new ownership lock.
+
 ## Checking a download
 
 From 0.2.1 on, each release's package is built by CI from the release's tag.
@@ -395,12 +557,41 @@ The release page lists its SHA-256 in `SHA256SUMS`, and GitHub keeps a signed
 build provenance attestation for it. To check a file you downloaded:
 
 ```sh
-shasum -a 256 lockedinlabs-agent-console-0.2.2.tgz              # macOS, Linux
-Get-FileHash lockedinlabs-agent-console-0.2.2.tgz               # Windows PowerShell
-gh attestation verify lockedinlabs-agent-console-0.2.2.tgz -R SamSnead85/agent-console
+shasum -a 256 lockedinlabs-agent-console-0.3.0.tgz              # macOS, Linux
+Get-FileHash lockedinlabs-agent-console-0.3.0.tgz               # Windows PowerShell
+gh attestation verify lockedinlabs-agent-console-0.3.0.tgz -R SamSnead85/agent-console
+```
+
+## The check in every command
+
+Every command the console or the join page prints starts with
+`node -e '<check>'`: a short program that downloads the release file and the
+release's `SHA256SUMS` from GitHub over HTTPS, and runs nothing unless the
+file's SHA-256 is the one listed. Before you run a command someone sent you,
+compare its check with the published one, not only its first words. The
+check's SHA-256 is:
+
+```text
+114422b34fdc2721cd70e125908fe2ef381b4afddf6c7317d3e540710ec03737
+```
+
+This command prints the SHA-256 of the check in any command you paste into it,
+without running anything. Paste the command, press Return, then Ctrl+D
+(Ctrl+Z and Return in PowerShell):
+
+```sh
+node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(require('crypto').createHash('sha256').update(s.split(String.fromCharCode(39))[1]).digest('hex')))"
+```
+
+The check itself, verbatim:
+
+```text
+const[u,...a]=process.argv.slice(1),p=require(`path`),n=p.basename(u),g=x=>fetch(x).then(r=>{if(!r.ok)throw Error(x+` answered `+r.status);return r.arrayBuffer()}).then(Buffer.from);(async()=>{if(!/^https:[/][/]github[.]com[/][A-Za-z0-9_.-]+[/][A-Za-z0-9_.-]+[/]releases[/]download[/]v[0-9.]+[/][A-Za-z0-9_.-]+[.]tgz(?![^])/.test(u))throw Error(`not a release file: `+u);const t=String(await g(p.posix.dirname(u)+`/SHA256SUMS`)).split(/[^0-9A-Za-z._-]+/),b=await g(u),h=require(`crypto`).createHash(`sha256`).update(b).digest(`hex`);if(h!==t[t.indexOf(n)-1])throw Error(n+` does not match the release SHA256SUMS; nothing was run`);const f=require(`fs`),d=p.join(require(`os`).homedir(),`.agent-console`,`releases`),k=p.join(d,n),w=process.platform==`win32`,q=String.fromCharCode(34);f.mkdirSync(d,{recursive:true});f.writeFileSync(k,b);console.error(n+` matches the release SHA256SUMS: `+h);const r=require(`child_process`).spawnSync(w?[`npx`,`--yes`,`file:`+k,...a].map(x=>q+x+q).join(` `):`npx`,w?[]:[`--yes`,`file:`+k,...a],{stdio:`inherit`,shell:w,env:{...process.env,AGENT_CONSOLE_PACKAGE:k}});process.exit(r.status??1)})().catch(e=>{console.error(String(e.message));process.exit(1)})
 ```
 
 ## Development
+
+See the [architecture and trust boundaries](docs/ARCHITECTURE.md) for data flow, component ownership and the CI/release path.
 
 ```sh
 npm test               # the whole suite, including the multi-machine end-to-end tests

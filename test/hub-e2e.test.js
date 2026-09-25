@@ -23,6 +23,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { CANARIES, writeHome } from "./fixtures/transcripts.js";
+import { readAdminKey, scrapeToken } from "../lib/hub/admin.js";
 
 const BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "bin", "agent-console.mjs");
 const INTENT = { "x-agent-console": "1" };
@@ -112,6 +113,19 @@ const wholeAnswer = (a) => [a.status, JSON.stringify(a.headers), a.body].join("\
  */
 const CONSOLE_READS = ["/api/console", "/api/projects?period=24h", "/api/projects?period=3d", "/api/hello"];
 const REPORTING_READS = ["/join", "/join.js", "/join.css", "/house.css", "/brand/mark.svg", "/favicon.svg", "/api/join/info"];
+/** With --interop, read with the scrape token, never the cookie. */
+const METRICS_READS = ["/metrics"];
+
+async function metricsReads(hub, stateDir) {
+  let text = "";
+  const authorization = "Bearer " + scrapeToken(readAdminKey(stateDir));
+  for (const url of METRICS_READS) {
+    const r = await fetch(hub.url + url, { headers: { authorization } });
+    assert.equal(r.status, 200, url);
+    text += `${url}\n${JSON.stringify([...r.headers])}\n${await r.text()}\n`;
+  }
+  return text;
+}
 
 async function consoleReads(hub) {
   let text = "";
@@ -183,7 +197,7 @@ test("two machines join by link, report, roll up by person, and nothing private 
   const a = await invite(hub, "You", "Laptop");
   const b = await invite(hub, "Platform engineer", "Workstation");
   // The command installs from the GitHub release, never from the hub.
-  assert.match(a.command, /^npx --yes https:\/\/github\.com\/SamSnead85\/agent-console\/releases\/download\/v\d+\.\d+\.\d+\/lockedinlabs-agent-console-\d+\.\d+\.\d+\.tgz join 'http:\/\/127\.0\.0\.1:\d+\/join#[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}'$/u);
+  assert.match(a.command, /^node -e '[^']+' https:\/\/github\.com\/SamSnead85\/agent-console\/releases\/download\/v\d+\.\d+\.\d+\/lockedinlabs-agent-console-\d+\.\d+\.\d+\.tgz join 'http:\/\/127\.0\.0\.1:\d+\/join#[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}'$/u);
   const via = (inv) => through(inv.link, wire.port);
 
   const joinA = await run(["join", via(a), "--once", "--json", "--home", laptop, "--state-dir", path.join(root, "laptop-state")]);
@@ -200,6 +214,7 @@ test("two machines join by link, report, roll up by person, and nothing private 
   assert.match(again.err, /not valid/u);
 
   const view = await consoleView(hub);
+  assert.deepEqual(view.alerts, [], 'the network console exposes no raw local alert fields');
   assert.equal(view.devices.length, 2);
   for (const d of view.devices) {
     assert.equal(d.status, "reporting", d.label + " is not reporting");
@@ -211,6 +226,23 @@ test("two machines join by link, report, roll up by person, and nothing private 
   assert.ok(view.day.shares.cacheRead > 0.5 && view.day.shares.cacheWrite > 0);
   assert.ok(view.day.models.some((m) => m.model === "gpt-5.6-sol") && view.day.models.some((m) => m.model === "claude-opus-5"));
   assert.equal(view.invitations.filter((i) => i.state === "joined").length, 2, "the console shows who joined");
+  assert.equal(view.interop, null, 'optional telemetry is off for an ordinary hub');
+  for (const lane of view.lanes) {
+    assert.ok(Array.isArray(lane.agentTree) && lane.agentTree.length > 0);
+    for (const agent of lane.agentTree) {
+      assert.deepEqual(Object.keys(agent).sort(), ["depth", "durationMinutes", "model", "modelLabel", "outcome", "parentSessionHash", "rootSessionHash", "sessionHash", "tokens"]);
+      assert.ok(["succeeded", "failed", "unknown"].includes(agent.outcome));
+      assert.ok(agent.tokens === null || Number.isSafeInteger(agent.tokens));
+    }
+    assert.deepEqual(Object.keys(lane.context).sort(), ["breaks", "growth", "latest", "priceTable", "samples", "status"]);
+    for (const sample of lane.context.samples) {
+      assert.deepEqual(Object.keys(sample).sort(), ["at", "tokens"]);
+      assert.ok(Number.isFinite(sample.at) && Number.isSafeInteger(sample.tokens));
+    }
+    for (const signal of lane.context.breaks) {
+      assert.deepEqual(Object.keys(signal).sort(), ["at", "estimatedExtraUsd", "gapMinutes", "kind"]);
+    }
+  }
 
   // Privacy: nothing private in anything that crossed the wire, in anything
   // the hub stored, or in what the reporters keep on their own disks.
@@ -232,13 +264,15 @@ test("two machines join by link, report, roll up by person, and nothing private 
   }
   for (const b of wire.bodies.filter((x) => x.url === "/api/ingest")) {
     const envelope = JSON.parse(b.body);
-    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "backlog"]);
+    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "coverage", "backlog"]);
+    // What could not be counted: reason names and counts, nothing else.
+    for (const [kind, n] of Object.entries(envelope.coverage)) assert.ok(/^[a-z][A-Za-z]+$/.test(kind) && Number.isSafeInteger(n), kind);
     // How far a catch-up has got: two counts, nothing else.
     assert.deepEqual(Object.keys(envelope.backlog), ["delivered", "total"]);
     assert.ok(Number.isSafeInteger(envelope.backlog.delivered) && Number.isSafeInteger(envelope.backlog.total));
     for (const r of envelope.records) {
-      assert.deepEqual(Object.keys(r).sort(), ["at", "cacheRead", "cacheWrite", "cacheWrite1h", "cacheWrite5m", "continuation", "engagement", "executionOrigin", "fresh",
-        "id", "isSubagent", "measurement", "model", "observed", "output", "parentSessionHash", "projectHash", "reportingDevice", "sessionHash", "tool", "ttl"]);
+      assert.deepEqual(Object.keys(r).sort(), ["at", "cacheRead", "cacheWrite", "cacheWrite1h", "cacheWrite5m", "continuation", "cumulative", "engagement", "executionOrigin", "fresh",
+        "id", "isSubagent", "measurement", "model", "observed", "output", "parentSessionHash", "projectHash", "reportingDevice", "sessionHash", "tier", "tool", "ttl"]);
       assert.equal(typeof r.continuation, "boolean");
       assert.match(r.sessionHash, /^[0-9a-f]{64}$/u);
       assert.match(r.projectHash, /^[0-9a-f]{64}$/u);
@@ -346,10 +380,90 @@ test("--share-project-names stops at once when it is left off, and leave deletes
   assert.ok(sent.every((r) => r.engagement === null), "a name went out after the opt-in was turned off");
   assert.ok(!wire.bodies.some((b) => b.body.includes("canary-secret-project-dir")));
 
-  const left = await run(["leave", "--state-dir", state]);
+  wire.bodies.length = 0;
+  wire.answers.length = 0;
+  const left = await run(["leave", "--json", "--state-dir", state]);
   assert.equal(left.code, 0);
+  assert.equal(JSON.parse(left.out.trim().split("\n").at(-1)).told, "told");
   const remaining = fs.existsSync(state) ? fs.readdirSync(state, { recursive: true }) : [];
   assert.deepEqual(remaining, [], "leave left files behind: " + remaining.join(", "));
+  // leave told the console: one bodiless request with the token, through the relay the canaries read.
+  assert.deepEqual(wire.bodies.map((b) => [b.method, b.url, b.body]), [["POST", "/api/leave", ""]]);
+  assert.deepEqual(wire.answers.map((x) => x.status), [200]);
+  for (const canary of CANARIES) assert.ok(!wire.bodies.map(wholeRequest).join("\n").includes(canary), canary);
+  const device = (await consoleView(hub)).devices.find((d) => d.label === "Laptop");
+  assert.equal(device.status, "revoked");
+  assert.ok(device.leftAt, "the console shows the machine left, not silent");
+});
+
+test("joining the same console again keeps the machine's entry; a second reporter is refused", async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-rejoin-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const home = writeHome(path.join(root, "home"), { claude: [{ sessionId: "abcdabcd-0000-4000-8000-000000000001", cwd: "/home/dev/p", start: Date.now() - 10 * 60_000, turns: 2 }] });
+  const started = startHub(["--no-local", "--state-dir", path.join(root, "hub")]);
+  t.after(() => started.child.kill("SIGKILL"));
+  const hub = await started.ready;
+  const state = path.join(root, "state");
+  const first = await run(["join", (await invite(hub, "You", "Laptop")).link, "--once", "--home", home, "--state-dir", state]);
+  assert.equal(first.code, 0, first.out + first.err);
+  assert.match(first.out, /once, then this command exits/u);
+  assert.doesNotMatch(first.out, /Leave this window open/u);
+  const again = await run(["join", (await invite(hub, "You", "Laptop")).link, "--once", "--json", "--home", home, "--state-dir", state]);
+  assert.equal(again.code, 0, again.out + again.err);
+  assert.ok(again.out.includes('"event":"rejoined"'), again.out);
+  const view = await consoleView(hub);
+  assert.equal(view.devices.length, 1, "a second machine of the same name");
+  assert.equal(view.devices[0].status, "reporting");
+  assert.ok(view.devices[0].day.tokens.total > 0, "its history stayed");
+
+  // A reporter running for this state directory refuses a second one.
+  const running = spawn(process.execPath, [BIN, "report", "--home", home, "--state-dir", state], { stdio: ["ignore", "pipe", "pipe"] });
+  t.after(() => running.kill("SIGKILL"));
+  let runningOut = "";
+  running.stdout.on("data", (chunk) => { runningOut += chunk; });
+  for (let i = 0; i < 100 && !fs.existsSync(path.join(state, "reporter.lock")); i += 1) await new Promise((r) => setTimeout(r, 50));
+  const second = await run(["report", "--once", "--home", home, "--state-dir", state]);
+  assert.equal(second.code, 4, second.out + second.err);
+  assert.match(second.out, new RegExp(`already running for this machine \\(process ${running.pid}\\)`, "u"));
+  // leave stops it too.
+  const left = await run(["leave", "--state-dir", state]);
+  assert.equal(left.code, 0, left.out + left.err);
+  assert.match(left.out, new RegExp(`Stopped the reporter that was running \\(process ${running.pid}\\)`, "u"));
+  // The reporter says so in its own window.
+  if (running.exitCode === null) await new Promise((r) => running.once("exit", r));
+  // Windows ends a process on SIGTERM without running its handlers, so only
+  // POSIX reporters can say why they stopped.
+  if (process.platform !== "win32") assert.match(runningOut, /stopped from another window/u);
+
+  // Joining again after leave, for the same person and machine name, brings the entry back.
+  const back = await run(["join", (await invite(hub, "You", "Laptop")).link, "--once", "--json", "--home", home, "--state-dir", state]);
+  assert.equal(back.code, 0, back.out + back.err);
+  assert.ok(back.out.includes('"event":"rejoined"'), back.out);
+  const after = await consoleView(hub);
+  assert.equal(after.devices.length, 1, "a second machine of the same name after leave");
+  assert.equal(after.devices[0].status, "reporting");
+  assert.ok(after.devices[0].day.tokens.total > 0, "its history stayed with it");
+});
+
+test("a reporter follows its console to a new reporting port, by its pinned certificate", async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-moved-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const home = writeHome(path.join(root, "home"), { claude: [{ sessionId: "bcdebcde-0000-4000-8000-000000000001", cwd: "/home/dev/p", start: Date.now() - 10 * 60_000, turns: 2 }] });
+  const hubState = path.join(root, "hub");
+  const port = await freePort();
+  const one = startHub(["--no-local", "--state-dir", hubState, "--report-port", String(port)]);
+  const hub = await one.ready;
+  const state = path.join(root, "state");
+  assert.equal((await run(["join", (await invite(hub, "You", "Laptop")).link, "--once", "--home", home, "--state-dir", state])).code, 0);
+  one.child.kill("SIGTERM");
+  await new Promise((r) => one.child.once("exit", r));
+  const two = startHub(["--no-local", "--state-dir", hubState, "--report-port", String(port + 3)]);
+  t.after(() => two.child.kill("SIGKILL"));
+  await two.ready;
+  const moved = await run(["report", "--once", "--json", "--home", home, "--state-dir", state]);
+  assert.equal(moved.code, 0, moved.out + moved.err);
+  assert.match(moved.out, /"event":"moved"/u);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(state, "credentials.json"), "utf8")).hub, `https://127.0.0.1:${port + 3}`);
 });
 
 test("the hub's own machine: nothing of it leaves through the reporting port", async (t) => {
@@ -365,7 +479,7 @@ test("the hub's own machine: nothing of it leaves through the reporting port", a
     claude: [{ sessionId: "efefefef-0000-4000-8000-000000000001", cwd: "/home/dev/other", start: now - 5 * 60_000, turns: 2 }],
   });
   const hubState = path.join(root, "hub");
-  const started = startHub(["--state-dir", hubState, "--home", hubHome]);
+  const started = startHub(["--state-dir", hubState, "--home", hubHome, "--interop"]);
   t.after(() => started.child.kill("SIGKILL"));
   const hub = await started.ready;
   let view;
@@ -385,6 +499,10 @@ test("the hub's own machine: nothing of it leaves through the reporting port", a
   // Everything the reporting port gave another machine: the join exchange, the
   // receipts, the join page and its assets, and the join info.
   const given = wire.answers.map(wholeAnswer).join("\n") + await reportingReads(hub);
+  // What a local scraper is given: counts only, though this hub read the canaries itself.
+  const scraped = await metricsReads(hub, hubState);
+  assert.match(scraped, /agent_console_transcript_tokens_last_24h\{kind="input"\} [1-9]/u);
+  for (const canary of CANARIES) assert.ok(!scraped.includes(canary), `"${canary}" reached /metrics`);
   const kept = readTree(path.join(root, "reporter-state")) + joined.out + joined.err;
   assert.ok(wire.answers.some((a) => a.url === "/api/join" && a.status === 200));
   for (const canary of CANARIES) {
@@ -398,7 +516,7 @@ test("every GET route the hub serves is read by the privacy checks above", () =>
   const routes = new Set();
   for (const m of source.matchAll(/url === (["'])(\/[^"']+)\1 && req\.method === (["'])GET\3/gu)) routes.add(m[2]);
   for (const m of source.matchAll(/\[(["'])(\/[^"']+)\1, (["'])[^"']+\3\]/gu)) routes.add(m[2]);   // the join page's assets
-  const read = new Set([...CONSOLE_READS, ...REPORTING_READS].map((u) => u.split("?")[0]));
+  const read = new Set([...CONSOLE_READS, ...REPORTING_READS, ...METRICS_READS].map((u) => u.split("?")[0]));
   // /login answers a single-use ticket with a redirect or a fixed refusal: no data.
   const unchecked = [...routes].filter((r) => !read.has(r) && r !== "/login");
   assert.ok(routes.has("/api/console") && routes.has("/join"), "the route pattern no longer matches lib/hub/routes.js");

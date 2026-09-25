@@ -24,6 +24,7 @@ function samples(tmp) {
     "--report-port": ["0"],
     "--listen": ["127.0.0.1"],
     "--allow-public": [],
+    "--allow-cgnat": [],
     "--demo": [],
     "--name": ["Build box"],
     "--person": ["Platform engineer"],
@@ -33,6 +34,11 @@ function samples(tmp) {
     "--invite-minutes": ["10"],
     "--claude-root": [path.join(tmp, "claude")],
     "--codex-root": [path.join(tmp, "codex")],
+    "--desktop-alerts": [],     // demo runs no local alert engine, so nothing is shown
+    "--alert-repeat": ["3"],
+    "--alert-spike-factor": ["4"],
+    "--alert-stall-minutes": ["2"],
+    "--interop": [],            // demo shows generated telemetry, stamped DEMO, behind its scrape token; accepts no ingest
   };
 }
 /** Options that do not start a console, or would act outside the test. */
@@ -93,6 +99,18 @@ test("--demo starts, serves every screen and stamps DEMO with each console optio
       }
       const join = await fetch(`http://127.0.0.1:${h.reportPort}/join`);
       assert.equal(join.status, 200, `${option}: the join page`);
+      if (option === "--interop") {
+        assert.match(String(h.metricsToken), /^[A-Za-z0-9_-]{43}$/u, "a demo with --interop prints its scrape token");
+        assert.equal((await fetch(h.url + "/metrics")).status, 401);
+        const scraped = await fetch(h.url + "/metrics", { headers: { authorization: "Bearer " + h.metricsToken } });
+        assert.equal(scraped.status, 200);
+        const text = await scraped.text();
+        assert.match(text, /^# DEMO/u);
+        assert.match(text, /^agent_console_demo 1$/mu);
+        assert.match(text, /agent_console_interop_tokens\{source="otel"/u);
+      } else {
+        assert.equal(h.metricsToken, undefined, `${option}: a scrape token without --interop`);
+      }
     } finally {
       hub.child.kill("SIGKILL");
     }

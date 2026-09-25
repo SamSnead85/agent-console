@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SamSnead85/agent-console/blob/main/docs/policy.schema.json",
+  "title": "Agent Console policy version 1",
+  "type": "object",
+  "required": ["version"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "on_error": { "$ref": "#/$defs/action" },
+    "effort": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "default_by_task": { "type": "object", "propertyNames": { "$ref": "#/$defs/name" }, "additionalProperties": { "enum": ["low", "medium", "high", "xhigh", "max"] } },
+        "max_allowlist": { "type": "array", "items": { "$ref": "#/$defs/name" }, "uniqueItems": true }
+      }
+    },
+    "routing": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "roles": { "type": "object", "propertyNames": { "$ref": "#/$defs/name" }, "additionalProperties": {
+          "type": "object", "required": ["model"], "additionalProperties": false,
+          "properties": { "model": { "$ref": "#/$defs/model" }, "with_verifying_test": { "$ref": "#/$defs/model" } }
+        } }
+      }
+    },
+    "escalation": {
+      "type": "object", "additionalProperties": false,
+      "properties": { "after_failures": { "type": "integer", "minimum": 1 }, "model": { "$ref": "#/$defs/model" } }
+    },
+    "model_allowlist": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/model" } },
+    "budgets": {
+      "type": "object", "additionalProperties": false,
+      "properties": { "per_run": { "$ref": "#/$defs/budget" }, "per_day": { "$ref": "#/$defs/budget" } }
+    },
+    "cache": {
+      "type": "object", "additionalProperties": false,
+      "properties": { "forbid_model_switch_in_task": { "type": "boolean" }, "idle_gap_minutes": { "type": "integer", "minimum": 1 } }
+    },
+    "gates": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "force_push": { "$ref": "#/$defs/action" },
+        "delete_outside_repo": { "$ref": "#/$defs/action" },
+        "pipe_to_interpreter": { "$ref": "#/$defs/action" },
+        "credential_read": { "$ref": "#/$defs/action" },
+        "production_migration": { "$ref": "#/$defs/action" },
+        "policy_change": { "$ref": "#/$defs/action" },
+        "uninspected_execution": { "$ref": "#/$defs/action" }
+      }
+    }
+  },
+  "$defs": {
+    "action": { "enum": ["allow", "ask", "block"] },
+    "name": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,39}$" },
+    "model": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,79}$" },
+    "budget": {
+      "type": "object", "additionalProperties": false,
+      "properties": { "tokens": { "type": "integer", "minimum": 1 }, "usd": { "type": "number", "exclusiveMinimum": 0 } }
+    }
+  }
+}

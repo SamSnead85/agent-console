@@ -1,5 +1,289 @@
 # Changelog
 
+## 0.3.0 — unreleased
+
+- Preserve missing token classes in lane totals, including subagents, and
+  leave historical cost unsplit when current rates do not reconcile with its
+  saved estimate. The burn chart labels its median as active minutes only;
+  local Git no longer divides fleet spend by local commits.
+- The console is a denser instrument. It opens on a one-line strip — the
+  name, where it reads, the live sessions with the one glow that means live,
+  the machines, the alert count, a clock and how fresh the reading is — with
+  no headline above it. The tokens panel prices each class, the chart stacks
+  the four classes with a legend that carries the same figures, and a
+  seven-day row sits under the classes. A second row holds Attention (the
+  one thing that needs it, or nothing), a spend spectrum (cost share over
+  token share, by class and by model) and the burn with its last sixty
+  minutes drawn. Each lane now shows uncached input, output, the day's
+  tokens, its estimate and when it last reported; the machines are one row
+  each beside the models; the rest of the day folds under the lanes as Cold
+  sessions, Projects, Effort and Shipped; and alerts are one dense list.
+  Nothing is set below 12px; labels are in the text face and numbers, ids,
+  models and branches in the monospace one; the four classes share one hue
+  stepped by price. At 390px wide the lanes and every table become stacked
+  rows with nothing scrolling sideways, every control is at least 44px tall,
+  and the light theme is layered paper, not a flat page. A reading a hub
+  does not send is a drawn void with its reason, never a zero.
+- `/api/console` splits each series step, the period's estimate, and each
+  lane's day by token class (`series.*.classes`, `cost.byClass`,
+  `lanes[].tokensDayByClass`, `lanes[].costDay`); dollars that cannot be
+  told apart by class are carried as `unsplitUsd`, never spread.
+- Quote Node entry paths and reporter restart options literally in the platform's
+  shell, so special characters in installation or state paths stay part of the path.
+- Separate telemetry read and ingest credentials with independent live
+  rotation. Exporters must use `metrics-token --scope ingest`.
+- Add `policy status --json` for installed-file/source drift checks; protect
+  recognized policy writes and ask before uninspected interpreter execution.
+  Status explicitly distinguishes installed configuration from runtime proof.
+
+What your agents are doing, not only what they spent: context and cache
+health, live alerts and an agent tree in each lane; a project policy you can
+apply and remove; optional local metrics; figures that follow one period
+everywhere; and reporters that keep going in the background and survive a
+console's restart.
+
+**Upgrading from 0.2.1 or 0.2.2.** Coming from 0.2.1, this release includes
+0.2.2's security fixes (below): everyone signs in to the console once more
+after upgrading, and a second start proves it holds the console's key instead
+of sending it. Upgrade the console before its reporters: a 0.3.0 reporter's
+records carry `tier` and `cumulative` keys that a 0.2.x console refuses
+(joining pins a reporter to its console's version, so this happens only when a
+reporter is upgraded by hand). A console whose machines join over Tailscale or other
+carrier-grade NAT addresses (100.64.0.0/10) must now be started with
+`--allow-cgnat`. A Prometheus scraper of `/metrics` needs the token that
+`metrics-token` prints. The burn is now a fifteen-minute average.
+
+**Seeing what agents are doing**
+
+- **Context and cache health in each lane.** The Context column shows each
+  session's latest complete input reading; open it for the last 16 readings,
+  growth and possible cache breaks, with a dated list-price estimate of what a
+  break cost. These are observed patterns, not a proven cause.
+- **Live alerts** for repeated identical tool calls, a spend spike against the
+  session's recent median, and spend without an observed successful tool
+  result. Thresholds are set with `--alert-repeat`, `--alert-spike-factor` and
+  `--alert-stall-minutes`; `--desktop-alerts` opts in to native notifications,
+  which name the signal and never include tool arguments. Alerts stay on this
+  machine.
+- **An agent tree in each lane**: the orchestrator and its subagents, each with
+  its model, observed tokens and duration. The outcome is "unknown" until a
+  result is recorded; activity is not treated as success.
+- **Spend in the window of the work**: Projects shows estimated spend per local
+  commit and per integration into the default branch in the same period,
+  labelled as correlation, not attribution. Anything unpriced leaves the ratio
+  unknown.
+- **A shared analysis core**, `@lockedinlabs/agent-console/analysis` (version
+  1): the same dependency-free functions the console uses for context health,
+  alerts, the agent tree, spend per outcome, the policy file and interop, for
+  other Node.js programs. [docs/ANALYSIS.md](docs/ANALYSIS.md) is the contract.
+
+**Project policy**
+
+- **An optional `agent-policy.yaml`** (or JSON) with a published schema and a
+  shared parser; unknown fields fail validation.
+- **`policy diff`, `apply` and `remove`** (run with the release's full
+  command, like every other command; `policy --help` prints the usage) compile the policy into
+  repository-scoped Claude Code agents, settings and a local hook, with private
+  backups so `remove` restores the files that were there before. Starting the
+  console installs nothing. [docs/policy.md](docs/policy.md) says what is
+  enforced and what is not.
+- All three refuse a symlinked `.claude` path and never write the user-level
+  Claude directory, compared by file identity, so a miscased or firmlinked
+  path on macOS is refused too. The hook classifies quoted (including `$'…'`),
+  wrapped and `sh -c` commands (after `-o`, `-O` and `+` options) and here-strings,
+  interpreters on the right of a pipe however they are written, secret files
+  handed to any program that prints them, force pushes through git aliases
+  and push settings, and deletes after a `cd` or through a symbolic link out
+  of the repository. It decides within five seconds on a worker thread and
+  asks or denies when it cannot load its classifier or runs out of time.
+  `policy remove` says `removed` for files it deleted and takes away the
+  directories apply created.
+
+**Metrics and telemetry (opt-in)**
+
+- **`--interop`** adds a Telemetry panel with Claude Code OpenTelemetry and
+  AI-gateway token readings, kept apart from transcript totals so a request is
+  never counted twice, a local Prometheus `/metrics` endpoint and a Grafana
+  dashboard. [docs/INTEROP.md](docs/INTEROP.md) has setup and formats.
+- `/metrics` and telemetry ingest take **separate scoped credentials**, printed
+  by `metrics-token --scope read|ingest`. Each supports independent `--rotate`;
+  the console key itself is never accepted.
+  A `--demo` console prints its token at start and stamps `/metrics` DEMO.
+
+**Joining and security**
+
+- **Every command the console and the join page print checks the release file
+  against the release's `SHA256SUMS`** before running anything, and keeps the
+  checked file in `~/.agent-console/releases/`. The check's SHA-256 is
+  published in the README and each release's notes, with a short command that
+  prints the SHA-256 of the check in any command pasted into it, so whoever is
+  sent a command can compare the whole check. The join page shows the whole
+  command (only the code masked), and its restart line is a complete command
+  with its own Copy button.
+- **A join by link is never held off by other machines' attempts**, however
+  many addresses one device uses; the total of sixty per ten minutes guards
+  only the typed code, and an address over its own limit does not count
+  toward it. A global IPv6 address counts by its /64; a unique-local or
+  link-local one counts by itself.
+- **Carrier-grade NAT (100.64.0.0/10, also Tailscale's range) is no longer
+  private by default.** Start the console with `--allow-cgnat` to accept it;
+  the start banner says so when it sees such an address.
+- **Signed out, a console can print a new sign-in link** in its own window,
+  from the button on its sign-in page or from a second start. A demo console
+  can be signed into again without a restart.
+
+**Accounting**
+
+- **Fixed: a message a forked subagent copied from its parent is counted
+  once.** Copies, including ones cut off mid-stream, were counted again in each
+  fork's file, so input, cache and message counts could be overstated. A
+  Claude message is now sent as its running per-class maximum under one id,
+  and the console keeps the largest reading it holds, so two machines that met
+  a fork's copy in a different order, or a machine that lost its cursor, give
+  the same total.
+- **A Codex thread resumed by a newer Codex is counted from its records** from
+  its first own record on; only a record for a response already counted is
+  reported as late.
+- **Drops follow their transcripts**: a deleted or replaced transcript takes
+  its drops with it, and a line Claude Code rewrites with all-zero usage is not
+  a drop.
+- **Partial periods say so**: 7 days with `--retention-days` below 7, and 30
+  days when usage arrives after its day passed minute retention (counted as
+  `pastRetention`).
+- **Nothing is dropped silently.** Every transcript line that carries usage and
+  cannot be counted is counted by reason, sent with each report, and shown
+  beside the figures and on its machine's row in Team, as are records the
+  console itself could not keep.
+- **Codex per-response usage records are counted**, one per response,
+  including requests the running total never shows, such as compaction.
+- **Model ids are kept exactly**, including Bedrock and Vertex forms, instead of
+  becoming `unknown`. A transcript line too long to read has its usage
+  recovered where possible, and is reported when it is not. Usage that grows on
+  a line already counted is counted; usage rewritten lower is reported.
+- **One period everywhere.** The period switch (1H, 24H, 7D and the new 30D)
+  drives the headline tokens, cost, messages, model list and machine list, and
+  Team and Projects offer the same periods with the same edges. The chart's
+  bars add up to the headline. 30 days come from daily totals the console keeps
+  for 400 days, after its minute detail is pruned.
+- **Fast mode is priced at its published rates**, and any other service tier
+  is left unpriced instead of being priced at the standard rate.
+- Input is labelled "uncached input", the cache-write split by lifetime is
+  shown, Team shows "no priced model" rather than $0.00 when nothing is priced,
+  and the JSON counts priced and unpriced messages and records separately.
+- **Projects counts only your commits**: those authored with the repository's
+  `user.email`, so a fresh clone no longer credits other people's work to this
+  machine. "PRs merged" is now "commits referencing #N", which is what it
+  counts.
+- The accounting spec is 1.1 and the conformance suite 1.1.0, with a case with
+  exact expected totals for each of these. Records carry a new `cumulative`
+  key ([docs/COLLECTOR-CONTRACT.md](docs/COLLECTOR-CONTRACT.md)).
+
+**Reporters and machines**
+
+- **`--background` and a periodic mode.** A reporter can keep running after its
+  window closes, and one reporting less often than every minute shows as
+  "reporting periodically" instead of flapping to silent.
+  [docs/BACKGROUND.md](docs/BACKGROUND.md) has launchd, systemd and Task
+  Scheduler examples for starting it at login.
+- **One reporter per state directory, for its whole life**: a second one is
+  refused and names the one that is running. New `stop` command. A lock is
+  honoured only for a process that is really a reporter, so a reused process
+  id is never refused or signalled. A reporter stopped by `stop` or `leave`
+  says so in its own window, and `--once` says it reports once.
+- **`leave` tells the console** and stops a reporter running in another window;
+  the console shows the machine as having left, not as silent.
+- **Joining the same console again keeps the machine's entry and history**
+  instead of adding a second machine with the same name, also after `leave`
+  when the new link names the same person and machine.
+- **Reporters survive a console's port change.** The console keeps its
+  reporting port across restarts, and a reporter that loses its console looks
+  for the same pinned certificate on nearby ports. A console with a new
+  certificate is reported as "certificate changed", not "cannot reach".
+- **A second start finds this console on the port it moved to** when the
+  default port was busy, instead of starting another console on the same
+  data.
+- **Removed machines no longer count as silent** in the chart's "incomplete"
+  label, the burn's "left out" list or "N of M machines". For two minutes
+  after a restart, a machine that was reporting shows as "Reconnecting".
+
+**The console**
+
+- **The burn is the average of the last fifteen minutes**, not five, so one
+  burst of agent traffic does not swing it. A lane's "tokens · 5 min" is
+  unchanged.
+- **One meaning of "session" on every view**: a top-level session, with its
+  subagents counted apart, over "the last 24 h" rather than "today". "1 person",
+  not "1 people".
+- **Pause motion stops the animation, not the data.** Figures keep updating
+  while paused, without moving.
+- **Add a machine gives the exact command** to restart a this-machine-only
+  console on the network. The week's line no longer runs through the hero's
+  label.
+- **Mistakes are refused, not ignored**: an unknown command (`joni`), an
+  unknown option (`--intervall`), a value out of range (`--interval abc`), a
+  `--name` or `--person` without a value, and a mistyped `metrics-token`
+  option (which no longer prints the token; `metrics-token --help` prints its
+  usage). `--help` lists the `policy` command.
+- **The Machines panel, lane footer and Team say what they cover**: the chosen
+  period, idle lanes hidden after an hour, machines that left apart from ones
+  that were removed, and each agent's outcome as "outcome unknown · no result
+  recorded" until one is.
+- **Input the console changes is said**: a machine name it cannot use, a
+  duplicate name for the same person, and a link duration outside 5 to 60
+  minutes. With `--json`, errors are JSON lines, and the console prints an
+  event when a machine joins or leaves.
+**Durability and release acceptance**
+
+- Published installation checks fail on missing packages and run after release
+  assets upload. Development availability may explicitly report a pending
+  release; it no longer presents a missing download as a verified installation.
+- Release packaging verifies the selected source's main-branch ancestry and
+  successful CI, public-safety and performance checks before producing assets.
+- Usage batches are indexed only after successful persistence. Failed writes
+  preserve earlier batches, allow safe retries, and recover incomplete final
+  lines before rebuilding the index after a restart.
+- Only one hub can own a state directory, including when different listening
+  ports or directory aliases are used. A crashed owner's lock can be recovered;
+  an owner that cannot be verified is never displaced automatically.
+- [Architecture diagrams](docs/ARCHITECTURE.md) document collection, enrollment,
+  trust boundaries, delivery controls and the separate future MCP integration.
+
+**Distribution**
+
+- **Standalone executables, for a computer without Node.js.** Each release
+  carries one file per platform — macOS (Apple silicon and Intel), Linux (x64
+  and arm64) and Windows (x64) — that is Node.js 24 with the release package
+  inside. Each is built and started on its own platform in CI, listed in
+  `SHA256SUMS` and covered by the release's build attestation. The macOS and
+  Windows files are unsigned until a signing identity is configured, and the
+  release page says so beside each one; `docs/executables.md` has the
+  Gatekeeper and SmartScreen steps.
+- Run as a standalone executable, the commands the console prints name the
+  executable instead of `node`, by its bare name when `PATH` finds it.
+- **Everything is built only after the release's source is authorized.** The
+  tag must be a main commit whose own main-push CI, public-safety and
+  performance checks passed; then the package, executables and hub image are
+  built from it. The package's published-install acceptance still runs if the
+  executables fail, and a separate check fails to say they are missing.
+- **Install scripts** (`install.sh`, `install.ps1`) fetch the executable for
+  the computer and the release's `SHA256SUMS`, and install nothing unless the
+  SHA-256 matches. Each release installs its executables with them on every
+  platform, checks the version they print, and on Linux their attestation.
+- **npm** receives the exact package file on the release, after it installed on
+  macOS, Linux and Windows, checked against `SHA256SUMS` and its attestation,
+  with npm provenance. A tag push alone publishes nothing; without the owner's
+  `NPM_TOKEN` the release says so and skips npm.
+- **A Homebrew formula** rendered only from a release's archive checksums
+  (`scripts/render-homebrew-formula.mjs`), for a tap the owner creates.
+- **A team hub image** for Linux amd64 and arm64 (arm64 built under QEMU), non-root,
+  with a `HEALTHCHECK` on its join page. Pull requests build and start both
+  architectures; a release pushes only the version tag, after starting it, and
+  attests the pushed digest.
+- **A download page** (`site/`), built from the latest release's verified facts.
+  The standalone executables, npm and Homebrew are shown as "coming" until the
+  release, the registry or the tap really serves them. It deploys only when
+  GitHub Pages is enabled for the repository.
+
 ## 0.2.2 — 2026-09-24
 
 Security fixes, accounting you can reconcile, and a console that is nearly

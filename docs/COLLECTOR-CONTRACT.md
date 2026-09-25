@@ -35,6 +35,7 @@ and nothing else; it does not upload conversations.
       "cacheRead": 250,
       "observed": true,
       "continuation": false,
+      "tier": "standard",
       "measurement": {
         "provenance": "deviceReported",
         "population": { "kind": "usageEvent", "recordId": "…", "sessionHash": "…" },
@@ -50,27 +51,37 @@ and nothing else; it does not upload conversations.
 | --- | --- |
 | `id` | HMAC-SHA256 of the tool, the transcript's session id and its own event or message id, keyed by the console's shared salt. The same transcript copied to another machine gives the same id, so it is counted once. Paths, file offsets and inodes never enter it. |
 | `tool` | `claude-code` or `codex`. |
-| `model` | The model id the transcript names (`[A-Za-z0-9][A-Za-z0-9._:-]{0,127}`), or `unknown`. Pricing matches it exactly. |
+| `model` | The model id the transcript names, exactly (`[A-Za-z0-9][A-Za-z0-9._:@[\]/-]{0,127}`, which includes Bedrock and Vertex forms such as `us.anthropic.claude-opus-4-6-v1:0` and `claude-opus-4-6@20250805`), or `unknown`. Pricing matches it exactly; an id the price table does not list is unpriced. |
 | `sessionHash`, `parentSessionHash` | HMAC of the session id under the shared salt (so a subagent can be matched to its parent), or `null` when no parent is recorded. |
 | `isSubagent` | The transcript marks this as subagent work. |
 | `projectHash` | HMAC of the project folder under a key that only the reporting machine holds, so the console, which has the shared salt, cannot test guesses of a folder path against it. |
 | `engagement` | `null`, unless the reporter was run with `--share-project-names`: then the project folder's last name, reduced to `[a-z][a-z0-9-]{1,47}`. Never a path. Records spooled while the option was on are sent with `null` once it is off. |
 | `reportingDevice` | The enrolled machine that sent the record; must equal the envelope's device. |
 | `executionOrigin` | Always `unknown` unless a transcript names where it ran (then a salted hash). |
-| `at` | Event time, rounded down to the UTC minute: the minute the API response began. Every increment of one response carries the minute of its first transcript line ([accounting.md](accounting.md) §2). |
+| `at` | Event time, rounded down to the UTC minute: the minute the API response began. Every reading of one response carries the minute of its first transcript line ([accounting.md](accounting.md) §2). |
 | `fresh`, `output`, `cacheWrite`, `cacheRead` | Disjoint token classes: non-negative integers, or `null` when the tool did not report the class. Unknown is never turned into zero. |
 | `cacheWrite5m`, `cacheWrite1h`, `ttl` | The cache-write split by lifetime when the tool reports it (`ttl: "split"`, and they sum to `cacheWrite`), otherwise `null` and `ttl: "unknown"`. They are parts of `cacheWrite`, not extra tokens. |
 | `observed` | Always `true`. |
-| `continuation` | `true` when an earlier record already counted this API message. Claude Code writes one response over several transcript lines, and each line whose usage grew becomes its own record so no token is lost; only the first counts as a message. Codex records are `false`. |
+| `continuation` | `true` when an earlier record already counted this API message, so only the first counts as a message. Codex records are `false`. |
+| `cumulative` | `true` when the token classes are a Claude message's running per-class maximum, sent again under the same message-level `id` each time a line grows it. The console keeps the largest reading per class for that id and adds only the growth above it; a lower or equal reading adds nothing ([accounting.md](accounting.md) §2). `false` for Codex records and for a response sent once at its stop. |
+| `tier` | The price tier the response was billed under: `standard`, `fast` (Claude Code's `usage.speed: "fast"`), `other` (a `usage.service_tier` other than `standard`), or `null` when the transcript does not say. Fast mode is priced at the table's fast rates; `other` is unpriced ([accounting.md](accounting.md) §9). |
 | `measurement` | A fixed descriptor derived from the fields above; anything else is refused. |
 
 The console refuses a record that does not have exactly these keys and these
 shapes (a 0.2.0 record without `continuation` is still accepted and counts as a
-message). Hashes must be 64 lowercase hex characters. Unrecognised transcript
+message, a 0.2.1 or 0.2.2 record without `tier` is accepted and priced at
+standard rates, as it always was, and a record without `cumulative` is kept
+first-writer-wins). Hashes must be 64 lowercase hex characters. Unrecognised transcript
 lines and fields are ignored and never forwarded.
 
 `backlog` is optional: two counts saying how far a large upload has got (see
 below). Nothing else is in it.
+
+`coverage` is optional: what the reporter's collector could not count, as
+counts by reason (`{ "unreadableLine": 1, "unboundedReplay": 2 }`). Reason
+names are plain words, the values non-negative integers, at most 32 of them.
+The console shows them beside the figures ([accounting.md](accounting.md) §3.2).
+A 0.2 reporter does not send it, and a 0.2 console ignores it.
 
 ## How it is delivered
 
@@ -120,8 +131,10 @@ the labels, the spool and the cursor.
 ## Identity and replay
 
 Claude Code records take the line's `uuid` as their event id, falling back to
-`message.id` plus `requestId`. Codex records take the session and the event's
-sequence number or timestamp. A record without intrinsic identity is not sent;
+`message.id` plus `requestId`; growth on a line already counted (a copy in a
+forked subagent's file, or a rewrite) gets an id of its own, derived from the
+line and its usage. Codex records take the session and the response's
+`response_id`, or the event's sequence number or timestamp. A record without intrinsic identity is not sent;
 it is counted as coverage debt. The collector keeps a cursor per transcript
 file and per destination, spools records before delivery so a crash can replay
 but never lose one, and never makes up a new id for a retry.
@@ -131,12 +144,20 @@ but never lose one, and never makes up a new id for a retry.
 **Claude Code.** Assistant `message.usage` carries `input_tokens`,
 `output_tokens`, `cache_creation_input_tokens` and `cache_read_input_tokens`,
 plus the cache-write split in `usage.cache_creation`. Several lines can repeat
-the same `message.id` with growing usage; the collector emits per-message
-increments, all dated by the response's first line, and nothing for an
-identical repeat. A subagent is identified by
+the same `message.id` with growing usage; the collector sends the message's
+running maximum each time a line grows it, all dated by the response's first
+line, and nothing for an identical repeat. The per-message marks are shared by
+every transcript the collector reads, so a forked subagent's copy of a message
+sends nothing unless it is larger. `usage.speed` and `usage.service_tier` set `tier`. A line too long
+to hold is read from its first and last bytes; its usage is recovered when
+Claude Code wrote it where expected, and otherwise it is coverage debt. A subagent is identified by
 `isSidechain` and `agentId` within its `sessionId`.
 
 **Codex.** The first `session_meta` identifies the session and its parent.
+A rollout that writes per-response `token_usage_record` lines is counted from
+them, one event per `response_id` of its own thread (a record for another
+thread is history replayed into a fork); its `token_count` totals then only
+move the baseline.
 `token_count` events carry cumulative `total_token_usage`; successive values
 become deltas, and fresh input is the input delta minus the cache-read and
 cache-write deltas (null if a part is missing). A forked session's replayed
@@ -156,7 +177,9 @@ from, and USD per million tokens for each class, or `null` where no rate was
 published. Only an exact listed model with every reported class priced gets an
 estimate; anything else is unpriced, never priced at zero. The figure is a
 standard-API-price estimate, not an invoice: it cannot see subscriptions,
-negotiated rates, batch or fast mode, or taxes.
+negotiated rates, batch, data residency or taxes. Fast mode is priced from a
+row's `fast` rates where the vendor publishes them; without them it is
+unpriced.
 
 ## What the numbers do not say
 

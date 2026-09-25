@@ -5,6 +5,15 @@
  *
  * Every size is written against --k, the one scale factor, so the whole
  * surface can be made larger for a projector without being redesigned.
+ * Nothing on screen is set below 12px at --k: 1.
+ *
+ * The ground is layered, near-black to raised: --void (the page), --band (the
+ * instrument), --tile (a panel on it), --raise (a panel lifted on hover), each
+ * a step lighter, with one hairline and one rim of light on the upper edge.
+ *
+ * The four token classes share one hue and step by price per token, so the
+ * mix bar reads as money before it reads as colour: output is the brightest,
+ * then cache write, uncached input, and cache read the quietest.
  *
  * Light is declared on :root; dark under prefers-color-scheme and again under
  * [data-theme="dark"], so the toggle and the operating system agree.
@@ -20,29 +29,31 @@
 :root {
   color-scheme: light;
   --k: 1;
-  /* ground */
-  --void: #EDF0F5; --deep: #E4E8F0;
-  --tile: #FFFFFF; --tile2: #F7F9FC;
-  /* the console band sits on its own ground */
-  --band: #FFFFFF; --band-head: #F4F6FA; --band-foot: #F4F6FA;
-  --conhead-a: #F7F9FC; --conhead-b: #FFFFFF;
+  /* ground, in layers: warm paper, the instrument a step lighter, panels lighter again */
+  --void: #ECEAE5; --deep: #E3E0DA;
+  --tile: #FAF9F6; --tile2: #F1EFEA; --raise: #FFFFFF;
+  --band: #F4F2EE; --band-head: #EDEBE6; --band-foot: #F0EEE9;
+  --conhead-a: #FBFAF8; --conhead-b: #F1EFEA;
   /* ink */
-  --ink: #0B1220; --ink2: #384357; --quiet: #5E6A83; --faint: #5E6A83;
-  --hair: rgba(14, 20, 32, .11); --hair2: rgba(14, 20, 32, .06);
-  --row-hover: rgba(14, 20, 32, .035);
-  /* the one accent */
+  --ink: #15171B; --ink2: #3A3E46; --quiet: #5C6169; --faint: #5C6169;
+  --hair: rgba(28, 24, 16, .15); --hair2: rgba(28, 24, 16, .08);
+  --rim: rgba(255, 255, 255, .85);
+  --row-hover: rgba(28, 24, 16, .04);
+  /* the one accent: on what is live and what can be pressed, nowhere else */
   --cobalt: #0B5CFF; --lit: #0A4FDB;
-  --cobalt-wash: rgba(11, 92, 255, .09); --cobalt-edge: rgba(11, 92, 255, .38);
+  --cobalt-wash: rgba(11, 92, 255, .10); --cobalt-edge: rgba(11, 92, 255, .42);
   /* state */
-  --good: #0B7A53; --stop: #C4352A; --warn: #8F6200;
-  --good-glow: rgba(11, 122, 83, .35);
-  /* token classes, as the console band draws them */
-  --c-cacheread: #1F5FD1; --c-cachewrite: #5B8FE8; --c-output: #1B9C74; --c-input: #8792A6;
-  --chart-line: #0B5CFF; --chart-top: rgba(11, 92, 255, .26); --chart-bottom: rgba(11, 92, 255, 0);
-  --spark: #7FA6EE; --spark-hot: #0B5CFF; --spark-idle: #CBD2DE;
-  --hatch: rgba(14, 20, 32, .07);
-  --elev: 0 18px 48px rgba(24, 39, 75, .13);
-  --stamp-edge: rgba(14, 20, 32, .22);
+  --good: #0A6B49; --stop: #B8322A; --warn: #7F5300;
+  --good-glow: rgba(10, 107, 73, .35);
+  --warn-wash: rgba(127, 83, 0, .09);
+  /* token classes: one ink, stepped by price per token — output darkest, cache read palest */
+  --c-output: #1B1E24; --c-cachewrite: #4A4F58; --c-input: #868C96; --c-cacheread: #C6C9CE;
+  --chart-line: #1B1E24; --chart-top: rgba(27, 30, 36, .28); --chart-bottom: rgba(27, 30, 36, 0);
+  --spark: #7D838D; --spark-hot: #0B5CFF; --spark-idle: #D6D3CD;
+  --hatch: rgba(28, 24, 16, .09);
+  --elev: 0 1px 2px rgba(28, 24, 16, .08), 0 16px 40px rgba(28, 24, 16, .12);
+  --elev2: 0 1px 2px rgba(28, 24, 16, .06), 0 8px 22px rgba(28, 24, 16, .08);
+  --stamp-edge: rgba(28, 24, 16, .3);
   /* type */
   --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -54,44 +65,50 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --void: #04060A; --deep: #080B12;
-    --tile: #111724; --tile2: #0B101A;
-    --band: #070B12; --band-head: #080D14; --band-foot: #0A0F17;
-    --conhead-a: #0C121C; --conhead-b: #090E17;
-    --ink: #EEF2F8; --ink2: #B8C2D2; --quiet: #7E8AA0; --faint: #7A869B;
-    --hair: rgba(255, 255, 255, .085); --hair2: rgba(255, 255, 255, .05);
-    --row-hover: rgba(255, 255, 255, .028);
-    --cobalt: #0B5CFF; --lit: #5B9BFF;
-    --cobalt-wash: rgba(91, 155, 255, .14); --cobalt-edge: rgba(91, 155, 255, .45);
+    --void: #04060A; --deep: #070A10;
+    --tile: #0E1420; --tile2: #0A0F18; --raise: #131A28;
+    --band: #080C14; --band-head: #0A0F18; --band-foot: #090E16;
+    --conhead-a: #0D131D; --conhead-b: #090E16;
+    --ink: #EEF2F8; --ink2: #C3CCDB; --quiet: #8B97AC; --faint: #8B97AC;
+    --hair: rgba(255, 255, 255, .09); --hair2: rgba(255, 255, 255, .055);
+    --rim: rgba(255, 255, 255, .045);
+    --row-hover: rgba(255, 255, 255, .032);
+    --cobalt: #0B5CFF; --lit: #6EA8FF;
+    --cobalt-wash: rgba(91, 155, 255, .14); --cobalt-edge: rgba(110, 168, 255, .45);
     --good: #4FE0A8; --stop: #FF7A6B; --warn: #F2C14E;
     --good-glow: rgba(79, 224, 168, .85);
-    --c-cacheread: #2C6FE0; --c-cachewrite: #5B9BFF; --c-output: #4FE0A8; --c-input: #7E8AA0;
+    --warn-wash: rgba(242, 193, 78, .08);
+    --c-output: #BFE3FF; --c-cachewrite: #7FC2F5; --c-input: #4A86C4; --c-cacheread: #2F5F8F;
     --chart-line: #7FB4FF; --chart-top: rgba(91, 155, 255, .55); --chart-bottom: rgba(91, 155, 255, 0);
-    --spark: #2F6ACB; --spark-hot: #5B9BFF; --spark-idle: #2A3243;
-    --hatch: rgba(255, 255, 255, .045);
-    --elev: 0 16px 34px rgba(0, 0, 0, .5);
-    --stamp-edge: rgba(255, 255, 255, .16);
+    --spark: #2F6ACB; --spark-hot: #7FB4FF; --spark-idle: #263047;
+    --hatch: rgba(255, 255, 255, .05);
+    --elev: 0 1px 0 rgba(0, 0, 0, .4), 0 24px 60px rgba(0, 0, 0, .55);
+    --elev2: 0 1px 0 rgba(0, 0, 0, .35), 0 10px 30px rgba(0, 0, 0, .4);
+    --stamp-edge: rgba(255, 255, 255, .2);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --void: #04060A; --deep: #080B12;
-  --tile: #111724; --tile2: #0B101A;
-  --band: #070B12; --band-head: #080D14; --band-foot: #0A0F17;
-  --conhead-a: #0C121C; --conhead-b: #090E17;
-  --ink: #EEF2F8; --ink2: #B8C2D2; --quiet: #7E8AA0; --faint: #7A869B;
-  --hair: rgba(255, 255, 255, .085); --hair2: rgba(255, 255, 255, .05);
-  --row-hover: rgba(255, 255, 255, .028);
-  --cobalt: #0B5CFF; --lit: #5B9BFF;
-  --cobalt-wash: rgba(91, 155, 255, .14); --cobalt-edge: rgba(91, 155, 255, .45);
+  --void: #04060A; --deep: #070A10;
+  --tile: #0E1420; --tile2: #0A0F18; --raise: #131A28;
+  --band: #080C14; --band-head: #0A0F18; --band-foot: #090E16;
+  --conhead-a: #0D131D; --conhead-b: #090E16;
+  --ink: #EEF2F8; --ink2: #C3CCDB; --quiet: #8B97AC; --faint: #8B97AC;
+  --hair: rgba(255, 255, 255, .09); --hair2: rgba(255, 255, 255, .055);
+  --rim: rgba(255, 255, 255, .045);
+  --row-hover: rgba(255, 255, 255, .032);
+  --cobalt: #0B5CFF; --lit: #6EA8FF;
+  --cobalt-wash: rgba(91, 155, 255, .14); --cobalt-edge: rgba(110, 168, 255, .45);
   --good: #4FE0A8; --stop: #FF7A6B; --warn: #F2C14E;
   --good-glow: rgba(79, 224, 168, .85);
-  --c-cacheread: #2C6FE0; --c-cachewrite: #5B9BFF; --c-output: #4FE0A8; --c-input: #7E8AA0;
+  --warn-wash: rgba(242, 193, 78, .08);
+  --c-output: #BFE3FF; --c-cachewrite: #7FC2F5; --c-input: #4A86C4; --c-cacheread: #2F5F8F;
   --chart-line: #7FB4FF; --chart-top: rgba(91, 155, 255, .55); --chart-bottom: rgba(91, 155, 255, 0);
-  --spark: #2F6ACB; --spark-hot: #5B9BFF; --spark-idle: #2A3243;
-  --hatch: rgba(255, 255, 255, .045);
-  --elev: 0 16px 34px rgba(0, 0, 0, .5);
-  --stamp-edge: rgba(255, 255, 255, .16);
+  --spark: #2F6ACB; --spark-hot: #7FB4FF; --spark-idle: #263047;
+  --hatch: rgba(255, 255, 255, .05);
+  --elev: 0 1px 0 rgba(0, 0, 0, .4), 0 24px 60px rgba(0, 0, 0, .55);
+  --elev2: 0 1px 0 rgba(0, 0, 0, .35), 0 10px 30px rgba(0, 0, 0, .4);
+  --stamp-edge: rgba(255, 255, 255, .2);
 }
 
 * { box-sizing: border-box; }
@@ -99,9 +116,10 @@ html, body { margin: 0; }
 body {
   background: var(--void);
   color: var(--ink);
-  font: 400 calc(14px * var(--k))/1.5 var(--sans);
+  font: 400 calc(13.5px * var(--k))/1.5 var(--sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
 }
 a { color: var(--lit); }
 button { font: inherit; color: inherit; }
@@ -109,8 +127,8 @@ button { font: inherit; color: inherit; }
 
 /* the four type roles: display, body, label, numeric */
 .lab {
-  font: 500 calc(10px * var(--k))/1 var(--mono);
-  letter-spacing: .14em; text-transform: uppercase; color: var(--quiet);
+  font: 500 calc(12px * var(--k))/1 var(--sans);
+  letter-spacing: .08em; text-transform: uppercase; color: var(--quiet);
 }
 .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
@@ -123,25 +141,26 @@ button { font: inherit; color: inherit; }
 .lockup { display: inline-flex; align-items: center; gap: calc(10px * var(--k)); color: var(--ink); text-decoration: none; }
 .lockup svg { width: calc(22px * var(--k)); height: calc(22px * var(--k)); flex: none; }
 .lockup .p { font: 500 calc(13.5px * var(--k)) var(--sans); letter-spacing: -.005em; }
-.lockup .f { font: 400 calc(11.5px * var(--k)) var(--sans); color: var(--quiet); }
+.lockup .f { font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); }
 
 /* DEMO — persistent, quiet, on every surface that shows generated figures */
 .stamp {
   display: inline-flex; align-items: center;
-  font: 500 calc(8px * var(--k)) var(--mono); letter-spacing: .14em; color: var(--quiet);
-  padding: calc(2px * var(--k)) calc(5px * var(--k)); border-radius: 3px;
+  font: 600 calc(12px * var(--k))/1 var(--sans); letter-spacing: .12em; color: var(--quiet);
+  padding: calc(3px * var(--k)) calc(6px * var(--k)) calc(3px * var(--k)) calc(7px * var(--k)); border-radius: 4px;
   box-shadow: inset 0 0 0 1px var(--stamp-edge);
+  background: repeating-linear-gradient(-45deg, var(--hatch) 0 2px, transparent 2px 5px);
 }
 
 .btn {
   display: inline-flex; align-items: center; gap: calc(7px * var(--k));
   height: calc(32px * var(--k)); padding: 0 calc(13px * var(--k)); border: 0; border-radius: 8px;
-  font: 500 calc(12px * var(--k)) var(--sans); cursor: pointer;
+  font: 500 calc(12.5px * var(--k)) var(--sans); cursor: pointer;
   background: transparent; color: var(--ink2); box-shadow: inset 0 0 0 1px var(--hair);
   transition: color .16s var(--ease), box-shadow .16s var(--ease), background .16s var(--ease), transform .18s var(--spring);
 }
 .btn:hover { color: var(--ink); box-shadow: inset 0 0 0 1px var(--cobalt-edge); }
-.btn.primary { background: var(--cobalt); color: #FFFFFF; box-shadow: none; }
+.btn.primary { background: var(--cobalt); color: #FFFFFF; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 1px 2px rgba(0, 0, 0, .25); }
 .btn.primary:hover { background: #1A68FF; transform: translateY(-1px); }
 .btn:disabled { opacity: .5; cursor: default; transform: none; }
 .btn svg { width: calc(14px * var(--k)); height: calc(14px * var(--k)); }

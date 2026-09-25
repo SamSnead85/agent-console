@@ -25,17 +25,21 @@ import { fileURLToPath } from "node:url";
 
 import { help, readConfig } from "./lib/config.js";
 import { createRegistry } from "./lib/hub/registry.js";
+import { acquireStateLock } from "./lib/hub/state-lock.js";
 import { createStore } from "./lib/hub/store.js";
 import { createNames, startLocalCollection } from "./lib/hub/local.js";
 import { startDemo } from "./lib/hub/demo.js";
-import { createConsoleHandler, createReportingHandler, hubAddresses, joinAssetsPresent } from "./lib/hub/routes.js";
+import { createAlerts, demoAlerts } from "./lib/hub/alerts.js";
+import { createConsoleHandler, createReportingHandler, hubAddresses, joinAssetsPresent, isCgnatAddress } from "./lib/hub/routes.js";
 import { choosePort, chooseFreePort } from "./lib/hub/port.js";
 import { createAdmin, readAdminKey, requestSignIn } from "./lib/hub/admin.js";
 import { hubCertificate } from "./lib/hub/tls.js";
 import { defaultRoots } from "./lib/collector/collector.js";
 import { createGitStatsStore } from "./lib/gitstats.js";
+import { createInteropStore } from './lib/interop/ingest.js';
 import { PRODUCT_NAME, productTitle } from "./lib/brand.js";
 import { invocation } from "./lib/invocation.js";
+import { REPORTER_SEARCH } from "./lib/reporter-search.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(HERE, "public");
@@ -47,14 +51,31 @@ if (config.help) {
   process.stdout.write(help(COMMAND));
   process.exit(0);
 }
-if (config.listenErrors.length) {
-  for (const problem of config.listenErrors) process.stderr.write("\n  " + problem + "\n");
-  process.stderr.write("\n");
+if (config.errors.length) {
+  // Under --json a mistake is a JSON line too, so a program starting the console can read it.
+  if (config.json) process.stdout.write(JSON.stringify({ ok: false, event: "error", kind: "usage", errors: config.errors }) + "\n");
+  else {
+    for (const problem of config.errors) process.stderr.write("\n  " + problem + "\n");
+    process.stderr.write("\n");
+  }
   process.exit(2);
 }
 if (!joinAssetsPresent(PUBLIC)) {
   process.stderr.write("\n  This copy of " + PRODUCT_NAME + " is missing files from public/. Download it again.\n\n");
   process.exit(1);
+}
+
+/** This start's own command, with --listen 0.0.0.0: how to open it to other machines. */
+function networkCommand() {
+  const argv = process.argv.slice(2);
+  const kept = [];
+  for (let i = 0; i < argv.length; i += 1) {
+    const [name] = argv[i].split("=");
+    if (name === "--listen") { if (!argv[i].includes("=")) i += 1; continue; }
+    if (name === "--json") continue;
+    kept.push(/^[A-Za-z0-9_./:=@%+-]+$/u.test(argv[i]) ? argv[i] : "'" + argv[i].replace(/'/gu, "'\\''") + "'");
+  }
+  return [COMMAND, ...kept, "--listen", "0.0.0.0"].join(" ");
 }
 
 /** Open the page in the platform's default browser. Best effort, never fatal. */
@@ -64,18 +85,58 @@ function openBrowser(address) {
   else execFile("xdg-open", [address], () => {});
 }
 
+/** The reporting port this console used last time: enrolled machines report there. */
+const REPORTING_FILE = config.stateDir ? path.join(config.stateDir, "reporting.json") : null;
+function rememberedReportPort() {
+  try {
+    const { port } = JSON.parse(fs.readFileSync(REPORTING_FILE, "utf8"));
+    return Number.isInteger(port) && port > 0 && port <= 65_535 ? port : null;
+  } catch { return null; }
+}
+
 // ---------------------------------------------------------------------------
 // Ports, before anything opens a file
 // ---------------------------------------------------------------------------
 
-const consoleChoice = await choosePort({ port: config.port, host: "127.0.0.1", explicit: config.portExplicit, demo: config.demo });
+const remembered = REPORTING_FILE ? rememberedReportPort() : null;
+// A console found on a nearby port (where an earlier start moved to) is this
+// one only when it proves it holds this state directory's key; a demo has none.
+const ownKey = config.stateDir ? readAdminKey(config.stateDir) : null;
+const proofs = new Map();
+const mine = config.demo ? null : async (port) => {
+  if (!ownKey) return false;
+  const answer = await requestSignIn({ port, key: ownKey });
+  proofs.set(port, answer);
+  return answer.verified;
+};
+const consoleChoice = await choosePort({ port: config.port, host: "127.0.0.1", explicit: config.portExplicit, demo: config.demo,
+  // A console that moves off a busy port never lands on the port its machines report to.
+  avoid: remembered && !config.reportPortExplicit ? [remembered] : [], mine });
 if (consoleChoice.action === "already-running") {
   const base = "http://127.0.0.1:" + consoleChoice.port;
   // The same user can read the running console's key, and proves it without
   // sending it: whatever answers on the port gets no secret, and the browser
   // opens only on a console that proved it holds the same key.
-  const key = config.stateDir ? readAdminKey(config.stateDir) : null;
-  const answer = key ? await requestSignIn({ port: consoleChoice.port, key }) : { verified: false };
+  const key = ownKey;
+  const answer = proofs.get(consoleChoice.port) ?? (key ? await requestSignIn({ port: consoleChoice.port, key }) : { verified: false });
+  if (!key) {
+    // No key to prove (a demo keeps none): ask the running console to print a
+    // new sign-in link in its own window. Nothing secret is sent, and nothing
+    // secret comes back; only that window shows the link.
+    let printed = false;
+    try {
+      const r = await fetch(base + "/api/sign-in/print", { method: "POST", headers: { "x-agent-console": "1" }, redirect: "error", signal: AbortSignal.timeout(2000) });
+      printed = r.ok;
+    } catch { /* said below */ }
+    if (config.json) {
+      process.stdout.write(JSON.stringify({ ok: true, alreadyRunning: true, verified: false, signInPrinted: printed, dashboard: { name: PRODUCT_NAME, url: base, port: consoleChoice.port, demo: Boolean(consoleChoice.running.demo) } }) + "\n");
+    } else {
+      process.stdout.write("\n  " + (consoleChoice.running.demo ? "A demo of " : "") + PRODUCT_NAME + " is already running at " + base + ".\n"
+        + (printed ? "  It printed a new sign-in link in the window where it runs.\n"
+          : "  Use the sign-in link in the window where it runs, or stop it there with Ctrl+C and start again.\n") + "\n");
+    }
+    process.exit(0);
+  }
   if (key && !answer.verified) {
     if (config.json) {
       process.stdout.write(JSON.stringify({ ok: false, alreadyRunning: true, verified: false, dashboard: { name: PRODUCT_NAME, url: base, port: consoleChoice.port } }) + "\n");
@@ -105,17 +166,21 @@ if (consoleChoice.action === "busy") {
   process.exit(1);
 }
 config.port = consoleChoice.port;
-// Reporting sits next to the console unless told otherwise.
+// Reporting sits where it sat last time (enrolled machines report there), or
+// next to the console, unless told otherwise.
 const reportChoice = await chooseFreePort({
-  port: config.reportPortExplicit ? config.reportPort : config.port === 0 ? 0 : config.port + 1,
+  port: config.reportPortExplicit ? config.reportPort : config.port === 0 ? 0 : remembered || config.port + 1,
   host: config.listen, explicit: config.reportPortExplicit, avoid: config.port ? [config.port] : [],
 });
 if (reportChoice.action === "busy") {
   process.stderr.write("\n  Port " + config.reportPort + " (for other machines to report on) is already in use.\n"
-    + "  Choose another:  " + COMMAND + " --report-port " + (config.reportPort + 2) + "\n\n");
+    + "  Choose another:  " + COMMAND + " --report-port " + (config.reportPort + 2) + "\n"
+    + "  Machines that joined earlier look for this console on nearby ports (up to " + REPORTER_SEARCH + " either side of the\n"
+    + "  port they joined on) and move by themselves; one further away needs a new join link.\n\n");
   process.exit(1);
 }
 config.reportPort = reportChoice.port;
+const movedReporting = remembered && reportChoice.port !== 0 && reportChoice.port !== remembered ? remembered : null;
 
 // ---------------------------------------------------------------------------
 // The hub
@@ -123,28 +188,46 @@ config.reportPort = reportChoice.port;
 
 const PRICES = JSON.parse(fs.readFileSync(path.join(HERE, "lib", "collector", "prices.json"), "utf8"));
 const retentionMs = config.retentionDays * 86_400_000;
-const registry = createRegistry({ dir: config.stateDir });
-const store = createStore({ dir: config.stateDir, retentionMs, prices: PRICES });
+let stateLock;
+try {
+  stateLock = acquireStateLock(config.stateDir);
+  config.stateDir = stateLock.dir;
+} catch (error) {
+  process.stderr.write("\n  " + error.message + "\n\n");
+  process.exit(1);
+}
+let registry = null, names = null, store = null;
+if (!config.demo) {
+  // Register before initializing any persisted component, including failures
+  // during startup. Finish every final write before another hub may acquire it.
+  process.on("exit", () => {
+    try { registry?.flush(); names?.save(); store?.flush(); } catch { /* exiting */ }
+    finally { try { stateLock.release(); } catch { /* a dead owner is recovered on the next start */ } }
+  });
+  for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => process.exit(signal === "SIGINT" ? 130 : 143));
+}
+registry = createRegistry({ dir: config.stateDir });
+store = createStore({ dir: config.stateDir, retentionMs, prices: PRICES });
 if (!config.demo) store.load();
 const admin = createAdmin({ dir: config.stateDir });
 const certificate = hubCertificate(config.stateDir);
-let names = config.demo ? null : createNames(config.stateDir, { retentionMs });
+names = config.demo ? null : createNames(config.stateDir, { retentionMs });
 let local = null;
+let alertEngine = null;
 if (config.demo) {
   names = startDemo({ registry, store }).names;
 } else if (config.local) {
   const roots = defaultRoots(config.home);
   roots[0].directory = config.claudeRoot;
   roots[1].directory = config.codexRoot;
+  alertEngine = createAlerts({ repeat: config.alertRepeat, spikeFactor: config.alertSpikeFactor,
+    stallMinutes: config.alertStallMinutes, notify: config.desktopAlerts, names });
   local = startLocalCollection({
     registry, store, names, stateDir: config.stateDir, roots,
+    intervalMs: 2_000, onTranscriptLine: alertEngine.observeLine,
     label: config.machineName, person: config.person,
     onError: (error) => process.stderr.write("  this machine: " + String(error && error.message) + "\n"),
   });
-}
-if (!config.demo) {
-  process.on("exit", () => { try { registry.flush(); names && names.save(); } catch { /* exiting */ } });
-  for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => process.exit(signal === "SIGINT" ? 130 : 143));
 }
 
 // Filled in with the real ports once both listeners are up.
@@ -153,9 +236,24 @@ const consoleHandler = createConsoleHandler({
   config, registry, store, names, local, admin, version: VERSION, publicDir: PUBLIC,
   reporting: reportingInfo,
   git: config.demo ? null : createGitStatsStore(),
+  alerts: config.demo ? { list: () => demoAlerts() } : alertEngine,
+  interop: config.interop && !config.demo ? createInteropStore() : null,
+  onSignInLink: () => {
+    const link = signIn();
+    if (config.json) process.stdout.write(JSON.stringify({ event: "sign-in", at: new Date().toISOString(), signIn: link }) + "\n");
+    else process.stdout.write("\n  A browser asked for a new sign-in link (it works once):  " + link + "\n\n");
+  },
+  networkCommand: networkCommand(),
 });
 const reportingHandler = createReportingHandler({
   config, registry, store, version: VERSION, publicDir: PUBLIC, onChange: () => consoleHandler.invalidate(),
+  onEvent: (event) => {
+    // Joins and leaves are said as they happen, in words or as JSON lines.
+    if (config.json) { process.stdout.write(JSON.stringify({ ...event, at: new Date().toISOString() }) + "\n"); return; }
+    const who = event.device.label + (event.device.person ? " (" + event.device.person + ")" : "");
+    const what = event.event === "joined" ? "joined" : event.event === "rejoined" ? "joined again, and keeps its history" : "left";
+    process.stdout.write("  " + new Date().toLocaleTimeString("en-GB") + "  " + who.replace(/[\u0000-\u001f\u007f-\u009f]/gu, " ") + " " + what + "\n");
+  },
 });
 const fail = (res) => (error) => {
   if (res.headersSent) { res.destroy(); return; }
@@ -206,6 +304,11 @@ config.port = consoleServer.address().port;
 await new Promise((resolve) => reportingServer.listen(config.reportPort, config.listen, resolve));
 config.reportPort = reportingServer.address().port;
 Object.assign(reportingInfo, { port: config.reportPort, consolePort: config.port });
+if (REPORTING_FILE && config.reportPort && !config.demo && !(reportChoice.movedFrom && registry.list().some((d) => !d.local && !d.revokedAt))) {
+  // Kept, so the next start listens where enrolled machines report. A port
+  // taken only for this run (the usual one was busy) is not kept.
+  try { fs.writeFileSync(REPORTING_FILE, JSON.stringify({ v: 1, port: config.reportPort }) + "\n", { mode: 0o600 }); } catch { /* best effort */ }
+}
 
 const address = "http://127.0.0.1:" + config.port;
 const signIn = () => address + "/login?ticket=" + admin.ticket();
@@ -227,6 +330,8 @@ if (config.json) {
       demo: config.demo,
       local: Boolean(local),
       stateDir: config.stateDir,
+      // A demonstration's key lives in memory, so its scrape token is shown here; a real one's by metrics-token.
+      ...(config.demo && config.interop ? { metricsToken: admin.demoScrapeToken() } : {}),
     },
   }) + "\n");
 } else {
@@ -243,11 +348,25 @@ if (config.json) {
       "  Only machines holding a join code or a device token get in; reports travel over TLS",
       "  pinned to this console's certificate. The console itself answers only on this machine.",
     );
-    if (reportChoice.movedFrom && registry.list().some((d) => !d.local && !d.revokedAt)) {
-      lines.push("  port " + reportChoice.movedFrom + " was in use: machines that joined earlier report there, and reach this console again once it runs on it");
+    const cgnat = reach.urls.filter((u) => isCgnatAddress(new URL(u).hostname));
+    if (cgnat.length && !config.allowCgnat && !config.allowPublic) {
+      lines.push("  " + cgnat.map((u) => new URL(u).hostname).join(", ") + " is in 100.64.0.0/10 (Tailscale or carrier-grade NAT): machines",
+        "  there are refused unless you restart with --allow-cgnat");
     }
   } else if (!config.demo) {
     lines.push("  this machine only — to connect other machines, restart with --listen 0.0.0.0");
+  }
+  if (movedReporting && registry.list().some((d) => !d.local && !d.revokedAt)) {
+    const near = Math.abs(config.reportPort - movedReporting) <= REPORTER_SEARCH;
+    lines.push("", "  Reporting is on port " + config.reportPort + ", not " + movedReporting + " where machines joined. "
+      + (near ? "They look for this console on nearby ports and move here by themselves."
+        : "That is too far for them to find it: start with --report-port " + movedReporting + ", or send each a new join link."));
+  }
+  if (config.interop) {
+    lines.push(config.demo
+      ? "  /metrics scrape token for this demo (Authorization: Bearer …):  " + admin.demoScrapeToken()
+      : "  Telemetry credentials: use metrics-token --scope read or --scope ingest. Command:  " + COMMAND + " metrics-token"
+        + (config.stateDir === path.join(config.home, ".agent-console", "hub") ? "" : " --state-dir \"" + config.stateDir + "\""));
   }
   lines.push("", "  Sign in (the link works once):  " + signIn(), "  Ctrl+C stops the console.", "");
   process.stdout.write(lines.join("\n") + "\n");

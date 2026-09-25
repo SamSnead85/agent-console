@@ -29,3 +29,4 @@
 .join footer { margin-top: calc(40px * var(--k)); font-size: calc(11.5px * var(--k)); color: var(--quiet); }
 .join footer a { color: var(--quiet); }
 .steps code span { font: inherit; color: inherit; }
+#restart { user-select: text; }

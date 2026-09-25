@@ -326,11 +326,13 @@ test('a device cannot claim verified provenance or smuggle context that disagree
 });
 
 test("plain HTTP is accepted only on this machine or a private network, unless explicitly allowed", async () => {
-  for (const host of ["127.0.0.1", "localhost", "10.1.2.3", "172.16.0.9", "172.31.255.1", "192.168.1.20", "169.254.3.4", "100.101.102.103", "studio.local", "[::1]", "[fd12:3456::1]"]) {
+  for (const host of ["127.0.0.1", "localhost", "10.1.2.3", "172.16.0.9", "172.31.255.1", "192.168.1.20", "169.254.3.4", "studio.local", "[::1]", "[fd12:3456::1]"]) {
     assert.equal(isPrivateHost(host.replace(/^\[|\]$/g, "")), true, host);
     await postRecords(`http://${host}:6787/api/ingest`, DEVICE, [record()], { token: TOKEN, fetch: async () => response(receipt(1)) });
   }
-  for (const host of ["example.invalid", "172.32.0.1", "8.8.8.8", "192.169.1.1", "100.128.0.1"]) {
+  // Carrier-grade NAT is shared with strangers: private only when asked for.
+  assert.equal(isPrivateHost("100.101.102.103", { cgnat: true }), true);
+  for (const host of ["example.invalid", "172.32.0.1", "8.8.8.8", "192.169.1.1", "100.128.0.1", "100.101.102.103"]) {
     assert.equal(isPrivateHost(host), false, host);
     await assert.rejects(postRecords(`http://${host}/api/ingest`, DEVICE, [record()], { token: TOKEN, fetch: async () => assert.fail("public plain HTTP used") }), safeError);
   }

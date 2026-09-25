@@ -13,7 +13,13 @@
  * which sh, bash, zsh, fish and PowerShell all take literally.
  *
  * The command installs Agent Console from its GitHub release, never from the
- * console that served this page, and the reporter then checks the console's
+ * console that served this page. It starts with a short check for `node -e`
+ * (VERIFY, the same text as VERIFY_AND_RUN in lib/invocation.js) that runs
+ * nothing until the file's SHA-256 matches the release's SHA256SUMS. The page
+ * shows the whole command, check included, and Copy gives exactly what is
+ * shown except the join code, which stays masked on screen. The check's SHA-256
+ * is published in the README and on each release page for comparison. The
+ * reporter then checks the console's
  * certificate against the fingerprint in the link before it sends anything.
  * This page itself arrives over plain HTTP, so the console's owner can also
  * send the command straight from the console (SECURITY.md, "The join page").
@@ -25,6 +31,7 @@
   const FRAGMENT = /^([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{43})$/;
   const SAFE_LINK = /^https?:\/\/(?:[a-z0-9._-]+|\[[0-9a-f:.]+\])(?::[0-9]{1,5})?\/join#[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}$/;
   const VERSION = /^[0-9]{1,4}\.[0-9]{1,4}\.[0-9]{1,4}$/;
+  const VERIFY = "const[u,...a]=process.argv.slice(1),p=require(`path`),n=p.basename(u),g=x=>fetch(x).then(r=>{if(!r.ok)throw Error(x+` answered `+r.status);return r.arrayBuffer()}).then(Buffer.from);(async()=>{if(!/^https:[/][/]github[.]com[/][A-Za-z0-9_.-]+[/][A-Za-z0-9_.-]+[/]releases[/]download[/]v[0-9.]+[/][A-Za-z0-9_.-]+[.]tgz(?![^])/.test(u))throw Error(`not a release file: `+u);const t=String(await g(p.posix.dirname(u)+`/SHA256SUMS`)).split(/[^0-9A-Za-z._-]+/),b=await g(u),h=require(`crypto`).createHash(`sha256`).update(b).digest(`hex`);if(h!==t[t.indexOf(n)-1])throw Error(n+` does not match the release SHA256SUMS; nothing was run`);const f=require(`fs`),d=p.join(require(`os`).homedir(),`.agent-console`,`releases`),k=p.join(d,n),w=process.platform==`win32`,q=String.fromCharCode(34);f.mkdirSync(d,{recursive:true});f.writeFileSync(k,b);console.error(n+` matches the release SHA256SUMS: `+h);const r=require(`child_process`).spawnSync(w?[`npx`,`--yes`,`file:`+k,...a].map(x=>q+x+q).join(` `):`npx`,w?[]:[`--yes`,`file:`+k,...a],{stdio:`inherit`,shell:w,env:{...process.env,AGENT_CONSOLE_PACKAGE:k}});process.exit(r.status??1)})().catch(e=>{console.error(String(e.message));process.exit(1)})";
 
   const parts = FRAGMENT.exec((location.hash || "").slice(1));
   const code = parts ? parts[1] : null;
@@ -32,6 +39,7 @@
   const link = rebuilt && SAFE_LINK.test(rebuilt) ? rebuilt : null;
   const valid = link !== null;
   let command = null;
+  let restart = null;
 
   $("hubName").textContent = location.host;
   if (!valid) {
@@ -47,9 +55,12 @@
     $("ver").textContent = "v" + version;
     for (const el of document.querySelectorAll(".verv")) el.textContent = version;
     $("releasePage").href = `${REPO}/releases/tag/v${version}`;
-    for (const el of document.querySelectorAll(".restart")) el.textContent = `npx --yes ${asset} report`;
+    const run = `node -e '${VERIFY}' ${asset}`;
+    restart = `${run} report`;
+    $("restart").textContent = restart;
+    $("restartBtn").disabled = false;
     if (valid) {
-      command = `npx --yes ${asset} join '${link}'`;
+      command = `${run} join '${link}'`;
       $("cmd").textContent = command.replace(code, "••••••••");
     }
     if (info.demo) { $("demoStamp").hidden = false; $("demoNote").hidden = false; }
@@ -57,18 +68,28 @@
 
   // Not a secure context on a local network address, so the Clipboard API is
   // usually absent; a hidden text area and the copy command still work.
-  $("copyBtn").addEventListener("click", async () => {
-    if (!command) return;
+  const copy = async (text) => {
     let ok = false;
-    try { await navigator.clipboard.writeText(command); ok = true; } catch { /* fall through */ }
+    try { await navigator.clipboard.writeText(text); ok = true; } catch { /* fall through */ }
     if (!ok) {
       const area = $("clip");
-      area.value = command;
+      area.value = text;
       area.select();
       try { ok = document.execCommand("copy"); } catch { ok = false; }
       area.value = "";
     }
+    return ok;
+  };
+  $("copyBtn").addEventListener("click", async () => {
+    if (!command) return;
+    const ok = await copy(command);
     $("status").textContent = ok ? "Copied. Paste it into the terminal and press Return." : "Copying is blocked here. Ask whoever sent the link for the command instead.";
     $("copyBtn").textContent = ok ? "Copied" : "Copy";
+  });
+  $("restartBtn").addEventListener("click", async () => {
+    if (!restart) return;
+    const ok = await copy(restart);
+    $("status").textContent = ok ? "Copied the command that starts reporting again." : "Copying is blocked here. Select the command and copy it by hand.";
+    $("restartBtn").textContent = ok ? "Copied" : "Copy";
   });
 })();

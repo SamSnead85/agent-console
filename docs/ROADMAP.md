@@ -8,10 +8,16 @@ console's certificate; the console is signed in and never on the network; per
 person and per machine views; copied transcripts counted once; large first
 uploads resume where they stopped; CI on macOS, Linux and Windows.
 
-Candidates for later, none of them started:
+In 0.3.0: context and cache health, live alerts and an agent tree in each
+lane; spend per commit and per integration in Projects; a project policy file
+that compiles into Claude Code controls and can be removed; opt-in local
+metrics and telemetry; one period (1 hour to 30 days) on every view; and
+reporters that run in the background and survive a console's restart.
 
-1. A background service for the reporter (launchd, systemd, Task Scheduler) so
-   reporting survives a restart without a terminal window.
+Candidates for later:
+
+1. Installing the reporter as a login service for you (launchd, systemd, Task
+   Scheduler). 0.3.0 has `--background` and examples to set one up by hand.
 2. Prices for more models as vendors publish rates; the table stays dated and
    offline.
 3. Choosing which projects a machine shares by name, from the console.

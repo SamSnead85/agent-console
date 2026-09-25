@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { BIND_ADDRESS, DEFAULT_PORT, help, readConfig } from "../lib/config.js";
 import { help as reporterHelp } from "../lib/reporter.js";
-import { invocation, releaseUrl } from "../lib/invocation.js";
+import { invocation, releaseUrl, verifiedRun } from "../lib/invocation.js";
 
 test("a boolean switch never swallows the argument that follows it", () => {
   const config = readConfig(["--demo", "--port", "7404"], {});
@@ -47,11 +47,11 @@ test("custom transcript roots are respected, and demo reads no home at all", () 
 });
 
 test("every printed command runs this copy: never a bare name npx could resolve elsewhere", () => {
-  const fromNpx = invocation("0.2.1", "/home/dev/.npm/_npx/abc123/node_modules/@lockedinlabs/agent-console/bin/agent-console.mjs");
-  assert.equal(fromNpx, `npx --yes ${releaseUrl("0.2.1")}`);
+  const fromNpx = invocation("0.2.1", "/home/dev/.npm/_npx/abc123/node_modules/@lockedinlabs/agent-console/bin/agent-console.mjs", {});
+  assert.equal(fromNpx, verifiedRun("0.2.1"), "through npx, the command checks the release file first");
   assert.match(releaseUrl("0.2.1"), /^https:\/\/github\.com\/SamSnead85\/agent-console\/releases\/download\/v0\.2\.1\/lockedinlabs-agent-console-0\.2\.1\.tgz$/u);
   const fromDownload = invocation("0.2.1", "/home/dev/agent-console-main/bin/agent-console.mjs");
-  assert.equal(fromDownload, `node "${path.resolve("/home/dev/agent-console-main/bin/agent-console.mjs")}"`);
+  assert.equal(fromDownload, `node '${path.resolve("/home/dev/agent-console-main/bin/agent-console.mjs")}'`);
   for (const text of [help(fromDownload), reporterHelp(fromDownload), help(fromNpx), reporterHelp(fromNpx)]) {
     assert.doesNotMatch(text, /npx\s+(--yes\s+)?agent-console\b/u);
     assert.doesNotMatch(text, /^\s*agent-console\s/mu, "a bare command line");

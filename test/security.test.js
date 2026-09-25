@@ -18,10 +18,16 @@
  *   S2  a second start never sends the key; it proves it holds it
  *   S3  a random session per browser, kept as a verifier, with sign-out and a
  *       cookie name of its own per state directory
+ *
+ * and of the 0.2.x usability review's security points:
+ *
+ *   S4  every printed command checks the release file against SHA256SUMS
+ *       before it runs anything; one address cannot use up everyone's joins;
+ *       carrier-grade NAT is private only when the console says so
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import http from "node:http";
@@ -30,11 +36,13 @@ import os from "node:os";
 import path from "node:path";
 import tls from "node:tls";
 import { once } from "node:events";
+import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
 import { selfSignedCertificate, fingerprintOf } from "../lib/hub/tls.js";
 import { createAdmin, readAdminKey, requestSignIn, ticketRequestProof, SESSION_TTL_MS } from "../lib/hub/admin.js";
-import { createReportingHandler, isPrivateAddress } from "../lib/hub/routes.js";
+import { createReportingHandler, isPrivateAddress, joinAddressKey } from "../lib/hub/routes.js";
+import { VERIFY_AND_RUN, invocation, releaseAsset, releaseUrl } from "../lib/invocation.js";
 import { createRegistry, MAX_INVITE_TTL_MS } from "../lib/hub/registry.js";
 import { createStore } from "../lib/hub/store.js";
 import { printable } from "../lib/reporter.js";
@@ -91,7 +99,7 @@ test("C1: the hub serves no code, and every command installs from the GitHub rel
   }
   const invite = JSON.parse((await raw(hub.port, "/api/invitations", { method: "POST", headers: { ...INTENT, cookie }, body: JSON.stringify({ person: "You" }) })).body);
   for (const command of [invite.command, invite.typed]) {
-    assert.match(command, /^npx --yes https:\/\/github\.com\/SamSnead85\/agent-console\/releases\/download\/v[\d.]+\/lockedinlabs-agent-console-[\d.]+\.tgz join /u);
+    assert.match(command, /^node -e '[^']+' https:\/\/github\.com\/SamSnead85\/agent-console\/releases\/download\/v[\d.]+\/lockedinlabs-agent-console-[\d.]+\.tgz join /u);
     assert.doesNotMatch(command, /127\.0\.0\.1:\d+\/[^j]/u, "a command points at the hub for code");
   }
   const joinPage = fs.readFileSync(new URL("../public/join.js", import.meta.url), "utf8");
@@ -392,7 +400,7 @@ test("M4: join guesses are counted before they are read, per address and in tota
 });
 
 test("M5: reporting refuses callers outside private networks unless --allow-public", async () => {
-  for (const a of ["127.0.0.1", "::1", "10.1.2.3", "172.20.0.1", "192.168.1.30", "100.100.1.1", "::ffff:192.168.1.30", "fd12::1", "fe80::1"]) assert.equal(isPrivateAddress(a), true, a);
+  for (const a of ["127.0.0.1", "::1", "10.1.2.3", "172.20.0.1", "192.168.1.30", "::ffff:192.168.1.30", "fd12::1", "fe80::1"]) assert.equal(isPrivateAddress(a), true, a);
   for (const a of ["8.8.8.8", "203.0.113.9", "::ffff:8.8.8.8", "2001:db8::1", "172.32.0.1"]) assert.equal(isPrivateAddress(a), false, a);
   const answers = [];
   const res = { writeHead: (status) => answers.push(status), end: () => {} };
@@ -401,6 +409,149 @@ test("M5: reporting refuses callers outside private networks unless --allow-publ
   await handle(false)({ method: "GET", url: "/api/join/info", headers: {}, socket: { remoteAddress: "8.8.8.8" } }, res, { secure: false });
   await handle(true)({ method: "GET", url: "/api/join/info", headers: {}, socket: { remoteAddress: "8.8.8.8" } }, res, { secure: false });
   assert.deepEqual(answers, [403, 200]);
+});
+
+test("M4: one address over its own limit does not use up everyone's joins, and IPv6 counts by its /64", async () => {
+  const handler = createReportingHandler({ config: { demo: false, retentionDays: 8, allowPublic: false }, registry: createRegistry({ dir: null }),
+    store: createStore({ dir: null, retentionMs: 86_400_000, prices: PRICES }), version: "0.0.0", publicDir: process.cwd() });
+  const attempt = async (remoteAddress) => {
+    const req = Object.assign(Readable.from([Buffer.from(JSON.stringify({ code: "2222-2223" }))]),
+      { method: "POST", url: "/api/join", headers: { "content-type": "application/json" }, socket: { remoteAddress } });
+    let status = 0;
+    await handler(req, { writeHead: (s) => { status = s; }, end: () => {} }, { secure: true });
+    return status;
+  };
+  const tally = {};
+  for (let i = 0; i < 200; i += 1) { const s = await attempt("192.168.1.66"); tally[s] = (tally[s] || 0) + 1; }
+  assert.deepEqual(tally, { 404: 10, 429: 190 }, "ten guesses evaluated, the rest refused");
+  // A real join from another machine still reaches the code check.
+  assert.equal(await attempt("192.168.1.20"), 404);
+  // A unique-local or link-local /64 is the whole office network: its addresses count one by one.
+  for (let i = 1; i <= 12; i += 1) await attempt(`fd12:3456:789a:1::${(0x60 + i).toString(16)}`);
+  assert.equal(await attempt("fd12:3456:789a:1::20"), 404, "a neighbour on the same ULA /64 is not held off");
+  assert.notEqual(joinAddressKey("fd12:3456:789a:1::66"), joinAddressKey("fd12:3456:789a:1::20"));
+  assert.notEqual(joinAddressKey("fe80::66%en0"), joinAddressKey("fe80::20%en0"));
+  // A global /64 (reachable only with --allow-public) is one machine's: it shares one allowance.
+  assert.equal(joinAddressKey("2001:db8:1:1:aaaa:bbbb:cccc:dddd"), joinAddressKey("2001:db8:1:0001::9"));
+  assert.equal(joinAddressKey("::ffff:192.168.1.20"), "192.168.1.20");
+});
+
+test("M4: however many addresses one device uses, a join by link from another machine is never held off", async () => {
+  const registry = createRegistry({ dir: null });
+  const handler = createReportingHandler({ config: { demo: false, retentionDays: 8, allowPublic: false }, registry,
+    store: createStore({ dir: null, retentionMs: 86_400_000, prices: PRICES }), version: "0.0.0", publicDir: process.cwd() });
+  const attempt = async (remoteAddress, code) => {
+    const req = Object.assign(Readable.from([Buffer.from(JSON.stringify({ code }))]),
+      { method: "POST", url: "/api/join", headers: { "content-type": "application/json" }, socket: { remoteAddress } });
+    let status = 0;
+    await handler(req, { writeHead: (s) => { status = s; }, end: () => {} }, { secure: true });
+    return status;
+  };
+  // Six addresses, ten guesses each, at typed codes and at link-shaped codes.
+  for (let a = 0x66; a <= 0x71; a += 1) for (let i = 0; i < 10; i += 1) await attempt(`192.168.1.${a}`, i % 2 ? "2222-2223" : "A".repeat(22));
+  const { linkCode } = registry.invite({ person: "Reviewer", machine: "Laptop" });
+  assert.equal(await attempt("192.168.1.20", linkCode), 200);
+});
+
+test("S4: carrier-grade NAT (100.64.0.0/10) counts as private only with --allow-cgnat", async () => {
+  for (const a of ["100.64.0.1", "100.100.1.1", "100.127.255.254", "::ffff:100.100.1.1"]) {
+    assert.equal(isPrivateAddress(a), false, a);
+    assert.equal(isPrivateAddress(a, { cgnat: true }), true, a);
+  }
+  assert.equal(isPrivateAddress("100.128.0.1", { cgnat: true }), false);
+  const answers = [];
+  const res = { writeHead: (status) => answers.push(status), end: (body) => answers.push(String(body)) };
+  const handle = (allowCgnat) => createReportingHandler({ config: { demo: false, retentionDays: 8, allowPublic: false, allowCgnat }, registry: createRegistry({ dir: null }),
+    store: createStore({ dir: null, retentionMs: 86_400_000, prices: PRICES }), version: "0.0.0", publicDir: process.cwd() });
+  await handle(false)({ method: "GET", url: "/api/join/info", headers: {}, socket: { remoteAddress: "100.100.1.1" } }, res, { secure: false });
+  await handle(true)({ method: "GET", url: "/api/join/info", headers: {}, socket: { remoteAddress: "100.100.1.1" } }, res, { secure: false });
+  assert.equal(answers[0], 403);
+  assert.match(answers[1], /--allow-cgnat/u);
+  assert.equal(answers[2], 200);
+});
+
+/*
+ * The verify-then-run check every printed command starts with, run for real:
+ * fetch answers from a folder standing in for the GitHub release, and a
+ * stand-in npx records whether it was ever started.
+ */
+const STUB_FETCH = `
+const fs = require("node:fs"), path = require("node:path");
+const dir = process.env.STUB_RELEASE_DIR;
+globalThis.fetch = async (url) => {
+  fs.appendFileSync(path.join(dir, "..", "fetched.txt"), url + "\\n");
+  const file = path.join(dir, path.basename(new URL(url).pathname));
+  if (!fs.existsSync(file)) return new Response("not found", { status: 404 });
+  return new Response(fs.readFileSync(file));
+};
+`;
+
+function verifyRun(t, { sums, file = Buffer.from("the release file"), url = releaseUrl("9.9.9") } = {}) {
+  const root = scratch(t, "verify");
+  const release = path.join(root, "release");
+  const bin = path.join(root, "bin");
+  const home = path.join(root, "home");
+  fs.mkdirSync(release); fs.mkdirSync(bin); fs.mkdirSync(home);
+  fs.writeFileSync(path.join(root, "stub.cjs"), STUB_FETCH);
+  fs.writeFileSync(path.join(release, releaseAsset("9.9.9")), file);
+  const hash = crypto.createHash("sha256").update(file).digest("hex");
+  if (sums !== null) fs.writeFileSync(path.join(release, "SHA256SUMS"), sums ?? `${hash}  ${releaseAsset("9.9.9")}\n`);
+  fs.writeFileSync(path.join(bin, "npx"), `#!/bin/sh\nprintf '%s\\n' "$@" > "${root}/npx-args.txt"\nprintf '%s' "$AGENT_CONSOLE_PACKAGE" > "${root}/npx-package.txt"\n`, { mode: 0o755 });
+  const link = "http://192.168.1.20:6788/join#" + "A".repeat(22) + "." + "B".repeat(43);
+  const run = spawnSync(process.execPath, ["--require", path.join(root, "stub.cjs"), "-e", VERIFY_AND_RUN, url, "join", link], {
+    encoding: "utf8", env: { ...process.env, HOME: home, USERPROFILE: home, PATH: bin + path.delimiter + process.env.PATH, STUB_RELEASE_DIR: release },
+  });
+  const read = (name) => (fs.existsSync(path.join(root, name)) ? fs.readFileSync(path.join(root, name), "utf8") : null);
+  const kept = path.join(home, ".agent-console", "releases", releaseAsset("9.9.9"));
+  return { run, hash, link, kept, npx: read("npx-args.txt"), pkg: read("npx-package.txt"), fetched: read("fetched.txt") };
+}
+
+test("S4: every printed command checks the release file against SHA256SUMS before anything runs", { skip: process.platform === "win32" && "the stand-in npx is a POSIX script" }, async (t) => {
+  // A file that matches: kept, then run as a file: package, with the arguments after it.
+  const good = verifyRun(t);
+  assert.equal(good.run.status, 0, good.run.stderr);
+  assert.match(good.run.stderr, new RegExp(`matches the release SHA256SUMS: ${good.hash}`, "u"));
+  assert.equal(good.npx, ["--yes", "file:" + good.kept, "join", good.link].join("\n") + "\n");
+  assert.equal(good.pkg, good.kept, "the reporter is told which checked file it runs from");
+  assert.equal(fs.readFileSync(good.kept, "utf8"), "the release file");
+  assert.deepEqual(good.fetched.trim().split("\n"), [releaseUrl("9.9.9").replace(releaseAsset("9.9.9"), "SHA256SUMS"), releaseUrl("9.9.9")]);
+
+  // Anything else: nothing runs and nothing is kept.
+  const refused = [
+    ["a file that was replaced", { sums: `${"0".repeat(64)}  ${releaseAsset("9.9.9")}\n` }, /does not match/u],
+    ["SHA256SUMS without the file", { sums: `${"0".repeat(64)}  another.tgz\n` }, /does not match/u],
+    ["no SHA256SUMS", { sums: null }, /answered 404/u],
+    ["an empty SHA256SUMS", { sums: "" }, /does not match/u],
+    ["a file from anywhere but a GitHub release", { url: "https://example.invalid/releases/download/v9.9.9/" + releaseAsset("9.9.9") }, /not a release file/u],
+    ["plain HTTP", { url: releaseUrl("9.9.9").replace("https:", "http:") }, /not a release file/u],
+  ];
+  for (const [what, options, reason] of refused) {
+    const r = verifyRun(t, options);
+    assert.equal(r.run.status, 1, what);
+    assert.match(r.run.stderr, reason, what);
+    assert.equal(r.npx, null, what + ": npx ran");
+    assert.equal(fs.existsSync(r.kept), false, what + ": the file was kept");
+  }
+  // The address is checked before anything is fetched.
+  assert.equal(verifyRun(t, { url: "https://example.invalid/x.tgz" }).fetched, null);
+});
+
+test("S4: the check is the same text in the console, the join page and every command, and pastes literally into any shell", async (t) => {
+  assert.doesNotMatch(VERIFY_AND_RUN, /['"\\$]/u, "a quote, backslash or dollar sign would change meaning in some shell");
+  const joinPage = fs.readFileSync(new URL("../public/join.js", import.meta.url), "utf8");
+  assert.ok(joinPage.includes(`const VERIFY = ${JSON.stringify(VERIFY_AND_RUN)};`), "public/join.js carries a different check");
+  const hub = await startHub(t);
+  const cookie = await signIn(hub);
+  const invite = JSON.parse((await raw(hub.port, "/api/invitations", { method: "POST", headers: { ...INTENT, cookie }, body: JSON.stringify({ person: "You" }) })).body);
+  for (const command of [invite.command, invite.typed]) assert.ok(command.startsWith(`node -e '${VERIFY_AND_RUN}' ${releaseUrl(invite.release.url.match(/v([\d.]+)\//u)[1])} join `), command);
+  // Run from a kept, checked file, the reporter's own restart line names that file; otherwise it is the check again.
+  const npxEntry = "/home/dev/.npm/_npx/abc/node_modules/@lockedinlabs/agent-console/bin/agent-console.mjs";
+  assert.equal(invocation("9.9.9", npxEntry, { AGENT_CONSOLE_PACKAGE: "/home/dev/.agent-console/releases/" + releaseAsset("9.9.9") }),
+    `npx --yes 'file:/home/dev/.agent-console/releases/${releaseAsset("9.9.9")}'`);
+  assert.equal(invocation("9.9.9", npxEntry, {}), `node -e '${VERIFY_AND_RUN}' ${releaseUrl("9.9.9")}`);
+  for (const odd of ["relative/" + releaseAsset("9.9.9"), "/tmp/other.tgz", `/tmp/a"b/${releaseAsset("9.9.9")}`]) {
+    assert.equal(invocation("9.9.9", npxEntry, { AGENT_CONSOLE_PACKAGE: odd }), `node -e '${VERIFY_AND_RUN}' ${releaseUrl("9.9.9")}`, odd);
+  }
 });
 
 test("LOW: a path that is not already in its simplest form is refused on both ports", async (t) => {

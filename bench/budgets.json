@@ -7,7 +7,7 @@
   "sessions": 60,
   "budgets": {
     "first.bytesReadPerSourceByte": 1.35,
-    "first.writesPerThousandRecords": 2,
+    "first.writesPerThousandRecords": 2.3,
     "first.jsonParsesPerLine": 1.15,
     "idle.bytesRead": 131072,
     "idle.bytesWritten": 1024,
@@ -16,7 +16,7 @@
     "fiveNewLines.bytesRead": 262144,
     "fiveNewLines.bytesWritten": 393216,
     "cursorBytes": 262144,
-    "consoleBytes": 65536,
+    "consoleBytes": 98304,
     "storeLoad.ratioToParse": 6.5
   }
 }

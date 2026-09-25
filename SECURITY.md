@@ -48,6 +48,18 @@ second port, which serves only the join page, the join exchange and
 token-checked reporting. Nothing of the console is on it, whatever `--listen`
 says.
 
+When `--interop` is enabled, its loopback `/metrics` and telemetry ingest
+paths require separate read and ingest bearer credentials. Domain-separated
+HMACs under the console key are printed by `metrics-token --scope read|ingest`
+to the user who can read that key and compared in constant time. `--rotate`
+revokes one scope immediately without changing the other scope or browser
+sessions. Corrupt rotation state refuses access; protect generation files
+alongside the key because deleting them restores initial credentials. The
+console key itself, wrong-scope credentials and sign-in cookies are refused
+there (`401`). Ingest also requires
+`X-Agent-Console-Interop: 1` and rejects browser `Origin` headers. These paths are disabled without `--interop` and never
+appear on the reporting listener.
+
 **Signing in.** The console makes a random key on first start (`admin.key` in
 its state directory, mode 600). A single-use sign-in link, printed at start and
 opened by `--open`, starts a session for that browser: a random id in an
@@ -86,20 +98,38 @@ network, so the page is not what to trust. **Add a machine** leads with the
 command itself: it is built on the console's own computer, and its owner sends
 it over whatever channel they already trust to carry the link. On a network you
 do not trust, send the command rather than the link. Whoever joins should run
-the command they were sent, and check that it starts with
-`npx --yes https://github.com/SamSnead85/agent-console/releases/download/` and
-ends with the link in single quotes, with nothing after it.
+the command they were sent, and check that it starts with `node -e`, names
+`https://github.com/SamSnead85/agent-console/releases/download/`, and ends
+with the link in single quotes, with nothing after it. Those parts alone do not
+pin what runs: the check between the first two single quotes must be the
+published one. Its SHA-256 is `114422b34fdc2721cd70e125908fe2ef381b4afddf6c7317d3e540710ec03737`, listed in the README
+("The check in every command") and in each release's notes. This command
+prints the SHA-256 of the check in a command pasted into it, without running
+anything (paste, Return, then Ctrl+D; Ctrl+Z and Return in PowerShell):
+
+```sh
+node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(require('crypto').createHash('sha256').update(s.split(String.fromCharCode(39))[1]).digest('hex')))"
+```
 
 **No code from the console.** The console never serves Agent Console itself.
 Every command it prints installs the package from its GitHub release over
-HTTPS. From 0.2.1 on, CI builds each release's package, attaches its SHA-256
+HTTPS, and starts with a short check for `node -e` that downloads the file
+and the release's `SHA256SUMS` and runs nothing unless the file's SHA-256
+matches. The check holds no quote, backslash or dollar sign, so it pastes
+literally into sh, bash, zsh, fish and PowerShell. Release files are uploaded
+without replacing one that exists. From 0.2.1 on, CI builds each release's package, attaches its SHA-256
 checksum and records a signed build provenance attestation for it (see the
 README's "Checking a download").
 
 **Joining.** A join link carries a 128-bit code; the eight-character code for
 typing by hand exists too. Either works once and lives at most an hour. Join
-attempts are counted before they are read, ten per address and sixty in total
-per ten minutes. The console stores only SHA-256 verifiers of codes and device
+attempts are counted before they are read, ten per address per ten minutes (a
+global IPv6 address by its /64; a unique-local or link-local one by itself,
+since that /64 is usually the whole office network). Typed codes also share a
+total of sixty per ten minutes, the guard against guessing from many
+addresses; an address over its own limit does not count toward it. A join by
+link is never held off by other addresses' attempts: its code cannot be
+guessed. The console stores only SHA-256 verifiers of codes and device
 tokens, in files with mode 600.
 
 **Reporting.** Each machine has its own bearer token; **Remove** revokes it at
@@ -107,8 +137,10 @@ once. Every record is checked for its exact shape before it is stored: exact
 keys, ids and hashes of exactly 64 hex characters, plain model ids and labels,
 minute timestamps, non-negative counts. Each machine may send 600 batches a
 minute and 250,000 records a day. Callers outside private networks (RFC 1918,
-CGNAT ranges such as Tailscale, link-local, IPv6 unique-local) are refused
-unless the console was started with `--allow-public`.
+link-local, IPv6 unique-local) are refused unless the console was started with
+`--allow-public`. Carrier-grade NAT (100.64.0.0/10, which Tailscale also
+uses) is shared with other customers of the same provider, so it counts as
+private only with `--allow-cgnat`.
 
 **Storage.** Usage is kept one file per day for the retention period (8 days by
 default), read back line by line with over-long or malformed lines skipped, and

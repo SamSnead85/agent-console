@@ -143,3 +143,16 @@ test("the complete checked local model inventory has one explicit price standing
     assert.equal(priceRecord(record({ model: row.model, fresh: 0, output: 0, cacheRead: 0, cacheWrite: 0 }), prices).usd, null);
   }
 });
+
+test("F5: fast mode is priced at the verified fast rates, never at standard, and an unknown tier is unpriced", () => {
+  const split = { model: "claude-opus-5-5", fresh: 1_000_000, output: 1_000_000, cacheRead: 1_000_000, cacheWrite: 2_000_000, cacheWrite5m: 1_000_000, cacheWrite1h: 1_000_000, ttl: "split" };
+  // Standard: 4 + 20 + 0.2 + 5 + 8. Fast: 8 + 40 + 0.4 + 10 + 16 (cache multipliers on the fast input rate).
+  assert.equal(priceRecord({ ...split, tier: "standard" }, prices).usd, 37.2);
+  assert.equal(priceRecord({ ...split, tier: null }, prices).usd, 37.2);
+  assert.equal(priceRecord({ ...split, tier: "fast" }, prices).usd, 74.4);
+  // Opus 4.6 runs fast requests at standard speed and standard rates.
+  assert.equal(priceRecord(record({ tier: "fast" }), prices).usd, priceRecord(record(), prices).usd);
+  // A model with no fast rate, and any other service tier, is unpriced: never standard.
+  assert.equal(priceRecord({ ...split, model: "claude-sonnet-5", tier: "fast" }, prices).reason, "unverified-fast-rate");
+  assert.equal(priceRecord({ ...split, tier: "other" }, prices).reason, "unverified-service-tier");
+});

@@ -100,7 +100,7 @@ export async function measure({ lines = 100_000, sessions = 80, days = 8, seed =
     const out = { lines: gen.lines, files: gen.files, sourceBytes: gen.bytes };
     let before = snapshot(), t = performance.now();
     const first = await pass();
-    out.first = { ...delta(before, snapshot()), ms: Math.round(performance.now() - t), records: first.emitted };
+    out.first = { ...delta(before, snapshot()), ms: Math.round(performance.now() - t), records: first.added };
     out.cursorBytes = fs.statSync(path.join(directory, "cursor-v2.json")).size;
 
     before = snapshot(); t = performance.now();

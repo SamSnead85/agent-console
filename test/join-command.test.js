@@ -13,16 +13,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 
-import { joinCommand, releaseUrl, SAFE_JOIN_LINK } from "../lib/invocation.js";
+import { joinCommand, releaseUrl, SAFE_JOIN_LINK, VERIFY_AND_RUN, verifiedRun, VERIFY_SHA256, CHECK_HASH_COMMAND } from "../lib/invocation.js";
 import { parseJoinTarget } from "../lib/reporter.js";
 
 const SOURCE = fs.readFileSync(new URL("../public/join.js", import.meta.url), "utf8");
 const VERSION = "0.2.2";
-const PREFIX = `npx --yes ${releaseUrl(VERSION)} join `;
+const PREFIX = `${verifiedRun(VERSION)} join `;
 const CODE = "AAAAAAAAAAAAAAAAAAAAAA";
 const PRINT = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
 
@@ -47,7 +48,11 @@ async function joinPage(href, { version = VERSION } = {}) {
   vm.runInNewContext(SOURCE, sandbox);
   for (let i = 0; i < 5; i += 1) await new Promise((resolve) => setImmediate(resolve));
   await $("copyBtn").listeners.click();
-  return { command: clipboard, shown: $("cmd").textContent, disabled: $("copyBtn").disabled, refused: !$("noCode").hidden };
+  const command = clipboard;
+  clipboard = null;
+  await $("restartBtn").listeners.click();
+  return { command, shown: $("cmd").textContent, disabled: $("copyBtn").disabled, refused: !$("noCode").hidden,
+    restart: clipboard, restartShown: $("restart").textContent };
 }
 
 /** Shells on this machine to paste a command into. */
@@ -70,7 +75,10 @@ test("a well-formed link: the command carries exactly that link, single-quoted, 
   const page = await joinPage(link);
   assert.equal(page.refused, false);
   assert.equal(page.command, `${PREFIX}'${link}'`);
-  assert.equal(page.shown, `${PREFIX}'${link}'`.replace(CODE, "••••••••"), "the code is masked on screen");
+  assert.equal(page.shown, `${PREFIX}'${link}'`.replace(CODE, "••••••••"), "the whole command is shown, the code masked");
+  // The restart line is a whole, runnable command, and Copy gives exactly what is shown.
+  assert.equal(page.restart, `${verifiedRun(VERSION)} report`);
+  assert.equal(page.restartShown, page.restart);
   // Written the way the console writes it, too.
   assert.equal(joinCommand(VERSION, link), page.command);
   for (const ipv6 of [`http://[fd12::1]:6788/join#${CODE}.${PRINT}`, `https://192.168.1.20:6788/join#${CODE}.${PRINT}`]) {
@@ -130,6 +138,17 @@ test("S1: pasted into a shell, the command's link is one literal argument", { sk
   }
 });
 
+test("S4: pasted into a shell, the whole command is node, -e, the check, the release file, join and the link, each literal", { skip: shells().length === 0 && "no POSIX shell here" }, async () => {
+  const link = `http://192.168.1.20:6788/join#${CODE}.${PRINT}`;
+  const { command } = await joinPage(link);
+  assert.ok(command.startsWith("node -e '"));
+  for (const shell of shells()) {
+    const run = spawnSync(shell, ["-c", `printf '%s\\n' ${command.slice("node ".length)}`], { encoding: "utf8" });
+    assert.equal(run.status, 0, shell + ": " + run.stderr);
+    assert.equal(run.stdout, ["-e", VERIFY_AND_RUN, releaseUrl(VERSION), "join", link].join("\n") + "\n", shell);
+  }
+});
+
 test("S1: pasted into PowerShell, the command's link is one literal argument", { skip: !powershell() && "PowerShell is not installed here" }, async () => {
   const link = `http://192.168.1.20:6788/join#${CODE}.${PRINT}`;
   const { command } = await joinPage(link);
@@ -149,4 +168,23 @@ test("the reporter reads a link with the quotes cmd.exe passes through, and the 
   const routes = fs.readFileSync(new URL("../lib/hub/routes.js", import.meta.url), "utf8");
   assert.match(routes, /command: joinCommand\(version, link\)/u);
   assert.doesNotMatch(SOURCE.replace(/\/\*[\s\S]*?\*\//gu, ""), /location\.href/u, "the join page must not put location.href into anything");
+});
+
+test("the check in every command is published: its SHA-256, and a short command that prints it", () => {
+  assert.equal(crypto.createHash("sha256").update(VERIFY_AND_RUN).digest("hex"), VERIFY_SHA256);
+  const readme = fs.readFileSync(new URL("../README.md", import.meta.url), "utf8");
+  const security = fs.readFileSync(new URL("../SECURITY.md", import.meta.url), "utf8");
+  for (const [name, text] of [["README.md", readme], ["SECURITY.md", security]]) {
+    assert.ok(text.includes(VERIFY_SHA256), name + " publishes the check's SHA-256");
+    assert.ok(text.includes(CHECK_HASH_COMMAND), name + " gives the command that prints it");
+  }
+  assert.ok(readme.includes(VERIFY_AND_RUN), "README publishes the check verbatim");
+  // Run it as a person would: paste a join command into it.
+  const script = /^node -e "(.*)"$/u.exec(CHECK_HASH_COMMAND)[1];
+  const link = `http://192.168.1.20:6788/join#${CODE}.${PRINT}`;
+  const printed = spawnSync(process.execPath, ["-e", script], { input: joinCommand(VERSION, link) + "\n", encoding: "utf8" });
+  assert.equal(printed.stdout.trim(), VERIFY_SHA256);
+  // A command whose check was changed prints something else.
+  const changed = spawnSync(process.execPath, ["-e", script], { input: `node -e 'require("child_process").execSync("id")' ${releaseUrl(VERSION)} join '${link}'`, encoding: "utf8" });
+  assert.notEqual(changed.stdout.trim(), VERIFY_SHA256);
 });
