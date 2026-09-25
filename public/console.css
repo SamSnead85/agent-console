@@ -359,8 +359,9 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .lanes { background: var(--tile); box-shadow: inset 0 1px 0 var(--rim), inset 0 0 0 1px var(--hair2), var(--elev-tile); flex: none; border-radius: 2px; }
 .lanescroll { scrollbar-width: thin; scrollbar-color: var(--hair) transparent; }
 .lanescroll:focus-visible { outline: 2px solid var(--lit); outline-offset: -2px; }
+/* the state column is 124px at every width: room for the longest word the console says (REMOVED, RECONNECTING) beside the DEMO stamp, never a stamp cut to DEM */
 .lhead, .lane { display: grid; align-items: center; gap: calc(12px * var(--k)); padding: 0 calc(16px * var(--k)) 0 calc(20px * var(--k));
-  grid-template-columns: calc(104px * var(--k)) minmax(calc(150px * var(--k)), 1.2fr) minmax(calc(96px * var(--k)), .5fr) minmax(calc(96px * var(--k)), .5fr)
+  grid-template-columns: calc(124px * var(--k)) minmax(calc(150px * var(--k)), 1.2fr) minmax(calc(96px * var(--k)), .5fr) minmax(calc(96px * var(--k)), .5fr)
     calc(74px * var(--k)) calc(66px * var(--k)) calc(58px * var(--k)) calc(66px * var(--k)) calc(64px * var(--k)) calc(50px * var(--k)) calc(58px * var(--k)) minmax(calc(126px * var(--k)), .9fr) minmax(calc(84px * var(--k)), .7fr) calc(52px * var(--k)); }
 .lhead { height: calc(28px * var(--k)); font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--quiet); white-space: nowrap;
   background: var(--band-head); border-bottom: 1px solid var(--hair2); box-shadow: inset 0 1px 0 var(--rim); overflow: hidden; }
@@ -742,7 +743,7 @@ dialog.pal[open] { animation: sheetin .18s var(--ease); }
 /* ── wide: a big screen gets more lanes, each a little tighter ── */
 @media (min-width: 1800px) {
   .console { grid-template-columns: calc(340px * var(--k)) 1fr calc(400px * var(--k)); }
-  .lhead, .lane { grid-template-columns: calc(104px * var(--k)) minmax(calc(190px * var(--k)), 1.3fr) minmax(calc(110px * var(--k)), .5fr) minmax(calc(120px * var(--k)), .55fr)
+  .lhead, .lane { grid-template-columns: calc(124px * var(--k)) minmax(calc(190px * var(--k)), 1.3fr) minmax(calc(110px * var(--k)), .5fr) minmax(calc(120px * var(--k)), .55fr)
     calc(78px * var(--k)) calc(74px * var(--k)) calc(66px * var(--k)) calc(76px * var(--k)) calc(68px * var(--k)) calc(56px * var(--k)) calc(64px * var(--k)) minmax(calc(150px * var(--k)), 1fr) minmax(calc(110px * var(--k)), .8fr) calc(60px * var(--k)); }
 }
 
@@ -754,7 +755,7 @@ dialog.pal[open] { animation: sheetin .18s var(--ease); }
    columns a phone cannot use dropped. Nothing that carries state is hidden. */
 @media (max-width: 1240px) {
   .lhead .c-in, .lhead .c-out, .lhead .c-usd, .lhead .c-do, .lane .in, .lane .out, .lane .usd, .lane .do { display: none; }
-  .lhead, .lane { grid-template-columns: calc(104px * var(--k)) minmax(calc(150px * var(--k)), 1.3fr) minmax(calc(90px * var(--k)), .5fr) minmax(calc(90px * var(--k)), .5fr)
+  .lhead, .lane { grid-template-columns: calc(124px * var(--k)) minmax(calc(150px * var(--k)), 1.3fr) minmax(calc(90px * var(--k)), .5fr) minmax(calc(90px * var(--k)), .5fr)
     calc(72px * var(--k)) calc(70px * var(--k)) calc(52px * var(--k)) calc(60px * var(--k)) minmax(calc(80px * var(--k)), .8fr) calc(56px * var(--k)); gap: calc(10px * var(--k)); }
 }
 @media (max-width: 1100px) {
@@ -824,7 +825,7 @@ dialog.pal[open] { animation: sheetin .18s var(--ease); }
   .lhead .c-in, .lhead .c-out, .lane .in, .lane .out { display: none; }
   .lhead .c-usd, .lane .usd, .lhead .c-la, .lane .la { display: block; }
   /* state, then the figures that cost money and when the lane last spoke, on screen at 390; the name, the model, the hour and the day follow under the thumb */
-  .lhead, .lane { width: max-content; min-width: 100%; padding: 0 14px 0 16px; gap: 10px; grid-template-columns: 104px 64px 64px 52px 150px 96px 96px 60px; }
+  .lhead, .lane { width: max-content; min-width: 100%; padding: 0 14px 0 16px; gap: 10px; grid-template-columns: 124px 64px 64px 52px 150px 96px 96px 60px; }
   .lhead .c-st, .lane .st { order: 0; }
   .lhead .c-fm, .lane .fm { order: 1; }
   .lhead .c-usd, .lane .usd { order: 2; }

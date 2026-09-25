@@ -148,8 +148,10 @@ test("on a phone the hour axis caption, the person's machine status and the lane
   assert.match(phone, /\.inspect \.irow\.mach \{ grid-template-columns: minmax\(0, 1fr\) 64px 60px;/u);
   assert.match(phone, /\.inspect \.irow\.mach > b \{ grid-area: 1 \/ 1; \}/u);
   assert.match(phone, /\.inspect \.irow\.mach \.status \{ grid-row: 2; grid-column: 1 \/ -1; \}/u);
-  // the state column holds the word, its dot and the stamp at every width: 104px, never 96 or 92
-  assert.match(phone, /\.lhead, \.lane \{[^}]*grid-template-columns: 104px 64px 64px 52px/u);
-  assert.equal((CSS.match(/grid-template-columns: calc\(104px \* var\(--k\)\) minmax\(calc\(1[59]0px \* var\(--k\)\)/gu) || []).length, 3, "desk, folded and wide lane grids");
-  assert.doesNotMatch(CSS, /grid-template-columns: calc\(96px \* var\(--k\)\) minmax\(calc\(1[59]0px/u);
+  // the state column holds the dot, the longest word the console says and the stamp at every width: 124px
+  // (SILENT · DEMO needs 113, REMOVED · DEMO 121, RECONNECTING alone 107), never the 104, 96 or 92 that cut the stamp to DEM
+  assert.match(phone, /\.lhead, \.lane \{[^}]*grid-template-columns: 124px 64px 64px 52px/u);
+  assert.equal((CSS.match(/grid-template-columns: calc\(124px \* var\(--k\)\) minmax\(calc\(1[59]0px \* var\(--k\)\)/gu) || []).length, 3, "desk, folded and wide lane grids");
+  assert.doesNotMatch(CSS, /grid-template-columns: calc\((96|104)px \* var\(--k\)\) minmax\(calc\(1[59]0px/u);
+  assert.doesNotMatch(phone, /grid-template-columns: (92|96|104)px 64px 64px 52px/u);
 });

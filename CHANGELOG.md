@@ -21,7 +21,8 @@
   projects' share and spend rows — is a 24px target (WCAG 2.5.8) at the
   same type size. On a phone the hour axis caption takes its own line
   whole, a person's machine row says its status whole under the name, and
-  the lanes' state column holds the DEMO stamp inside it at every width.
+  the lanes' state column holds the DEMO stamp inside it beside any
+  state word — SILENT included — at every width.
 - The instrument is denser and says less twice. The lanes carry a Doing
   column (the lane's newest alert, its subagents at work, a cache signal, a
   growing context, or its state in a word — never a prompt or a path), the
