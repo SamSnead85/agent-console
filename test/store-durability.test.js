@@ -51,7 +51,7 @@ test("an append-open failure leaves no phantom ids, totals or quota usage", (t) 
 test("short writes complete every byte and deduplicate within the same batch", (t) => {
   const { make, store } = fixture(t);
   const write = fs.writeSync.bind(fs);
-  t.mock.method(fs, "writeSync", (fd, buffer, offset, length) => write(fd, buffer, offset, Math.min(length, 17)));
+  t.mock.method(fs, "writeSync", (fd, buffer, offset, length, position) => write(fd, buffer, offset, Math.min(length, 17), position));
   const receipt = store.ingest("device", [row(1), row(1), row(2)]);
   t.mock.reset();
   assert.equal(receipt.accepted, 2);
@@ -65,9 +65,9 @@ test("a partial append rolls back only the new batch and permits a safe retry", 
   const before = fs.readFileSync(file);
   const write = fs.writeSync.bind(fs);
   let calls = 0;
-  t.mock.method(fs, "writeSync", (fd, buffer, offset) => {
+  t.mock.method(fs, "writeSync", (fd, buffer, offset, _length, position) => {
     if (++calls > 1) throw diskError();
-    return write(fd, buffer, offset, buffer.indexOf(10) + 8);
+    return write(fd, buffer, offset, buffer.indexOf(10) + 8, position);
   });
   assert.throws(() => store.ingest("device", [row(2), row(3)]), { code: "EIO" });
   t.mock.reset();
@@ -97,9 +97,9 @@ test("a failed rollback stops ingestion until restart recovers complete lines", 
   store.ingest("device", [row(1)]);
   const write = fs.writeSync.bind(fs);
   let calls = 0;
-  t.mock.method(fs, "writeSync", (fd, buffer, offset) => {
+  t.mock.method(fs, "writeSync", (fd, buffer, offset, _length, position) => {
     if (++calls > 1) throw diskError();
-    return write(fd, buffer, offset, buffer.indexOf(10) + 8);
+    return write(fd, buffer, offset, buffer.indexOf(10) + 8, position);
   });
   t.mock.method(fs, "ftruncateSync", () => { throw diskError(); });
   assert.throws(() => store.ingest("device", [row(2), row(3)]), AggregateError);
