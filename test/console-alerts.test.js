@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import fs from "node:fs";
 import crypto from "node:crypto";
+import vm from "node:vm";
 
 import { createAlerts } from "../lib/hub/alerts.js";
 
@@ -58,4 +59,82 @@ test("the scrollable regions and the numbers a hub may not send are handled with
   assert.match(JS, /el\.textContent = value === null \? "—" : fmt\(value\);/u);
   // The chart draws the stack only when the hub sent one.
   assert.match(JS, /const clsGoal = s\.classes \? /u);
+});
+
+// Execute the actual small renderers with synthetic readings and inert DOM
+// nodes. Their numerical results and labels matter, not their source spelling.
+function renderer(name, end, globals) {
+  const start = JS.indexOf(`  function ${name}(`);
+  assert.ok(start >= 0 && JS.indexOf(end, start) > start);
+  return vm.runInNewContext(JS.slice(start, JS.indexOf(end, start)) + `\n${name}`, globals);
+}
+function elements() {
+  const nodes = new Map();
+  const $ = (id) => {
+    if (!nodes.has(id)) nodes.set(id, { innerHTML: "", textContent: "", title: "", classList: { toggle() {} },
+      setAttribute(key, value) { this[key] = value; } });
+    return nodes.get(id);
+  };
+  return $;
+}
+
+test("lane class readings distinguish missing, mixed and observed zero", () => {
+  const read = renderer("laneClassReading", "  function fillLane(", {
+    fmt: String, CLASS_LABEL: { fresh: "uncached input", output: "output" },
+  });
+  assert.equal(read({}, "fresh").value, null);
+  const oldHub = read({ tokensDayByClass: { fresh: 0 } }, "fresh");
+  assert.equal(oldHub.value, null, "an older hub's omitted completeness is not an observed zero");
+  assert.match(oldHub.title, /does not report whether/u);
+  const lane = { tokensDayByClass: { fresh: 0, output: 500 }, tokensDayUnknown: { fresh: 1, output: 1 } };
+  for (const key of ["fresh", "output"]) {
+    const value = read(lane, key);
+    assert.equal(value.value, null, "an incomplete count is a void, including a mixed known sum");
+    assert.match(value.title, /did not report .*floor/u);
+  }
+  lane.tokensDayUnknown.fresh = 0;
+  assert.equal(read(lane, "fresh").value, 0, "a reported zero remains zero");
+});
+
+test("the burn median names active minutes and does not call empty history observed idle", () => {
+  const $ = elements();
+  const values = new Array(60).fill(0);
+  const D = { devices: [{}], burn: { reporting: 1 }, now: 59.5 * 60_000,
+    series: { "1h": { start: 0, step: 60_000, values } } };
+  const paint = renderer("paintBurnSpark", "  // ── the rest of the day", { D, $, fmt: String });
+  values[20] = 100;
+  paint();
+  assert.match($("burnMedian").innerHTML, /median active minute <b>100<\/b>/u);
+  assert.match($("burnMedian").title, /Empty minutes may be idle or unobserved and are excluded/u);
+  values[30] = 300;
+  values[59] = 5000;
+  paint();
+  assert.match($("burnMedian").innerHTML, /<b>200<\/b>/u, "even median averages the middle pair and excludes the ongoing minute");
+  values.fill(0);
+  paint();
+  assert.equal($("burnMedian").innerHTML, "No usage recorded in completed minutes");
+  assert.doesNotMatch($("cBurnSpark")["aria-label"], /median 0|no whole minute/u);
+  D.devices = [];
+  paint();
+  assert.equal($("burnMedian").textContent, "—", "no machine is an unknown reading");
+});
+
+test("the local Git estimate never divides fleet dollars by local commits", () => {
+  const $ = elements();
+  const local = { totals: { commits: 2, prsMerged: null, added: 0, removed: 0 }, projects: [], withRepo: 0,
+    tokens: 100, sessions: 1, demo: false };
+  let fleetUsd = 20;
+  const paint = renderer("paintFold", "  // ── scrollable regions", { $, foldFetched: { data: local },
+    period: "1h", PERIOD_TEXT: { "1h": ["last hour", "1 h"] },
+    win: () => ({ tokens: { total: 200 }, cost: { usd: fleetUsd, status: "estimated" }, messages: 3 }),
+    esc: String, fmt: String, money: (n) => "$" + n, plural: (n, word) => `${n} ${word}`,
+  });
+  paint();
+  const estimate = () => $("foldEffortBody").innerHTML.match(/<tr><td>Estimate<\/td><td[^>]*>.*?<\/td><td[^>]*>(.*?)<\/td>/u)?.[1];
+  const before = estimate();
+  assert.ok(before);
+  fleetUsd = 2000; // A remote machine contributes another $1,980.
+  paint();
+  assert.equal(estimate(), before, "remote spend cannot change the local Git estimate");
+  assert.doesNotMatch(before, /\$[\d.]+ per commit/u);
 });

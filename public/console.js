@@ -395,6 +395,17 @@
     return row;
   }
 
+  function laneClassReading(l, key) {
+    const cls = l.tokensDayByClass || null;
+    if (!cls || cls[key] == null) return { value: null, title: "No reading: this hub does not split a lane's day by class" };
+    const missing = l.tokensDayUnknown?.[key];
+    if (!Number.isSafeInteger(missing)) return { value: null, title: "No reading: this hub does not report whether this lane's token class is complete" };
+    const label = CLASS_LABEL[key];
+    return missing > 0
+      ? { value: null, title: `Incomplete: ${missing} ${missing === 1 ? "record" : "records"} did not report ${label}; ${fmt(cls[key])} known tokens in the last 24 h is a floor` }
+      : { value: cls[key], title: `${fmt(cls[key])} ${label} tokens in the last 24 h, subagents included` };
+  }
+
   function fillLane(row, l, now) {
     const demo = D.hub.demo;
     row.className = "lane " + l.state + (demo ? " sim" : "");
@@ -440,16 +451,19 @@
     }
     // The day's tokens by class and its estimate: a hub that does not send them
     // draws a void with its reason, never a zero or a missing column.
-    const cls = l.tokensDayByClass || null;
     const numCell = (name, value, title) => {
       const el = row.querySelector(".num." + name);
       el.classList.toggle("void", value === null);
       el.textContent = value === null ? "—" : fmt(value);
       el.title = title;
     };
-    numCell("in", cls ? cls.fresh : null, cls ? `${fmt(cls.fresh)} uncached input tokens today · cache read ${fmt(cls.cacheRead)} · cache write ${fmt(cls.cacheWrite)}` : "No reading: this hub does not split a lane's day by class");
-    numCell("out", cls ? cls.output : null, cls ? `${fmt(cls.output)} output tokens today` : "No reading: this hub does not split a lane's day by class");
-    numCell("tot", l.tokensDay ?? null, `${fmt(l.tokensDay)} tokens in the last 24 h, subagents included`);
+    for (const [name, key] of [["in", "fresh"], ["out", "output"]]) {
+      const reading = laneClassReading(l, key);
+      numCell(name, reading.value, reading.title);
+    }
+    const partialDay = Object.values(l.tokensDayUnknown || {}).some((n) => n > 0);
+    numCell("tot", l.tokensDay ?? null, `${fmt(l.tokensDay)} tokens in the last 24 h, subagents included${partialDay ? "; a floor because some records did not report every class" : ""}`);
+    if (partialDay && l.tokensDay != null) row.querySelector(".num.tot").textContent += "+";
     const usd = row.querySelector(".num.usd");
     const cost = l.costDay || null;
     usd.classList.toggle("void", !cost || cost.usd === null);
@@ -636,7 +650,8 @@
   // ── burn: the last sixty minutes drawn ────────────────────────────────
   /* One bar per minute from the hour series, every machine; the newest minute
      is drawn as a rate over the part of it that has elapsed. The dashed rule
-     is the median of the whole minutes. */
+     is the median of completed minutes with recorded usage. Empty bins can
+     mean idle or unobserved: this series cannot establish an all-minute median. */
   function paintBurnSpark() {
     const s = D.series["1h"];
     const wrap = $("burnWrap"), svg = $("cBurnSpark");
@@ -654,7 +669,8 @@
     const elapsed = Math.max(0.25, Math.min(1, (D.now - (s.start + s.step * (n - 1))) / s.step));
     vals[n - 1] = vals[n - 1] / elapsed;
     const whole = vals.slice(0, -1).filter((v) => v > 0).sort((a, b) => a - b);
-    const median = whole.length ? whole[Math.floor(whole.length / 2)] : 0;
+    const middle = Math.floor(whole.length / 2);
+    const median = whole.length ? (whole[middle] + whole[Math.ceil(whole.length / 2) - 1]) / 2 : null;
     const max = Math.max(...vals, 1);
     const bw = W / n;
     const silentX = D.silentSince && D.silentSince > s.start ? ((D.silentSince - s.start) / (s.step * n)) * W : null;
@@ -663,9 +679,9 @@
       const dim = silentX !== null && i * bw >= silentX;
       return `<rect x="${(i * bw).toFixed(1)}" y="${(H - h).toFixed(1)}" width="${(bw * 0.7).toFixed(1)}" height="${h.toFixed(1)}"${i === n - 1 ? ' class="now"' : dim ? ' class="dim"' : ""}/>`;
     }).join("") + (median > 0 ? `<line x1="0" x2="${W}" y1="${(H - (median / max) * (H - 2)).toFixed(1)}" y2="${(H - (median / max) * (H - 2)).toFixed(1)}"/>` : "");
-    $("burnMedian").innerHTML = median > 0 ? `median <b>${fmt(median)}</b>/min` : "no whole minute yet";
-    $("burnMedian").title = "Median tokens per minute over the whole minutes of the last hour, every reporting machine";
-    svg.setAttribute("aria-label", `Tokens per minute over the last 60 minutes; median ${fmt(median)} per minute`);
+    $("burnMedian").innerHTML = median !== null ? `median active minute <b>${fmt(median)}</b>` : "No usage recorded in completed minutes";
+    $("burnMedian").title = "Median of completed minutes with recorded tokens, across every machine in the last hour. Empty minutes may be idle or unobserved and are excluded; missing token classes make readings floors.";
+    svg.setAttribute("aria-label", `Recorded tokens per minute over the last 60 minutes; ${median === null ? "no usage recorded in completed minutes" : `median active minute ${fmt(median)} tokens; idle and unobserved minutes excluded`}`);
   }
 
   // ── the rest of the day, folded under the lanes ───────────────────────
@@ -731,11 +747,10 @@
         <td class="num r">${x.costPerOutcome.perCommitUsd === null ? "—" : money(x.costPerOutcome.perCommitUsd) + " est."}</td>
         <td class="num">${esc((x.branches || []).slice(0, 3).join(", ") || "—")}</td></tr>`).join("") + `</tbody></table><div class="note">This machine only. Spend per commit is spend in the window of the work, not attribution. <button class="linkbtn" type="button" data-go="projects">Projects view →</button></div>`
       : `<div class="note">No project on this machine has transcripts in this period.</div>`;
-    const spend = t.commits > 0 && w.cost.usd !== null ? w.cost.usd / t.commits : null;
     $("effortSum").innerHTML = `${stamp}<b>${fmt(w.tokens.total)}</b> tokens<span class="sep">·</span><b>${w.cost.usd === null ? "—" : money(w.cost.usd)}</b> est.<span class="sep">·</span><b>${t.commits.toLocaleString("en-US")}</b> ${t.commits === 1 ? "commit" : "commits"} on this machine<span class="sep">·</span>${esc(label)}`;
     $("foldEffortBody").innerHTML = `<table class="grid"><thead><tr><th scope="col">Effort · ${esc(label)}</th><th scope="col" class="r">Every machine</th><th scope="col" class="r">This machine's Git</th></tr></thead><tbody>
       <tr><td>Tokens</td><td class="num r">${fmt(w.tokens.total)}</td><td class="num r">${fmt(p.tokens)}<span class="sub">this machine's transcripts</span></td></tr>
-      <tr><td>Estimate</td><td class="num r">${w.cost.usd === null ? "—" : money(w.cost.usd) + (w.cost.status === "partial" ? " · partial" : "")}</td><td class="num r">${spend === null ? "—" : money(spend) + " per commit"}</td></tr>
+      <tr><td>Estimate</td><td class="num r">${w.cost.usd === null ? "—" : money(w.cost.usd) + (w.cost.status === "partial" ? " · partial" : "")}</td><td class="num r">—<span class="sub">see each project's matched spend / commit above</span></td></tr>
       <tr><td>Messages</td><td class="num r">${w.messages.toLocaleString("en-US")}</td><td class="num r">${p.sessions === null ? "—" : plural(p.sessions, "session")}</td></tr>
       <tr><td>Commits</td><td class="num r">—</td><td class="num r">${t.commits.toLocaleString("en-US")}${p.author === true ? `<span class="sub">yours, by this machine's Git email</span>` : p.author === false ? `<span class="sub">every author — no Git email set here</span>` : ""}</td></tr>
       </tbody></table><div class="note">Tokens measure usage, not value; this is not a productivity score. Git figures are this machine's local history only.</div>`;

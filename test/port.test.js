@@ -25,6 +25,63 @@ async function holdPort(t, handler = null) {
   return server.address().port;
 }
 
+// events.once(server, "listening") also rejects on "error", so racing it
+// against once("error") does not handle an occupied neighboring port.
+function listenPort(server, port) {
+  return new Promise((resolve, reject) => {
+    const clean = () => { server.removeListener("listening", listening); server.removeListener("error", error); };
+    const listening = () => { clean(); resolve(true); };
+    const error = (err) => { clean(); if (err.code === "EADDRINUSE") resolve(false); else reject(err); };
+    server.once("listening", listening);
+    server.once("error", error);
+    server.listen(port, "127.0.0.1");
+  });
+}
+const closeServer = (server) => new Promise((resolve, reject) => {
+  if (!server.listening) { resolve(); return; }
+  server.close((err) => err ? reject(err) : resolve());
+});
+
+async function holdNeighboringPorts(t, hello, beforeNeighbor = null) {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    // Drain the deliberately unresponsive holder so an aborted HTTP probe's
+    // FIN is consumed and close() can finish on every supported platform.
+    const held = net.createServer((socket) => socket.resume()), moved = http.createServer(hello);
+    try {
+      assert.equal(await listenPort(held, 0), true);
+      const port = held.address().port;
+      if (port === 65_535) continue;
+      await beforeNeighbor?.(port, attempt);
+      if (!(await listenPort(moved, port + 1))) continue;
+      t.after(async () => { await closeServer(moved); await closeServer(held); });
+      return port;
+    } finally {
+      // Keep successful reservations until the assertions finish. Retry only
+      // the expected address collision; all other errors fail the test.
+      if (!moved.listening) await closeServer(held);
+    }
+  }
+  assert.fail("could not reserve neighboring loopback ports after 20 attempts");
+}
+
+test("neighboring-port setup retries a real address collision and still reserves both ports", async (t) => {
+  const blockers = [];
+  t.after(async () => { for (const server of blockers) await closeServer(server); });
+  let attempts = 0;
+  const port = await holdNeighboringPorts(t, (_req, res) => res.end(), async (candidate, attempt) => {
+    attempts += 1;
+    if (attempt > 0) return;
+    const blocker = net.createServer();
+    blockers.push(blocker);
+    // Either we reserve it or another process already did: the first
+    // neighboring listen is guaranteed to encounter EADDRINUSE.
+    await listenPort(blocker, candidate + 1);
+  });
+  assert.ok(attempts >= 2, "the colliding pair was retried, not skipped");
+  assert.equal(await portFree(port, "127.0.0.1"), false);
+  assert.equal(await portFree(port + 1, "127.0.0.1"), false);
+});
+
 test("port 0 means any free port, and a held port is seen as held", async (t) => {
   const port = await holdPort(t);
   await new Promise((resolve) => setTimeout(resolve, 0));
@@ -73,16 +130,11 @@ test("the CLI refuses a busy port the person chose, and says so", async (t) => {
 
 test("started again after it moved off a busy port, the console finds itself instead of starting a second copy", async (t) => {
   // Another program holds the default port; this console moved one port on.
-  const held = await holdPort(t);
   const hello = (req, res) => {
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify({ product: "Agent Console", version: "0.3.0", demo: false, retentionDays: 8 }));
   };
-  const server = http.createServer(hello);
-  server.listen(held + 1, "127.0.0.1");
-  const listening = await Promise.race([once(server, "listening").then(() => true), once(server, "error").then(() => false)]);
-  if (!listening) { t.skip("the next port was not free"); return; }
-  t.after(() => server.close());
+  const held = await holdNeighboringPorts(t, hello);
   const ours = await choosePort({ port: held, host: "127.0.0.1", explicit: false, demo: false, mine: async (p) => p === held + 1 });
   assert.deepEqual([ours.action, ours.port], ["already-running", held + 1]);
   // A console that cannot prove it is this one (another --state-dir) is passed over.

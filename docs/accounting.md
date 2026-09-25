@@ -115,6 +115,10 @@ The same goes for a Claude line that has the total but no split.
 A class the tool did not report is **unknown, not zero**. A sum that includes
 an unknown is a floor, and it MUST be shown as one.
 
+A lane carries its known sums as `tokensDayByClass` and the number of records
+missing each class as `tokensDayUnknown`, including its subagents. An incomplete
+class is a dash with its known floor explained; its total is marked `+`.
+
 ## 3.1 Counted once: deduplication
 
 | Situation | What the logs contain | Rule |
@@ -300,10 +304,11 @@ and `total = input + output + cache read + cache write`.
 - Unpriced messages and records are different counts: a streamed response is
   one message over several records. Each is named for what it counts.
 - **By class.** Pricing is linear in tokens, so a minute bucket of one model
-  and one tier splits exactly: each class's tokens at that class's rate. The
-  console's estimate by class (`cost.byClass`, a lane's `costDay`) is the sum
-  of those exact splits. A bucket that holds any unpriced record cannot be
-  split; its dollars are carried whole as `unsplitUsd`, named on the screen
+  and one tier splits exactly when those rates reconcile with its saved
+  dollars. The console's estimate by class (`cost.byClass`) is the sum of
+  those splits; a lane's `costDay` is its whole estimate. A bucket with any
+  unpriced record, or saved dollars that no longer reconcile after a table
+  change, cannot be split; its dollars are carried whole as `unsplitUsd`, named on the screen
   and never spread across the classes. The four classes plus `unsplitUsd`
   add up to the estimate, to the cent.
 - A figure names the table it came from (its check date and digest). It is a

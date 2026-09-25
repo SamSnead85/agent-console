@@ -2,6 +2,10 @@
 
 ## 0.3.0 — unreleased
 
+- Preserve missing token classes in lane totals, including subagents, and
+  leave historical cost unsplit when current rates do not reconcile with its
+  saved estimate. The burn chart labels its median as active minutes only;
+  local Git no longer divides fleet spend by local commits.
 - The console is a denser instrument. It opens on a one-line strip — the
   name, where it reads, the live sessions with the one glow that means live,
   the machines, the alert count, a clock and how fresh the reading is — with

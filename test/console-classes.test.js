@@ -12,6 +12,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import fs from "node:fs";
 import crypto from "node:crypto";
+import os from "node:os";
+import path from "node:path";
 
 import { createStore } from "../lib/hub/store.js";
 import { createRegistry } from "../lib/hub/registry.js";
@@ -128,4 +130,51 @@ test("a lane's day splits by class, and its estimate is what its priced records 
   assert.equal(otherLane.costDay.usd, null, "unpriced: unknown, not $0");
   assert.equal(otherLane.costDay.status, "unpriced");
   near(lane.costDay.usd, view.day.cost.usd, "one priced lane: its estimate is the day's");
+});
+
+test("retained daily estimates keep their dollars unsplit when the price table changes", (t) => {
+  const now = Date.UTC(2026, 8, 22, 12);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "console-class-prices-"));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const old = createStore({ dir, retentionMs: 8 * DAY, prices: PRICES, now: () => now });
+  const r = record(1, { model: "claude-sonnet-5", at: now - 10 * DAY });
+  old.seedDaily("device-a", r);
+  old.flush();
+  const originalUsd = priceRecord(r, PRICES).usd;
+  const changed = structuredClone(PRICES);
+  changed.rows.find((row) => row.model === r.model).usdPerMillion.fresh *= 2;
+  const store = createStore({ dir, retentionMs: 8 * DAY, prices: changed, now: () => now });
+  store.load();
+  const registry = createRegistry({ dir: null, now: () => now });
+  registry.addSynthetic({ id: "device-a", label: "Laptop", person: "You" });
+  const view = buildConsole({ store, registry, now, hub: {} });
+  for (const owner of [view, view.devices[0], view.people[0]]) {
+    const cost = owner.windows["30d"].cost;
+    near(cost.usd, originalUsd, "the stored estimate survives restart unchanged");
+    near(cost.byClass.unsplitUsd, originalUsd, "an old price basis stays unsplit");
+    for (const key of CLASSES) assert.equal(cost.byClass[key], 0, "no allocation at the new rate");
+  }
+});
+
+test("lane classes carry missing readings through mixed records and subagents", () => {
+  const now = Date.UTC(2026, 8, 22, 12);
+  const absent = record(1, { model: "claude-sonnet-5", at: now - 60_000 });
+  for (const key of CLASSES) absent[key] = null;
+  absent.measurement = eventMeasurement(absent);
+  let view = console_([absent], now);
+  assert.deepEqual(view.lanes[0].tokensDayUnknown, { fresh: 1, output: 1, cacheWrite: 1, cacheRead: 1 });
+  assert.equal(view.lanes[0].tokensDay, 0, "the zero known sum is marked incomplete, not an observed zero");
+
+  const known = record(2, { model: "claude-sonnet-5", at: now - 2 * 60_000 });
+  const child = record(3, { model: "claude-sonnet-5", at: now - 60_000, session: "child", unknownClass: "output" });
+  child.parentSessionHash = known.sessionHash;
+  child.isSubagent = true;
+  view = console_([absent, known, child], now);
+  assert.equal(view.lanes.length, 1, "the child folds into its parent's lane");
+  const lane = view.lanes[0];
+  assert.deepEqual(lane.tokensDayUnknown, { fresh: 1, output: 2, cacheWrite: 1, cacheRead: 1 });
+  assert.deepEqual(lane.tokensDayUnknown, view.day.unknown, "one lane carries every missing class exactly once");
+  for (const key of CLASSES) assert.equal(lane.tokensDayByClass[key], view.day.tokens[key], "known sums still reconcile");
+  const complete = console_([known], now).lanes[0];
+  assert.deepEqual(complete.tokensDayUnknown, { fresh: 0, output: 0, cacheWrite: 0, cacheRead: 0 });
 });
