@@ -1,14 +1,12 @@
 name: README install line
 # The README's one-line install, run exactly as a newcomer would, against the
-# published release (docs/PRINCIPLES.md §1). On pushes to main, when a release
-# is published, and weekly, so a broken first step is found before a
-# newcomer finds it.
+# published release (docs/PRINCIPLES.md §1). Development pushes explicitly
+# allow a pending release; scheduled/manual checks require a working package.
+# Release acceptance lives in release.yml, after successful asset upload.
 on:
   push:
     branches: [main]
     paths: [README.md, package.json]
-  release:
-    types: [published]
   schedule:
     - cron: "17 6 * * 1"
   workflow_dispatch:
@@ -16,7 +14,7 @@ permissions:
   contents: read
 jobs:
   install:
-    name: README install line (${{ matrix.os }})
+    name: ${{ github.event_name == 'push' && 'README availability (pending allowed)' || 'README published install' }} (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -30,4 +28,13 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
-      - run: node scripts/readme-install.mjs
+      - name: Verify the README install command
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" = push ]; then
+            node scripts/readme-install.mjs --allow-pending-release
+          else
+            node scripts/readme-install.mjs
+          fi

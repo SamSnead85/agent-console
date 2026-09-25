@@ -8,6 +8,8 @@ on:
     types: [published]
 permissions:
   contents: read
+  checks: read
+  actions: read
 jobs:
   asset:
     name: Build, attest and attach the package
@@ -15,16 +17,24 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      checks: read
+      actions: read
       id-token: write
       attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
+      - name: Verify source and required checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: node scripts/release-source-check.mjs
       - run: npm test
       - run: npm run smoke:pack
       - name: Pack
@@ -47,3 +57,28 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name }}
         run: gh release upload "$TAG" lockedinlabs-agent-console-*.tgz SHA256SUMS --repo "$GITHUB_REPOSITORY"
+
+  acceptance:
+    name: Published install (${{ matrix.os }})
+    needs: asset
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - name: Install the uploaded release package
+        shell: bash
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: node scripts/readme-install.mjs --expected-version "$TAG"

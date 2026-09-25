@@ -516,6 +516,14 @@ node bin/agent-console.mjs join --help     # the reporter
 
 Environment equivalents use the `AGENT_CONSOLE_` prefix.
 
+## Upgrading a hub
+
+Stop its running console processes before upgrading. Keep each hub's state
+directory on a local disk that supports hard links. One running hub owns a
+state directory, even if another start chooses different ports; use a separate
+`--state-dir` for a separate hub. Older versions must be stopped because they
+do not honor the new ownership lock.
+
 ## Checking a download
 
 From 0.2.1 on, each release's package is built by CI from the release's tag.
@@ -529,6 +537,8 @@ gh attestation verify lockedinlabs-agent-console-0.3.0.tgz -R SamSnead85/agent-c
 ```
 
 ## Development
+
+See the [architecture and trust boundaries](docs/ARCHITECTURE.md) for data flow, component ownership and the CI/release path.
 
 ```sh
 npm test               # the whole suite, including the multi-machine end-to-end tests

@@ -159,6 +159,21 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
   duplicate name for the same person, and a link duration outside 5 to 60
   minutes. With `--json`, errors are JSON lines, and the console prints an
   event when a machine joins or leaves.
+**Durability and release acceptance**
+
+- Published installation checks fail on missing packages and run after release
+  assets upload. Development availability may explicitly report a pending
+  release; it no longer presents a missing download as a verified installation.
+- Release packaging verifies the selected source's main-branch ancestry and
+  successful CI, public-safety and performance checks before producing assets.
+- Usage batches are indexed only after successful persistence. Failed writes
+  preserve earlier batches, allow safe retries, and recover incomplete final
+  lines before rebuilding the index after a restart.
+- Only one hub can own a state directory, including when different listening
+  ports or directory aliases are used. A crashed owner's lock can be recovered;
+  an owner that cannot be verified is never displaced automatically.
+- [Architecture diagrams](docs/ARCHITECTURE.md) document collection, enrollment,
+  trust boundaries, delivery controls and the separate future MCP integration.
 
 ## 0.2.2 — 2026-09-24
 
