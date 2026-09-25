@@ -286,6 +286,17 @@ The full definitions are in [docs/MEASUREMENTS.md](docs/MEASUREMENTS.md). The
 accounting rules for people, teams, models and sessions, and the conformance
 suite that checks them to the token, are in [docs/accounting.md](docs/accounting.md).
 
+## Project policy
+
+Add `agent-policy.yaml` at your repository root, then run
+`agent-console policy diff` to inspect the proposed Claude Code agents,
+settings and hooks. `agent-console policy apply` installs those project files
+with private backups; `agent-console policy remove` restores them. Nothing is
+installed by starting the dashboard. The optional policy covers model roles,
+effort, action gates, and budget thresholds; hard token and dollar budget
+enforcement is not available from the native launch hook. See
+[the policy format and current enforcement limits](docs/policy.md).
+
 ## How the machines connect
 
 One computer runs the console: the **hub**. Every other computer runs a small

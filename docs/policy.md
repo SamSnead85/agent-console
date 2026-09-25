@@ -65,18 +65,40 @@ publish named role agents and flag overrides; it must not assert it proved a
 test or a failure count. An idle gap is an observed cache-health signal, not
 an API-enforced cache TTL.
 
-## Native controls planned for `policy apply`
+## Native controls in `policy apply`
 
-The compiler writes repo-scoped `.claude/agents/*.md`,
+Run `agent-console policy diff` from the repository root to preview each
+create or update. `agent-console policy apply` writes repo-scoped `.claude/agents/*.md`,
 `.claude/settings.json`, and a local command hook under `.claude/hooks/`.
+`agent-console policy remove` restores the exact prior settings and deletes
+only generated files. Use `--project <path>` to choose another repository or
+`--org-policy <file>` with `diff` and `apply` to overlay organization rules.
+The first apply stores original bytes in a private backup under
+`~/.agent-console/policy/`; a changed generated file must be reviewed before
+`remove` will restore it. Applying twice without a change is a no-op. Edit a
+policy by removing the old compiled files and applying the new version.
+On POSIX the backup directory and files use modes 700 and 600; on Windows
+their protection follows the account's filesystem access controls.
+
+The compiler writes named role agents with pinned model and effort, a separate
+verified-code-edit role, and a named escalation role. A `PreToolUse` hook
+checks explicit `Agent` model overrides and action gates on shell and file
+tools; `PreModelSwitch` checks model allow-list and switches inside an active
+agent. The hook classifies commands locally, including `+refspec` pushes,
+outside deletes through `~`, `$HOME`, `%USERPROFILE%`, separate `rm -r -f`
+flags, and long options. Its local decision log contains only a timestamp,
+rule name, and action. Set `AGENT_CONSOLE_HOME` if this log should live under a
+different private home. Hooks do not use the network.
+
 Claude Code documents [project settings and precedence](https://code.claude.com/docs/en/settings),
 [project agent frontmatter including `model` and `effort`](https://code.claude.com/docs/en/sub-agents),
 and [hook locations, `PreToolUse`, `PreModelSwitch`, and their JSON decisions](https://code.claude.com/docs/en/hooks).
 The documented `Agent` tool input has `subagent_type` and an optional `model`
-override. `PreToolUse` can deny or ask for a tool call; a `PreModelSwitch` hook
-can block a switch. These are the fields the compiler will use, with no
-invented settings keys. `diff` shows generated changes, `apply` saves
-restorable backups and prints paths, and `remove` restores only files it owns.
+override. `PreToolUse` can deny or ask for a tool call; current docs also
+specify `permissionDecision` of `deny` or `ask` for `PreModelSwitch`. These are
+the fields the compiler uses, with no invented settings keys. Hooks cannot
+observe every action that a shell command might perform, so native Claude
+Code permissions and sandboxing remain in effect.
 On malformed hook input or a policy read error, `on_error` applies, defaulting
 to `ask`; no raw command or credential text is logged.
 
