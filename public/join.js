@@ -13,7 +13,11 @@
  * which sh, bash, zsh, fish and PowerShell all take literally.
  *
  * The command installs Agent Console from its GitHub release, never from the
- * console that served this page, and the reporter then checks the console's
+ * console that served this page. It starts with a short check for `node -e`
+ * (VERIFY, the same text as VERIFY_AND_RUN in lib/invocation.js) that runs
+ * nothing until the file's SHA-256 matches the release's SHA256SUMS. On screen
+ * that check is shortened to '…'; Copy gives the whole command. The reporter
+ * then checks the console's
  * certificate against the fingerprint in the link before it sends anything.
  * This page itself arrives over plain HTTP, so the console's owner can also
  * send the command straight from the console (SECURITY.md, "The join page").
@@ -25,6 +29,7 @@
   const FRAGMENT = /^([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{43})$/;
   const SAFE_LINK = /^https?:\/\/(?:[a-z0-9._-]+|\[[0-9a-f:.]+\])(?::[0-9]{1,5})?\/join#[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}$/;
   const VERSION = /^[0-9]{1,4}\.[0-9]{1,4}\.[0-9]{1,4}$/;
+  const VERIFY = "const[u,...a]=process.argv.slice(1),p=require(`path`),n=p.basename(u),g=x=>fetch(x).then(r=>{if(!r.ok)throw Error(x+` answered `+r.status);return r.arrayBuffer()}).then(Buffer.from);(async()=>{if(!/^https:[/][/]github[.]com[/][A-Za-z0-9_.-]+[/][A-Za-z0-9_.-]+[/]releases[/]download[/]v[0-9.]+[/][A-Za-z0-9_.-]+[.]tgz(?![^])/.test(u))throw Error(`not a release file: `+u);const t=String(await g(p.posix.dirname(u)+`/SHA256SUMS`)).split(/[^0-9A-Za-z._-]+/),b=await g(u),h=require(`crypto`).createHash(`sha256`).update(b).digest(`hex`);if(h!==t[t.indexOf(n)-1])throw Error(n+` does not match the release SHA256SUMS; nothing was run`);const f=require(`fs`),d=p.join(require(`os`).homedir(),`.agent-console`,`releases`),k=p.join(d,n),w=process.platform==`win32`,q=String.fromCharCode(34);f.mkdirSync(d,{recursive:true});f.writeFileSync(k,b);console.error(n+` matches the release SHA256SUMS: `+h);const r=require(`child_process`).spawnSync(w?[`npx`,`--yes`,`file:`+k,...a].map(x=>q+x+q).join(` `):`npx`,w?[]:[`--yes`,`file:`+k,...a],{stdio:`inherit`,shell:w,env:{...process.env,AGENT_CONSOLE_PACKAGE:k}});process.exit(r.status??1)})().catch(e=>{console.error(String(e.message));process.exit(1)})";
 
   const parts = FRAGMENT.exec((location.hash || "").slice(1));
   const code = parts ? parts[1] : null;
@@ -47,10 +52,11 @@
     $("ver").textContent = "v" + version;
     for (const el of document.querySelectorAll(".verv")) el.textContent = version;
     $("releasePage").href = `${REPO}/releases/tag/v${version}`;
-    for (const el of document.querySelectorAll(".restart")) el.textContent = `npx --yes ${asset} report`;
+    const run = `node -e '${VERIFY}' ${asset}`;
+    for (const el of document.querySelectorAll(".restart")) el.textContent = `node -e '…' ${asset} report`;
     if (valid) {
-      command = `npx --yes ${asset} join '${link}'`;
-      $("cmd").textContent = command.replace(code, "••••••••");
+      command = `${run} join '${link}'`;
+      $("cmd").textContent = command.replace(code, "••••••••").replace(VERIFY, "…");
     }
     if (info.demo) { $("demoStamp").hidden = false; $("demoNote").hidden = false; }
   }).catch(() => { $("status").textContent = "That console is not answering right now. Check you are on the same network, then reload."; });

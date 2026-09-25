@@ -825,8 +825,10 @@
       $("linkField").value = j.link;
       // Commands are shown with their codes masked; Copy puts the real one on the clipboard.
       const secret = j.link.slice(j.link.indexOf("#") + 1, j.link.lastIndexOf("."));
-      $("cmdShown").textContent = j.command.replace(secret, "••••••••");
-      $("typedShown").textContent = j.typed.replace(j.code, "••••-••••");
+      // The verify-then-run check at the front is shortened on screen; Copy gives it whole.
+      const short = (text) => text.replace(/^node -e '[^']*'/u, "node -e '…'");
+      $("cmdShown").textContent = short(j.command.replace(secret, "••••••••"));
+      $("typedShown").textContent = short(j.typed.replace(j.code, "••••-••••"));
       const who = [j.invitation.person, j.invitation.machine].filter(Boolean).join("'s ").replace(/'s$/, "") || "them";
       $("linkSay").innerHTML = j.demo
         ? "This is a demonstration console, so this link cannot actually be used. On a real console, the steps are exactly these."

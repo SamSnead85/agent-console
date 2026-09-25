@@ -23,6 +23,17 @@
   and AI-gateway token readings kept separate from transcript totals, a local
   Prometheus `/metrics` format and a Grafana dashboard. `/metrics` and the
   telemetry ingest answer 401 until their scrape token is available.
+- `/metrics` and the telemetry ingest now take a scrape token: an HMAC of a
+  fixed label under the console's key, printed by the new `metrics-token`
+  command and replaced whenever the key is. The key itself is never accepted.
+  A `--demo` console prints its token at start and stamps `/metrics` DEMO.
+- Every command the console and the join page print now checks the release
+  file against the release's `SHA256SUMS` before running anything, and keeps
+  the checked file in `~/.agent-console/releases/`.
+- One address over its join limit no longer counts toward the total, so one
+  device cannot hold off everyone's joins; IPv6 addresses count by their /64.
+- Carrier-grade NAT (100.64.0.0/10, also Tailscale's range) is no longer
+  private by default: start the console with `--allow-cgnat` to accept it.
 
 ## 0.2.2 — 2026-09-24
 

@@ -204,8 +204,8 @@ transcript totals so the same request is never added twice. It is off for
 ordinary users. The synthetic demo shows an OpenTelemetry reading. See
 [setup, accepted formats and privacy rules](docs/INTEROP.md); the included
 [Grafana dashboard](docs/grafana-agent-console.json) can read `/metrics`.
-Until the scrape token for `/metrics` and ingest is available, those paths
-answer `401`.
+`/metrics` and ingest take a scrape token, derived from the console's key,
+that the `metrics-token` command prints.
 
 ### Shared analysis core
 
@@ -327,8 +327,9 @@ removing machines) are on `127.0.0.1:6787`: this computer only, whatever
 reporting port, `6788`, which serves only the join page, the join exchange and
 reporting. By default it listens on this computer only; `--listen 0.0.0.0` (or
 a specific address) opens it to your network. It accepts callers on private
-networks only (home and office ranges, Tailscale, IPv6 unique-local) unless you
-pass `--allow-public`. To look at the console from elsewhere, tunnel to it:
+networks only (home and office ranges, IPv6 unique-local) unless you pass
+`--allow-public`. Tailscale's addresses (100.64.0.0/10) are shared with
+strangers on carrier-grade NAT, so they count only with `--allow-cgnat`. To look at the console from elsewhere, tunnel to it:
 `ssh -L 6787:127.0.0.1:6787 you@hub-computer`, then open `http://127.0.0.1:6787`.
 
 **Encrypted and pinned.** The console makes its own TLS certificate the first
@@ -367,6 +368,12 @@ a restart, with no new link. `leave` stops, and deletes everything the enrolment
 left on this computer. From a download, use `node bin/agent-console.mjs` in place
 of `npx --yes <release link>`. Always use the full command: the short name on
 its own would fetch a different, unrelated package from the public registry.
+
+The command **Add a machine** gives, and the join page's, starts with
+`node -e '…'`: a short check that downloads the release file and its
+`SHA256SUMS` from GitHub, runs nothing unless the file's SHA-256 matches,
+keeps the checked file in `~/.agent-console/releases/`, and then runs it. The
+reporter's own restart line names that checked file.
 
 Options: `--name` (what to call this computer), `--interval <seconds>`, `--once`,
 `--state-dir`, `--home`, `--claude-root`, `--codex-root`,
@@ -470,6 +477,7 @@ node bin/agent-console.mjs join --help     # the reporter
 | `--report-port <n>` | the port above it (`6788`): where other computers join and report |
 | `--listen <address>` | `127.0.0.1`; `0.0.0.0` lets other computers reach the reporting port |
 | `--allow-public` | accept reports from outside private networks |
+| `--allow-cgnat` | also accept 100.64.0.0/10 (Tailscale, carrier-grade NAT) |
 | `--demo` | a synthetic team; reads nothing, accepts no machine |
 | `--name <text>`, `--person <text>` | this computer's name, and whose it is, on the console (`This machine`, `You`) |
 | `--no-local` | do not read this computer (a hub on a server) |

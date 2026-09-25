@@ -17,12 +17,12 @@ import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 
-import { joinCommand, releaseUrl, SAFE_JOIN_LINK } from "../lib/invocation.js";
+import { joinCommand, releaseUrl, SAFE_JOIN_LINK, VERIFY_AND_RUN, verifiedRun } from "../lib/invocation.js";
 import { parseJoinTarget } from "../lib/reporter.js";
 
 const SOURCE = fs.readFileSync(new URL("../public/join.js", import.meta.url), "utf8");
 const VERSION = "0.2.2";
-const PREFIX = `npx --yes ${releaseUrl(VERSION)} join `;
+const PREFIX = `${verifiedRun(VERSION)} join `;
 const CODE = "AAAAAAAAAAAAAAAAAAAAAA";
 const PRINT = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
 
@@ -70,7 +70,7 @@ test("a well-formed link: the command carries exactly that link, single-quoted, 
   const page = await joinPage(link);
   assert.equal(page.refused, false);
   assert.equal(page.command, `${PREFIX}'${link}'`);
-  assert.equal(page.shown, `${PREFIX}'${link}'`.replace(CODE, "••••••••"), "the code is masked on screen");
+  assert.equal(page.shown, `${PREFIX}'${link}'`.replace(CODE, "••••••••").replace(VERIFY_AND_RUN, "…"), "the code is masked and the check shortened on screen");
   // Written the way the console writes it, too.
   assert.equal(joinCommand(VERSION, link), page.command);
   for (const ipv6 of [`http://[fd12::1]:6788/join#${CODE}.${PRINT}`, `https://192.168.1.20:6788/join#${CODE}.${PRINT}`]) {
@@ -127,6 +127,17 @@ test("S1: pasted into a shell, the command's link is one literal argument", { sk
       assert.equal(run.status, 0, shell + ": " + run.stderr);
       assert.equal(run.stdout, link + "\n", shell);
     }
+  }
+});
+
+test("S4: pasted into a shell, the whole command is node, -e, the check, the release file, join and the link, each literal", { skip: shells().length === 0 && "no POSIX shell here" }, async () => {
+  const link = `http://192.168.1.20:6788/join#${CODE}.${PRINT}`;
+  const { command } = await joinPage(link);
+  assert.ok(command.startsWith("node -e '"));
+  for (const shell of shells()) {
+    const run = spawnSync(shell, ["-c", `printf '%s\\n' ${command.slice("node ".length)}`], { encoding: "utf8" });
+    assert.equal(run.status, 0, shell + ": " + run.stderr);
+    assert.equal(run.stdout, ["-e", VERIFY_AND_RUN, releaseUrl(VERSION), "join", link].join("\n") + "\n", shell);
   }
 });
 
