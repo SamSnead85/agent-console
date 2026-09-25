@@ -15,6 +15,10 @@
   integration in Projects, labelled as correlation rather than attribution.
 - Added an optional, versioned `agent-policy.yaml` (or JSON) with a published
   schema and a shared parser; unknown fields fail validation.
+- Added `agent-console policy diff`, `apply` and `remove`, which compile the
+  policy into repo-scoped Claude Code agents, settings and a local hook, with
+  private backups so `remove` restores the prior files. Starting the console
+  installs nothing.
 
 ## 0.2.2 — 2026-09-24
 
