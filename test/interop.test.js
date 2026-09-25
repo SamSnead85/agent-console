@@ -45,7 +45,7 @@ test('raw OTLP and gateway labels are projected to counts, model ids, times and 
     { key: 'prompt', value: { stringValue: 'canary-private-prompt' } },
   ])]), Date.now(), hash);
   assert.equal(samples.length, 1);
-  assert.deepEqual(Object.keys(samples[0]).sort(), ['at', 'kind', 'model', 'seriesHash', 'source', 'tokens']);
+  assert.deepEqual(Object.keys(samples[0]).sort(), ['at', 'kind', 'model', 'seriesHash', 'source', 'stamp', 'tokens']);
   assert.ok(!JSON.stringify(samples).includes('canary-private'));
   const gateway = parseGatewayMetrics('litellm',
     'litellm_input_tokens_metric_total{model="claude-sonnet-5",user_email="canary-private-email"} 27', Date.now(), hash);
@@ -223,4 +223,23 @@ test('metrics-token needs a console key and says so; a demonstration prints its 
   assert.match(none.stderr, /no console key/u);
   const demo = spawnSync(process.execPath, [bin, 'metrics-token', '--demo'], { encoding: 'utf8' });
   assert.equal(demo.status, 2);
+});
+
+test('H13: a re-sent OTel point is dropped by series and time, cumulative points are counted, each source names its token definition', () => {
+  const store = createInteropStore();
+  const stamp = time();
+  const at = (tokens) => ({ ...point('input', tokens), timeUnixNano: stamp });
+  assert.equal(store.acceptOtlp(otlp([at(10)])), 1);
+  // The same series at the same time, even with a different value, is the same point sent again.
+  assert.equal(store.acceptOtlp(otlp([at(10), at(11)])), 0);
+  const cumulative = otlp([point('input', 4), point('output', 2)]);
+  cumulative.resourceMetrics[0].scopeMetrics[0].metrics[0].sum.aggregationTemporality = 2;
+  assert.equal(store.acceptOtlp(cumulative), 0);
+  const snap = store.snapshot();
+  assert.equal(snap.otel.tokens.total, 10);
+  assert.equal(snap.otel.dedupedSamples, 2);
+  assert.equal(snap.otel.cumulativeIgnored, 2);
+  assert.equal(snap.otel.tokenDefinition, 'input+output+cache');
+  assert.equal(snap.kong.tokenDefinition, 'input+output');
+  assert.equal(snap.litellm.tokenDefinition, 'input+output');
 });

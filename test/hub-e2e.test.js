@@ -202,7 +202,8 @@ test("two machines join by link, report, roll up by person, and nothing private 
 
   const joinA = await run(["join", via(a), "--once", "--json", "--home", laptop, "--state-dir", path.join(root, "laptop-state")]);
   assert.equal(joinA.code, 0, joinA.out + joinA.err);
-  const joinB = await run(["join", via(b), "--once", "--json", "--home", workstation, "--state-dir", path.join(root, "ws-state")]);
+  // The workstation opts in to sending its alerts and tool activity (counts only); the laptop does not.
+  const joinB = await run(["join", via(b), "--once", "--json", "--home", workstation, "--state-dir", path.join(root, "ws-state"), "--share-alerts", "--share-tool-activity"]);
   assert.equal(joinB.code, 0, joinB.out + joinB.err);
   const eventsA = joinA.out.trim().split("\n").map((l) => JSON.parse(l));
   assert.equal(eventsA[0].event, "joined");
@@ -214,7 +215,15 @@ test("two machines join by link, report, roll up by person, and nothing private 
   assert.match(again.err, /not valid/u);
 
   const view = await consoleView(hub);
-  assert.deepEqual(view.alerts, [], 'the network console exposes no raw local alert fields');
+  assert.ok(view.alerts.every((a) => a.deviceId !== view.devices.find((d) => d.label === "Laptop")?.id), 'no alert from a machine that did not share them');
+  assert.deepEqual(view.alertsCoverage.unwatchedDevices, [view.devices.find((d) => d.label === "Laptop").id], "the laptop is named as not watched");
+  assert.equal(view.alertsCoverage.watched, 1);
+  for (const lane of view.lanes) {
+    const shared = lane.device.label === "Workstation";
+    assert.equal(lane.activityShared, shared, lane.device.label);
+    if (shared) assert.deepEqual(Object.keys(lane.activity.calls).sort(), ["agent", "edit", "mcp", "other", "read", "search", "shell", "web"]);
+    else assert.equal(lane.activity, null);
+  }
   assert.equal(view.devices.length, 2);
   for (const d of view.devices) {
     assert.equal(d.status, "reporting", d.label + " is not reporting");
@@ -230,7 +239,8 @@ test("two machines join by link, report, roll up by person, and nothing private 
   for (const lane of view.lanes) {
     assert.ok(Array.isArray(lane.agentTree) && lane.agentTree.length > 0);
     for (const agent of lane.agentTree) {
-      assert.deepEqual(Object.keys(agent).sort(), ["depth", "durationMinutes", "model", "modelLabel", "outcome", "parentSessionHash", "rootSessionHash", "sessionHash", "tokens"]);
+      assert.deepEqual(Object.keys(agent).sort(), ["depth", "durationMinutes", "model", "modelLabel", "outcome", "parentSessionHash", "results", "rootSessionHash", "sessionHash", "tokens"]);
+      assert.ok(agent.results === null || (Object.keys(agent.results).sort().join() === "error,ok"), "results are two counts");
       assert.ok(["succeeded", "failed", "unknown"].includes(agent.outcome));
       assert.ok(agent.tokens === null || Number.isSafeInteger(agent.tokens));
     }
@@ -262,9 +272,26 @@ test("two machines join by link, report, roll up by person, and nothing private 
     assert.ok(!kept.includes(canary), `"${canary}" was kept by a reporter`);
     assert.ok(!shown.includes(canary), `"${canary}" reached the console`);
   }
+  const extrasSent = { alerts: 0, activity: 0 };
   for (const b of wire.bodies.filter((x) => x.url === "/api/ingest")) {
     const envelope = JSON.parse(b.body);
-    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "coverage", "backlog"]);
+    const optIn = envelope.device.label === "Workstation" && "alerts" in envelope;
+    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "coverage", ...(optIn ? ["alerts", "activity"] : []), "backlog"]);
+    if (optIn) {
+      extrasSent.alerts += 1; extrasSent.activity += envelope.activity.length;
+      // Alerts: a salted id, a kind, a minute, a salted session hash, a count and a flag.
+      for (const a of envelope.alerts) {
+        assert.deepEqual(Object.keys(a).sort(), ["at", "count", "historical", "id", "kind", "sessionHash"]);
+        assert.match(a.at, /:00\.000Z$/u);
+        assert.equal(a.historical, true, "raised while reading the backlog on a first join");
+      }
+      // Activity: per session and minute, eight kinds' counts, ok and error, and the last tool's kind.
+      for (const e of envelope.activity) {
+        assert.deepEqual(Object.keys(e).sort(), ["at", "calls", "lastTool", "results", "sessionHash"]);
+        assert.deepEqual(Object.keys(e.calls).sort(), ["agent", "edit", "mcp", "other", "read", "search", "shell", "web"]);
+        assert.match(e.at, /:00\.000Z$/u, "a time finer than a minute left the machine");
+      }
+    }
     // What could not be counted: reason names and counts, nothing else.
     for (const [kind, n] of Object.entries(envelope.coverage)) assert.ok(/^[a-z][A-Za-z]+$/.test(kind) && Number.isSafeInteger(n), kind);
     // How far a catch-up has got: two counts, nothing else.
@@ -280,6 +307,9 @@ test("two machines join by link, report, roll up by person, and nothing private 
       assert.match(r.at, /:00\.000Z$/u, "a time finer than a minute left the machine");
     }
   }
+  assert.equal(extrasSent.alerts, 1, "the opt-in extras ride on one envelope");
+  assert.ok(view.lanes.some((l) => l.device.label === "Workstation" && l.lastTool), "the shared activity lands on its own lane");
+  assert.ok(extrasSent.activity > 0, "the workstation's tool activity was sent");
   // Project hashes use each reporter's own key, not the salt the hub holds, so
   // the hub cannot confirm a guess of a folder path against them.
   const orgSalt = Buffer.from(JSON.parse(fs.readFileSync(path.join(root, "laptop-state", "credentials.json"), "utf8")).orgSalt, "base64url");

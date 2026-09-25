@@ -29,7 +29,9 @@ import { acquireStateLock } from "./lib/hub/state-lock.js";
 import { createStore } from "./lib/hub/store.js";
 import { createNames, startLocalCollection } from "./lib/hub/local.js";
 import { startDemo } from "./lib/hub/demo.js";
-import { createAlerts, demoAlerts } from "./lib/hub/alerts.js";
+import { createAlerts } from "./lib/hub/alerts.js";
+import { createFleetSignals } from "./lib/hub/fleet.js";
+import { createActivityBook } from "./lib/collector/activity.js";
 import { createConsoleHandler, createReportingHandler, hubAddresses, joinAssetsPresent, isCgnatAddress } from "./lib/hub/routes.js";
 import { choosePort, chooseFreePort } from "./lib/hub/port.js";
 import { createAdmin, readAdminKey, requestSignIn } from "./lib/hub/admin.js";
@@ -214,17 +216,28 @@ const certificate = hubCertificate(config.stateDir);
 names = config.demo ? null : createNames(config.stateDir, { retentionMs });
 let local = null;
 let alertEngine = null;
+// Joined machines' opt-in alerts and tool activity (lib/hub/fleet.js), and
+// this machine's own tool activity, counted from the transcripts it reads.
+const fleet = createFleetSignals();
+let activityBook = null;
 if (config.demo) {
-  names = startDemo({ registry, store }).names;
+  activityBook = createActivityBook();
+  const demo = startDemo({ registry, store, fleet, activity: activityBook });
+  names = demo.names;
+  alertEngine = { list: () => demo.alerts() };
 } else if (config.local) {
   const roots = defaultRoots(config.home);
   roots[0].directory = config.claudeRoot;
   roots[1].directory = config.codexRoot;
+  // No alert is live until the first read of this machine's transcripts is
+  // done: a first run replays history, and history is not "now".
   alertEngine = createAlerts({ repeat: config.alertRepeat, spikeFactor: config.alertSpikeFactor,
-    stallMinutes: config.alertStallMinutes, notify: config.desktopAlerts, names });
+    stallMinutes: config.alertStallMinutes, notify: config.desktopAlerts, names,
+    live: () => local?.status.firstRunComplete === true });
+  activityBook = createActivityBook();
   local = startLocalCollection({
     registry, store, names, stateDir: config.stateDir, roots,
-    intervalMs: 2_000, onTranscriptLine: alertEngine.observeLine,
+    intervalMs: 2_000, onTranscriptLine: (args) => { alertEngine.observeLine(args); activityBook.observeLine(args); },
     label: config.machineName, person: config.person,
     onError: (error) => process.stderr.write("  this machine: " + String(error && error.message) + "\n"),
   });
@@ -236,7 +249,9 @@ const consoleHandler = createConsoleHandler({
   config, registry, store, names, local, admin, version: VERSION, publicDir: PUBLIC,
   reporting: reportingInfo,
   git: config.demo ? null : createGitStatsStore(),
-  alerts: config.demo ? { list: () => demoAlerts() } : alertEngine,
+  alerts: alertEngine,
+  fleet,
+  activity: activityBook,
   interop: config.interop && !config.demo ? createInteropStore() : null,
   onSignInLink: () => {
     const link = signIn();
@@ -246,7 +261,7 @@ const consoleHandler = createConsoleHandler({
   networkCommand: networkCommand(),
 });
 const reportingHandler = createReportingHandler({
-  config, registry, store, version: VERSION, publicDir: PUBLIC, onChange: () => consoleHandler.invalidate(),
+  config, registry, store, fleet, version: VERSION, publicDir: PUBLIC, onChange: () => consoleHandler.invalidate(),
   onEvent: (event) => {
     // Joins and leaves are said as they happen, in words or as JSON lines.
     if (config.json) { process.stdout.write(JSON.stringify({ ...event, at: new Date().toISOString() }) + "\n"); return; }
