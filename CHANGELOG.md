@@ -2,6 +2,43 @@
 
 ## Unreleased
 
+- Every row's activity is the wave: the Console lanes, the Projects and
+  Sessions tables, the Team People and Machines tables and the inspector's
+  hour draw the same soft line over the chart's light as the activity chart,
+  the newest step lit while the row is live, dim when its machine is silent
+  or gone; a row with nothing in the window is a flat dotted baseline with
+  its reason on hover, never a zero wave. No bar spark remains.
+- The Doing column draws coverage, not a boolean (docs/COLLECTOR-CONTRACT.md,
+  "What the console shows for them"): tool counts are zero only under
+  complete coverage; under partial coverage what is held is a floor, marked
+  `+` with the figure and the time sharing began on hover, and nothing held
+  is "tool not held since …", unavailable rather than idle; a machine whose
+  reporter does not share, does not say, or has not been heard since the
+  console started is "tool not shared", "tool not declared" or "tool not
+  heard", each with the reporter's own reason. The lane inspector's Tools
+  block and the agent tree's foot say the same.
+- Team's Machines rows and the machine inspector say what each machine
+  shares (alerts over the hour, tool activity over five minutes) — on the
+  status line when it shares everything, on a line of its own in warn when
+  it does not — and flag entries the console refused for being dated in the
+  future, when there are any.
+- "No alert" is claimed only from the time alerts are held
+  (`alertsCoverage.since`): the Attention hero reads "No alert since 6:38
+  PM" with the reason, its stat says "since" rather than "last hour", the
+  alerts sheet's caption and Team's alert count say "known since", the
+  machine inspector says since when its own alerts are held, and the
+  sixty-minute strip is hatched up to that time.
+- The Attention card's timeline has an axis row of its own ("60 min ago ·
+  2 alerts · now") inside the card's padding, never cut by the card's edge;
+  the alert rows above it are one line each, the lane's name giving way with
+  the whole row on hover; the stat drops its least important parts whole when
+  the caption is tight. The spend spectrum's legend keeps each item on one
+  line and flows the items as whole units.
+- Presenting aliases the address of an open inspector (`#team/person/<token>`,
+  a token of the session's own, resolved on the way back) and the
+  add-a-machine sheet: no name in its people list, stand-ins in the link's
+  explanation and the joined line, the restart command stepped back.
+
 - The strip is the approved band's hero again, compact: 76px on the substrate
   with the artwork reading from a third of the way across, the instrument's
   name in the display sans and the view beside it, and everything else on the

@@ -87,10 +87,11 @@ test("on a phone the lanes' footer stays in frame, the spend legend wraps, and t
   assert.doesNotMatch(phone, /\.lanes:not\(\.tbl\) \{ overflow-x: auto; \}/u);
   assert.doesNotMatch(phone, /\.lfoot \{[^}]*min-width: 640px/u);
   assert.match(phone, /\.lfoot span\.end \{ flex-basis: 100%;/u);
-  // the legend wraps instead of cutting a word
-  assert.match(CSS, /\.speclegend span \{[^}]*flex-wrap: wrap;[^}]*white-space: normal;/u);
+  // the legend flows as whole items: each item on one line, never a word cut or a share alone on the next line
+  assert.match(CSS, /\.speclegend \{[^}]*display: flex;[^}]*flex-wrap: wrap;/u);
+  assert.match(CSS, /\.speclegend span \{[^}]*white-space: nowrap;/u);
   assert.doesNotMatch(CSS, /\.speclegend span \{[^}]*overflow: hidden/u);
-  assert.match(phone, /\.speclegend \{ grid-template-columns: 1fr; \}/u);
+  assert.doesNotMatch(CSS, /\.speclegend \{[^}]*grid-template-columns/u, "a grid would cut an item at its column's edge");
   // state, the name (its branch under it), five minutes and when it last spoke come first; the estimate and the day follow under the thumb; Last is shown
   const order = (cls) => Number(phone.match(new RegExp(`\\.lane \\.${cls} \\{ order: (\\d); \\}`, "u"))?.[1]);
   assert.ok(order("st") < order("pr") && order("pr") < order("fm") && order("fm") < order("la") && order("la") < order("usd"), "state · name · 5 min · last · then the estimate");
@@ -116,7 +117,8 @@ test("no numeric is cut and no unit is said twice", () => {
 });
 
 test("every Attention row is a door, by pointer and by keyboard; the pointer is drawn only where there is a door", () => {
-  assert.match(JS, /<div class="arow\$\{cls\}" \$\{lane \? `data-lane="\$\{esc\(lane\.key\)\}"` : "data-alerts"\} tabindex="0" role="button" title="\$\{lane \? "Open the lane" : "Open the alert list"\}/u);
+  // the row's hover carries the whole of it — kind, lane, cause, time — and says which door it is
+  assert.match(JS, /<div class="arow\$\{cls\}" \$\{lane \? `data-lane="\$\{esc\(lane\.key\)\}"` : "data-alerts"\} tabindex="0" role="button" title="\$\{esc\(ALERT_LABEL\[a\.kind\] \|\| "Alert"\)\}[^\n]*\$\{lane \? "open the lane" : "open the alert list"\}"/u);
   // a lane the canvas does not carry still opens: the alert list carries it
   assert.match(JS, /if \(!focusLane\(go\.dataset\.lane\) && go\.classList\.contains\("arow"\)\) openAlerts\(go\);/u);
   assert.match(JS, /\[role='button'\]\[data-lane\], \[role='button'\]\[data-alerts\], \[role='button'\]\[data-inspect\]/u);

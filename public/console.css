@@ -362,8 +362,10 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .arow .sev { grid-area: sev; color: var(--warn); font-size: 12px; line-height: 1; align-self: start; padding-top: 3px; }
 .arow .sev::before { content: "▲"; font-size: 10px; }
 .arow.earlier .sev { color: var(--quiet); }
-.arow b { grid-area: kind; font-weight: 500; color: var(--ink); white-space: normal; line-height: 1.3; min-width: 0; }
-.arow b em { font-style: normal; font: 400 calc(12px * var(--k)) var(--mono); color: var(--quiet); margin-left: 6px; }
+/* one line per row: the kind stays whole, the lane's name gives way with its whole on the row's hover — a wrapped row would be cut by the card's edge under the timeline */
+.arow b { grid-area: kind; font-weight: 500; color: var(--ink); white-space: nowrap; line-height: 1.3; min-width: 0; display: flex; align-items: baseline; gap: 6px; }
+.arow b > span { flex: none; }
+.arow b em { font-style: normal; font: 400 calc(12px * var(--k)) var(--mono); color: var(--quiet); overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .arow time { grid-area: time; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); white-space: nowrap; font-variant-numeric: tabular-nums; padding-top: 1px; }
 .arow .cause { display: none; }
 .alist .rule { margin-top: 4px; padding: 2px 0 0; border-top: 1px solid var(--hair2); font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--quiet); }
@@ -374,6 +376,11 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .astrip svg rect.tick { fill: var(--warn); }
 .astrip svg rect.tick.earlier { fill: var(--quiet); }
 .astrip svg line.base { stroke: var(--hair); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.astrip svg rect.gap.unknown { fill: url(#hatchfill); opacity: .8; }
+/* the strip's axis is a row of its own inside the card's padding, never cut by the card's edge: the list above it gives way first */
+.attention .astrip { flex: none; }
+.attention .astrip .bx { margin-top: calc(3px * var(--k)); }
+.console.two > .col.attention > .alist { flex: 0 1 auto; min-height: 0; overflow: hidden; }
 
 /* spend spectrum: where the money goes against where the tokens go */
 .specwrap { position: relative; margin-top: calc(4px * var(--k)); display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: calc(10px * var(--k)); align-items: start; }
@@ -393,8 +400,9 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 #cSpec text.ondark { fill: #FFFFFF; }
 .specwrap.void #cSpec { opacity: .12; }
 .specwrap.void .voidstate { min-height: calc(46px * var(--k)); }
-.speclegend { margin-top: calc(3px * var(--k)); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px calc(8px * var(--k)); }
-.speclegend span { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; min-width: 0; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); white-space: normal; }
+/* each legend item is one line ("cache write 38% est. · 7% tok") and the items flow as whole units, so a share never sits alone on the next line */
+.speclegend { margin-top: calc(3px * var(--k)); display: flex; flex-wrap: wrap; gap: 2px calc(12px * var(--k)); }
+.speclegend span { display: inline-flex; align-items: center; gap: 2px 4px; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); white-space: nowrap; }
 .speclegend b { font: 500 calc(12px * var(--k)) var(--sans); color: var(--ink2); font-variant-numeric: tabular-nums; }
 .speclegend em { font-style: normal; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); }
 .speclegend .sep { opacity: .5; }
@@ -490,10 +498,10 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .lane .md .tool { font-style: normal; font: 500 calc(12px * var(--k))/16px var(--mono); letter-spacing: .04em; color: var(--quiet); padding: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1px var(--hair2); flex: none; }
 .lane .md .mname { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .lane .md svg { width: 11px; height: 11px; flex: none; opacity: .85; }
-.lane .sp { display: flex; align-items: flex-end; gap: 2px; height: calc(16px * var(--k)); width: 100%; }
-.lane .sp i { flex: 1; min-width: 2px; border-radius: 1px; background: var(--spark); height: 6%; transition: height .34s var(--ease), background .34s var(--ease); }
-.lane .sp i.hot { background: var(--spark-hot); box-shadow: 0 0 6px var(--cobalt-edge); }
-.lane.idle .sp i, .lane.silent .sp i, .lane.revoked .sp i, .lane.catching-up .sp i, .lane.reconnecting .sp i { background: var(--spark-idle); box-shadow: none; }
+/* the lane's hour as a wave (.spw, below): the chart's light under a soft line, the newest step lit while the lane is live; an idle lane's wave is quiet, a silent or gone lane's dim */
+.lane .sp { display: flex; align-items: flex-end; height: calc(16px * var(--k)); width: 100%; }
+.lane .sp .spw { width: 100%; height: 100%; }
+.lane.idle .sp .spw .line { opacity: .7; }
 .lane .fm { font: 500 calc(12.5px * var(--k)) var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .lane .fm u { text-decoration: none; font-size: calc(12px * var(--k)); margin-right: 3px; color: var(--good); }
 .lane .fm u.dn { color: var(--quiet); }
@@ -519,6 +527,10 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .lane .do.warn { color: var(--warn); font-weight: 500; }
 .lane .do.quiet, .lane.idle .do { color: var(--quiet); }
 .lane .do .k { font: 500 calc(12px * var(--k)) var(--sans); color: var(--ink); }
+/* under partial coverage the counts are a floor, marked with the figure; the time sharing began sits quiet beside a void word */
+.lane .do .part { margin-left: 1px; }
+.lane .do em.since { font-style: normal; color: var(--quiet); }
+.agent-foot .floor { color: var(--warn); }
 .lane .la { font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .lane.live .la { color: var(--ink2); }
 .agent-tree[hidden] { display: none; }
@@ -665,20 +677,18 @@ table.grid .models .split i { display: block; height: 100%; background: var(--in
 table.grid .models .split i:nth-child(2) { opacity: .6; } table.grid .models .split i:nth-child(3) { opacity: .36; } table.grid .models .split i:nth-child(4) { opacity: .2; }
 table.grid .models .names { font: 400 calc(12px * var(--k)) var(--mono); color: var(--quiet); white-space: nowrap; }
 table.grid .models .names b { color: var(--ink2); font-weight: 400; }
-/* a person's or a machine's last hour, drawn from its own sessions */
-table.grid .sp { display: inline-flex; align-items: flex-end; gap: 2px; height: calc(16px * var(--k)); width: calc(72px * var(--k)); vertical-align: middle; }
-table.grid .sp i { flex: 1; min-width: 2px; border-radius: 1px; background: var(--spark); height: 6%; }
-table.grid .sp i.hot { background: var(--spark-hot); box-shadow: 0 0 6px var(--cobalt-edge); }
-table.grid tr.silent .sp i, table.grid tr.revoked .sp i { background: var(--spark-idle); box-shadow: none; }
-table.grid .sp.none { font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); align-items: center; }
-/* a row's activity over the chosen period: a small wave from the hub's own per-row series at the chart's resolution */
-table.grid .spw { display: inline-block; width: calc(76px * var(--k)); height: calc(16px * var(--k)); vertical-align: middle; overflow: visible; }
-table.grid .spw .area { fill: url(#wg); }
-table.grid .spw .line { fill: none; stroke: var(--spark); stroke-width: 1.1; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
-table.grid .spw.hot .line { stroke: var(--spark-hot); }
-table.grid .spw.hot .now { fill: var(--spark-hot); }
-table.grid tr.silent .spw .line, table.grid tr.revoked .spw .line { stroke: var(--spark-idle); }
-table.grid tr.silent .spw .area, table.grid tr.revoked .spw .area { opacity: .3; }
+/* a row's activity as a wave — a person's, a machine's, a project's, a lane's, the inspector's hour: the hub's own per-row series at
+   the chart's resolution where it sends one, the last hour from its sessions where it does not; the same grammar as the chart above,
+   a soft line over the chart's light. Nothing in the window is a flat dotted baseline with its reason, never a zero wave. */
+table.grid .sp.none { display: inline-flex; align-items: center; height: calc(16px * var(--k)); font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); }
+.spw { display: inline-block; width: calc(76px * var(--k)); height: calc(16px * var(--k)); vertical-align: middle; overflow: visible; }
+.spw .area, .ispark .area { fill: url(#wg); }
+.spw .line, .ispark .line { fill: none; stroke: var(--spark); stroke-width: 1.25; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.spw.hot .line, .ispark.hot .line { stroke: var(--spark-hot); }
+.spw .now, .ispark .now { fill: none; stroke: var(--spark-hot); stroke-width: 3.5; stroke-linecap: round; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 3px var(--cobalt-edge)); }
+.spw.dim .line, .ispark.dim .line, table.grid tr.silent .spw .line, table.grid tr.revoked .spw .line { stroke: var(--spark-idle); }
+.spw.dim .area, .ispark.dim .area, table.grid tr.silent .spw .area, table.grid tr.revoked .spw .area { opacity: .3; }
+.spw.none .base, .ispark.none .base { stroke: var(--quiet); stroke-width: 1; stroke-dasharray: 1.5 3; vector-effect: non-scaling-stroke; opacity: .75; }
 .status { display: inline-flex; align-items: center; gap: 7px; font: 400 calc(12.5px * var(--k)) var(--sans); color: var(--quiet); white-space: nowrap; flex-wrap: wrap; row-gap: 0; }
 .status i { width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--quiet); flex: none; }
 /* the dot carries the state; the words stay in ink so nothing reads as a link */
@@ -686,6 +696,9 @@ table.grid tr.silent .spw .area, table.grid tr.revoked .spw .area { opacity: .3;
 .status.reporting i { background: var(--good); box-shadow: 0 0 6px var(--good-glow); }
 body[data-demo="true"] .status.reporting i { background: var(--lit); box-shadow: 0 0 6px var(--cobalt-edge); }
 .status .lk { flex-basis: 100%; padding-left: 14px; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); line-height: 1.2; }
+/* what the machine shares: on the status line when it shares everything, on a line of its own in warn when it does not; refused future-dated entries a line of their own */
+.status .sh { font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); }
+.status .lk.sh.w, .status .lk.flag { color: var(--warn); }
 .status.silent { color: var(--warn); }
 .status.silent i { box-shadow: inset 0 0 0 1px var(--warn); }
 .status.catching-up, .status.reconnecting, .status.waiting { color: var(--warn); }
@@ -820,10 +833,10 @@ dialog.sheet.dock[open] { animation: dockin .2s var(--ease); }
 .inspect .ikv .v .u { font: 400 12px var(--sans); color: var(--quiet); }
 .inspect .ikv .v.warn, .context-details .ikv .v.warn { color: var(--warn); }
 .inspect .ikv .l, .context-details .ikv .l { font: 500 12px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--quiet); margin-top: 3px; }
-.inspect .ispark, .context-details .ispark { display: flex; align-items: flex-end; gap: 2px; height: 44px; padding: 6px 6px 0; border-radius: 6px; background: var(--tile2); box-shadow: var(--inset); }
-.inspect .ispark i, .context-details .ispark i { flex: 1; min-width: 3px; border-radius: 1px; background: var(--spark); }
-.inspect .ispark i.hot, .context-details .ispark i.hot { background: var(--spark-hot); box-shadow: 0 0 6px var(--cobalt-edge); }
-.inspect .ispark.dim i { background: var(--spark-idle); }
+/* the inspector's last hour: the row wave, taller, sunk into its tile */
+.isparkwrap { padding: 6px 6px 0; border-radius: 6px; background: var(--tile2); box-shadow: var(--inset); }
+.ispark { display: block; width: 100%; height: 44px; overflow: visible; }
+.inspect .iline b.w { color: var(--warn); }
 .inspect .ihead, .context-details .ihead { display: flex; align-items: baseline; gap: 10px; margin-top: 4px; padding-bottom: 4px; border-bottom: 1px solid var(--hair2); font: 500 12px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); }
 .inspect .ihead span, .context-details .ihead span { margin-left: auto; font: 400 12px var(--sans); letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
 .inspect .mrow { grid-template-columns: 120px auto 1fr 60px 64px; }
@@ -955,7 +968,6 @@ body[data-present] .conhead .count { visibility: hidden; }
   .console { grid-template-columns: calc(296px * var(--k)) 1fr calc(324px * var(--k)); }
   .console > .col { padding-left: calc(12px * var(--k)); padding-right: calc(12px * var(--k)); }
   .conhead .scan { display: none; }
-  .speclegend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .specmodels .srow { grid-template-columns: calc(90px * var(--k)) 1fr calc(60px * var(--k)); }
 }
 /* below 1024 the page scrolls as a document and the band stacks: the figure and the breakdown side by side, the wave under them */
@@ -965,7 +977,6 @@ body[data-present] .conhead .count { visibility: hidden; }
   .console > .col.flow { grid-column: 1 / -1; order: 3; }
   .console.two > .col.spectrum { grid-column: 1 / -1; order: 3; }
   .conhead .count, .conhead .scan { display: none; }
-  .speclegend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .canvas { overflow: visible; }
 }
 @media (max-width: 760px) {
@@ -1012,7 +1023,6 @@ body[data-present] .conhead .count { visibility: hidden; }
   .cap .peak, .cap .capr { flex-basis: 100%; }
   .cap .seg { width: 100%; }
   .cap .seg button { flex: 1; }
-  .speclegend { grid-template-columns: 1fr; }
   .attention .ahead { font-size: 18px; }
   .attention .afoot { white-space: normal; flex-wrap: wrap; overflow: visible; }
   .mfoot { white-space: normal; }

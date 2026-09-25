@@ -98,20 +98,23 @@
     }
     return out;
   }
-  const sparkBars = (spark, hot, cls = "sp") => {
-    const top = Math.max(...spark, 1);
-    return `<span class="${cls}" aria-hidden="true">${spark.map((v, k) => `<i style="height:${(v > 0 ? 9 + (v / top) * 91 : 5).toFixed(0)}%"${hot && k === spark.length - 1 && v > 0 ? ' class="hot"' : ""}></i>`).join("")}</span>`;
-  };
-  /* A row's activity over the period as a small wave: the hub's own per-row series at the chart's resolution
-     (3 min, 15 min, 2 h, a day), so a Team or Projects row follows the period control like the chart above it. */
-  const sparkWave = (spark, hot, title = "") => {
-    const vals = spark && Array.isArray(spark.tokens) ? spark.tokens : null;
-    if (!vals || vals.length < 2) return `<span class="sp none" title="${esc(title || "No activity in the period")}">—</span>`;
-    const W = 76, H = 16, top = Math.max(...vals, 1);
-    const pts = vals.map((v, i) => [(i / (vals.length - 1)) * W, H - 1 - (Math.max(0, v) / top) * (H - 3)]);
+  /* A row's activity as a small wave, the same grammar as the chart above it: a soft line over a gradient fill.
+     Team and Projects rows draw the hub's own per-row series at the period's resolution (3 min, 15 min, 2 h, a day),
+     so they follow the period control; a lane and the inspector draw the last hour in three-minute steps. A row with
+     nothing in the window is a flat dotted baseline with its reason, never a zero wave; a row whose machine is
+     silent or gone is drawn dim. The title carries the figure and the window. */
+  const sparkWave = (spark, hot, title = "", { dim = false, W = 76, H = 16, cls = "spw", hidden = false } = {}) => {
+    const vals = spark && Array.isArray(spark.tokens) ? spark.tokens : Array.isArray(spark) ? spark : null;
+    const aria = hidden ? `aria-hidden="true"` : `role="img" aria-label="${esc(title || "No activity in the period")}"`;
+    if (!vals || vals.length < 2 || !vals.some((v) => v > 0)) {
+      return `<svg class="${cls} none${dim ? " dim" : ""}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" ${aria}><title>${esc(title || "No activity in the period")}</title><line class="base" x1="0" x2="${W}" y1="${(H - 1.5).toFixed(1)}" y2="${(H - 1.5).toFixed(1)}"/></svg>`;
+    }
+    const top = Math.max(...vals, 1);
+    const pts = vals.map((v, i) => [(i / (vals.length - 1)) * W, H - 1.5 - (Math.max(0, v) / top) * (H - 4)]);
     const line = smooth(pts);
     const all = vals.reduce((a, b) => a + b, 0);
-    return `<svg class="spw${hot ? " hot" : ""}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(title || fmt(all) + " tokens over the period")}"><title>${esc(title || fmt(all) + " tokens over the period")}</title><path class="area" d="${line}L${W} ${H}L0 ${H}Z"/><path class="line" d="${line}"/>${hot ? `<circle class="now" cx="${W}" cy="${pts[pts.length - 1][1].toFixed(1)}" r="1.6"/>` : ""}</svg>`;
+    const text = title || fmt(all) + " tokens over the period";
+    return `<svg class="${cls}${hot ? " hot" : ""}${dim ? " dim" : ""}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" ${aria}><title>${esc(text)}</title><path class="area" d="${line}L${W} ${H}L0 ${H}Z"/><path class="line" d="${line}"/>${hot ? `<path class="now" d="M${W} ${pts[pts.length - 1][1].toFixed(1)}h0"/>` : ""}</svg>`;
   };
   /* A line of ordered parts that never ellipsizes meaning: each part carries a priority; when the line does not fit its box,
      the least important parts drop whole until it does, and the element carries the whole line on hover. */
@@ -708,26 +711,52 @@
   const DOING_LONG = { loop: "repeated tool call", spike: "burn spike", stall: "spending without progress" };
   const TOOL_KIND = { read: "Read", edit: "Edit", shell: "Shell", search: "Search", web: "Web", agent: "Agent", mcp: "MCP", other: "Tool" };
   const TOOL_VERB = { read: "reading", edit: "editing", shell: "running commands", search: "searching", web: "fetching", agent: "delegating", mcp: "calling MCP", other: "working" };
+  /* How much of a window a machine's sharing covers (docs/COLLECTOR-CONTRACT.md, "What the console shows for them"):
+     complete is the only state a zero may be drawn in; partial makes what is held a floor and what is not held
+     unavailable; off, undeclared and unknown are voids, each with the reporter's own reason. */
+  const COVERAGE_WHY = {
+    "console-restarted": (since) => `The console restarted at ${hhmm(since)} and keeps these counts in memory: before then they are not held`,
+    "sharing-started": (since) => `This machine began sharing at ${hhmm(since)}: nothing from before is held`,
+    "sharing-off": () => "This machine's reporter runs without sharing it (--share-tool-activity, --share-alerts): unknown, not none",
+    "reporter-undeclared": () => "This machine runs an older reporter that does not say whether it shares: unknown, not none",
+    "not-heard": (since) => `Nothing from this machine's reporter since the console started${since ? " at " + hhmm(since) : ""}: unknown, not none`,
+  };
+  const COVERAGE_WORD = { "console-restarted": "not held", "sharing-started": "not held", "sharing-off": "not shared", "reporter-undeclared": "not declared", "not-heard": "not heard" };
+  // Why "no alert" is known only since a time (alertsCoverage.since): the hour is held only from then.
+  const SINCE_WHY = { "console-restarted": "the console restarted then and holds no alert from before", "sharing-started": "a watched machine began sharing then; nothing from before is held" };
+  // A coverage's reason in words, for a hover: the reporter's fixed reason, or the state alone when it names none.
+  const coverageWhy = (c) => (c && COVERAGE_WHY[c.reason] ? COVERAGE_WHY[c.reason](c.since) : c && c.state === "complete" ? "Shared for the whole window" : "Coverage unknown: not sent by this hub");
+  // A lane's tool-activity coverage: the hub's own field, or what a 0.4-pre hub's activityShared implies.
+  const activityCoverageOf = (l) => l.activityCoverage || (l.activityShared === false ? { state: "off", since: null, reason: "sharing-off" } : l.activityShared === true ? { state: "complete", since: null, reason: null } : { state: "unknown", since: null, reason: "not-heard" });
+  const activityState = (l) => activityCoverageOf(l).state;
+  const activityWhy = (l) => coverageWhy(activityCoverageOf(l));
+  // Under partial coverage, the counts held are a floor: the mark travels with the figure, the reason on hover.
+  const activityFloor = (l) => activityState(l) === "partial" && Boolean(l.activity && l.activity.calls);
   function doingOf(l, now) {
     if (l.state === "silent" || l.state === "revoked") return ["since " + hhmm(l.device.lastContactAt || l.lastAt), "quiet", "The machine's last report; what the lane has done since is unknown"];
     if (l.state === "catching-up" || l.state === "reconnecting") return ["unknown", "quiet", "Not known until the machine has sent its backlog"];
     const alert = (D.alerts || []).filter((a) => a.laneHash && a.laneHash.slice(0, 16) === l.key && !a.historical).sort((a, b) => b.at - a.at)[0];
     if (alert && now - alert.at < 60 * 60_000) return [`▲ ${DOING_KIND[alert.kind] || "alert"} ${hhmm(alert.at)}`, "warn", `${DOING_LONG[alert.kind] || "Alert"} · ${alertCause(alert)}`];
     if (l.state === "idle") return ["idle " + ago(l.lastAt, now).replace(" ago", ""), "quiet", "No tokens since " + hhmm(l.lastAt)];
-    // tool activity: what the machine shares, as kinds and counts — a machine that does not share it is marked, not shown as idle
-    if (l.activityShared === false) return ["tool not shared", "quiet", "This machine's reporter does not send tool activity (--share-tool-activity is off there); the lane may well be busy"];
+    // tool activity: what the machine shares, as kinds and counts — a machine whose sharing does not cover the window is
+    // marked with the reporter's reason, never shown as idle; counts held under partial coverage are a floor, marked +
+    const cov = activityCoverageOf(l);
     const act = l.activity && l.activity.calls ? l.activity : null;
+    if (cov.state !== "complete" && cov.state !== "partial") return [`tool ${COVERAGE_WORD[cov.reason] || "unknown"}`, "quiet", `${activityWhy(l)}; the lane may well be busy`];
+    if (cov.state === "partial" && !act) return [`tool ${COVERAGE_WORD[cov.reason] || "not held"}${cov.since ? ` <em class="since">since ${hhmm(cov.since)}</em>` : ""}`, "quiet", `${activityWhy(l)}; its recent tools are unavailable, not idle`];
     if (act) {
       const calls = Object.values(act.calls).reduce((a, b) => a + (b || 0), 0);
       const res = act.results || { ok: 0, error: 0 };
       const perMin = calls / 5;
-      const shellErr = act.calls.shell && res.error > 0 && res.error >= Math.max(1, Math.round(act.calls.shell / 2)) ? `${TOOL_KIND.shell.toLowerCase()} failing ${res.error}/${res.error + res.ok}` : null;
+      const floor = cov.state === "partial";
+      const mark = floor ? `<em class="part" title="${esc(activityWhy(l))}">+</em>` : "";
+      const shellErr = act.calls.shell && res.error > 0 && res.error >= Math.max(1, Math.round(act.calls.shell / 2)) ? `${TOOL_KIND.shell.toLowerCase()} failing ${res.error}/${res.error + res.ok}${mark}` : null;
       const lead = l.lastTool && l.lastTool.kind ? `<span class="k">${esc(TOOL_KIND[l.lastTool.kind] || "Tool")}</span> · ${esc(ago(l.lastTool.at, now).replace(" ago", "").replace(/ (s|min|h)$/u, "$1"))}` : null;
       const kinds = Object.entries(act.calls).filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1]);
-      const why = `Last five minutes on this machine: ${kinds.map(([k, c]) => `${c} ${TOOL_KIND[k] || k}`).join(", ") || "no tool call"} · ${res.ok} ok, ${res.error} error · kinds and counts only, never a name, an argument or a path`;
+      const why = `Last five minutes on this machine: ${kinds.map(([k, c]) => `${c} ${TOOL_KIND[k] || k}`).join(", ") || "no tool call"} · ${res.ok} ok, ${res.error} error${floor ? ` · a floor: held only since ${hhmm(cov.since)} (${activityWhy(l).replace(/^./u, (c) => c.toLowerCase())})` : ""} · kinds and counts only, never a name, an argument or a path`;
       if (shellErr) return [`${lead ? lead + " · " : ""}${shellErr}`, "warn", why];
-      if (lead) return [`${lead}${calls ? ` · ${perMin >= 1 ? Math.round(perMin) : perMin.toFixed(1)}/min` : ""}`, "", why];
-      if (calls) return [`${TOOL_VERB[kinds[0][0]] || "working"} · ${perMin >= 1 ? Math.round(perMin) : perMin.toFixed(1)} calls/min`, "", why];
+      if (lead) return [`${lead}${calls ? ` · ${perMin >= 1 ? Math.round(perMin) : perMin.toFixed(1)}/min${mark}` : mark}`, "", why];
+      if (calls) return [`${TOOL_VERB[kinds[0][0]] || "working"} · ${perMin >= 1 ? Math.round(perMin) : perMin.toFixed(1)} calls/min${mark}`, "", why];
     }
     if (l.agents.live) return [`${l.agents.live} of ${l.agents.total} subagents`, "", "Subagents that reported in the last five minutes"];
     const brk = (l.context?.breaks || []).slice(-1)[0];
@@ -748,7 +777,7 @@
     row.tabIndex = -1;
     row.dataset.key = l.key;
     row.innerHTML = `<span class="st"><i></i><span></span><span class="stamp sm" title="Generated: nothing was read from any machine">DEMO</span></span><span class="pr"><b></b><em></em></span><span class="md"></span>
-      <span class="sp" aria-hidden="true">${"<i></i>".repeat(20)}</span><span class="fm r" data-src="lanes.tokens5m"></span>
+      <span class="sp" aria-hidden="true"></span><span class="fm r" data-src="lanes.tokens5m"></span>
       <span class="nums"><span class="num in r" data-l="in" data-src="lanes.tokensDayByClass.fresh"></span><span class="num out r" data-l="out" data-src="lanes.tokensDayByClass.output"></span><span class="num tot r" data-l="24 h" data-src="lanes.tokensDay"></span><span class="num usd r" data-l="est." data-src="lanes.costDay.usd" data-internal></span></span>
       <span class="ag r"><button type="button" aria-expanded="false"><span class="l">agents</span><span class="v"></span></button></span>
       <span class="cx r"><button type="button"><span class="l">context</span><span class="v"></span></button></span><span class="do" data-src="lanes.state"></span><span class="dv"></span><span class="la r" data-src="lanes.lastAt"></span>`;
@@ -831,15 +860,16 @@
     row.querySelector(".md").innerHTML = toolChip(l.tool) + vendorMark(vendorOf(l.model)) + `<span class="mname">${esc(l.modelLabel)}</span>`;
     row.querySelector(".md").title = `${l.model} · ${TOOL[l.tool] || l.tool}`;
     row.setAttribute("aria-label", `${projectName}${branchName ? " · " + branchName : ""} · ${word.toLowerCase()} · ${l.tokensDay == null ? "tokens unknown" : fmt(l.tokensDay) + " tokens today"}: open`);
-    // Normalised to the lane's own hour — the shape is the information; the
-    // absolute level is the five-minute figure beside it.
-    const bars = row.querySelectorAll(".sp i");
-    const top = Math.max(...l.spark, 1);
-    bars.forEach((bar, k) => {
-      const v = l.spark[k] || 0;
-      bar.style.height = (v > 0 ? 9 + (v / top) * 91 : 5).toFixed(0) + "%";
-      bar.classList.toggle("hot", k === bars.length - 1 && v > 0 && l.state === "live");
-    });
+    // The lane's own hour as a wave, normalised to its own peak — the shape is the information; the absolute
+    // level is the five-minute figure beside it. Nothing in the hour is a dotted baseline, never a zero wave.
+    const hour = l.spark.reduce((a, b) => a + b, 0);
+    const sparkKey = l.spark.join(",") + "|" + l.state;
+    if (row._sparkKey !== sparkKey) {
+      row._sparkKey = sparkKey;
+      row.querySelector(".sp").innerHTML = sparkWave({ tokens: l.spark }, l.state === "live" && l.spark[l.spark.length - 1] > 0,
+        hour > 0 ? `${fmt(hour)} tokens in the last hour, three-minute steps` : l.state === "live" || l.state === "idle" ? "Nothing in the last hour" : "Nothing reported in the last hour; the machine is " + l.state.replace("-", " "),
+        { dim: l.state !== "live" && l.state !== "idle", hidden: true });
+    }
     const fm = row.querySelector(".fm");
     if (l.tokens5m === null) {
       fm.textContent = "—";
@@ -887,8 +917,8 @@
     const res = l.activity && l.activity.results ? l.activity.results : null;
     const unknownN = tree.filter((agent) => agent.outcome === "unknown").length;
     row._tree.innerHTML = tree.map((agent, index) => `<div class="agent-node" style="--depth:${Math.min(agent.depth, 8)}" title="${esc(observedSpan(agent.durationMinutes))}"><span class="who">${index === 0 ? 'Orchestrator' : '↳ Subagent'}${agent.firstAt ? `<b>${hhmm(agent.firstAt)}</b>` : ""}</span><span class="agent-model">${vendorMark(vendorOf(agent.model))}${esc(agent.modelLabel)}</span><span class="abar">${agent.tokens == null ? '<span>tokens unavailable</span>' : `<i><b style="width:${Math.min(100, Math.round((agent.tokens / laneTotalTokens) * 100))}%"></b></i><span>${fmt(agent.tokens)}</span>`}</span><span>${agent.tokens == null ? '—' : pct(agent.tokens / laneTotalTokens, 0) + ' of lane'}</span><span>${agent.outcome === 'unknown' ? esc(observedSpan(agent.durationMinutes)) : esc(agent.outcome)}</span></div>`).join('')
-      + (res ? `<div class="agent-foot">Tool results in the last five minutes, this lane: <span class="ok">${res.ok} ok</span> · <span class="${res.error ? "err" : ""}">${res.error} error</span>${unknownN ? " · the transcripts carry usage, not each agent's result" : ""}</div>`
-        : unknownN ? `<div class="agent-foot">${unknownN === tree.length ? "Every" : unknownN} outcome unknown · no result recorded: the transcripts carry usage, not results${l.activityShared === false ? "; this machine does not share tool results" : ""}.</div>` : "");
+      + (res ? `<div class="agent-foot">Tool results in the last five minutes, this lane: <span class="ok">${res.ok} ok</span> · <span class="${res.error ? "err" : ""}">${res.error} error</span>${activityFloor(l) ? ` · <span class="floor" title="${esc(activityWhy(l))}">a floor: held since ${hhmm(l.activityCoverage.since)}</span>` : ""}${unknownN ? " · the transcripts carry usage, not each agent's result" : ""}</div>`
+        : unknownN ? `<div class="agent-foot">${unknownN === tree.length ? "Every" : unknownN} outcome unknown · no result recorded: the transcripts carry usage, not results${activityState(l) !== "complete" ? `; ${esc(activityWhy(l).replace(/^./u, (c) => c.toLowerCase()))}` : ""}.</div>` : "");
     // What the lane is doing now, from what the hub knows; the whole of it on hover.
     const [doing, doingCls, doingWhy] = doingOf(l, now);
     const doEl = row.querySelector(".do");
@@ -973,7 +1003,9 @@
     chip.title = (D.hub.demo ? "Generated alerts. " : "Live alerts in the last hour, dated by their own lines. ") + "Open the panel.";
     const shown = alertsOpen ? all : all.slice(0, ALERT_SHOWN);
     const cov = D.alertsCoverage || null;
-    $("alertShown").textContent = (shown.length < all.length ? `${shown.length} of ${all.length} shown · ` : "") + (cov && cov.unwatched > 0 ? `${cov.watched} of ${cov.watched + cov.unwatched} machines watched · last hour` : "every machine · last hour");
+    // the window is the hour only when every watched machine's alerts are held for the whole of it; otherwise it is known since alertsCoverage.since
+    $("alertShown").textContent = (shown.length < all.length ? `${shown.length} of ${all.length} shown · ` : "") + (cov && cov.unwatched > 0 ? `${cov.watched} of ${cov.watched + cov.unwatched} machines watched` : "every machine") + (cov && Number.isFinite(cov.since) ? ` · known since ${hhmm(cov.since)}` : " · last hour");
+    $("alertShown").title = cov && Number.isFinite(cov.since) ? `Alerts are held only since ${hhmm(cov.since)}: ${SINCE_WHY[cov.reason] || "unknown before"}` : "";
     const more = $("alertMore");
     more.hidden = all.length <= ALERT_SHOWN;
     more.textContent = alertsOpen ? "Show fewer" : `${all.length - ALERT_SHOWN} more`;
@@ -992,18 +1024,25 @@
     const W = 520, H = 18, span = 60 * 60_000;
     const ticks = alerts.filter((a) => now - a.at < span).map((a) => { const x = ((a.at - (now - span)) / span) * W; return `<rect class="tick" x="${(x - 1.5).toFixed(1)}" y="3" width="3" height="${H - 6}" rx="1"><title>${esc(ALERT_LABEL[a.kind] || "Alert")} · ${hhmm(a.at)}</title></rect>`; });
     const gap = D.silentSince && D.silentSince > now - span ? `<rect class="gap" x="${(((D.silentSince - (now - span)) / span) * W).toFixed(1)}" y="0" width="${(W - ((D.silentSince - (now - span)) / span) * W).toFixed(1)}" height="${H}"/>` : "";
-    $(svgId).innerHTML = `<line class="base" x1="0" x2="${W}" y1="${H - 0.5}" y2="${H - 0.5}"/>` + gap + ticks.join("");
-    $(capId).textContent = ticks.length ? plural(ticks.length, "alert") : "no alert";
-    $(capId).title = D.silentSince && D.silentSince > now - span ? `Hatched from ${hhmm(D.silentSince)}: a machine went silent, so alerts from it cannot be known` : "One tick per alert in the last sixty minutes";
+    // and hatched up to the time from which alerts are held at all (alertsCoverage.since): before it, quiet is not "no alert"
+    const cov = D.alertsCoverage || null;
+    const known = cov && Number.isFinite(cov.since) && cov.since > now - span ? cov.since : null;
+    const before = known ? `<rect class="gap unknown" x="0" y="0" width="${(((known - (now - span)) / span) * W).toFixed(1)}" height="${H}"><title>Before ${hhmm(known)} alerts are not held: ${esc(SINCE_WHY[cov.reason] || "unknown")}</title></rect>` : "";
+    $(svgId).innerHTML = `<line class="base" x1="0" x2="${W}" y1="${H - 0.5}" y2="${H - 0.5}"/>` + before + gap + ticks.join("");
+    $(capId).textContent = (ticks.length ? plural(ticks.length, "alert") : "no alert") + (known ? ` · since ${hhmm(known)}` : "");
+    $(capId).title = [known ? `Hatched to ${hhmm(known)}: alerts are held only from then (${SINCE_WHY[cov.reason] || "unknown before"})` : "",
+      D.silentSince && D.silentSince > now - span ? `Hatched from ${hhmm(D.silentSince)}: a machine went silent, so alerts from it cannot be known` : "One tick per alert in the last sixty minutes"].filter(Boolean).join(" · ");
   }
   /* The Team canvas lists today's alerts, live and earlier, each named for its machine. */
   function paintTeamAlerts() {
     const all = D.alerts || [];
     const live = liveAlerts().length;
     const cov = D.alertsCoverage || null;
-    $("teamAlertCount").textContent = (all.length ? `${plural(all.length, "alert")} · ${live} live` : "none today") + (cov && cov.unwatched > 0 ? ` · ${plural(cov.unwatched, "machine")} not watched` : "");
-    $("teamAlertCount").title = cov && cov.unwatched > 0 ? `${cov.unwatchedDevices.map((id) => pn("machine", (deviceOf(id) || { label: id }).label)).join(", ")}: the reporter there does not share alerts (--share-alerts is off), so their silence is not "no alert"` : "Every current machine shares its alerts";
-    $("teamAlerts").innerHTML = all.length ? all.map((a) => alertRow(a, Boolean(a.historical))).join("") : `<div class="none">No alert has been raised today${cov && cov.unwatched > 0 ? ` on the ${plural(cov.watched, "watched machine")}` : ""}.</div>`;
+    const known = cov && Number.isFinite(cov.since) ? cov.since : null;
+    $("teamAlertCount").textContent = (all.length ? `${plural(all.length, "alert")} · ${live} live` : "none today") + (cov && cov.unwatched > 0 ? ` · ${plural(cov.unwatched, "machine")} not watched` : "") + (known ? ` · known since ${hhmm(known)}` : "");
+    $("teamAlertCount").title = [cov && cov.unwatched > 0 ? `${cov.unwatchedDevices.map((id) => pn("machine", (deviceOf(id) || { label: id }).label)).join(", ")}: the reporter there does not share alerts (--share-alerts is off), so their silence is not "no alert"` : "Every current machine shares its alerts",
+      known ? `held only since ${hhmm(known)}: ${SINCE_WHY[cov.reason] || "unknown before"}` : ""].filter(Boolean).join(" · ");
+    $("teamAlerts").innerHTML = all.length ? all.map((a) => alertRow(a, Boolean(a.historical))).join("") : `<div class="none">No alert ${known ? `held since ${hhmm(known)}` : "has been raised today"}${cov && cov.unwatched > 0 ? ` on the ${plural(cov.watched, "watched machine")}` : ""}.</div>`;
   }
 
   // ── attention: the one thing that needs it ───────────────────────────
@@ -1023,6 +1062,8 @@
     const unpriced = w.cost.status === "partial" || w.cost.status === "unpriced" ? w.cost.unpricedModels : [];
     const cov = D.alertsCoverage || null;
     const unwatched = cov && cov.unwatched > 0 ? cov.unwatched : 0;
+    // "no alert" is known only from this time (H03): before it a watched machine's alerts are not held
+    const known = cov && Number.isFinite(cov.since) ? cov.since : null;
     const current = currentDevices().length;
     let head, line, foot, hot = true;
     if (top) {
@@ -1048,12 +1089,15 @@
       foot = "Its figures are incomplete until the backlog is in.";
       hot = false;
     } else {
-      // "no alert" is only said for the machines that are watched; the others are named as not watched, never read as quiet
-      head = !D.devices.length ? "No machine yet" : unwatched ? `No alert on ${cov.watched === 1 && D.devices.some((d) => d.local && cov.watched) ? "this machine" : plural(cov.watched, "watched machine")}` : "Nothing needs attention";
+      // "no alert" is only said for the machines that are watched, and only from the time their alerts are held; the others
+      // are named as not watched, never read as quiet
+      const unwatchedNames = unwatched ? cov.unwatchedDevices.map((id) => pn("machine", (deviceOf(id) || { label: id }).label)).join(", ") : "";
+      head = !D.devices.length ? "No machine yet" : known ? `No alert since ${hhmm(known)}` : unwatched ? `No alert on ${cov.watched === 1 && D.devices.some((d) => d.local && cov.watched) ? "this machine" : plural(cov.watched, "watched machine")}` : "Nothing needs attention";
       line = !D.devices.length ? "Add a machine, or run the console where Claude Code or Codex transcripts are."
-        : unwatched ? `${plural(unwatched, "machine")} not watched: <em>${esc(cov.unwatchedDevices.map((id) => pn("machine", (deviceOf(id) || { label: id }).label)).join(", "))}</em> · every model priced, every machine reporting.`
+        : known ? `<em>${esc(SINCE_WHY[cov.reason] || "alerts are held only since then")}</em>${unwatched ? ` · ${plural(unwatched, "machine")} not watched: <em>${esc(unwatchedNames)}</em>` : " · every model priced, every machine reporting"}.`
+        : unwatched ? `${plural(unwatched, "machine")} not watched: <em>${esc(unwatchedNames)}</em> · every model priced, every machine reporting.`
         : "No alert in the last hour, every model priced, every machine reporting.";
-      foot = unwatched ? "A reporter shares its alerts only with --share-alerts; until then its silence is not \"no alert\"." : "";
+      foot = known ? `Before ${hhmm(known)} the watched machines' alerts are not held, so their quiet is not "no alert".` : unwatched ? "A reporter shares its alerts only with --share-alerts; until then its silence is not \"no alert\"." : "";
       hot = false;
     }
     box.classList.toggle("hot", hot);
@@ -1061,17 +1105,18 @@
     $("attnLine").innerHTML = line;
     $("attnLine").title = $("attnLine").textContent;
     $("attnFoot").innerHTML = foot;
-    // "0 alerts · last hour" is only said when every current machine is watched; otherwise the count names its coverage.
-    const stat = cov && unwatched ? [`<b>${alerts.length}</b> ${alerts.length === 1 ? "alert" : "alerts"} · ${cov.watched} of ${current} watched`] : [`<b>${alerts.length}</b> ${alerts.length === 1 ? "alert" : "alerts"} · last hour`];
-    if (unpriced.length) stat.push(`<span class="tag" title="${esc(unpriced.join(", "))}">${unpriced.length} unpriced</span>`);
-    if (silent.length && top) stat.push(`<b>${silent.length}</b> silent`);
-    if (catching.length && (top || unpriced.length || silent.length)) stat.push(`<b>${catching.length}</b> catching up`);
-    $("attnStat").innerHTML = stat.join(" · ");
-    $("attnStat").title = cov ? `${cov.watched} of ${current} current machines share their alerts${unwatched ? `; not watched: ${cov.unwatchedDevices.map((id) => pn("machine", (deviceOf(id) || { label: id }).label)).join(", ")}` : ""}` : "";
+    // "0 alerts · last hour" is only said when every current machine is watched for the whole hour; otherwise the count names its coverage: since when, or how many watched.
+    // ordered parts that drop whole from the least important when the caption is tight, the whole line on hover — never a cut word
+    const stat = [{ html: `<b>${alerts.length}</b> ${alerts.length === 1 ? "alert" : "alerts"}`, pri: 0 }, { html: known ? `since ${hhmm(known)}` : cov && unwatched ? `${cov.watched} of ${current} watched` : "last hour", pri: 1 }];
+    if (unpriced.length) stat.push({ html: `<span class="tag" title="${esc(unpriced.join(", "))}">${unpriced.length} unpriced</span>`, text: `${unpriced.length} unpriced`, pri: 2 });
+    if (silent.length && top) stat.push({ html: `<b>${silent.length}</b> silent`, pri: 3 });
+    if (catching.length && (top || unpriced.length || silent.length)) stat.push({ html: `<b>${catching.length}</b> catching up`, pri: 4 });
+    fitLine($("attnStat"), stat, cov ? ` · ${cov.watched} of ${current} current machines share their alerts${unwatched ? `; not watched: ${cov.unwatchedDevices.map((id) => pn("machine", (deviceOf(id) || { label: id }).label)).join(", ")}` : ""}${known ? `; held only since ${hhmm(known)}: ${SINCE_WHY[cov.reason] || "unknown before"}` : ""}` : "");
     // The other current alerts as compact rows, newest first, each the door to its lane; earlier ones under a rule, never counted as live.
     const rest = alerts.filter((a) => a !== top).sort((a, b) => b.at - a.at);
     const rows = rest.slice(0, 2);
-    const row = (a, cls = "") => { const lane = alertLane(a); return `<div class="arow${cls}" ${lane ? `data-lane="${esc(lane.key)}"` : "data-alerts"} tabindex="0" role="button" title="${lane ? "Open the lane" : "Open the alert list"} · ${esc(alertCause(a))}"><span class="sev" aria-hidden="true"></span><b>${ALERT_LABEL[a.kind] || "Alert"}${lane ? `<em>${esc(pn("project", lane.project.name))}${lane.branch ? " · " + esc(pn("branch", lane.branch)) : ""}</em>` : ""}</b><time>${hhmm(a.at)}${D.hub.demo ? " · DEMO" : ""}</time><span class="cause">${alertCause(a)}</span></div>`; };
+    // one line per row: the kind whole, the lane's name giving way, and the whole of it — kind, lane, cause, time — on the row's hover
+    const row = (a, cls = "") => { const lane = alertLane(a); const name = lane ? `${pn("project", lane.project.name)}${lane.branch ? " · " + pn("branch", lane.branch) : ""}` : ""; return `<div class="arow${cls}" ${lane ? `data-lane="${esc(lane.key)}"` : "data-alerts"} tabindex="0" role="button" title="${esc(ALERT_LABEL[a.kind] || "Alert")}${name ? ` · ${esc(name)}` : ""} · ${esc(alertCause(a))} · ${hhmm(a.at)} · ${lane ? "open the lane" : "open the alert list"}"><span class="sev" aria-hidden="true"></span><b><span>${ALERT_LABEL[a.kind] || "Alert"}</span>${lane ? `<em>${esc(name)}</em>` : ""}</b><time>${hhmm(a.at)}${D.hub.demo ? " · DEMO" : ""}</time><span class="cause">${alertCause(a)}</span></div>`; };
     $("attnList").innerHTML = rows.map((a) => row(a)).join("")
       + (rest.length > rows.length ? `<button type="button" class="more" data-alerts>${rest.length - rows.length} more</button>` : "")
       + (earlier.length && !rest.length ? `<div class="rule">earlier · ${plural(earlier.length, "alert")}</div>` + earlier.slice(0, 2).map((a) => row(a, " earlier")).join("") : "");
@@ -1681,6 +1726,9 @@
     // every row takes its new name at once, not at its own moment inside the poll interval
     for (const rows of [laneRows, coldRows, projLaneRows]) for (const row of rows.values()) row._painted = false;
     if (D) { paintAll(); if (foldFetched.data) paintFold(); if (view === "projects") loadProjects(true); }
+    // an open inspector's address takes the stand-in too, at once
+    if (inspect.open && inspectDialog.open && inspect.kind !== "lane") setHash(`${view}/${inspect.kind}/${idInUrl(inspect.kind, inspect.id)}`);
+    if (addDialog.open) $("peopleList").innerHTML = present ? "" : (D ? D.people : []).map((p) => `<option value="${esc(p.person)}"></option>`).join("");
     toast(present ? "Presenting: names are stand-ins until you press P again." : "Presenting is off: real names are back.");
   }
 
@@ -1721,6 +1769,21 @@
   }
   // The URL carries the view and whatever is open beside it: #team, #team/machine/<id>, #lane/<key>/context, #console/add.
   function setHash(h) { try { history.replaceState(null, "", h ? "#" + h : location.pathname); } catch { /* fine */ } }
+  /* While presenting, the address names what is open by an opaque token of this session's own, never by a person's,
+     a machine's or a project's name (#team/person/<token>): a token is minted once per thing and resolved on the way
+     back, so a shared screen's address bar gives nothing away and the address still opens the same sheet here. */
+  const urlTokens = new Map(), urlBack = new Map();
+  function idInUrl(kind, id) {
+    if (!present) return encodeURIComponent(id);
+    const key = kind + ":" + id;
+    if (!urlTokens.has(key)) {
+      let token;
+      do { token = Math.random().toString(36).slice(2, 8); } while (urlBack.has(token));
+      urlTokens.set(key, token); urlBack.set(token, String(id));
+    }
+    return urlTokens.get(key);
+  }
+  const idFromUrl = (token) => (urlBack.has(token) ? urlBack.get(token) : token);
   /* The opener, remembered by what names it rather than by its node: a lane row by its key, a machine, person or project row by its
      data-inspect, a control by its id — with the cell button inside a row kept too. Rows are repainted while a sheet is open, so the node
      that was clicked is often gone by the time the sheet closes; its successor is found by the same key and takes the focus. */
@@ -1776,6 +1839,22 @@
   const costTitle = (c) => c.status === "none" ? "Nothing to price yet" : c.status === "unpriced" ? "No verified list price for what ran here" : c.status === "partial" ? "List-price estimate; some records are unpriced, so this is a floor" : "List-price estimate. Not an invoice.";
   const deviceOf = (id) => (D ? D.devices.find((d) => d.id === id) || null : null);
   const deviceKey = (l) => l.device.id;
+  /* What a machine shares beyond its records (sharing: alerts over the last hour, tool activity over the last five
+     minutes), in a few words with the reporter's own reason on hover; entries refused for being dated in the future
+     are a quiet flag when there are any. A 0.3 hub sends no sharing: nothing is said, never "shares nothing". */
+  function sharingText(d) {
+    const s = d && d.sharing && d.sharing.alerts && d.sharing.activity ? d.sharing : null;
+    if (!s) return null;
+    const one = (name, c) => (c.state === "complete" ? name : c.state === "partial" ? `${name} since ${hhmm(c.since)}` : `${name} ${COVERAGE_WORD[c.reason] || c.state}`);
+    const same = s.alerts.state === s.activity.state && s.alerts.reason === s.activity.reason && s.alerts.state !== "partial";
+    const text = same ? (s.alerts.state === "complete" ? "shares alerts · tools" : `alerts and tools ${COVERAGE_WORD[s.alerts.reason] || s.alerts.state}`) : `${one("alerts", s.alerts)} · ${one("tools", s.activity)}`;
+    const whole = s.alerts.state === "complete" && s.activity.state === "complete";
+    const title = `Alerts, last hour: ${coverageWhy(s.alerts)}. Tool activity, last five minutes: ${coverageWhy(s.activity)}.`;
+    return { text, title, whole, refused: Number.isFinite(s.rejectedFuture) ? s.rejectedFuture : 0 };
+  }
+  const refusedTitle = (n) => `${plural(n, "entry", "entries")} from this machine dated more than two minutes in the future, refused: counted here, never stored, so nothing from them can become "now" later`;
+  // on the status line when the machine shares everything ("· shares alerts · tools"); on a line of its own, in warn, when it does not
+  const sharingHtml = (d) => { const s = sharingText(d); return s ? `<span class="${s.whole ? "sh" : "lk sh w"}" title="${esc(s.title)}">${s.whole ? "· " : ""}${esc(s.text)}</span>${s.refused ? `<span class="lk flag" title="${esc(refusedTitle(s.refused))}">${plural(s.refused, "entry", "entries")} refused · future-dated</span>` : ""}` : ""; };
   const personOfDevice = (id) => (deviceOf(id) || {}).person || "Unassigned";
   // Machines and people with a current (not removed) machine: the denominators "per machine" and "per person" name.
   const peopleCurrent = () => D.people.filter((p) => p.devices.some((id) => { const d = deviceOf(id); return d && d.status !== "revoked"; }));
@@ -1882,8 +1961,9 @@
     const peopleRows = D.people.slice().sort((a, b) => of(b).tokens.total - of(a).tokens.total);
     const byPerson = sparksBy((l) => personOfDevice(l.device.id));
     // a row's activity over the period: the hub's own per-row series (sparks[period]); a 0.3 hub gives the hour from the lanes' sparks
-    const rowSpark = (x, s, hot, who) => (x.sparks && x.sparks[period] ? sparkWave(x.sparks[period], hot, `${who} · ${fmt(x.sparks[period].tokens.reduce((a, b) => a + b, 0))} tokens over the ${PERIOD_TEXT[period][0]}, ${stepText(x.sparks[period].step)} steps`)
-      : s ? sparkBars(s.spark, hot) : `<span class="sp none">—</span>`);
+    const rowSpark = (x, s, hot, who, dim = false) => (x.sparks && x.sparks[period]
+      ? sparkWave(x.sparks[period], hot, `${who} · ${x.sparks[period].tokens.some((v) => v > 0) ? `${fmt(x.sparks[period].tokens.reduce((a, b) => a + b, 0))} tokens over the ${PERIOD_TEXT[period][0]}, ${stepText(x.sparks[period].step)} steps` : `nothing in the ${PERIOD_TEXT[period][0]}`}`, { dim })
+      : sparkWave({ tokens: s ? s.spark : null }, hot, `${who} · ${s ? fmt(s.spark.reduce((a, b) => a + b, 0)) + " tokens in the last hour" : "no session in the last 24 hours"}`, { dim }));
     $("peopleCount").innerHTML = `${plural(D.people.length, "person", "people")} <span class="win">· ${esc(label)}</span>`;
     $("peopleTable").tBodies[0].innerHTML = D.people.length ? peopleRows.map((p) => {
       const a = of(p);
@@ -1916,8 +1996,8 @@
       return `<tr class="door ${d.status}" data-inspect="machine:${esc(d.id)}" title="${esc(pn("machine", d.label))} · ${esc(joined)}">
         <td class="k1"><button type="button" class="rowbtn" data-inspect="machine:${esc(d.id)}" title="Open ${esc(pn("machine", d.label))} · ${esc(joined)}">${esc(pn("machine", d.label))}</button>${demoStamp()}<span class="sub joined">${d.local ? "the hub itself" : "joined " + new Date(d.createdAt).toLocaleDateString([], { day: "numeric", month: "short" }) + " · " + hhmm(Date.parse(d.createdAt)) + (d.joinedVia === "link" ? " by link" : "")}</span></td>
         <td class="k3" data-l="person">${esc(pn("person", d.person) || "—")}</td>
-        <td class="k3 full"><span class="status ${d.status}"><i></i>${esc(statusText(d, now))}${stale ? `<span class="lk" title="Its figures stopped moving when it did; they stay in the total as its last known reading">last known</span>` : ""}</span></td>
-        <td>${rowSpark(d, s, Boolean(s && s.live > 0 && d.status === "reporting"), pn("machine", d.label))}</td>
+        <td class="k3 full"><span class="status ${d.status}"><i></i>${esc(statusText(d, now))}${stale ? `<span class="lk" title="Its figures stopped moving when it did; they stay in the total as its last known reading">last known</span>` : ""}${sharingHtml(d)}</span></td>
+        <td>${rowSpark(d, s, Boolean(s && s.live > 0 && d.status === "reporting"), pn("machine", d.label), stale)}</td>
         <td class="num r k3" data-l="tokens" data-src="devices.windows.tokens.total" title="${fmt(a.tokens.total)} tokens · ${esc(label)}${stale ? " · last known" : ""}">${fmt(a.tokens.total)}</td><td class="k2">${shareBar(a.shareOfWhole, "devices.windows.shareOfWhole")}</td>
         <td class="num r k3" data-l="cache read" data-src="devices.windows.shares.cacheRead">${pct(a.shares.cacheRead)}</td><td class="num r k3" data-l="cache write" data-src="devices.windows.shares.cacheWrite">${pct(a.shares.cacheWrite)}</td>
         <td>${modelSplit(a.models)}</td><td class="num r k3" data-l="est." data-internal data-src="devices.windows.cost.usd" title="${esc(costWhy)}">${cost.html}</td><td class="r">${action}</td></tr>`;
@@ -2047,8 +2127,8 @@
     for (const cell of document.querySelectorAll("#projTable [data-spark]")) {
       const s = by.get(cell.dataset.spark);
       const x = p && p.projects.find((y) => projectKeyOf(y) === cell.dataset.spark);
-      cell.innerHTML = x && x.spark ? sparkWave(x.spark, Boolean(s && s.live > 0), `${pn("project", x.name)} · ${fmt(x.tokens)} tokens over the ${PERIOD_TEXT[period][0]}, ${stepText(x.spark.step)} steps`)
-        : s ? sparkBars(s.spark, s.live > 0) : `<span class="sp none" title="No session on this project in the period">—</span>`;
+      cell.innerHTML = x && x.spark ? sparkWave(x.spark, Boolean(s && s.live > 0), `${pn("project", x.name)} · ${x.spark.tokens.some((v) => v > 0) ? `${fmt(x.tokens)} tokens over the ${PERIOD_TEXT[period][0]}, ${stepText(x.spark.step)} steps` : `nothing in the ${PERIOD_TEXT[period][0]}`}`)
+        : sparkWave({ tokens: s ? s.spark : null }, Boolean(s && s.live > 0), s ? `${fmt(s.spark.reduce((a, b) => a + b, 0))} tokens in the last hour` : "No session on this project in the period");
     }
     for (const th of document.querySelectorAll("#projTable th.act")) th.textContent = "Activity · " + PERIOD_TEXT[period][1];
     // The sessions behind the projects: this machine's own lanes, by project then by burn, in the Console's row grammar.
@@ -2268,7 +2348,8 @@
   function openAdd() {
     step("form");
     $("addForm").reset();
-    $("peopleList").innerHTML = (D ? D.people : []).map((p) => `<option value="${esc(p.person)}"></option>`).join("");
+    // the people already on the console, to pick from — none while presenting: a name list is a name list, and a stand-in would be sent as the person
+    $("peopleList").innerHTML = present ? "" : (D ? D.people : []).map((p) => `<option value="${esc(p.person)}"></option>`).join("");
     $("loopbackWarn").hidden = !D || D.hub.listen.network || D.hub.demo;
     // The first remote machine needs the console restarted to listen on the
     // network: the exact command, with the options it runs with now.
@@ -2309,7 +2390,8 @@
       const short = (text) => text.replace(/^node -e '[^']*'/u, "node -e '…'");
       $("cmdShown").textContent = short(j.command.replace(secret, "••••••••"));
       $("typedShown").textContent = short(j.typed.replace(j.code, "••••-••••"));
-      const who = [j.invitation.person, j.invitation.machine].filter(Boolean).join("'s ").replace(/'s$/, "") || "them";
+      // the names just typed, through the same stand-ins as every other name while presenting
+      const who = [pn("person", j.invitation.person), pn("machine", j.invitation.machine)].filter(Boolean).join("'s ").replace(/'s$/, "") || "them";
       $("linkSay").innerHTML = j.demo
         ? "This is a demonstration console, so this link cannot actually be used. On a real console, the steps are exactly these."
         : j.network
@@ -2344,7 +2426,7 @@
       const device = D.devices.find((d) => d.id === inv.deviceId);
       const status = $("joinStatus");
       status.className = "waiting done";
-      status.innerHTML = `<i></i>Joined at ${hhmm(Date.parse(inv.usedAt))} — ${esc(device ? device.label : "the machine")}${device && device.person ? " (" + esc(device.person) + ")" : ""} is reporting.`;
+      status.innerHTML = `<i></i>Joined at ${hhmm(Date.parse(inv.usedAt))} — ${esc(device ? pn("machine", device.label) : "the machine")}${device && device.person ? " (" + esc(pn("person", device.person)) + ")" : ""} is reporting.`;
       clearSecret();
     }
   }
@@ -2372,7 +2454,7 @@
   function openInspect(kind, id, from = null) {
     inspect.open = true; inspect.kind = kind; inspect.id = id;
     paintInspect();
-    openSheet(inspectDialog, `${view}/${kind}/${encodeURIComponent(id)}`, from);
+    openSheet(inspectDialog, `${view}/${kind}/${idInUrl(kind, id)}`, from);
   }
   inspectDialog.addEventListener("close", () => { inspect.open = false; });
   document.addEventListener("click", (ev) => {
@@ -2389,8 +2471,9 @@
     if (!c || c.reported === false || c.dropped === null || c.dropped === undefined) return [na("not reported", "Not reported by this machine's reporter version: what it could not count is unknown, not zero", true, true), "not counted", "warn"];
     return [String(c.dropped) + (c.since ? `<span class="u"> since ${esc(new Date(c.since).toLocaleDateString([], { day: "numeric", month: "short" }))}</span>` : ""), "not counted", c.dropped ? "warn" : ""];
   };
+  // The inspector's last hour: the same wave as every row, taller, sunk into its tile.
   const isparkHtml = (s, dim) => s
-    ? `<div class="ispark${dim ? " dim" : ""}" role="img" aria-label="Tokens in the last hour, three-minute steps">${(() => { const top = Math.max(...s.spark, 1); return s.spark.map((v, k) => `<i style="height:${(v > 0 ? 9 + (v / top) * 91 : 5).toFixed(0)}%"${!dim && k === s.spark.length - 1 && v > 0 ? ' class="hot"' : ""}></i>`).join(""); })()}</div>`
+    ? `<div class="isparkwrap">${sparkWave({ tokens: s.spark }, !dim && s.spark[s.spark.length - 1] > 0, s.spark.some((v) => v > 0) ? `${fmt(s.spark.reduce((a, b) => a + b, 0))} tokens in the last hour, three-minute steps` : "Nothing in the last hour", { dim, W: 300, H: 44, cls: "ispark" })}</div>`
     : `<div class="iquiet">No session in the last 24 hours.</div>`;
   const stateWord = (s) => s === "live" ? "LIVE" : s === "idle" ? "IDLE" : s === "revoked" ? "REMOVED" : s === "catching-up" ? "CATCHING UP" : s === "reconnecting" ? "RECONNECTING" : "SILENT";
   const laneList = (lanes, cap = "24 h", total = null) => lanes.length
@@ -2429,15 +2512,19 @@
         const unsaid = !d.coverage || d.coverage.reported === false || d.coverage.dropped === null;
         const lt = D.laneTotals && D.laneTotals.byDevice ? D.laneTotals.byDevice[d.id] : null;
         const watched = D.alertsCoverage && Array.isArray(D.alertsCoverage.unwatchedDevices) ? !D.alertsCoverage.unwatchedDevices.includes(d.id) : null;
+        // this machine's own coverage of the hour (alertsCoverage.byDevice) and what it shares (sharing): "no alert" is claimed only from the time its alerts are held
+        const alertCov = D.alertsCoverage && D.alertsCoverage.byDevice ? D.alertsCoverage.byDevice[d.id] || null : null;
+        const sh = sharingText(d);
         body = `<div class="ihero"><span class="big" data-src="devices.windows.tokens.total">${fmt(a.tokens.total)}</span><span class="u">tokens · ${esc(cap)}${d.status === "silent" ? " · last known" : ""}</span></div>
           <div class="iline"><span class="status ${d.status}"><i></i>${esc(statusText(d, now))}</span>${d.person ? ` · <b>${esc(pn("person", d.person))}</b>` : ""}${d.local ? " · this machine" : ""}</div>
+          ${sh ? `<div class="iline" title="${esc(sh.title)}">${sh.whole ? "shares · <b>alerts · tools</b>" : `<b>${esc(sh.text)}</b>`}${sh.refused ? ` · <b class="w">${plural(sh.refused, "entry", "entries")} refused</b> · future-dated` : ""}</div>` : ""}
           ${ikv([[pct(a.shareOfWhole, 0), "share of every machine", "", "devices.windows.shareOfWhole"], [costMark(a.cost, lost).html, "est. $", a.cost.status === "unpriced" ? "warn" : "", "devices.windows.cost.usd"],
             [pct(a.shares.cacheRead), "cache read", "", "devices.windows.shares.cacheRead"], [pct(a.shares.cacheWrite), "cache write", "", "devices.windows.shares.cacheWrite"],
             [a.messages.toLocaleString("en-US"), "messages", "", "devices.windows.messages"], [cov[0], cov[1], cov[2], "devices.coverage.dropped"]])}
           <div class="ihead">Last hour <span>${s ? fmt(s.spark.reduce((x, y) => x + y, 0)) + " tokens" : "—"}</span></div>${isparkHtml(s, d.status !== "reporting")}
           ${modelList(a.models, cap)}
           ${laneList(D.lanes.filter((l) => l.device.id === d.id), "24 h", lt ? lt.sessions : null)}
-          <div class="iquiet">${d.local ? "The hub itself." : `Joined ${new Date(d.createdAt).toLocaleDateString([], { day: "numeric", month: "short" })} · ${hhmm(Date.parse(d.createdAt))}${d.joinedVia === "link" ? " by link" : ""}.`}${lost ? ` <b>${lost} not counted</b>: ${esc(d.coverage.reasons.map((r) => r.count + " × " + r.label).join("; "))}.` : ""}${unsaid ? ` <b>Coverage not reported</b> by this machine's version: what it could not count is unknown, not zero.` : ""}${watched === false ? ` <b>Alerts not shared</b>: its reporter runs without --share-alerts, so no alert from it can be known here.` : ""}${d.local || watched === null ? "" : watched && lt ? "" : ""}</div>`;
+          <div class="iquiet">${d.local ? "The hub itself." : `Joined ${new Date(d.createdAt).toLocaleDateString([], { day: "numeric", month: "short" })} · ${hhmm(Date.parse(d.createdAt))}${d.joinedVia === "link" ? " by link" : ""}.`}${lost ? ` <b>${lost} not counted</b>: ${esc(d.coverage.reasons.map((r) => r.count + " × " + r.label).join("; "))}.` : ""}${unsaid ? ` <b>Coverage not reported</b> by this machine's version: what it could not count is unknown, not zero.` : ""}${alertCov ? (alertCov.state === "complete" ? "" : alertCov.state === "partial" ? ` <b>Alerts held since ${hhmm(alertCov.since)}</b>: ${esc(coverageWhy(alertCov).replace(/^./u, (c) => c.toLowerCase()))}; before then its quiet is not "no alert".` : ` <b>Alerts ${esc(COVERAGE_WORD[alertCov.reason] || alertCov.state)}</b>: ${esc(coverageWhy(alertCov).replace(/^./u, (c) => c.toLowerCase()))}, so no alert from it can be known here.`) : watched === false ? ` <b>Alerts not shared</b>: its reporter runs without --share-alerts, so no alert from it can be known here.` : ""}${sh && sh.refused ? ` <b>${plural(sh.refused, "entry", "entries")} refused</b>: dated more than two minutes in the future; counted here, never stored.` : ""}</div>`;
         // Remove confirms here, in the sheet's own foot: the first press asks, the second does it.
         if (!d.local && d.status !== "revoked") foot.innerHTML = inspect.confirm === d.id
           ? `<span class="confirm"><b>Remove ${esc(pn("machine", d.label))}?</b> It stops being accepted at once. What it already reported stays on the console, marked as removed. A new join link brings it back.</span><button type="button" class="btn" data-keep>Keep it</button><button type="button" class="btn danger solid" data-revoke-go="${esc(d.id)}" data-label="${esc(pn("machine", d.label))}">Remove</button>`
@@ -2490,7 +2577,8 @@
             [cls.fresh == null ? "—" : fmt(cls.fresh), "uncached input", "", "lanes.tokensDayByClass.fresh"], [cls.output == null ? "—" : fmt(cls.output), "output", "", "lanes.tokensDayByClass.output"],
             [l.agents.total ? `${l.agents.live} <span class="u">/ ${l.agents.total}</span>` : "0", "subagents", "", "lanes.agents"], [l.context?.latest == null ? "—" : fmt(l.context.latest), "context" + (l.context?.status === "bloated" ? " ↑" : ""), l.context?.status === "bloated" ? "warn" : "", "lanes.context.latest"]])}
           <div class="ihead">Last hour <span>${fmt(l.spark.reduce((a, b) => a + b, 0))} tokens</span></div>${isparkHtml({ spark: l.spark }, l.state !== "live")}
-          ${res ? `<div class="ihead">Tools · 5 min <span>${res.ok} ok · ${res.error} error</span></div><div class="iquiet">${Object.entries(l.activity.calls || {}).filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1]).map(([k, c]) => `${c} ${TOOL_KIND[k] || k}`).join(" · ") || "no tool call"} · kinds and counts only</div>` : l.activityShared === false ? `<div class="ihead">Tools</div><div class="iquiet">Not shared by this machine's reporter (--share-tool-activity is off there).</div>` : ""}
+          ${res ? `<div class="ihead">Tools · 5 min <span>${res.ok} ok · ${res.error} error${activityFloor(l) ? "<em class=\"part\">+</em>" : ""}</span></div><div class="iquiet">${Object.entries(l.activity.calls || {}).filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1]).map(([k, c]) => `${c} ${TOOL_KIND[k] || k}`).join(" · ") || "no tool call"} · kinds and counts only${activityFloor(l) ? ` · <b>a floor</b>: ${esc(activityWhy(l).replace(/^./u, (c) => c.toLowerCase()))}` : ""}</div>`
+            : activityState(l) !== "complete" ? `<div class="ihead">Tools · 5 min <span>${esc(COVERAGE_WORD[activityCoverageOf(l).reason] || "unknown")}</span></div><div class="iquiet">${esc(activityWhy(l))}${activityState(l) === "partial" ? "; its recent tools are unavailable, not idle" : "; the lane may well be busy"}.</div>` : ""}
           <div class="ihead" id="inspectContext">Context</div><div class="context-details">${contextHtml(l)}</div>
           ${(l.agentTree || []).length ? `<div class="ihead">Agents <span>${l.agentTree.length}</span></div>` + l.agentTree.map((agent, i) => `<div class="irow"><span class="nm"><b>${i === 0 ? "Orchestrator" : "↳ Subagent"}</b>${agent.firstAt ? `<em>${hhmm(agent.firstAt)}</em>` : ""}</span><span class="md">${esc(agent.modelLabel)}</span><span class="r">${agent.tokens == null ? "—" : fmt(agent.tokens)}</span><span class="r">${agent.tokens == null || !l.tokensDay ? "—" : pct(agent.tokens / l.tokensDay, 0)}</span></div>`).join("") : ""}`;
       }
@@ -2643,7 +2731,7 @@
     if (next !== view) show(next);
     if (b === "add") openAdd();
     else if (b === "alerts") openAlerts();
-    else if ((b === "machine" || b === "person" || b === "project" || b === "lane") && c) openInspect(b, c);
+    else if ((b === "machine" || b === "person" || b === "project" || b === "lane") && c) openInspect(b, idFromUrl(c));
   }
   window.addEventListener("hashchange", route);
   poll().then(startLoop);

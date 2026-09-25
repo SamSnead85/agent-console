@@ -175,9 +175,15 @@ for (const hub of hubs) {
       const rows = lanes.filter((l) => { const b = r(l); return b.height > 0 && b.top >= r(head).bottom - 1 && b.bottom <= r(foot).top + 1; }).length;
       const room = Math.floor((r(foot).top - r(head).bottom) / rowH);
       const caps = [...document.querySelectorAll(".cap, .mhead")].filter((x) => x.checkVisibility()).map((x) => [x.textContent.replace(/\s+/gu, " ").trim().slice(0, 40), Math.round(r(x).height)]).filter(([, h]) => h > 24);
+      // the Attention card's timeline and its axis sit whole inside the card's padding, and each legend item is one line
+      const att = document.getElementById("attention"), ax = att.querySelector(".astrip .bx");
+      const axisWhole = !ax || getComputedStyle(att.querySelector(".astrip")).display === "none" || (r(ax).bottom <= r(att).bottom - 6 && r(ax).top >= r(att).top && [...ax.children].every((s) => r(s).height <= 20));
+      const legendLines = [...document.querySelectorAll("#specLegend span")].filter((s) => s.checkVisibility()).map((s) => Math.round(r(s).height)).filter((h) => h > 20);
       return { rows, room, drawn: lanes.length, band2: r(band2).height, stripVisible: r(strip).top >= c.top && r(strip).bottom <= c.bottom + 1, docScroll: document.documentElement.scrollHeight > innerHeight + 1,
-        foot: Math.round(r(document.querySelector("footer.foot")).height), caps, attention: document.getElementById("attention").classList.contains("hot") };
+        foot: Math.round(r(document.querySelector("footer.foot")).height), caps, attention: document.getElementById("attention").classList.contains("hot"), axisWhole, legendLines };
     });
+    if (!m.axisWhole) fail(`console ${width}${tag(hub)}: the Attention timeline's axis is cut by the card's edge`); else ok(`console ${width}${tag(hub)}: the Attention timeline's axis is whole inside the card`);
+    if (m.legendLines.length) fail(`console ${width}${tag(hub)}: ${m.legendLines.length} spend legend item(s) wrap mid-item`); else ok(`console ${width}${tag(hub)}: every spend legend item is one line`);
     const need = Math.min(MIN_ROWS[width], m.drawn);
     if (m.rows < need || m.room < MIN_ROWS[width]) fail(`console ${width}${tag(hub)}: ${m.rows} of ${m.drawn} lane rows drawn whole above the footer, room for ${m.room} (need ${MIN_ROWS[width]}; attention ${m.attention ? "hot" : "quiet"})`); else ok(`console ${width}${tag(hub)}: ${m.rows} of ${m.drawn} lane rows whole, room for ${m.room} (attention ${m.attention ? "hot" : "quiet"})`);
     const maxBand2 = width <= 1280 ? 72 : 200;
@@ -207,7 +213,7 @@ for (const hub of hubs) {
 
 // ── 4. clipped text ─────────────────────────────────────────────────────
 process.stdout.write("clipping\n");
-const CLIP = ".pr b, .pr em, .mn .txt, .do, .mhead, .mhead span, .lhead span, .hc, .aline, .dv, .fs, .foldrow .fs, .count, .lane .md .mname, .cap, .capr, .bx span, .kv .s, .kv .l, .tline, .afoot, .xn b, .xn em";
+const CLIP = ".pr b, .pr em, .mn .txt, .do, .mhead, .mhead span, .lhead span, .hc, .aline, .dv, .fs, .foldrow .fs, .count, .lane .md .mname, .cap, .capr, .bx span, .kv .s, .kv .l, .tline, .afoot, .xn b, .xn em, .speclegend span, .astrip .bx span, .ahead, .arow b em, .status .sh, .status .lk";
 for (const hub of hubs) for (const width of hub.name === "demo" ? [360, 390, 1024, 1280, 1440] : [1024, 1440]) {
   for (const view of ["console", "projects", "team"]) {
     const { page, context } = await open(width, "dark", view, { hub, period: hub.name === "demo" ? null : "30d" });
@@ -338,6 +344,27 @@ process.stdout.write("presenting\n");
     if (leaked.length) fail(`${view}: presenting still shows ${leaked.slice(0, 5).join(", ")}`); else ok(`${view}: presenting hides every project, branch, machine, person and host name (${names.size} checked)`);
     if (dom.strip !== "PRESENTING") fail(`${view}: the strip does not read PRESENTING`);
     await shot(page, `${view}-1440-dark-presenting`);
+    // an inspector opened while presenting: its address carries a token, never a name; its title is a stand-in
+    if (view === "team") {
+      const person = payload.people?.[0]?.person;
+      if (person) {
+        await page.evaluate(() => document.querySelector("#peopleTable .rowbtn").click());
+        await page.waitForTimeout(400);
+        const addr = await page.evaluate(() => ({ hash: location.hash, title: document.getElementById("inspectTitle").textContent }));
+        const leak = [...names].filter((n) => n.length >= 3 && (decodeURIComponent(addr.hash).includes(n) || addr.title.includes(n)));
+        if (leak.length || !/^#team\/person\/[a-z0-9]{6}$/u.test(addr.hash)) fail(`team: presenting leaves ${leak.join(", ") || addr.hash} in the inspector's address or title (${addr.hash})`); else ok(`team: the presented inspector's address is a token (${addr.hash})`);
+        await page.keyboard.press("Escape");
+        await page.waitForTimeout(300);
+      }
+      // the add-a-machine sheet while presenting: no name in its people list, the restart command stepped back
+      await page.evaluate(() => document.getElementById("addBtn").click());
+      await page.waitForTimeout(400);
+      const add = await page.evaluate(() => ({ options: document.getElementById("peopleList").children.length, cmd: getComputedStyle(document.getElementById("networkCmd")).visibility, text: document.getElementById("addDialog").textContent }));
+      const addLeak = [...names].filter((n) => n.length >= 3 && add.text.includes(n));
+      if (add.options || addLeak.length) fail(`team: the add-a-machine sheet shows ${add.options} people and ${addLeak.join(", ") || "no name"} while presenting`); else ok("team: the add-a-machine sheet names nobody while presenting");
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(300);
+    }
     await page.keyboard.press("p");
   }
   await context.close();

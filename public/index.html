@@ -150,17 +150,17 @@
 
     <div class="console two" id="band2">
       <div class="col attention" id="attention">
-        <div class="cap">Attention<span class="capr" id="attnStat">—</span></div>
+        <div class="cap">Attention<span class="capr fit" id="attnStat">—</span></div>
         <div class="ahero" id="attnHero">
           <div class="ahead" id="attnHead">—</div>
           <div class="aline" id="attnLine">—</div>
           <div class="afoot" id="attnFoot">—</div>
         </div>
         <div class="alist" id="attnList"></div>
-        <!-- the card's own sixty minutes: one tick per alert, hatched from the moment a machine went silent; the axis is said on hover and in the alerts sheet -->
-        <div class="astrip" title="The last sixty minutes, left to right: one tick per alert, hatched from the moment a machine went silent">
+        <!-- the card's own sixty minutes: one tick per alert, hatched to the time alerts are held from and from the moment a machine went silent; its axis is a row of its own inside the card, never cut by the card's edge -->
+        <div class="astrip" title="The last sixty minutes, left to right: one tick per alert, hatched where alerts cannot be known">
           <svg id="attnStrip" viewBox="0 0 520 18" preserveAspectRatio="none" role="img" aria-label="Alerts over the last sixty minutes"></svg>
-          <span class="visually-hidden" id="attnStripCap"></span>
+          <div class="bx ax"><span>60 min ago</span><span id="attnStripCap"></span><span>now</span></div>
         </div>
       </div>
       <div class="col spectrum">
@@ -378,7 +378,7 @@
     <label class="field"><span>The link stays valid for</span>
       <select id="fMinutes" name="minutes"><option value="15">15 minutes</option><option value="30" selected>30 minutes</option><option value="60">1 hour</option></select></label>
     <p class="warnline" id="loopbackWarn" hidden>This console listens on this machine only, so a link made now works only here. To add another computer, stop the console and start it again with <code>--listen 0.0.0.0</code>.
-      <span class="copyrow" id="networkCmd" hidden><code class="cmd" id="networkCmdShown"></code><button type="button" class="btn small" id="copyNetworkCmd">Copy command</button></span></p>
+      <span class="copyrow" id="networkCmd" hidden data-internal><code class="cmd" id="networkCmdShown"></code><button type="button" class="btn small" id="copyNetworkCmd">Copy command</button></span></p>
     <footer><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn primary" id="createBtn">Create join link</button></footer>
   </form>
 
