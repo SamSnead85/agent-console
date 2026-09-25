@@ -29,31 +29,31 @@
 :root {
   color-scheme: light;
   --k: 1;
-  /* ground, in layers */
-  --void: #EAEEF4; --deep: #E0E5ED;
-  --tile: #FFFFFF; --tile2: #F3F6FA; --raise: #FFFFFF;
-  --band: #FAFBFD; --band-head: #F2F5F9; --band-foot: #F4F6FA;
-  --conhead-a: #FFFFFF; --conhead-b: #F5F7FB;
+  /* ground, in layers: warm paper, the instrument a step lighter, panels lighter again */
+  --void: #ECEAE5; --deep: #E3E0DA;
+  --tile: #FAF9F6; --tile2: #F1EFEA; --raise: #FFFFFF;
+  --band: #F4F2EE; --band-head: #EDEBE6; --band-foot: #F0EEE9;
+  --conhead-a: #FBFAF8; --conhead-b: #F1EFEA;
   /* ink */
-  --ink: #0B1220; --ink2: #333E52; --quiet: #5B6780; --faint: #5B6780;
-  --hair: rgba(14, 20, 32, .12); --hair2: rgba(14, 20, 32, .065);
-  --rim: rgba(255, 255, 255, .9);
-  --row-hover: rgba(11, 92, 255, .045);
-  /* the one accent */
+  --ink: #15171B; --ink2: #3A3E46; --quiet: #5C6169; --faint: #5C6169;
+  --hair: rgba(28, 24, 16, .15); --hair2: rgba(28, 24, 16, .08);
+  --rim: rgba(255, 255, 255, .85);
+  --row-hover: rgba(28, 24, 16, .04);
+  /* the one accent: on what is live and what can be pressed, nowhere else */
   --cobalt: #0B5CFF; --lit: #0A4FDB;
   --cobalt-wash: rgba(11, 92, 255, .10); --cobalt-edge: rgba(11, 92, 255, .42);
   /* state */
-  --good: #0B7A53; --stop: #C4352A; --warn: #8A5B00;
-  --good-glow: rgba(11, 122, 83, .35);
-  --warn-wash: rgba(138, 91, 0, .09);
-  /* token classes: one hue, stepped by price per token */
-  --c-output: #0A3D8F; --c-cachewrite: #1F5FD1; --c-input: #6B9BEA; --c-cacheread: #B9CFF2;
-  --chart-line: #0B5CFF; --chart-top: rgba(11, 92, 255, .30); --chart-bottom: rgba(11, 92, 255, 0);
-  --spark: #7FA6EE; --spark-hot: #0B5CFF; --spark-idle: #C9D1DE;
-  --hatch: rgba(14, 20, 32, .08);
-  --elev: 0 1px 2px rgba(16, 24, 40, .06), 0 18px 48px rgba(24, 39, 75, .12);
-  --elev2: 0 1px 2px rgba(16, 24, 40, .05), 0 8px 24px rgba(24, 39, 75, .08);
-  --stamp-edge: rgba(14, 20, 32, .28);
+  --good: #0A6B49; --stop: #B8322A; --warn: #7F5300;
+  --good-glow: rgba(10, 107, 73, .35);
+  --warn-wash: rgba(127, 83, 0, .09);
+  /* token classes: one ink, stepped by price per token — output darkest, cache read palest */
+  --c-output: #1B1E24; --c-cachewrite: #4A4F58; --c-input: #868C96; --c-cacheread: #C6C9CE;
+  --chart-line: #1B1E24; --chart-top: rgba(27, 30, 36, .28); --chart-bottom: rgba(27, 30, 36, 0);
+  --spark: #7D838D; --spark-hot: #0B5CFF; --spark-idle: #D6D3CD;
+  --hatch: rgba(28, 24, 16, .09);
+  --elev: 0 1px 2px rgba(28, 24, 16, .08), 0 16px 40px rgba(28, 24, 16, .12);
+  --elev2: 0 1px 2px rgba(28, 24, 16, .06), 0 8px 22px rgba(28, 24, 16, .08);
+  --stamp-edge: rgba(28, 24, 16, .3);
   /* type */
   --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;

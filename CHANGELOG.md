@@ -2,13 +2,28 @@
 
 ## 0.3.0 — unreleased
 
-- The console's screens are sharper and work on a phone. Nothing on screen
-  is set below 12px; labels are in the text face and only numbers, ids,
-  models and branches are in the monospace one; the four token classes share
-  one hue and step by price per token; a live lane is lit along its edge and
-  the rail carries a count of live alerts; the chart names its peak. At 390px
-  wide the lanes and every table become stacked rows with nothing scrolling
-  sideways, and the light theme is as layered as the dark one.
+- The console is a denser instrument. It opens on a one-line strip — the
+  name, where it reads, the live sessions with the one glow that means live,
+  the machines, the alert count, a clock and how fresh the reading is — with
+  no headline above it. The tokens panel prices each class, the chart stacks
+  the four classes with a legend that carries the same figures, and a
+  seven-day row sits under the classes. A second row holds Attention (the
+  one thing that needs it, or nothing), a spend spectrum (cost share over
+  token share, by class and by model) and the burn with its last sixty
+  minutes drawn. Each lane now shows uncached input, output, the day's
+  tokens, its estimate and when it last reported; the machines are one row
+  each beside the models; the rest of the day folds under the lanes as Cold
+  sessions, Projects, Effort and Shipped; and alerts are one dense list.
+  Nothing is set below 12px; labels are in the text face and numbers, ids,
+  models and branches in the monospace one; the four classes share one hue
+  stepped by price. At 390px wide the lanes and every table become stacked
+  rows with nothing scrolling sideways, every control is at least 44px tall,
+  and the light theme is layered paper, not a flat page. A reading a hub
+  does not send is a drawn void with its reason, never a zero.
+- `/api/console` splits each series step, the period's estimate, and each
+  lane's day by token class (`series.*.classes`, `cost.byClass`,
+  `lanes[].tokensDayByClass`, `lanes[].costDay`); dollars that cannot be
+  told apart by class are carried as `unsplitUsd`, never spread.
 - Separate telemetry read and ingest credentials with independent live
   rotation. Exporters must use `metrics-token --scope ingest`.
 - Add `policy status --json` for installed-file/source drift checks; protect

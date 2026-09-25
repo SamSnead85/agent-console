@@ -30,6 +30,9 @@
     <pattern id="hatchfill" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
       <rect width="3" height="7" fill="var(--hatch)"/>
     </pattern>
+    <pattern id="hatchwarn" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+      <rect width="2.5" height="6" fill="var(--warn)" opacity=".55"/>
+    </pattern>
   </defs>
 </svg>
 
@@ -64,19 +67,17 @@
 
   <!-- ─────────────── CONSOLE ─────────────── -->
   <section class="view" id="view-console" aria-labelledby="h-console">
-    <section class="hero">
-      <svg class="week" id="heroWeek" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true"><path id="heroWeekArea"/><path id="heroWeekLine"/></svg>
-      <div class="hero-copy">
-        <h1 id="h-console">Agent Console</h1>
-        <p class="by">by LockedIn Labs</p>
-        <p class="ctx"><span id="heroWhen">—</span><em id="heroCounts">—</em></p>
-      </div>
-      <div class="hero-id"><span id="heroScope">—</span><b id="heroWeekLabel">seven days, every machine</b></div>
-    </section>
 
-    <div class="conhead">
-      <span class="cap"><i id="liveDot"></i>Agent console<b class="stamp demo-only">DEMO</b></span>
+    <!-- the instrument strip: what this is, where it reads, what is live, and the clock -->
+    <div class="conhead" id="strip">
+      <h1 id="h-console">Agent Console</h1>
+      <span class="stamp demo-only">DEMO</span>
+      <span class="scope" id="scope">—</span>
+      <span class="cap live" id="liveCap"><i id="liveDot"></i><span id="liveCount">—</span></span>
+      <span class="count" id="machineCount">—</span>
       <button class="alertchip" id="alertChip" type="button" hidden aria-describedby="alertPanel">—</button>
+      <span class="clock"><span id="clockDate">—</span><b id="clockTime">—</b></span>
+      <span class="scan" id="scanNote" title="When the last reading arrived, and how long the hub took to answer">—</span>
       <span class="ctrls">
         <button id="voidBtn" type="button" aria-pressed="false">Show unavailable</button>
         <button id="motionBtn" type="button" aria-pressed="false">Pause motion</button>
@@ -90,49 +91,88 @@
         <div class="tline"><span id="cSpend">—</span><em><span id="cMsgs">—</span> messages</em></div>
         <div class="prov" id="cProv">—</div>
         <div class="mix" id="cMix" role="img" aria-label="Token composition"></div>
+        <div class="chead" aria-hidden="true"><span></span><span>class</span><span>tokens</span><span>share</span><span>est.</span></div>
         <div class="classes" id="cClasses"></div>
+        <div class="week" title="The last seven days, every machine, in two-hour steps"><span class="wl">7 days</span><svg id="weekBars" viewBox="0 0 84 20" preserveAspectRatio="none" aria-hidden="true"></svg><b id="weekTotal">—</b></div>
       </div>
       <div class="col flow">
-        <div class="cap">Tokens over time
+        <div class="cap">Tokens over time <em class="by">by class</em><span class="peak" id="cPeak" hidden></span>
           <span class="seg" id="winSeg" role="group" aria-label="Period for every figure">
             <button type="button" data-w="1h" aria-pressed="false">1H</button><button type="button" data-w="24h" class="on" aria-pressed="true">24H</button><button type="button" data-w="7d" aria-pressed="false">7D</button><button type="button" data-w="30d" aria-pressed="false">30D</button>
           </span>
         </div>
         <div class="flowwrap" id="flowWrap">
           <div class="voidstate"><b>Reading unavailable</b><span id="voidReason">No machine has reported yet. Nothing is estimated in its place.</span></div>
-          <svg id="cFlow" viewBox="0 0 520 100" preserveAspectRatio="none" role="img" aria-label="Tokens over time">
+          <svg id="cFlow" viewBox="0 0 520 100" preserveAspectRatio="none" role="img" aria-label="Tokens over time, stacked by class">
             <defs><linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--chart-top)"/><stop offset="1" stop-color="var(--chart-bottom)"/></linearGradient></defs>
             <g id="cGridLines" aria-hidden="true"><line x1="0" x2="520" y1="25" y2="25"/><line x1="0" x2="520" y1="50" y2="50"/><line x1="0" x2="520" y1="75" y2="75"/></g>
             <rect id="cGap" x="0" y="0" width="0" height="100" fill="url(#hatchfill)"/>
+            <g id="cStack" aria-hidden="true"><path class="cacheRead"/><path class="cacheWrite"/><path class="output"/><path class="fresh"/></g>
             <path id="cArea" fill="url(#fg)"/>
-            <path id="cLine" fill="none" stroke="var(--chart-line)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+            <path id="cLine" fill="none" stroke="var(--chart-line)" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
             <line id="cHover" x1="0" x2="0" y1="0" y2="100" stroke="var(--quiet)" stroke-width="1" vector-effect="non-scaling-stroke" opacity="0"/>
           </svg>
-          <div class="peak" id="cPeak" hidden></div>
           <div class="gaplabel" id="cGapLabel" hidden></div>
           <div class="tip" id="cTip" hidden></div>
         </div>
         <div class="bx"><span id="axLeft">24 hours ago</span><span id="axMid">Claude Code · Codex</span><span>now</span></div>
+        <div class="legend" id="cLegend" aria-label="Token classes in the chart"></div>
+      </div>
+      <div class="col models">
+        <div class="mhead"><span id="cModelCap">by model · 24 h</span><span>share</span><span>est.</span></div>
+        <div id="cModels"></div>
+        <div class="mhead machines"><span id="cMachineCap">by machine · 24 h</span><span>share</span><span>tokens</span><span>est.</span></div>
+        <div id="cMachines"></div>
+        <div class="mfoot"><span class="hint" id="machinesHint">—</span><button class="linkbtn" type="button" data-go="team">Team view →</button></div>
+      </div>
+    </div>
+
+    <div class="console two" id="band2">
+      <div class="col attention" id="attention">
+        <div class="cap">Attention</div>
+        <div class="ahead" id="attnHead">—</div>
+        <div class="aline" id="attnLine">—</div>
+        <div class="afoot" id="attnFoot">—</div>
+        <div class="astat" id="attnStat">—</div>
+      </div>
+      <div class="col spectrum">
+        <div class="cap">Spend spectrum <em class="by">cost share over token share</em><span class="capr" id="specCap">—</span></div>
+        <div class="specwrap" id="specWrap">
+          <div class="voidstate"><b>No estimate</b><span id="specReason">—</span></div>
+          <svg id="cSpec" viewBox="0 0 520 60" preserveAspectRatio="none" role="img" aria-label="Cost share over token share, by class"></svg>
+        </div>
+        <div class="speclegend" id="specLegend"></div>
+        <div class="specmodels" id="specModels"></div>
       </div>
       <div class="col burn">
-        <div class="cap">Burn · right now<button type="button" class="unit" id="unitBtn" aria-label="Switch burn unit">per minute ⇄</button></div>
+        <div class="cap">Burn · last 60 min<span class="capr" id="burnMedian">—</span><button type="button" class="unit" id="unitBtn" aria-label="Switch burn unit">per minute ⇄</button></div>
         <div id="cBurn" class="big mid">—</div>
         <div class="brate"><span id="cRate">—</span></div>
         <div class="bprov" id="cBurnNote">—</div>
-        <div class="mhead"><span id="cModelCap">by model · 24 h</span><span>share</span><span>est.</span></div>
-        <div id="cModels"></div>
+        <div class="bsparkwrap" id="burnWrap">
+          <div class="voidstate"><b>No reading</b><span id="burnReason">—</span></div>
+          <svg id="cBurnSpark" class="bspark" viewBox="0 0 520 44" preserveAspectRatio="none" role="img" aria-label="Tokens per minute over the last 60 minutes, every machine"></svg>
+        </div>
       </div>
     </div>
 
     <section class="lanes" aria-label="Lanes">
-      <div class="lhead" aria-hidden="true"><span>State</span><span>Project / branch</span><span>Model</span><span>Activity · 1 hour</span>
-        <span class="r">Tokens · 5 min</span><span class="r">Agents</span><span>Context</span><span>Machine · last seen</span></div>
+      <div class="lhead" aria-hidden="true"><span>State</span><span>Project / branch</span><span>Model</span><span>Activity · 1 h</span>
+        <span class="r">5 min</span><span class="r c-in">In · 24 h</span><span class="r c-out">Out</span><span class="r">24 h</span><span class="r c-usd">Est. $</span><span class="r">Agents</span><span class="r">Context</span><span>Machine</span><span class="r">Last</span></div>
       <div id="cLanes" class="lanescroll" tabindex="0" role="region" aria-label="Lanes, one per session, scrollable"></div>
       <div class="lfoot" id="lFoot"><span>—</span></div>
     </section>
 
+    <!-- the rest of the day, folded: open a row to see it without leaving the tab -->
+    <section class="fold" id="fold" aria-label="The rest of the day">
+      <details class="foldrow" id="foldCold"><summary><span class="fk">Cold sessions</span><span class="fs" id="coldSum">—</span></summary><div id="coldLanes" class="coldlanes"></div></details>
+      <details class="foldrow" id="foldProjects"><summary><span class="fk">Projects</span><span class="fs" id="projSum">—</span></summary><div id="foldProjBody" class="foldbody"></div></details>
+      <details class="foldrow" id="foldEffort"><summary><span class="fk">Effort</span><span class="fs" id="effortSum">—</span></summary><div id="foldEffortBody" class="foldbody"></div></details>
+      <details class="foldrow" id="foldShipped"><summary><span class="fk">Shipped</span><span class="fs" id="shipSum">—</span></summary><div id="foldShipBody" class="foldbody"></div></details>
+    </section>
+
     <section class="alert-panel" id="alertPanel" aria-label="Live alerts" hidden>
-      <div class="alert-head"><h2>Live alerts</h2><span class="stamp demo-only">DEMO</span><span>this machine · last hour</span></div>
+      <div class="alert-head"><h2>Live alerts</h2><span class="stamp demo-only">DEMO</span><span id="alertShown">this machine · last hour</span><button class="linkbtn" type="button" id="alertMore" hidden>—</button></div>
       <div id="alertRows" class="alert-rows"></div>
     </section>
 
@@ -140,13 +180,6 @@
       <div class="interop-head"><h2>Telemetry</h2><span class="stamp demo-only">DEMO</span><span>local sources · separate from transcript totals</span></div>
       <div class="interop-rows" id="interopRows"></div>
     </section>
-
-    <div class="head">
-      <h2>Machines</h2><span class="stamp demo-only">DEMO</span>
-      <span class="hint" id="machinesHint">—</span>
-      <button class="linkbtn" type="button" data-go="team">Team view →</button>
-    </div>
-    <section class="machines" id="machines" aria-label="Machines"></section>
   </section>
 
   <!-- ─────────────── TEAM ─────────────── -->

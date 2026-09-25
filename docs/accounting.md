@@ -299,6 +299,13 @@ and `total = input + output + cache read + cache write`.
   is priced at the standard rate, as the table's basis assumes.
 - Unpriced messages and records are different counts: a streamed response is
   one message over several records. Each is named for what it counts.
+- **By class.** Pricing is linear in tokens, so a minute bucket of one model
+  and one tier splits exactly: each class's tokens at that class's rate. The
+  console's estimate by class (`cost.byClass`, a lane's `costDay`) is the sum
+  of those exact splits. A bucket that holds any unpriced record cannot be
+  split; its dollars are carried whole as `unsplitUsd`, named on the screen
+  and never spread across the classes. The four classes plus `unsplitUsd`
+  add up to the estimate, to the cent.
 - A figure names the table it came from (its check date and digest). It is a
   standard API-list-price estimate, not an invoice. It cannot see
   subscriptions, negotiated rates, batch, data residency or taxes.

@@ -178,14 +178,29 @@ other common reading, is in the cache-read tooltip, labelled as such.)
 **Tokens over time**: the last hour, day, week or 30 days. Where a machine has stopped
 reporting, the chart says from when it is incomplete.
 
-**Burn · right now**: tokens per minute (or per second), averaged over the last
-fifteen minutes so one burst of agent traffic does not swing it, the dollars per
-hour it implies, and each model's share and spend over
-the day, with real Anthropic and OpenAI marks.
+**By model** and **by machine**: each model's share and spend over the period,
+with real Anthropic and OpenAI marks, and each machine's share, tokens and
+estimate, one row each, a silent machine saying since when.
+
+**Attention**: the one thing that needs it — a burn spike, spending without
+progress, a repeated tool call, an unpriced model in the estimate, a silent
+machine — or, when nothing does, that nothing does.
+
+**Spend spectrum**: the estimate's share by class over the tokens' share by
+class, so a small share of tokens that is a large share of the money shows as
+such; then each model's share of the money over its share of the tokens.
+
+**Burn · last 60 min**: tokens per minute (or per second) right now, averaged
+over the last fifteen minutes so one burst of agent traffic does not swing it,
+the dollars per hour it implies, and the last sixty minutes drawn one bar per
+minute with their median.
 
 **Lanes**: one row per session: whether it is live, the project and branch, the
-model, its last hour of activity, tokens in the last five minutes, how many
-subagents it is running, and which machine it is on.
+model, its last hour of activity, tokens in the last five minutes, uncached
+input and output for the day, the day's tokens and their estimate, how many
+subagents it is running, its context, which machine it is on and when it last
+reported. The rest of the day folds under the lanes: cold sessions, projects,
+effort and what was shipped.
 
 **Context and cache health**: the Context column shows the latest complete
 input reading for an API response in each session. Open it to see the last 16
@@ -260,7 +275,7 @@ privacy-safe record format; activity or a tool call is not treated as success.
 The synthetic team includes parent and child sessions. The same count-only
 tree builder is exported from the shared analysis subpath.
 
-**Machines** and **Team**: every machine and every person: tokens, share of the
+**Team**: every machine and every person: tokens, share of the
 total, cache read and write shares, model split and cost, for the same periods as the headline; every join link, who used it and when. Two machines with the same
 person roll up into one row.
 
