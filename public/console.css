@@ -169,8 +169,11 @@ body.paused .conhead .cap i.on, body.paused .waiting i { animation: none; }
 .kv .s { font: 400 calc(12px * var(--k))/1.3 var(--sans); color: var(--quiet); white-space: normal; }
 /* Projects: the fleet on one line, this machine's Git on the other — never divided into each other */
 .effort { margin-top: auto; padding-top: calc(8px * var(--k)); display: flex; flex-direction: column; gap: 3px; }
-.effort > div { display: flex; align-items: baseline; gap: calc(8px * var(--k)); font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); white-space: nowrap; overflow: hidden; box-shadow: inset 0 1px 0 var(--hair2); padding-top: 4px; }
+/* a line is the label and its figures; when the figures do not fit beside the label they take the next line whole — a figure is never cut */
+.effort > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px calc(8px * var(--k)); font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); box-shadow: inset 0 1px 0 var(--hair2); padding-top: 4px; }
 .effort .el { font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--quiet); flex: none; min-width: calc(96px * var(--k)); white-space: nowrap; }
+.effort .ev { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px calc(8px * var(--k)); min-width: 0; }
+.effort .eg { display: inline-flex; align-items: baseline; gap: calc(8px * var(--k)); white-space: nowrap; }
 .effort b { font-weight: 500; color: var(--ink); }
 .effort em { font-style: normal; color: var(--quiet); }
 
@@ -227,6 +230,8 @@ body.paused #cLine, .flowwrap.void #cLine { filter: none; }
 .mhead span + span { text-align: right; }
 .mhead span:first-child { min-width: 0; overflow: hidden; }
 .mrow { display: grid; grid-template-columns: calc(104px * var(--k)) auto 1fr calc(46px * var(--k)) calc(64px * var(--k)); align-items: center; gap: calc(8px * var(--k)); margin-top: calc(3px * var(--k)); line-height: 1.2; }
+/* a row that opens an inspector is a 24px target (WCAG 2.5.8): the type keeps its size, the row takes the height */
+.mrow.door { min-height: 24px; margin-top: 0; cursor: pointer; }
 .mrow .ms { display: flex; min-width: 0; }
 .mrow .ms:empty { margin-left: calc(-8px * var(--k)); }
 .mn { font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); white-space: nowrap; display: flex; align-items: center; gap: calc(6px * var(--k)); min-width: 0; }
@@ -243,7 +248,7 @@ body.paused #cLine, .flowwrap.void #cLine { filter: none; }
 .more { margin-top: calc(3px * var(--k)); border: 0; background: none; cursor: pointer; padding: 0; min-height: 18px; line-height: 1.2; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); text-align: left; }
 .more:hover { color: var(--lit); }
 .xrow { display: grid; grid-template-columns: minmax(0, 1fr) calc(40px * var(--k)) calc(52px * var(--k)) calc(64px * var(--k)); align-items: center; gap: calc(8px * var(--k)); margin-top: calc(3px * var(--k)); line-height: 1.2; }
-.xrow.door { cursor: pointer; border-radius: 5px; margin-left: -6px; margin-right: -6px; padding: 1px 6px; transition: background .16s var(--ease); }
+.xrow.door { cursor: pointer; border-radius: 5px; min-height: 24px; margin-top: 0; margin-left: -6px; margin-right: -6px; padding: 0 6px; transition: background .16s var(--ease); }
 .xrow.door:hover, .xrow.door:focus-visible { background: var(--row-hover); }
 .xrow .xn { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 7px; min-width: 0; font: 500 calc(12.5px * var(--k)) var(--sans); color: var(--ink); line-height: 1.25; }
 .xrow .xp { font: 500 calc(12px * var(--k)) var(--mono); text-align: right; color: var(--ink); }
@@ -355,7 +360,7 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .lanescroll { scrollbar-width: thin; scrollbar-color: var(--hair) transparent; }
 .lanescroll:focus-visible { outline: 2px solid var(--lit); outline-offset: -2px; }
 .lhead, .lane { display: grid; align-items: center; gap: calc(12px * var(--k)); padding: 0 calc(16px * var(--k)) 0 calc(20px * var(--k));
-  grid-template-columns: calc(96px * var(--k)) minmax(calc(150px * var(--k)), 1.2fr) minmax(calc(96px * var(--k)), .5fr) minmax(calc(96px * var(--k)), .5fr)
+  grid-template-columns: calc(104px * var(--k)) minmax(calc(150px * var(--k)), 1.2fr) minmax(calc(96px * var(--k)), .5fr) minmax(calc(96px * var(--k)), .5fr)
     calc(74px * var(--k)) calc(66px * var(--k)) calc(58px * var(--k)) calc(66px * var(--k)) calc(64px * var(--k)) calc(50px * var(--k)) calc(58px * var(--k)) minmax(calc(126px * var(--k)), .9fr) minmax(calc(84px * var(--k)), .7fr) calc(52px * var(--k)); }
 .lhead { height: calc(28px * var(--k)); font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--quiet); white-space: nowrap;
   background: var(--band-head); border-bottom: 1px solid var(--hair2); box-shadow: inset 0 1px 0 var(--rim); overflow: hidden; }
@@ -737,7 +742,7 @@ dialog.pal[open] { animation: sheetin .18s var(--ease); }
 /* ── wide: a big screen gets more lanes, each a little tighter ── */
 @media (min-width: 1800px) {
   .console { grid-template-columns: calc(340px * var(--k)) 1fr calc(400px * var(--k)); }
-  .lhead, .lane { grid-template-columns: calc(96px * var(--k)) minmax(calc(190px * var(--k)), 1.3fr) minmax(calc(110px * var(--k)), .5fr) minmax(calc(120px * var(--k)), .55fr)
+  .lhead, .lane { grid-template-columns: calc(104px * var(--k)) minmax(calc(190px * var(--k)), 1.3fr) minmax(calc(110px * var(--k)), .5fr) minmax(calc(120px * var(--k)), .55fr)
     calc(78px * var(--k)) calc(74px * var(--k)) calc(66px * var(--k)) calc(76px * var(--k)) calc(68px * var(--k)) calc(56px * var(--k)) calc(64px * var(--k)) minmax(calc(150px * var(--k)), 1fr) minmax(calc(110px * var(--k)), .8fr) calc(60px * var(--k)); }
 }
 
@@ -749,7 +754,7 @@ dialog.pal[open] { animation: sheetin .18s var(--ease); }
    columns a phone cannot use dropped. Nothing that carries state is hidden. */
 @media (max-width: 1240px) {
   .lhead .c-in, .lhead .c-out, .lhead .c-usd, .lhead .c-do, .lane .in, .lane .out, .lane .usd, .lane .do { display: none; }
-  .lhead, .lane { grid-template-columns: calc(96px * var(--k)) minmax(calc(150px * var(--k)), 1.3fr) minmax(calc(90px * var(--k)), .5fr) minmax(calc(90px * var(--k)), .5fr)
+  .lhead, .lane { grid-template-columns: calc(104px * var(--k)) minmax(calc(150px * var(--k)), 1.3fr) minmax(calc(90px * var(--k)), .5fr) minmax(calc(90px * var(--k)), .5fr)
     calc(72px * var(--k)) calc(70px * var(--k)) calc(52px * var(--k)) calc(60px * var(--k)) minmax(calc(80px * var(--k)), .8fr) calc(56px * var(--k)); gap: calc(10px * var(--k)); }
 }
 @media (max-width: 1100px) {
@@ -811,7 +816,6 @@ dialog.pal[open] { animation: sheetin .18s var(--ease); }
   .speclegend { grid-template-columns: 1fr; }
   .attention .ahead { font-size: 18px; }
   .mfoot { white-space: normal; }
-  .effort > div { white-space: normal; }
   .week { min-height: 40px; }
   /* the lanes keep their row grammar and scroll sideways under their own header; each row is the door to its own inspector */
   /* the header and the rows scroll sideways together; the footer sits under the scroller, in frame, and wraps */
@@ -820,7 +824,7 @@ dialog.pal[open] { animation: sheetin .18s var(--ease); }
   .lhead .c-in, .lhead .c-out, .lane .in, .lane .out { display: none; }
   .lhead .c-usd, .lane .usd, .lhead .c-la, .lane .la { display: block; }
   /* state, then the figures that cost money and when the lane last spoke, on screen at 390; the name, the model, the hour and the day follow under the thumb */
-  .lhead, .lane { width: max-content; min-width: 100%; padding: 0 14px 0 16px; gap: 10px; grid-template-columns: 92px 64px 64px 52px 150px 96px 96px 60px; }
+  .lhead, .lane { width: max-content; min-width: 100%; padding: 0 14px 0 16px; gap: 10px; grid-template-columns: 104px 64px 64px 52px 150px 96px 96px 60px; }
   .lhead .c-st, .lane .st { order: 0; }
   .lhead .c-fm, .lane .fm { order: 1; }
   .lhead .c-usd, .lane .usd { order: 2; }
@@ -864,6 +868,14 @@ dialog.pal[open] { animation: sheetin .18s var(--ease); }
   .copyrow .btn { min-height: 44px; flex: 1 1 100%; justify-content: center; }
   .btn.wide { min-height: 44px; }
   .kv { grid-template-columns: 1fr 1fr; }
+  /* the hour axis: its ends stay at the plot's edges, the caption takes the next line whole */
+  .bx.wrapcap { flex-wrap: wrap; row-gap: 2px; }
+  .bx.wrapcap span:nth-child(2) { order: 3; flex: 1 1 100%; white-space: normal; overflow: visible; text-overflow: clip; }
+  /* a person's machine row: the name and its figures on one line, the machine's status whole on the next */
+  .inspect .irow.mach { grid-template-columns: minmax(0, 1fr) 64px 60px; row-gap: 2px; padding: 4px 0; }
+  .inspect .irow.mach > b { grid-area: 1 / 1; }
+  .inspect .irow.mach .r { grid-row: 1; }
+  .inspect .irow.mach .status { grid-row: 2; grid-column: 1 / -1; }
   .foot .prov { display: none; }
   #toast { left: 16px; right: 16px; bottom: calc(72px + env(safe-area-inset-bottom)); }
 }

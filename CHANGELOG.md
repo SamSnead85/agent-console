@@ -14,6 +14,14 @@
   row is a door — to its lane, or to the alert list that carries it —
   by pointer and by keyboard. Projects fills its frame: the sessions behind
   the projects take the height the table leaves.
+- Three residuals the final captures still showed. Projects' Effort lines
+  wrap their figures whole under the label instead of cutting a 30-day
+  estimate or the word after a number. Every row that opens an inspector —
+  the machines on Console and in the agent tree, the people on Team, the
+  projects' share and spend rows — is a 24px target (WCAG 2.5.8) at the
+  same type size. On a phone the hour axis caption takes its own line
+  whole, a person's machine row says its status whole under the name, and
+  the lanes' state column holds the DEMO stamp inside it at every width.
 - The instrument is denser and says less twice. The lanes carry a Doing
   column (the lane's newest alert, its subagents at work, a cache signal, a
   growing context, or its state in a word — never a prompt or a path), the

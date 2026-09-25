@@ -1652,8 +1652,8 @@
       ].map(([v, l, s, src, why]) => `<div><div class="v" data-src="${src}" title="${esc(why || l + " · " + s)} · ${asOf()}">${v}</div><div class="l">${esc(l)}</div><div class="s">${esc(s)}</div></div>`).join("");
       // Effort: the fleet on one line, this machine's Git on the other — never divided into each other.
       const w = win();
-      $("pEffort").innerHTML = `<div title="Every machine on the console · ${esc(label)} · ${w.messages.toLocaleString("en-US")} messages"><span class="el">every machine</span><b data-src="windows.tokens.total">${fmt(w.tokens.total)}</b><em>tokens</em> · <b data-internal data-src="windows.cost.usd">${w.cost.usd === null ? "unpriced" : money(w.cost.usd)}</b><em>${w.cost.usd === null ? "" : "est." + (w.cost.status === "partial" ? "+" : "")}</em></div>
-        <div title="This machine's own transcripts and Git · ${esc(label)}${p.sessions === null ? "" : " · " + plural(p.sessions, "session")}"><span class="el">this machine</span><b data-src="projects.tokens">${fmt(p.tokens)}</b><em>tokens</em> · <b data-src="projects.totals.commits">${t.commits.toLocaleString("en-US")}</b><em>commits</em></div>`;
+      $("pEffort").innerHTML = `<div title="Every machine on the console · ${esc(label)} · ${w.messages.toLocaleString("en-US")} messages"><span class="el">every machine</span><span class="ev"><span class="eg"><b data-src="windows.tokens.total">${fmt(w.tokens.total)}</b><em>tokens</em></span> · <span class="eg"><b data-internal data-src="windows.cost.usd">${w.cost.usd === null ? "unpriced" : money(w.cost.usd)}</b><em>${w.cost.usd === null ? "" : "est." + (w.cost.status === "partial" ? "+" : "")}</em></span></span></div>
+        <div title="This machine's own transcripts and Git · ${esc(label)}${p.sessions === null ? "" : " · " + plural(p.sessions, "session")}"><span class="el">this machine</span><span class="ev"><span class="eg"><b data-src="projects.tokens">${fmt(p.tokens)}</b><em>tokens</em></span> · <span class="eg"><b data-src="projects.totals.commits">${t.commits.toLocaleString("en-US")}</b><em>commits</em></span></span></div>`;
       // Share of tokens per project, sorted, top five and "n more"; spend per commit as bars against the costliest.
       const ranked = p.projects.slice().sort((a, b) => b.tokens - a.tokens);
       const max = Math.max(...ranked.map((x) => x.tokens), 1);
@@ -1910,7 +1910,7 @@
           <div class="ihead">Last hour <span>${s ? fmt(s.spark.reduce((x, y) => x + y, 0)) + " tokens" : "—"}</span></div>${isparkHtml(s, p.reporting === 0)}
           ${modelList(a.models, cap)}
           <div class="ihead">Machines <span>${p.devices.length}</span></div>
-          ${p.devices.map((id) => deviceOf(id)).filter(Boolean).map((d) => `<div class="irow" data-inspect="machine:${esc(d.id)}" tabindex="0" role="button" title="Open ${esc(d.label)}"><b>${esc(d.label)}</b><span class="status ${d.status}"><i></i>${esc(statusText(d, now))}</span><span class="r" data-src="devices.windows.tokens.total">${fmt(pw(d).tokens.total)}</span><span class="r">${pct(pw(d).shareOfWhole, 0)}</span></div>`).join("")}
+          ${p.devices.map((id) => deviceOf(id)).filter(Boolean).map((d) => `<div class="irow mach" data-inspect="machine:${esc(d.id)}" tabindex="0" role="button" title="Open ${esc(d.label)}"><b>${esc(d.label)}</b><span class="status ${d.status}"><i></i>${esc(statusText(d, now))}</span><span class="r" data-src="devices.windows.tokens.total">${fmt(pw(d).tokens.total)}</span><span class="r">${pct(pw(d).shareOfWhole, 0)}</span></div>`).join("")}
           ${laneList(D.lanes.filter((l) => p.devices.includes(l.device.id)))}`;
       }
     } else if (inspect.kind === "project") {

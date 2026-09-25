@@ -113,3 +113,43 @@ test("Projects fills its frame at desk width", () => {
   assert.match(desk, /#projCanvas \.lanes:last-child \{ flex: 1 1 auto; \}/u);
   assert.match(desk, /\.canvas \{ flex: 0 1 auto; min-height: 0; overflow-y: auto;/u, "the canvas still scrolls by itself when its rows need more than the frame has");
 });
+
+/* The bounded pass after the six: three residual groups the final captures still showed. */
+test("Effort's figures are never cut: a line wraps its figures whole under the label", () => {
+  assert.match(CSS, /\.effort > div \{ display: flex; flex-wrap: wrap;/u);
+  assert.doesNotMatch(CSS, /\.effort > div \{[^}]*(overflow: hidden|white-space: nowrap)/u, "a cut line hides a figure");
+  assert.match(CSS, /\.effort \.ev \{ display: flex; flex-wrap: wrap;[^}]*min-width: 0;/u);
+  assert.match(CSS, /\.effort \.eg \{ display: inline-flex;[^}]*white-space: nowrap;/u, "a figure and its unit stay together");
+  // both lines: label, then the figures as two groups joined by the separator
+  assert.match(JS, /<span class="el">every machine<\/span><span class="ev"><span class="eg"><b data-src="windows\.tokens\.total">[^<]*<\/b><em>tokens<\/em><\/span> · <span class="eg"><b data-internal data-src="windows\.cost\.usd">/u);
+  assert.match(JS, /<span class="el">this machine<\/span><span class="ev"><span class="eg"><b data-src="projects\.tokens">[^<]*<\/b><em>tokens<\/em><\/span> · <span class="eg"><b data-src="projects\.totals\.commits">[^<]*<\/b><em>commits<\/em><\/span><\/span>/u);
+});
+
+test("a row that opens an inspector is a 24px target, and the type keeps its size (WCAG 2.5.8)", () => {
+  // the minimum is an absolute 24 CSS px, so it is not scaled by --k
+  assert.match(CSS, /\.xrow\.door \{[^}]*min-height: 24px; margin-top: 0;/u);
+  assert.match(CSS, /\.mrow\.door \{ min-height: 24px; margin-top: 0; cursor: pointer; \}/u);
+  assert.doesNotMatch(CSS, /\.xrow \.xn \{[^}]*font: 500 calc\(1[3-9]/u, "the row's text did not grow to fill the target");
+  // every inspector-opening row still carries the door class the rule sizes
+  assert.match(JS, /<div class="xrow door \$\{d\.status\}" title=/u);
+  assert.match(JS, /<div class="xrow msgs door" data-inspect="person:/u);
+  assert.equal((JS.match(/<div class="mrow door" data-inspect="project:/gu) || []).length, 2, "share and spend rows");
+});
+
+test("on a phone the hour axis caption, the person's machine status and the lane's DEMO stamp are shown whole", () => {
+  const phone = media("max-width: 760px");
+  // the axis: its ends stay at the plot's edges, the caption takes the next line whole
+  assert.match(HTML, /<div class="bx wrapcap"><span>60 min ago<\/span><span id="tFlowCap">/u);
+  assert.match(HTML, /<div class="bx wrapcap"><span>60 min ago<\/span><span id="pFlowCap">/u);
+  assert.match(phone, /\.bx\.wrapcap \{ flex-wrap: wrap;/u);
+  assert.match(phone, /\.bx\.wrapcap span:nth-child\(2\) \{ order: 3; flex: 1 1 100%; white-space: normal; overflow: visible;/u);
+  // the person's machine row: name and figures on one line, the status whole on the next
+  assert.match(JS, /<div class="irow mach" data-inspect="machine:\$\{esc\(d\.id\)\}" tabindex="0" role="button"/u);
+  assert.match(phone, /\.inspect \.irow\.mach \{ grid-template-columns: minmax\(0, 1fr\) 64px 60px;/u);
+  assert.match(phone, /\.inspect \.irow\.mach > b \{ grid-area: 1 \/ 1; \}/u);
+  assert.match(phone, /\.inspect \.irow\.mach \.status \{ grid-row: 2; grid-column: 1 \/ -1; \}/u);
+  // the state column holds the word, its dot and the stamp at every width: 104px, never 96 or 92
+  assert.match(phone, /\.lhead, \.lane \{[^}]*grid-template-columns: 104px 64px 64px 52px/u);
+  assert.equal((CSS.match(/grid-template-columns: calc\(104px \* var\(--k\)\) minmax\(calc\(1[59]0px \* var\(--k\)\)/gu) || []).length, 3, "desk, folded and wide lane grids");
+  assert.doesNotMatch(CSS, /grid-template-columns: calc\(96px \* var\(--k\)\) minmax\(calc\(1[59]0px/u);
+});
