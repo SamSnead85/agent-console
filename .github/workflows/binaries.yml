@@ -1,0 +1,116 @@
+name: Standalone executables
+# Node.js with the release package inside, one file per platform, each built
+# and then started on its own platform's runner (packaging/sea/). On a pull
+# request that touches what goes inside, this proves every target still builds
+# and starts. For a published release, release.yml calls it with the tag and
+# attaches what it builds beside the package, under one SHA256SUMS and one
+# signed build attestation. Nothing here publishes anything.
+on:
+  pull_request:
+    paths:
+      - packaging/sea/**
+      - bin/**
+      - lib/**
+      - server.js
+      - package.json
+      - .github/workflows/binaries.yml
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: The release tag to build from
+        required: true
+        type: string
+    # Only when all five are set are the macOS executables signed with a
+    # Developer ID and notarized; otherwise they are labelled unsigned.
+    secrets:
+      APPLE_DEVELOPER_ID_P12:
+        required: false
+      APPLE_DEVELOPER_ID_P12_PASSWORD:
+        required: false
+      APPLE_NOTARY_KEY_P8:
+        required: false
+      APPLE_NOTARY_KEY_ID:
+        required: false
+      APPLE_NOTARY_ISSUER:
+        required: false
+permissions:
+  contents: read
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: darwin-arm64, runner: macos-15, exe: agent-console-darwin-arm64 }
+          - { target: darwin-x64, runner: macos-15-intel, exe: agent-console-darwin-x64 }
+          - { target: linux-x64, runner: ubuntu-24.04, exe: agent-console-linux-x64 }
+          - { target: linux-arm64, runner: ubuntu-24.04-arm, exe: agent-console-linux-arm64 }
+          - { target: win32-x64, runner: windows-2025, exe: agent-console-win32-x64.exe }
+    env:
+      # Signing is for releases only, and only when every Apple value exists.
+      SIGN_MAC: ${{ inputs.ref != '' && secrets.APPLE_DEVELOPER_ID_P12 != '' && secrets.APPLE_DEVELOPER_ID_P12_PASSWORD != '' && secrets.APPLE_NOTARY_KEY_P8 != '' && secrets.APPLE_NOTARY_KEY_ID != '' && secrets.APPLE_NOTARY_ISSUER != '' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      # The Node.js inside the executable: the current LTS line, at its latest
+      # patch when the release is built, so security fixes arrive by rebuilding.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Install the build tool (postject, pinned by its lockfile)
+        run: npm ci --prefix packaging/sea --ignore-scripts --no-audit --no-fund
+      - name: Load the Developer ID into a throwaway keychain
+        id: apple
+        if: runner.os == 'macOS' && env.SIGN_MAC == 'true'
+        shell: bash
+        env:
+          P12: ${{ secrets.APPLE_DEVELOPER_ID_P12 }}
+          P12_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_P12_PASSWORD }}
+          NOTARY_KEY: ${{ secrets.APPLE_NOTARY_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password="$(openssl rand -hex 24)"
+          printf '%s' "$P12" | base64 --decode > "$RUNNER_TEMP/id.p12"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          security import "$RUNNER_TEMP/id.p12" -k "$keychain" -P "$P12_PASSWORD" -T /usr/bin/codesign
+          rm -f "$RUNNER_TEMP/id.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$password" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" login.keychain-db
+          # The certificate's SHA-1, never its name: this log is public.
+          identity="$(security find-identity -v -p codesigning "$keychain" | awk '/Developer ID Application/ { print $2; exit }')"
+          test -n "$identity" || { echo "::error::No Developer ID Application certificate in APPLE_DEVELOPER_ID_P12"; exit 1; }
+          printf '%s' "$NOTARY_KEY" | base64 --decode > "$RUNNER_TEMP/notary.p8"
+          echo "identity=$identity" >> "$GITHUB_OUTPUT"
+          echo "key=$RUNNER_TEMP/notary.p8" >> "$GITHUB_OUTPUT"
+      - name: Build
+        shell: bash
+        env:
+          MACOS_SIGN_IDENTITY: ${{ steps.apple.outputs.identity }}
+          APPLE_NOTARY_KEY_PATH: ${{ steps.apple.outputs.key }}
+          APPLE_NOTARY_KEY_ID: ${{ steps.apple.outputs.identity && secrets.APPLE_NOTARY_KEY_ID || '' }}
+          APPLE_NOTARY_ISSUER: ${{ steps.apple.outputs.identity && secrets.APPLE_NOTARY_ISSUER || '' }}
+        run: node packaging/sea/build.mjs --out sea
+      - name: Start it, with no Node.js on PATH
+        shell: bash
+        run: node packaging/sea/smoke.mjs "sea/dist/${{ matrix.exe }}"
+      - name: Remove the keychain
+        if: always() && steps.apple.outcome == 'success'
+        shell: bash
+        run: |
+          security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
+          rm -f "$RUNNER_TEMP/notary.p8"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: agent-console-${{ matrix.target }}
+          path: sea/
+          if-no-files-found: error
+          retention-days: 3
