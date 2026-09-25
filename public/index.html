@@ -57,7 +57,9 @@
 
   <section class="signin" id="signedOut" hidden aria-live="polite">
     <h1>Sign in to this console</h1>
-    <p>The console only shows its figures to a browser that has signed in. Use the sign-in link the console printed in its terminal window when it started (it works once), or start it again with <code>--open</code> and it opens this page signed in.</p>
+    <p>The console only shows its figures to a browser that has signed in. Use a sign-in link the console printed in its terminal window (each works once), or have it print a new one there.</p>
+    <p><button type="button" class="btn primary" id="printSignIn">Print a new sign-in link</button></p>
+    <p class="fine" id="printSay" role="status" aria-live="polite" hidden></p>
   </section>
 
   <!-- ─────────────── CONSOLE ─────────────── -->
@@ -185,7 +187,7 @@
     <section class="totals" id="projTotals" aria-label="Delivery evidence"></section>
     <div class="tablewrap"><table class="grid" id="projTable">
       <caption class="visually-hidden">Projects on this machine</caption>
-      <thead><tr><th scope="col">Project</th><th scope="col" class="r">Tokens</th><th scope="col" class="r">Est. cost</th><th scope="col" class="r">Sessions</th><th scope="col" class="r">Commits</th><th scope="col" class="r">Lines + / −</th><th scope="col" class="r">PRs merged</th><th scope="col" class="r">Default merges</th><th scope="col" class="r">Spend / commit</th><th scope="col" class="r">Spend / default merge</th><th scope="col">Branches</th></tr></thead>
+      <thead><tr><th scope="col">Project</th><th scope="col" class="r">Tokens</th><th scope="col" class="r">Est. cost</th><th scope="col" class="r">Sessions</th><th scope="col" class="r">Commits</th><th scope="col" class="r">Lines + / −</th><th scope="col" class="r" title="Commits whose subject ends (#N) or merges a pull request; #N may name an issue">Commits referencing #N</th><th scope="col" class="r">Default merges</th><th scope="col" class="r">Spend / commit</th><th scope="col" class="r">Spend / default merge</th><th scope="col">Branches</th></tr></thead>
       <tbody></tbody>
     </table></div>
     <p class="footnote" id="projNote">Delivery evidence is what Git recorded, not a productivity score. Tokens measure usage, not value.</p>
@@ -215,7 +217,8 @@
       <input id="fMachine" name="machine" type="text" maxlength="40" autocomplete="off" placeholder="Laptop, Workstation, Build box…"></label>
     <label class="field"><span>The link stays valid for</span>
       <select id="fMinutes" name="minutes"><option value="15">15 minutes</option><option value="30" selected>30 minutes</option><option value="60">1 hour</option></select></label>
-    <p class="warnline" id="loopbackWarn" hidden>This console listens on this machine only, so a link made now works only here. To add another computer, stop the console and start it again with <code>--listen 0.0.0.0</code>.</p>
+    <p class="warnline" id="loopbackWarn" hidden>This console listens on this machine only, so a link made now works only here. To add another computer, stop the console and start it again with <code>--listen 0.0.0.0</code>.
+      <span class="copyrow" id="networkCmd" hidden><code class="cmd" id="networkCmdShown"></code><button type="button" class="btn small" id="copyNetworkCmd">Copy command</button></span></p>
     <footer><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn primary" id="createBtn">Create join link</button></footer>
   </form>
 

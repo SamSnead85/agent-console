@@ -13,10 +13,10 @@
  *   - the big figures ease toward the latest measured value (never beyond it);
  *   - a lane's spark changes only when that lane's own data does, and the
  *     machines report on their own jittered schedules.
- * Text redraws at most eight times a second. Pause motion stops the loop and
- * the polling — a held frame costs nothing and is what you want when somebody
- * asks what a number means. prefers-reduced-motion keeps every state change
- * and drops the travel.
+ * Text redraws at most eight times a second. Pause motion stops the loop, not
+ * the data: figures keep updating, each new reading painted at once without
+ * travel, exactly as prefers-reduced-motion does. A paused screen is never a
+ * stale one.
  *
  * GAPS. An unknown reading is drawn as a hatched void with its reason,
  * never a zero. A machine that stopped reporting shows when it stopped. Cost
@@ -88,7 +88,6 @@
   // ── polling ──────────────────────────────────────────────────────────
   async function poll() {
     clearTimeout(pollTimer);
-    if (paused) return;
     try {
       const response = await fetch("/api/console", { headers: HEADERS, cache: "no-store" });
       if (response.status === 401) { signedOut(); return; }
@@ -105,7 +104,7 @@
       document.body.classList.add("offline");
     } finally {
       // Signed out, there is nothing to poll for until the sign-in link reloads the page.
-      if (!paused && !document.body.classList.contains("signed-out")) pollTimer = setTimeout(poll, POLL_MS);
+      if (!document.body.classList.contains("signed-out")) pollTimer = setTimeout(poll, POLL_MS);
     }
   }
 
@@ -120,14 +119,15 @@
       : net ? "Other machines can join at " + D.hub.urls.join(", ") + ". The console itself answers only here."
       : "Only this machine can reach this console. Start it with --listen 0.0.0.0 to add other computers.";
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
-    $("tabTeam").textContent = D.devices.length ? reporting + "/" + D.devices.length : "0";
+    const current = currentDevices().length;
+    $("tabTeam").textContent = current ? reporting + "/" + current : "0";
 
     const w = win();
     target.total = w.tokens.total;
     target.spend = w.cost.usd ?? 0;
     target.msgs = w.messages;
     target.burn = D.burn.tokensPerMinute;
-    if (first || reducedMotion.matches) Object.assign(shown, target);
+    if (first || reducedMotion.matches || paused) Object.assign(shown, target);
     first = false;
 
     paintHero();
@@ -154,19 +154,29 @@
     }).join('');
   }
 
+  // ── words used the same way on every view ────────────────────────────
+  /* A machine removed from the console, or one that left, is not counted
+     among "the machines": it is shown only when Show unavailable is on. */
+  const currentDevices = () => D.devices.filter((d) => d.status !== "revoked");
+  const plural = (n, one, many = one + "s") => `${n.toLocaleString("en-US")} ${n === 1 ? one : many}`;
+  /* A session is one top-level Claude Code or Codex session; its subagents are
+     counted apart, as subagents, never as more sessions. */
+  const sessionWords = () => {
+    const subagents = Math.max(0, D.day.sessions - D.laneCount);
+    return plural(D.laneCount, "session") + " in the last 24 h" + (subagents ? " · " + plural(subagents, "subagent") : "");
+  };
+
   // ── hero ─────────────────────────────────────────────────────────────
   function paintHero() {
     const now = serverNow();
     $("heroWhen").textContent = new Date(now).toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }) + " · " + hhmm(now);
     const live = D.lanes.filter((l) => l.state === "live").length;
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
-    const subagents = Math.max(0, D.day.sessions - D.laneCount);
     const catching = D.devices.filter((d) => d.status === "catching-up").length;
-    $("heroCounts").textContent = `${D.devices.length} machine${D.devices.length === 1 ? "" : "s"} · ${reporting} reporting · ` +
-      (catching ? `${catching} catching up · ` : "") +
-      `${D.laneCount} session${D.laneCount === 1 ? "" : "s"} today · ${live} live` + (subagents ? ` · ${subagents} subagent${subagents === 1 ? "" : "s"}` : "");
+    $("heroCounts").textContent = `${plural(currentDevices().length, "machine")} · ${reporting} reporting · ` +
+      (catching ? `${catching} catching up · ` : "") + sessionWords() + ` · ${live} live`;
     $("heroScope").textContent = D.hub.demo ? "Demonstration team" : D.hub.listen.network ? "Hub · this network" : "Hub · this machine";
-    $("liveDot").classList.toggle("on", reporting > 0 && !paused);
+    $("liveDot").classList.toggle("on", reporting > 0);
   }
 
   function paintWeek() {
@@ -208,10 +218,11 @@
 
     const silent = D.devices.filter((d) => d.status === "silent");
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
+    const current = currentDevices().length;
     let prov;
     if (!D.devices.length) prov = "no machine has joined yet";
     else if (D.hub.demo) prov = `generated · ${D.devices.length} synthetic machines`;
-    else prov = `reported by ${reporting} of ${D.devices.length} machine${D.devices.length === 1 ? "" : "s"}`;
+    else prov = `reported by ${reporting} of ${plural(current, "machine")}`;
     if (silent.length) prov += `<br><b>${esc(silent[0].label)} silent since ${hhmm(silent[0].lastContactAt)}</b>` + (silent.length > 1 ? ` and ${silent.length - 1} more` : "");
     const catching = D.devices.filter((d) => d.status === "catching-up");
     if (catching.length) prov += `<br><b>${esc(catching[0].label)} ${esc(catchUpText(catching[0]))}</b>` + (catching.length > 1 ? ` and ${catching.length - 1} more` : "") + " — incomplete until it has sent everything";
@@ -246,7 +257,7 @@
     const ex = D.burn.excluded;
     const reporting = D.burn.reporting;
     $("cBurnNote").innerHTML = D.devices.length === 0 ? "no machine yet"
-      : `last ${D.burn.windowMinutes} min · ${reporting} of ${D.devices.length} machine${D.devices.length === 1 ? "" : "s"}` +
+      : `average of the last ${D.burn.windowMinutes} min · ${reporting} of ${plural(currentDevices().length, "machine")}` +
         (ex.length ? ` · <b>${esc(ex.map((d) => d.label).join(", "))} left out</b>` : "");
     $("cBurnNote").title = ex.length ? "Left out of the burn because what they are doing right now is unknown." : "";
   }
@@ -313,8 +324,8 @@
     const live = D.lanes.filter((l) => l.state === "live").length;
     const idle = D.lanes.filter((l) => l.state === "idle").length;
     const unavailable = D.lanes.filter((l) => l.state === "silent" || l.state === "revoked").length;
-    const catching = D.lanes.filter((l) => l.state === "catching-up").length;
-    const parts = [`${D.laneCount} session${D.laneCount === 1 ? "" : "s"} in 24 h`, `${live} live`, `${idle} idle`];
+    const catching = D.lanes.filter((l) => l.state === "catching-up" || l.state === "reconnecting").length;
+    const parts = [sessionWords(), `${live} live`, `${idle} idle`];
     if (catching) parts.push(`${catching} on machines still catching up${showUnavailable ? "" : " (hidden)"}`);
     if (unavailable) parts.push(`${unavailable} on silent machines${showUnavailable ? "" : " (hidden)"}`);
     const tail = D.hub.demo ? "DEMO · every figure here is generated" : "figures are what each machine reported · costs are list-price estimates";
@@ -324,11 +335,13 @@
   function fillLane(row, l, now) {
     const demo = D.hub.demo;
     row.className = "lane " + l.state + (demo ? " sim" : "");
-    const word = l.state === "live" ? (demo ? "DEMO" : "LIVE") : l.state === "idle" ? "IDLE" : l.state === "revoked" ? "REMOVED" : l.state === "catching-up" ? "CATCHING UP" : "SILENT";
+    const word = l.state === "live" ? (demo ? "DEMO" : "LIVE") : l.state === "idle" ? "IDLE" : l.state === "revoked" ? "REMOVED"
+      : l.state === "catching-up" ? "CATCHING UP" : l.state === "reconnecting" ? "RECONNECTING" : "SILENT";
     row.querySelector(".st span").textContent = word;
     row.querySelector(".st").title = l.state === "live" ? "Reported within the last two minutes" + (demo ? " (generated)" : "")
       : l.state === "idle" ? "The machine is reporting; this session has not worked for a while"
       : l.state === "catching-up" ? "The machine is still sending its backlog; what it is doing right now is not known yet"
+      : l.state === "reconnecting" ? "The console restarted moments ago; this machine was reporting then and has not reconnected yet"
       : "The machine stopped reporting; what it has done since is unknown";
     const b = row.querySelector(".pr b");
     b.textContent = l.project.name;
@@ -374,6 +387,7 @@
     const dv = row.querySelector(".dv");
     const who = l.device.person ? ` · ${esc(l.device.person)}` : "";
     dv.innerHTML = `<b>${esc(l.device.label)}</b>${who} · ` + (l.state === "catching-up" ? "catching up"
+      : l.state === "reconnecting" ? "reconnecting"
       : l.state === "silent" || l.state === "revoked"
       ? `silent since ${hhmm(l.device.lastContactAt || l.lastAt)}`
       : l.state === "live" ? "now" : ago(l.lastAt + 60_000, now));
@@ -425,17 +439,18 @@
       const p = D.hub.local.progress;
       return "Reading its transcripts" + (p && p.filesTotal ? ` · ${p.files.toLocaleString("en-US")} of ${p.filesTotal.toLocaleString("en-US")} files` : "…");
     }
-    if (d.status === "reporting") return d.mode === "periodic" ? "Reporting hourly" : "Reporting · " + ago(d.lastContactAt, now);
+    if (d.status === "reporting") return (d.mode === "periodic" ? "Reporting periodically · " : "Reporting · ") + ago(d.lastContactAt, now);
+    if (d.status === "reconnecting") return "Reconnecting — it was reporting when the console restarted";
     if (d.status === "silent") return `Silent since ${hhmm(d.lastContactAt)} · ${ago(d.lastContactAt, now)}`;
     if (d.status === "waiting") return "Joined — waiting for its first report";
-    return "Removed " + (d.revokedAt ? hhmm(Date.parse(d.revokedAt)) : "");
+    return (d.leftAt ? "Left " : "Removed ") + (d.revokedAt ? hhmm(Date.parse(d.revokedAt)) : "");
   }
   function paintMachines() {
     const now = serverNow();
     const rows = D.devices.filter((d) => d.status !== "revoked" || showUnavailable);
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
     $("machinesHint").textContent = D.devices.length
-      ? `${reporting} of ${D.devices.length} reporting · share of the last 24 hours`
+      ? `${reporting} of ${currentDevices().length} reporting · share of the last 24 hours`
       : "none yet";
     $("machines").innerHTML = rows.map((d) => `<div class="mach ${d.status}">
         <div class="n"><b>${esc(d.label)}</b><em>${esc(d.person || "")}</em>${d.local ? '<span class="here">THIS MACHINE</span>' : ""}</div>
@@ -468,6 +483,8 @@
     chart.goal = goal;
     chart.goalMax = Math.max(...goal, 1) * 1.12;
     chart.series = s;
+    // No travel without the loop: a paused or reduced-motion chart shows the reading as it is.
+    if (paused || reducedMotion.matches) { chart.vals = goal.slice(); chart.max = chart.goalMax; }
   }
 
   function smooth(pts) {
@@ -630,9 +647,11 @@
     const b = ev.currentTarget;
     b.setAttribute("aria-pressed", String(paused));
     b.textContent = paused ? "Resume motion" : "Pause motion";
+    b.title = paused ? "Figures still update; they change without moving" : "Stop the animation; figures keep updating";
     document.body.classList.toggle("paused", paused);
-    if (D) paintHero();
-    if (!paused) { poll(); startLoop(); } else clearTimeout(pollTimer);
+    // Polling carries on either way: only the travel stops.
+    if (paused && D) { Object.assign(shown, target); setChartGoal(); paintText(); drawChart(); }
+    if (!paused) startLoop();
   });
   $("voidBtn").addEventListener("click", (ev) => {
     showUnavailable = !showUnavailable;
@@ -699,16 +718,21 @@
     const cost = whole.cost;
     const msgs = whole.messages;
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
+    const current = currentDevices().length;
     const label = PERIOD_TEXT[period][1];
     $("teamTotals").innerHTML = [
-      [fmt(total), "Tokens · " + label, `across ${D.devices.length} machine${D.devices.length === 1 ? "" : "s"}`],
+      [fmt(total), "Tokens · " + label, "across " + plural(D.devices.length, "machine") + (current < D.devices.length ? `, ${D.devices.length - current} since removed` : "")],
       // Every model unpriced is "no priced model", never $0.00.
       [cost.status === "unpriced" ? "—" : cost.status === "none" ? money(0) : money(cost.usd), "Est. cost",
         cost.status === "unpriced" ? "no priced model" : cost.status === "partial" ? "partial — some models unpriced" : "list-price estimate"],
       [pct(total ? cr / total : null), "Cache read", "share of all tokens"],
       [pct(total ? cw / total : null), "Cache write", "share of all tokens"],
-      [msgs.toLocaleString("en-US"), "Messages", whole.sessions === null ? "sessions not kept past the minute detail" : `${whole.sessions} sessions`],
-      [`${reporting}<span class="u">/ ${D.devices.length}</span>`, "Machines reporting", D.people.length + " people" + (D.devices.some((d) => d.status === "catching-up") ? " · some still catching up" : "")],
+      // A session is a top-level session everywhere; outside the last 24 h the
+      // count kept per period includes subagents, and says so.
+      [msgs.toLocaleString("en-US"), "Messages", period === "24h" ? sessionWords()
+        : whole.sessions === null ? "sessions not kept past the minute detail"
+        : plural(whole.sessions, "session or subagent", "sessions and subagents")],
+      [`${reporting}<span class="u">/ ${current}</span>`, "Machines reporting", plural(D.people.length, "person", "people") + (D.devices.some((d) => d.status === "catching-up") ? " · some still catching up" : "")],
     ].map(([v, l, s]) => `<div><div class="v">${v}</div><div class="l">${esc(l)}</div><div class="s">${esc(s)}</div></div>`).join("");
 
     $("peopleTable").tBodies[0].innerHTML = D.people.length ? D.people.map((p) => {
@@ -782,9 +806,9 @@
       $("projTotals").innerHTML = [
         [fmt(p.tokens), "Tokens", p.demo ? "DEMO · generated" : "this machine's transcripts"],
         [String(p.projects.length), "Projects", `${p.withRepo} in a Git repository`],
-        [t.commits.toLocaleString("en-US"), "Commits", "local Git history"],
+        [t.commits.toLocaleString("en-US"), "Commits", p.author === true ? "yours, by this machine's Git email" : p.author === false ? "every author — no Git email set here" : "local Git history"],
         [`+${fmt(t.added)} <span class="u">−${fmt(t.removed)}</span>`, "Lines changed", "added / removed"],
-        [t.prsMerged === null ? "—" : String(t.prsMerged), "PRs merged", t.prsMerged === null ? "not read — needs a Git remote" : "from merge commits"],
+        [t.prsMerged === null ? "—" : String(t.prsMerged), "Commits referencing #N", t.prsMerged === null ? "not read — needs a Git remote" : "subjects ending (#N) or merging a pull request"],
         [p.sessions === null ? "—" : String(p.sessions), "Sessions", p.sessions === null ? "not kept past the minute detail" : "Claude Code and Codex"],
       ].map(([v, l, s]) => `<div><div class="v">${v}</div><div class="l">${esc(l)}</div><div class="s">${esc(s)}</div></div>`).join("");
       body.innerHTML = p.projects.length ? p.projects.map((x) => `<tr>
@@ -799,6 +823,8 @@
         <td class="num">${esc((x.branches || []).slice(0, 3).join(", ") || "—")}</td></tr>`).join("")
         : `<tr><td colspan="11">No project on this machine has transcripts in this period.</td></tr>`;
       $("projNote").textContent = (p.demo ? "DEMO — synthetic projects and Git figures. " : "") +
+        (p.author === true ? "Git figures count only commits authored with this machine's Git email (user.email). " : p.author === false ? "No Git email (user.email) is set in one of these repositories, so its Git figures count every author. " : "") +
+        "A commit referencing #N is a subject ending (#N) or a pull-request merge; it may name an issue rather than a merged pull request. " +
         "Spend per outcome is spend in the window of the work, not attribution. This is not a productivity score. Tokens measure usage, not value. Default merges count local default-branch integration commits. A dash means no eligible count, verified price or local default-branch ref. None of this leaves this machine.";
     } catch (error) {
       body.innerHTML = `<tr><td colspan="11">This machine's projects could not be read: ${esc(error.message)}</td></tr>`;
@@ -811,6 +837,20 @@
     document.body.classList.add("signed-out");
     $("signedOut").hidden = false;
   }
+  // The way back in without restarting: the console prints a new sign-in link
+  // in its own window. Nothing comes back here but that it was printed.
+  $("printSignIn").addEventListener("click", async () => {
+    const say = $("printSay");
+    try {
+      const response = await fetch("/api/sign-in/print", { method: "POST", headers: HEADERS, cache: "no-store" });
+      const body = await response.json().catch(() => ({}));
+      say.textContent = response.ok ? "A new sign-in link is in the window where the console runs. It works once."
+        : body.reason || "The console did not print a link. Try again in a few seconds.";
+    } catch {
+      say.textContent = "The console did not answer. Is it still running?";
+    }
+    say.hidden = false;
+  });
   // Ends this browser's session on the console, not just the page.
   $("signOutBtn").addEventListener("click", async () => {
     try {
@@ -835,6 +875,11 @@
     $("addForm").reset();
     $("peopleList").innerHTML = (D ? D.people : []).map((p) => `<option value="${esc(p.person)}"></option>`).join("");
     $("loopbackWarn").hidden = !D || D.hub.listen.network || D.hub.demo;
+    // The first remote machine needs the console restarted to listen on the
+    // network: the exact command, with the options it runs with now.
+    const again = D && D.hub.networkCommand;
+    $("networkCmd").hidden = !again;
+    $("networkCmdShown").textContent = again || "";
     addDialog.showModal();
     $("fPerson").focus();
   }
@@ -875,7 +920,8 @@
         : j.network
           ? `Send ${esc(who)} the command below by any message. They paste it into a terminal on their computer, which must be on the same network as this machine. Agent Console itself comes from its GitHub release, never from this machine.`
           : `This console listens on this machine only, so the link works only here — for example for a second account on this computer. To add another computer, restart with <code>--listen 0.0.0.0</code>.`;
-      $("linkExpiry").textContent = `Works once. Expires at ${hhmm(j.invitation.expiresAt)}.`;
+      $("linkExpiry").textContent = `Works once. Expires at ${hhmm(j.invitation.expiresAt)}.`
+        + (j.adjusted && j.adjusted.minutes ? ` (${j.adjusted.minutes.used} minutes, not ${j.adjusted.minutes.asked}: ${j.adjusted.minutes.reason}.)` : "");
       const status = $("joinStatus");
       status.className = "waiting";
       status.innerHTML = "<i></i>Waiting for the machine to join…";
@@ -895,6 +941,7 @@
   $("copyLink").addEventListener("click", () => pending && pending.link && copy(pending.link, "Join link copied. It works once."));
   $("copyCmd").addEventListener("click", () => pending && pending.command && copy(pending.command, "Command copied."));
   $("copyTyped").addEventListener("click", () => pending && pending.typed && copy(pending.typed, "Command copied."));
+  $("copyNetworkCmd").addEventListener("click", () => D && D.hub.networkCommand && copy(D.hub.networkCommand, "Command copied. Stop the console with Ctrl+C, then run it."));
   function watchJoin() {
     if (!pending || !addDialog.open) return;
     const inv = D.invitations.find((i) => i.id === pending.id);

@@ -67,7 +67,10 @@ tool fees. It is not an invoice.
 
 Tokens, estimated cost, sessions and branches per project folder, from the
 console's own machine only, beside what that folder's local Git history
-recorded in the same period: commits, lines added and removed, and pull
-requests merged (counted from merge and squash-merge commit subjects). Git
+recorded in the same period: commits, lines added and removed, and commits
+referencing #N (merge commits of pull requests, and subjects ending `(#N)`,
+which can name an issue as well as a merged pull request). Only commits whose
+author email is the repository's configured `user.email` are counted; with
+none configured, every author is, and the page says so. Git
 evidence describes delivery activity. It does not measure value, quality or
 causation, and tokens do not measure productivity.
