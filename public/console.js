@@ -31,6 +31,9 @@
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   // ── formatting ───────────────────────────────────────────────────────
+  // A Git figure the hub could not read is null: a dash, never a measured 0.
+  const gitN = (v) => (v === null || v === undefined ? "—" : v.toLocaleString("en-US"));
+  const gitLines = (t) => (t.added === null || t.removed === null ? "—" : null);
   const fmt = (n) => {
     if (n === null || n === undefined || !Number.isFinite(n)) return "—";
     const a = Math.abs(n);
