@@ -296,7 +296,9 @@ test("pausing motion never stops the polling, and the words agree across views",
 // ---------------------------------------------------------------------------
 
 function startDemo(port) {
-  const child = spawn(process.execPath, [BIN, "--demo", "--json", "--port", String(port)], { stdio: ["ignore", "pipe", "pipe"] });
+  // Reporting on any free port: the one after `port` can be taken or reserved
+  // (Windows reserves port ranges), which is not what this test is about.
+  const child = spawn(process.execPath, [BIN, "--demo", "--json", "--port", String(port), "--report-port", "0"], { stdio: ["ignore", "pipe", "pipe"] });
   let out = "";
   child.stdout.on("data", (c) => { out += c; });
   child.stderr.on("data", (c) => { out += c; });
@@ -328,7 +330,7 @@ test("a demo console prints a new sign-in link on request, from its page or from
   assert.equal((await fetch(meta.url + "/api/sign-in/print", { method: "POST" })).status, 403, "needs the console's own header");
 
   await new Promise((r) => setTimeout(r, 3100));
-  const second = spawnSync(process.execPath, [BIN, "--demo", "--port", String(port)], { encoding: "utf8", timeout: 20_000 });
+  const second = spawnSync(process.execPath, [BIN, "--demo", "--port", String(port), "--report-port", "0"], { encoding: "utf8", timeout: 20_000 });
   assert.equal(second.status, 0, second.stdout + second.stderr);
   assert.match(second.stdout, /A demo of Agent Console is already running at .*\n.*printed a new sign-in link in the window where it runs/u);
 });
