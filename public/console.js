@@ -1591,7 +1591,37 @@
   }
   const projLaneRows = new Map();
   // A cell the hub cannot fill says why in a word, never a dash; a reading held back by a named cause is hatched.
-  const na = (word, why, held = false) => `<span class="na${held ? " held" : ""}" title="${esc(why)}">${esc(word)}</span>`;
+  // `spoken` also gives the reason to a screen reader, which does not read a title.
+  const na = (word, why, held = false, spoken = false) => `<span class="na${held ? " held" : ""}" title="${esc(why)}">${esc(word)}${spoken ? `<span class="visually-hidden"> — ${esc(why)}</span>` : ""}</span>`;
+  const noGit = na("no Git", "Not a Git repository: nothing to count");
+  // Merges into the default branch, read three ways and never by truthiness: null is evidence the console could
+  // not read (no default branch is known), 0 is an observed none, a positive number is that count.
+  function mergeReading(x) {
+    const c = x.costPerOutcome, n = c.defaultMerges;
+    if (!x.repo) return { count: null, per: null, word: "no Git", why: "Not a Git repository: nothing to count" };
+    if (!Number.isSafeInteger(n) || n < 0) return { count: null, per: null, word: "no default", why: "No default branch is known here, so merges into it could not be counted: unavailable, not zero" };
+    if (c.perDefaultMergeUsd !== null) return { count: n, per: c.perDefaultMergeUsd };
+    return n === 0 ? { count: 0, per: null, word: "no merge", why: "No local default-branch integration in the period, so nothing to divide by" }
+      : { count: n, per: null, word: "unpriced", why: "No verified list price for what ran here, so no dollar figure" };
+  }
+  // One row of the Projects table.
+  function projectRow(x, p, label) {
+    const c = x.costPerOutcome, m = mergeReading(x);
+    return `<tr class="door" data-inspect="project:${esc(x.name)}">
+      <td class="k1"><button type="button" class="rowbtn" data-inspect="project:${esc(x.name)}" title="Open ${esc(x.name)}">${esc(x.name)}</button>${demoStamp()}${x.repo ? (x.repo.name !== x.name ? `<span class="sub">${esc(x.repo.name)}</span>` : "") : `<span class="sub"><b>not a Git repository</b></span>`}</td>
+      <td class="k3" data-l="live" data-live="${esc(x.name)}"><span class="live-dot"><i></i>—</span></td>
+      <td data-spark="${esc(x.name)}"><span class="sp none">—</span></td>
+      <td class="num r k3" data-l="tokens" data-src="projects.tokens" title="${fmt(x.tokens)} tokens in this machine's transcripts · ${esc(label)}">${fmt(x.tokens)}</td><td class="k2">${shareBar(p.tokens ? x.tokens / p.tokens : null, "projects.tokens")}</td>
+      <td class="num r k3" data-l="est." data-internal data-src="projects.usd" title="${x.usd === null ? "No verified list price for what ran here" : "List-price estimate. Not an invoice."}">${x.usd === null ? "unpriced" : money(x.usd) + " est."}</td>
+      <td class="num r" data-src="projects.sessions" title="${x.sessions === null ? "Sessions are kept with the minute detail" : plural(x.sessions, "session") + " · " + esc(label)}">${x.sessions === null ? na("not kept", "Sessions are kept with the minute detail (7 days); nothing is estimated in their place", true) : x.sessions}</td>
+      <td class="num r k3" data-l="commits" data-src="projects.repo.commits" title="${x.repo ? plural(x.repo.commits, "commit") + " in local Git · " + esc(label) : "Not a Git repository"}">${x.repo ? x.repo.commits : noGit}</td>
+      <td class="num r" data-src="projects.repo.added" title="${x.repo ? "Lines added and removed in local Git · " + esc(label) : "Not a Git repository"}">${x.repo ? `+${x.repo.added.toLocaleString("en-US")} / −${x.repo.removed.toLocaleString("en-US")}` : noGit}</td>
+      <td class="num r" data-src="projects.repo.prsMerged" title="Commits whose subject ends (#N) or merges a pull request">${!x.repo ? noGit : x.repo.prsMerged === null ? na("no remote", "Needs a remote to tell pull requests from issues") : x.repo.prsMerged}</td>
+      <td class="num r" data-src="projects.costPerOutcome.defaultMerges" title="Local default-branch integration commits">${m.count === null ? na(m.word, m.why, false, true) : m.count}</td>
+      <td class="num r" data-internal data-src="projects.costPerOutcome.perCommitUsd" title="Spend in the work window per local commit, not attribution">${!x.repo ? noGit : c.perCommitUsd === null ? (x.repo.commits ? na("unpriced", "No verified list price for what ran here, so no dollar figure") : na("no commit", "No local commit in the period")) : money(c.perCommitUsd) + " est."}</td>
+      <td class="num r" data-internal data-src="projects.costPerOutcome.perDefaultMergeUsd" title="Spend in the work window per local default-branch integration, not attribution">${m.per === null ? na(m.word, m.why, false, true) : money(m.per) + " est."}</td>
+      <td class="num" data-src="projects.branches">${(x.branches || []).length ? esc(x.branches.slice(0, 3).join(", ")) : na("no branch", "No branch name reached the console from this project's sessions")}</td></tr>`;
+  }
   async function loadProjects() {
     const body = $("projTable").tBodies[0];
     if (!projCache) body.innerHTML = `<tr><td colspan="14">Reading this machine…</td></tr>`;
@@ -1648,21 +1678,7 @@
       $("pEffortHint").title = "Tokens measure usage, not value; this is not a productivity score.";
 
       $("projTableCount").textContent = `${plural(p.projects.length, "project")} · ${p.withRepo} in Git · ${label}`;
-      const noGit = na("no Git", "Not a Git repository: nothing to count");
-      body.innerHTML = p.projects.length ? ranked.map((x) => { const c = x.costPerOutcome; return `<tr class="door" data-inspect="project:${esc(x.name)}">
-        <td class="k1"><button type="button" class="rowbtn" data-inspect="project:${esc(x.name)}" title="Open ${esc(x.name)}">${esc(x.name)}</button>${demoStamp()}${x.repo ? (x.repo.name !== x.name ? `<span class="sub">${esc(x.repo.name)}</span>` : "") : `<span class="sub"><b>not a Git repository</b></span>`}</td>
-        <td class="k3" data-l="live" data-live="${esc(x.name)}"><span class="live-dot"><i></i>—</span></td>
-        <td data-spark="${esc(x.name)}"><span class="sp none">—</span></td>
-        <td class="num r k3" data-l="tokens" data-src="projects.tokens" title="${fmt(x.tokens)} tokens in this machine's transcripts · ${esc(label)}">${fmt(x.tokens)}</td><td class="k2">${shareBar(p.tokens ? x.tokens / p.tokens : null, "projects.tokens")}</td>
-        <td class="num r k3" data-l="est." data-internal data-src="projects.usd" title="${x.usd === null ? "No verified list price for what ran here" : "List-price estimate. Not an invoice."}">${x.usd === null ? "unpriced" : money(x.usd) + " est."}</td>
-        <td class="num r" data-src="projects.sessions" title="${x.sessions === null ? "Sessions are kept with the minute detail" : plural(x.sessions, "session") + " · " + esc(label)}">${x.sessions === null ? na("not kept", "Sessions are kept with the minute detail (7 days); nothing is estimated in their place", true) : x.sessions}</td>
-        <td class="num r k3" data-l="commits" data-src="projects.repo.commits" title="${x.repo ? plural(x.repo.commits, "commit") + " in local Git · " + esc(label) : "Not a Git repository"}">${x.repo ? x.repo.commits : noGit}</td>
-        <td class="num r" data-src="projects.repo.added" title="${x.repo ? "Lines added and removed in local Git · " + esc(label) : "Not a Git repository"}">${x.repo ? `+${x.repo.added.toLocaleString("en-US")} / −${x.repo.removed.toLocaleString("en-US")}` : noGit}</td>
-        <td class="num r" data-src="projects.repo.prsMerged" title="Commits whose subject ends (#N) or merges a pull request">${!x.repo ? noGit : x.repo.prsMerged === null ? na("no remote", "Needs a remote to tell pull requests from issues") : x.repo.prsMerged}</td>
-        <td class="num r" data-src="projects.costPerOutcome.defaultMerges" title="Local default-branch integration commits">${!x.repo ? noGit : c.defaultMerges === null ? na("no default", "No local default-branch ref to count merges into") : c.defaultMerges}</td>
-        <td class="num r" data-internal data-src="projects.costPerOutcome.perCommitUsd" title="Spend in the work window per local commit, not attribution">${!x.repo ? noGit : c.perCommitUsd === null ? (x.repo.commits ? na("unpriced", "No verified list price for what ran here, so no dollar figure") : na("no commit", "No local commit in the period")) : money(c.perCommitUsd) + " est."}</td>
-        <td class="num r" data-internal data-src="projects.costPerOutcome.perDefaultMergeUsd" title="Spend in the work window per local default-branch integration, not attribution">${!x.repo ? noGit : c.perDefaultMergeUsd === null ? (c.defaultMerges ? na("unpriced", "No verified list price for what ran here, so no dollar figure") : na("no merge", "No local default-branch integration in the period")) : money(c.perDefaultMergeUsd) + " est."}</td>
-        <td class="num" data-src="projects.branches">${(x.branches || []).length ? esc(x.branches.slice(0, 3).join(", ")) : na("no branch", "No branch name reached the console from this project's sessions")}</td></tr>`; }).join("")
+      body.innerHTML = p.projects.length ? ranked.map((x) => projectRow(x, p, label)).join("")
         : `<tr><td colspan="14">No project on this machine has transcripts in this period.</td></tr>`;
       paintProjectsLive();
       watchScroll($("projCanvas"));
@@ -1838,6 +1854,17 @@
       + (lanes.length > 12 ? `<div class="iquiet">${lanes.length - 12} more in the lanes</div>` : "")
     : `<div class="iquiet">No session in the last 24 hours.</div>`;
   const modelList = (models, cap) => models.length ? `<div class="ihead">Models <span>${esc(cap)}</span></div>` + modelRows(models, "inspect", models) : "";
+  // The Projects inspector for one project with transcripts in the period.
+  function projectInspectBody(x, cap, s, lanes) {
+    const c = x.costPerOutcome, m = mergeReading(x);
+    return `<div class="ihero"><span class="big" data-src="projects.tokens">${fmt(x.tokens)}</span><span class="u">tokens · ${esc(cap)} · this machine</span>${demoStamp()}</div>
+    <div class="iline">${x.repo ? `<b>${esc(x.repo.name)}</b> · ${plural(x.repo.commits, "commit")}` : "<b>not a Git repository</b>"}${x.branches && x.branches.length ? ` · ${x.branches.map(esc).join(", ")}` : ""}</div>
+    ${ikv([[x.usd === null ? "unpriced" : money(x.usd), "est.", x.usd === null ? "warn" : "", "projects.usd"], [x.sessions === null ? "not kept" : String(x.sessions), "sessions", "", "projects.sessions"],
+      [x.repo ? `+${fmt(x.repo.added)} <span class="u">−${fmt(x.repo.removed)}</span>` : "no Git", "lines", "", "projects.repo.added"], [x.repo && x.repo.prsMerged !== null ? String(x.repo.prsMerged) : x.repo ? "no remote" : "no Git", "PR-linked commits", "", "projects.repo.prsMerged"],
+      [c.perCommitUsd === null ? (x.repo && x.repo.commits ? "unpriced" : "no commit") : money(c.perCommitUsd), "$ / commit · est.", "", "projects.costPerOutcome.perCommitUsd"], [m.per === null ? na(m.word, m.why, false, true) : money(m.per), `$ / merge · est. · ${m.count === null ? "merges not counted" : plural(m.count, "merge")}`, "", "projects.costPerOutcome.perDefaultMergeUsd"]])}
+    <div class="ihead">Last hour <span>${s ? fmt(s.spark.reduce((a, b) => a + b, 0)) + " tokens" : "—"}</span></div>${isparkHtml(s, false)}
+    ${laneList(lanes)}`;
+  }
   function paintInspect() {
     if (!D || !inspect.open) return;
     const now = serverNow();
@@ -1892,14 +1919,7 @@
       title = inspect.id;
       if (!x) body = `<div class="iquiet">${projCache ? "This project has no transcripts in this period." : "Reading this machine…"}</div>` + laneList(lanes);
       else {
-        const c = x.costPerOutcome;
-        body = `<div class="ihero"><span class="big" data-src="projects.tokens">${fmt(x.tokens)}</span><span class="u">tokens · ${esc(cap)} · this machine</span>${demoStamp()}</div>
-          <div class="iline">${x.repo ? `<b>${esc(x.repo.name)}</b> · ${plural(x.repo.commits, "commit")}` : "<b>not a Git repository</b>"}${x.branches && x.branches.length ? ` · ${x.branches.map(esc).join(", ")}` : ""}</div>
-          ${ikv([[x.usd === null ? "unpriced" : money(x.usd), "est.", x.usd === null ? "warn" : "", "projects.usd"], [x.sessions === null ? "not kept" : String(x.sessions), "sessions", "", "projects.sessions"],
-            [x.repo ? `+${fmt(x.repo.added)} <span class="u">−${fmt(x.repo.removed)}</span>` : "no Git", "lines", "", "projects.repo.added"], [x.repo && x.repo.prsMerged !== null ? String(x.repo.prsMerged) : x.repo ? "no remote" : "no Git", "PR-linked commits", "", "projects.repo.prsMerged"],
-            [c.perCommitUsd === null ? (x.repo && x.repo.commits ? "unpriced" : "no commit") : money(c.perCommitUsd), "$ / commit · est.", "", "projects.costPerOutcome.perCommitUsd"], [c.perDefaultMergeUsd === null ? (c.defaultMerges ? "unpriced" : "no merge") : money(c.perDefaultMergeUsd), `$ / merge · est.${c.defaultMerges ? " · " + c.defaultMerges : ""}`, "", "projects.costPerOutcome.perDefaultMergeUsd"]])}
-          <div class="ihead">Last hour <span>${s ? fmt(s.spark.reduce((a, b) => a + b, 0)) + " tokens" : "—"}</span></div>${isparkHtml(s, false)}
-          ${laneList(lanes)}`;
+        body = projectInspectBody(x, cap, s, lanes);
       }
     } else if (inspect.kind === "lane") {
       // A lane, whole: what the row's cells fold away on a phone — its day by class, its context, its cache signals, its agents.
