@@ -2,15 +2,32 @@ name: Release asset
 # When a release is published, CI builds the package from the release's tag,
 # tests it, attaches it with its SHA-256, and records a signed build
 # provenance attestation for it. The one-line install and every join command
-# fetch exactly this file; nothing is built on anyone's own machine.
+# fetch exactly this file; nothing is built on anyone's own machine. The
+# standalone executables (binaries.yml) are built from the same tag and go
+# under the same SHA256SUMS and attestation.
 on:
   release:
     types: [published]
 permissions:
   contents: read
 jobs:
+  executables:
+    name: Standalone executables
+    uses: ./.github/workflows/binaries.yml
+    with:
+      ref: ${{ github.event.release.tag_name }}
+    secrets:
+      APPLE_DEVELOPER_ID_P12: ${{ secrets.APPLE_DEVELOPER_ID_P12 }}
+      APPLE_DEVELOPER_ID_P12_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_P12_PASSWORD }}
+      APPLE_NOTARY_KEY_P8: ${{ secrets.APPLE_NOTARY_KEY_P8 }}
+      APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+      APPLE_NOTARY_ISSUER: ${{ secrets.APPLE_NOTARY_ISSUER }}
   asset:
     name: Build, attest and attach the package
+    # Waits for the executables but is never held back by them: if they fail,
+    # the package still ships, and the last step fails to say so.
+    needs: executables
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -27,18 +44,25 @@ jobs:
           node-version: 22
       - run: npm test
       - run: npm run smoke:pack
+      - name: Collect the executables
+        if: needs.executables.result == 'success'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: agent-console-*
+          merge-multiple: true
       - name: Pack
         env:
           TAG: ${{ github.event.release.tag_name }}
         run: |
           version="${TAG#v}"
           test "$(node -p "require('./package.json').version")" = "$version"
-          npm pack
-          sha256sum "lockedinlabs-agent-console-${version}.tgz" > SHA256SUMS
+          mkdir -p dist
+          npm pack --pack-destination dist
+          (cd dist && sha256sum -- * > ../SHA256SUMS)
           cat SHA256SUMS
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: lockedinlabs-agent-console-*.tgz
+          subject-path: dist/*
       # No --clobber: a release file that already exists is never replaced
       # silently. If a file must really change, delete it on the release page
       # first, on purpose, and run this job again.
@@ -46,4 +70,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$TAG" lockedinlabs-agent-console-*.tgz SHA256SUMS --repo "$GITHUB_REPOSITORY"
+        # Each executable is shown on the release page with its label: the
+        # file name, the platform, and whether it is signed.
+        run: |
+          files=()
+          for f in dist/*; do
+            label="labels/$(basename "$f").label"
+            if [ -f "$label" ]; then files+=("$f#$(cat "$label")"); else files+=("$f"); fi
+          done
+          gh release upload "$TAG" "${files[@]}" SHA256SUMS --repo "$GITHUB_REPOSITORY"
+      - name: Every executable attached
+        if: needs.executables.result != 'success'
+        run: |
+          echo "::error::The standalone executables did not build, so this release carries only the package. Fix binaries.yml and publish a patch release."
+          exit 1
