@@ -149,7 +149,7 @@ if (config.demo) {
   });
 }
 if (!config.demo) {
-  process.on("exit", () => { try { registry.flush(); names && names.save(); } catch { /* exiting */ } });
+  process.on("exit", () => { try { registry.flush(); names && names.save(); store.flush(); } catch { /* exiting */ } });
   for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => process.exit(signal === "SIGINT" ? 130 : 143));
 }
 

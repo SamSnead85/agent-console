@@ -58,7 +58,12 @@
     ? `${minutes} m observed` : `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60} m` : ""} observed`;
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const TOOL = { "claude-code": "Claude Code", codex: "Codex" };
-  const CLASS_LABEL = { cacheRead: "cache read", cacheWrite: "cache write", output: "output", fresh: "input" };
+  // "input" is uncached input only; cached input is the cache read and write classes.
+  const CLASS_LABEL = { cacheRead: "cache read", cacheWrite: "cache write", output: "output", fresh: "uncached input" };
+  // One period for every view (lib/hub/aggregate.js, PERIODS): the headline,
+  // the chart, Team and Projects all answer for it.
+  const PERIOD_TEXT = { "1h": ["last hour", "1 h", "one hour ago"], "24h": ["last 24 hours", "24 h", "24 hours ago"],
+    "7d": ["last 7 days", "7 days", "seven days ago"], "30d": ["last 30 days", "30 days", "30 days ago"] };
   const vendorMark = (vendor) => vendor
     ? `<svg aria-label="${vendor === "anthropic" ? "Anthropic" : "OpenAI"}" role="img"><use href="#mk-${vendor}"/></svg>`
     : `<i class="none" title="No vendor mark for this model"></i>`;
@@ -67,12 +72,10 @@
   let D = null;                 // the last payload
   let receivedAt = 0;           // performance.now() when it arrived
   let view = "console";
-  let chartWindow = "24h";
+  let period = "24h";
   let perSecond = false;
   let paused = false;
   let showUnavailable = false;
-  let teamPeriod = "day";
-  let projPeriod = "24h";
   let pollTimer = null;
   let offline = false;
   const target = { total: 0, spend: 0, msgs: 0, burn: 0 };
@@ -119,9 +122,10 @@
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
     $("tabTeam").textContent = D.devices.length ? reporting + "/" + D.devices.length : "0";
 
-    target.total = D.day.tokens.total;
-    target.spend = D.day.cost.usd ?? 0;
-    target.msgs = D.day.messages;
+    const w = win();
+    target.total = w.tokens.total;
+    target.spend = w.cost.usd ?? 0;
+    target.msgs = w.messages;
     target.burn = D.burn.tokensPerMinute;
     if (first || reducedMotion.matches) Object.assign(shown, target);
     first = false;
@@ -176,16 +180,31 @@
     $("heroWeekArea").setAttribute("d", line + `L${W} ${H}L0 ${H}Z`);
   }
 
-  // ── tokens · last 24 hours ──────────────────────────────────────────
+  // The summary for the chosen period; a 0.2 hub sends only the day.
+  const win = () => (D.windows && D.windows[period]) || D.day;
+  const pw = (x) => (x.windows && x.windows[period]) || x.day;
+  function paintPeriod() {
+    const [label, short] = PERIOD_TEXT[period];
+    const w = win();
+    const since = period === "30d" && w.partial && w.since ? " · daily totals kept since " + new Date(w.since + "T00:00:00Z").toLocaleDateString([], { day: "numeric", month: "short", timeZone: "UTC" }) : "";
+    $("cCap").textContent = "Tokens · " + label + since;
+    $("cCap").title = period === "30d" ? "The last 30 calendar days in UTC, today included, from the daily totals the console keeps after its minute-by-minute detail."
+      : "The whole minutes of the " + label + ", ending with the current one. The chart's bars add up to this figure.";
+    $("cModelCap").textContent = "by model · " + short;
+  }
+
+  // ── tokens for the period ────────────────────────────────────────────
   function paintClasses() {
-    const t = D.day.tokens, sh = D.day.shares;
+    paintPeriod();
+    const w = win();
+    const t = w.tokens, sh = w.shares;
     const order = ["cacheRead", "cacheWrite", "output", "fresh"];
     $("cMix").innerHTML = t.total > 0
       ? order.map((k) => `<i class="${k}" style="flex-grow:${Math.max(t[k], 0)}" title="${CLASS_LABEL[k]} ${pct(sh[k])}"></i>`).join("")
       : "";
     $("cMix").setAttribute("aria-label", "Token composition: " + order.map((k) => `${CLASS_LABEL[k]} ${pct(sh[k])}`).join(", "));
     $("cClasses").innerHTML = order.map((k) =>
-      `<span title="${esc(CLASS_LABEL[k])} — ${pct(sh[k], 2)} of all tokens${k === "cacheRead" ? `; ${pct(sh.cacheHitOnInput, 1)} of input tokens` : ""}${D.day.unknown[k] ? `; ${D.day.unknown[k]} records did not report this class` : ""}"><i class="sw ${k}"></i><span>${CLASS_LABEL[k]}</span><b>${fmt(t[k])}</b><em class="pc">${pct(sh[k])}</em></span>`).join("");
+      `<span title="${esc(CLASS_LABEL[k])} — ${pct(sh[k], 2)} of all tokens${k === "cacheRead" ? `; ${pct(sh.cacheHitOnInput, 1)} of input tokens` : ""}${k === "cacheWrite" && t.cacheWrite5m !== undefined ? `; 5-minute ${fmt(t.cacheWrite5m)} · 1-hour ${fmt(t.cacheWrite1h)} · lifetime not reported ${fmt(t.cacheWriteUnknownTtl)}` : ""}${k === "fresh" ? "; input the cache did not serve" : ""}${w.unknown[k] ? `; ${w.unknown[k]} records did not report this class` : ""}"><i class="sw ${k}"></i><span>${CLASS_LABEL[k]}</span><b>${fmt(t[k])}</b><em class="pc">${pct(sh[k])}</em></span>`).join("");
 
     const silent = D.devices.filter((d) => d.status === "silent");
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
@@ -196,8 +215,11 @@
     if (silent.length) prov += `<br><b>${esc(silent[0].label)} silent since ${hhmm(silent[0].lastContactAt)}</b>` + (silent.length > 1 ? ` and ${silent.length - 1} more` : "");
     const catching = D.devices.filter((d) => d.status === "catching-up");
     if (catching.length) prov += `<br><b>${esc(catching[0].label)} ${esc(catchUpText(catching[0]))}</b>` + (catching.length > 1 ? ` and ${catching.length - 1} more` : "") + " — incomplete until it has sent everything";
-    const unknown = Math.max(...Object.values(D.day.unknown));
+    const unknown = Math.max(...Object.values(w.unknown));
     if (unknown) prov += ` · ${unknown} record${unknown === 1 ? "" : "s"} missing a class — a floor, not a total`;
+    // What could not be counted is said here, never left out quietly.
+    const cov = D.coverage;
+    if (cov && cov.dropped) prov += `<br><b title="${esc(cov.reasons.map((r) => r.count + " × " + r.label).join("; "))}">${cov.dropped.toLocaleString("en-US")} transcript record${cov.dropped === 1 ? "" : "s"} could not be counted</b> — ${esc(cov.reasons.slice(0, 2).map((r) => r.label).join(", "))}${cov.reasons.length > 2 ? " and more" : ""}`;
     $("cProv").innerHTML = prov;
     const flow = $("flowWrap");
     const empty = D.day.tokens.total === 0 && D.series["7d"].values.every((v) => v === 0);
@@ -212,7 +234,7 @@
 
   // ── burn and models ───────────────────────────────────────────────────
   function paintModels() {
-    const models = D.day.models.slice(0, 6);
+    const models = win().models.slice(0, 6);
     const max = Math.max(...models.map((m) => m.tokens), 1);
     $("cModels").innerHTML = models.length ? models.map((m) => `<div class="mrow">
         <span class="mn" title="${esc(m.model)}">${vendorMark(m.vendor)}${esc(m.label)}</span>
@@ -418,23 +440,23 @@
     $("machines").innerHTML = rows.map((d) => `<div class="mach ${d.status}">
         <div class="n"><b>${esc(d.label)}</b><em>${esc(d.person || "")}</em>${d.local ? '<span class="here">THIS MACHINE</span>' : ""}</div>
         <div class="s ${d.status === "reporting" ? "ok" : ""}">${esc(statusText(d, now))}</div>
-        <div class="row"><span class="v">${fmt(d.day.tokens.total)}</span><span class="l">tokens · 24 h</span><span class="pc">${pct(d.day.shareOfWhole)}</span></div>
-        <div class="bar" aria-hidden="true"><i style="width:${Math.round((d.day.shareOfWhole || 0) * 100)}%"></i></div>
+        <div class="row"><span class="v">${fmt(pw(d).tokens.total)}</span><span class="l">tokens · ${PERIOD_TEXT[period][1]}</span><span class="pc">${pct(pw(d).shareOfWhole)}</span></div>
+        <div class="bar" aria-hidden="true"><i style="width:${Math.round((pw(d).shareOfWhole || 0) * 100)}%"></i></div>
       </div>`).join("");
   }
 
   // ── the chart ────────────────────────────────────────────────────────
   const W = 520, H = 100;
   function setChartGoal() {
-    const s = D.series[chartWindow];
-    const key = chartWindow + ":" + s.start;
+    const s = D.series[period];
+    const key = period + ":" + s.start;
     const goal = s.values.slice();
     // The newest step is still filling. Drawn raw it would dip at the right
     // edge every time; drawn as a rate over the part of it that has elapsed,
     // it says the same thing the other steps say.
     const elapsed = Math.max(0.25, Math.min(1, (D.now - (s.start + s.step * (goal.length - 1))) / s.step));
     goal[goal.length - 1] = goal[goal.length - 1] / elapsed;
-    if (chart.key !== null && chart.key.split(":")[0] === chartWindow && chart.vals.length === goal.length) {
+    if (chart.key !== null && chart.key.split(":")[0] === period && chart.vals.length === goal.length) {
       // same window, the frame advanced by whole steps: shift what is on screen
       const shift = Math.round((s.start - Number(chart.key.split(":")[1])) / s.step);
       if (shift > 0) chart.vals = chart.vals.slice(shift).concat(goal.slice(-shift));
@@ -508,8 +530,10 @@
     tip.hidden = false;
     tip.style.left = Math.max(12, Math.min(88, fx * 100)) + "%";
     const until = i === s.values.length - 1 ? "now" : hhmm(from + s.step);
-    const day = chartWindow === "7d" ? new Date(from).toLocaleDateString([], { weekday: "short" }) + " " : "";
-    tip.innerHTML = `${day}${hhmm(from)}–${until} · <b>${fmt(s.values[i])}</b> tokens`;
+    const day = period === "7d" ? new Date(from).toLocaleDateString([], { weekday: "short" }) + " " : "";
+    tip.innerHTML = period === "30d"
+      ? `${new Date(from).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })} (UTC)${i === s.values.length - 1 ? " · so far" : ""} · <b>${fmt(s.values[i])}</b> tokens`
+      : `${day}${hhmm(from)}–${until} · <b>${fmt(s.values[i])}</b> tokens`;
     const hover = $("cHover");
     hover.setAttribute("x1", (fx * W).toFixed(1));
     hover.setAttribute("x2", (fx * W).toFixed(1));
@@ -521,9 +545,10 @@
   let last = performance.now(), textAcc = 1;
   function paintText() {
     if (!D) return;
-    const empty = !D.devices.length && D.day.tokens.total === 0;
+    const w = win();
+    const empty = !D.devices.length && w.tokens.total === 0;
     $("cTotal").innerHTML = empty ? "—" : fmt(shown.total);
-    const cost = D.day.cost;
+    const cost = w.cost;
     $("cSpend").textContent = cost.status === "none" ? "no spend yet"
       : cost.status === "unpriced" ? "no priced model"
       : money(shown.spend) + (cost.status === "partial" ? " est. · partial" : " est.");
@@ -572,12 +597,29 @@
   // ── controls ─────────────────────────────────────────────────────────
   $("winSeg").addEventListener("click", (ev) => {
     const b = ev.target.closest("button[data-w]"); if (!b) return;
-    chartWindow = b.dataset.w;
-    for (const x of $("winSeg").querySelectorAll("button")) { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", String(x === b)); }
-    $("axLeft").textContent = { "1h": "one hour ago", "24h": "24 hours ago", "7d": "seven days ago" }[chartWindow];
-    chart.key = null;
-    if (D) { setChartGoal(); drawChart(); }
+    setPeriod(b.dataset.w);
   });
+  /* Changing the period anywhere changes it everywhere. */
+  function setPeriod(next) {
+    if (!PERIOD_TEXT[next]) return;
+    period = next;
+    for (const seg of ["winSeg", "periodSeg", "projSeg"]) {
+      for (const x of $(seg).querySelectorAll("button")) {
+        const on = (x.dataset.w || x.dataset.p) === next;
+        x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on));
+      }
+    }
+    $("axLeft").textContent = PERIOD_TEXT[period][2];
+    chart.key = null;
+    if (D) {
+      const w = win();
+      Object.assign(target, { total: w.tokens.total, spend: w.cost.usd ?? 0, msgs: w.messages });
+      Object.assign(shown, { total: target.total, spend: target.spend, msgs: target.msgs });
+      paintClasses(); paintModels(); paintMachines(); setChartGoal(); drawChart(); paintText();
+      if (view === "team") paintTeam();
+    }
+    if (view === "projects") loadProjects();
+  }
   $("unitBtn").addEventListener("click", (ev) => {
     perSecond = !perSecond;
     ev.currentTarget.textContent = (perSecond ? "per second" : "per minute") + " ⇄";
@@ -637,9 +679,7 @@
   // ── team ─────────────────────────────────────────────────────────────
   $("periodSeg").addEventListener("click", (ev) => {
     const b = ev.target.closest("button[data-p]"); if (!b) return;
-    teamPeriod = b.dataset.p;
-    for (const x of $("periodSeg").querySelectorAll("button")) { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", String(x === b)); }
-    paintTeam();
+    setPeriod(b.dataset.p);
   });
   const shareBar = (x) => `<span class="sharebar"><i><b style="width:${Math.round((x || 0) * 100)}%"></b></i><span>${pct(x)}</span></span>`;
   const modelSplit = (models) => models.length
@@ -651,27 +691,28 @@
   function paintTeam() {
     if (!D) return;
     const now = serverNow();
-    const P = teamPeriod;
-    const whole = P === "day" ? D.day : null;
-    const sum = (key) => D.devices.reduce((a, d) => a + d[P].tokens[key], 0);
-    const total = sum("total");
-    const cr = sum("cacheRead"), cw = sum("cacheWrite");
-    const usd = D.devices.reduce((a, d) => a + (d[P].cost.usd || 0), 0);
-    const partial = D.devices.some((d) => d[P].cost.status === "partial" || d[P].cost.status === "unpriced");
-    const msgs = D.devices.reduce((a, d) => a + d[P].messages, 0);
+    // The same period, and the same figures, as the Console headline.
+    const of = (x) => (x.windows && x.windows[period]) || (period === "7d" ? x.week : x.day);
+    const whole = win();
+    const total = whole.tokens.total;
+    const cr = whole.tokens.cacheRead, cw = whole.tokens.cacheWrite;
+    const cost = whole.cost;
+    const msgs = whole.messages;
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
-    const label = P === "day" ? "24 hours" : "7 days";
+    const label = PERIOD_TEXT[period][1];
     $("teamTotals").innerHTML = [
       [fmt(total), "Tokens · " + label, `across ${D.devices.length} machine${D.devices.length === 1 ? "" : "s"}`],
-      [money(usd), "Est. cost", partial ? "partial — some models unpriced" : "list-price estimate"],
+      // Every model unpriced is "no priced model", never $0.00.
+      [cost.status === "unpriced" ? "—" : cost.status === "none" ? money(0) : money(cost.usd), "Est. cost",
+        cost.status === "unpriced" ? "no priced model" : cost.status === "partial" ? "partial — some models unpriced" : "list-price estimate"],
       [pct(total ? cr / total : null), "Cache read", "share of all tokens"],
       [pct(total ? cw / total : null), "Cache write", "share of all tokens"],
-      [msgs.toLocaleString("en-US"), "Messages", whole ? `${whole.sessions} sessions` : "reported events"],
+      [msgs.toLocaleString("en-US"), "Messages", whole.sessions === null ? "sessions not kept past the minute detail" : `${whole.sessions} sessions`],
       [`${reporting}<span class="u">/ ${D.devices.length}</span>`, "Machines reporting", D.people.length + " people" + (D.devices.some((d) => d.status === "catching-up") ? " · some still catching up" : "")],
     ].map(([v, l, s]) => `<div><div class="v">${v}</div><div class="l">${esc(l)}</div><div class="s">${esc(s)}</div></div>`).join("");
 
     $("peopleTable").tBodies[0].innerHTML = D.people.length ? D.people.map((p) => {
-      const a = p[P];
+      const a = of(p);
       return `<tr><td><b>${esc(p.person)}</b><span class="sub">${p.reporting} of ${p.devices.length} reporting</span></td>
         <td class="num">${p.devices.map((id) => esc((D.devices.find((d) => d.id === id) || {}).label || "")).join(", ")}</td>
         <td class="num r">${fmt(a.tokens.total)}</td><td>${shareBar(a.shareOfWhole)}</td>
@@ -680,11 +721,12 @@
     }).join("") : `<tr><td colspan="8">Nobody yet — add a machine.</td></tr>`;
 
     $("machineTable").tBodies[0].innerHTML = D.devices.length ? D.devices.map((d) => {
-      const a = d[P];
+      const a = of(d);
       const action = d.local ? `<span class="sub">this machine</span>`
         : d.status === "revoked" ? `<span class="sub">removed</span>`
         : `<button type="button" class="btn small danger" data-revoke="${esc(d.id)}" data-label="${esc(d.label)}">Remove</button>`;
-      return `<tr><td><b>${esc(d.label)}</b><span class="sub">${d.local ? "the hub itself" : "joined " + new Date(d.createdAt).toLocaleDateString([], { day: "numeric", month: "short" }) + " · " + hhmm(Date.parse(d.createdAt)) + (d.joinedVia === "link" ? " by link" : "")}</span></td>
+      const lost = d.coverage && d.coverage.dropped ? ` · <b title="${esc(d.coverage.reasons.map((r) => r.count + " × " + r.label).join("; "))}">${d.coverage.dropped} not counted</b>` : "";
+      return `<tr><td><b>${esc(d.label)}</b><span class="sub">${lost ? lost.slice(3) + " · " : ""}${d.local ? "the hub itself" : "joined " + new Date(d.createdAt).toLocaleDateString([], { day: "numeric", month: "short" }) + " · " + hhmm(Date.parse(d.createdAt)) + (d.joinedVia === "link" ? " by link" : "")}</span></td>
         <td>${esc(d.person || "—")}</td>
         <td><span class="status ${d.status}"><i></i>${esc(statusText(d, now))}</span></td>
         <td class="num r">${fmt(a.tokens.total)}</td><td>${shareBar(a.shareOfWhole)}</td>
@@ -727,15 +769,13 @@
   // ── projects (this machine only) ─────────────────────────────────────
   $("projSeg").addEventListener("click", (ev) => {
     const b = ev.target.closest("button[data-p]"); if (!b) return;
-    projPeriod = b.dataset.p;
-    for (const x of $("projSeg").querySelectorAll("button")) { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", String(x === b)); }
-    loadProjects();
+    setPeriod(b.dataset.p);
   });
   async function loadProjects() {
     const body = $("projTable").tBodies[0];
     body.innerHTML = `<tr><td colspan="11">Reading this machine…</td></tr>`;
     try {
-      const r = await fetch("/api/projects?period=" + projPeriod, { headers: HEADERS });
+      const r = await fetch("/api/projects?period=" + period, { headers: HEADERS });
       const p = await r.json();
       if (!r.ok) throw new Error(p.reason || String(r.status));
       const t = p.totals;
@@ -745,11 +785,11 @@
         [t.commits.toLocaleString("en-US"), "Commits", "local Git history"],
         [`+${fmt(t.added)} <span class="u">−${fmt(t.removed)}</span>`, "Lines changed", "added / removed"],
         [t.prsMerged === null ? "—" : String(t.prsMerged), "PRs merged", t.prsMerged === null ? "not read — needs a Git remote" : "from merge commits"],
-        [String(p.sessions), "Sessions", "Claude Code and Codex"],
+        [p.sessions === null ? "—" : String(p.sessions), "Sessions", p.sessions === null ? "not kept past the minute detail" : "Claude Code and Codex"],
       ].map(([v, l, s]) => `<div><div class="v">${v}</div><div class="l">${esc(l)}</div><div class="s">${esc(s)}</div></div>`).join("");
       body.innerHTML = p.projects.length ? p.projects.map((x) => `<tr>
         <td><b>${esc(x.name)}</b>${x.repo ? `<span class="sub">${esc(x.repo.name)}</span>` : `<span class="sub">not a Git repository</span>`}</td>
-        <td class="num r">${fmt(x.tokens)}</td><td class="num r">${x.usd === null ? "—" : money(x.usd)}</td><td class="num r">${x.sessions}</td>
+        <td class="num r">${fmt(x.tokens)}</td><td class="num r">${x.usd === null ? "—" : money(x.usd)}</td><td class="num r">${x.sessions === null ? "—" : x.sessions}</td>
         <td class="num r">${x.repo ? x.repo.commits : "—"}</td>
         <td class="num r">${x.repo ? `+${x.repo.added.toLocaleString("en-US")} / −${x.repo.removed.toLocaleString("en-US")}` : "—"}</td>
         <td class="num r">${x.repo && x.repo.prsMerged !== null ? x.repo.prsMerged : "—"}</td>

@@ -23,6 +23,31 @@
   and AI-gateway token readings kept separate from transcript totals, a local
   Prometheus `/metrics` format and a Grafana dashboard. `/metrics` and the
   telemetry ingest answer 401 until their scrape token is available.
+- Fixed: a message a forked subagent copied from its parent is counted once.
+  Copies, including ones cut off mid-stream, were counted again in each fork's
+  file, so input, cache and message counts could be overstated.
+- Every transcript line that carries usage and cannot be counted is now
+  counted by reason, sent with each report, and shown beside the figures and
+  on its machine's row in Team, as are records the console itself could not
+  keep. They were recorded and then discarded.
+- Codex per-response usage records are counted, one per response, including
+  requests the running total never shows, such as compaction.
+- Model ids are kept exactly, including Bedrock and Vertex forms, instead of
+  becoming `unknown`. A transcript line too long to read has its usage
+  recovered where possible, and is reported when it is not. Usage that grows on
+  a line already counted is counted; usage rewritten lower is reported.
+- The period switch (1H, 24H, 7D and the new 30D) now drives the headline
+  tokens, cost, messages, model list and machine list, and Team and Projects
+  offer the same periods with the same edges. The chart's bars add up to the
+  headline. 30 days come from daily totals the console keeps for 400 days,
+  after its minute detail is pruned.
+- Fast mode is priced at its published rates, and any other service tier is
+  left unpriced instead of being priced at the standard rate.
+- Input is labelled "uncached input", the cache-write split by lifetime is
+  shown, Team shows "no priced model" rather than $0.00 when nothing is priced,
+  and the JSON counts priced and unpriced messages and records separately.
+- The accounting spec is 1.1 and the conformance suite 1.1.0, with a case with
+  exact expected totals for each of these.
 
 ## 0.2.2 — 2026-09-24
 

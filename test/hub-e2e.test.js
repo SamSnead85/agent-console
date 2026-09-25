@@ -250,13 +250,15 @@ test("two machines join by link, report, roll up by person, and nothing private 
   }
   for (const b of wire.bodies.filter((x) => x.url === "/api/ingest")) {
     const envelope = JSON.parse(b.body);
-    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "backlog"]);
+    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "coverage", "backlog"]);
+    // What could not be counted: reason names and counts, nothing else.
+    for (const [kind, n] of Object.entries(envelope.coverage)) assert.ok(/^[a-z][A-Za-z]+$/.test(kind) && Number.isSafeInteger(n), kind);
     // How far a catch-up has got: two counts, nothing else.
     assert.deepEqual(Object.keys(envelope.backlog), ["delivered", "total"]);
     assert.ok(Number.isSafeInteger(envelope.backlog.delivered) && Number.isSafeInteger(envelope.backlog.total));
     for (const r of envelope.records) {
       assert.deepEqual(Object.keys(r).sort(), ["at", "cacheRead", "cacheWrite", "cacheWrite1h", "cacheWrite5m", "continuation", "engagement", "executionOrigin", "fresh",
-        "id", "isSubagent", "measurement", "model", "observed", "output", "parentSessionHash", "projectHash", "reportingDevice", "sessionHash", "tool", "ttl"]);
+        "id", "isSubagent", "measurement", "model", "observed", "output", "parentSessionHash", "projectHash", "reportingDevice", "sessionHash", "tier", "tool", "ttl"]);
       assert.equal(typeof r.continuation, "boolean");
       assert.match(r.sessionHash, /^[0-9a-f]{64}$/u);
       assert.match(r.projectHash, /^[0-9a-f]{64}$/u);

@@ -165,14 +165,17 @@ test('redaction: records contain no raw identifiers; private state contains no p
   assert.doesNotMatch(JSON.stringify(updated.records), /SENTINEL_PRIVATE_DATA|\/private\/|response and command/);
   assert.doesNotMatch(JSON.stringify(updated.state), /\/private\/|response and command/);
   assert.deepEqual(Object.keys(updated.records[0]).sort(), ['id','tool','model','sessionHash','parentSessionHash',
-    'isSubagent','projectHash','reportingDevice','executionOrigin','at','fresh','output','cacheWrite','cacheRead','cacheWrite5m','cacheWrite1h','ttl','observed','measurement','continuation'].sort());
+    'isSubagent','projectHash','reportingDevice','executionOrigin','at','fresh','output','cacheWrite','cacheRead','cacheWrite5m','cacheWrite1h','ttl','observed','measurement','continuation','tier'].sort());
 });
 
 test('copied transcripts have portable organization IDs and unchanged consumption on another reporting device', () => {
   const transcript = [
     assistant({ ...usage, cache_creation: { ephemeral_5m_input_tokens: 12, ephemeral_1h_input_tokens: 8 } }),
     assistant({ ...usage, output_tokens: 11, cache_creation: { ephemeral_5m_input_tokens: 12, ephemeral_1h_input_tokens: 8 } }),
-    assistant(usage, { isSidechain: true, agentId: 'child-one', uuid: 'child-line' }),
+    // The subagent's own response: its own message id (a copy of the parent's
+    // message would carry the parent's id and count once, docs/accounting.md §2).
+    { ...assistant(usage, { isSidechain: true, agentId: 'child-one', uuid: 'child-line' }),
+      message: { id: 'synthetic-child-message', model: 'claude-opus-4-8', usage } },
   ];
   const collect = device => {
     let state;
@@ -325,4 +328,79 @@ test("a forked Codex child's first own request is counted although its counter s
   const own = { input_tokens: 900, output_tokens: 70, cached_input_tokens: 0, cache_write_input_tokens: 300 };
   const first = call('codex', withLast(own), inherited.state, 200);
   assert.deepEqual(['fresh', 'output', 'cacheRead', 'cacheWrite'].map(k => first.records[0][k]), [600, 70, 0, 300]);
+});
+
+test('A1: a message copied into forked subagent files counts once, whatever order the files are read in', () => {
+  // One parent response streamed over three lines; three forks hold copies:
+  // a mid-stream snapshot of line 2, lines 1-2, and line 3 alone.
+  const u = (output) => ({ input_tokens: 4, output_tokens: output, cache_creation_input_tokens: 100, cache_read_input_tokens: 1000 });
+  const line = (n, output, extra = {}) => assistant(u(output), { uuid: `parent-line-${n}`, ...extra });
+  const fork = (agentId) => ({ isSidechain: true, agentId });
+  const files = {
+    parent: [line(1, 2), line(2, 150), line(3, 399)],
+    f1: [line(2, 60, fork('f1'))],
+    f2: [line(1, 2, fork('f2')), line(2, 150, fork('f2'))],
+    f3: [line(3, 399, fork('f3'))],
+  };
+  const read = (order) => {
+    const shared = {};
+    const accepted = new Map();
+    for (const name of order) {
+      let state;
+      for (const row of files[name]) {
+        const next = parseLine('claude-code', JSON.stringify(row), { ...context, shared }, state);
+        state = next.state;
+        for (const record of next.records) if (!accepted.has(record.id)) accepted.set(record.id, record);
+      }
+    }
+    const rows = [...accepted.values()];
+    const sum = (key) => rows.reduce((a, r) => a + r[key], 0);
+    return { fresh: sum('fresh'), output: sum('output'), cacheWrite: sum('cacheWrite'), cacheRead: sum('cacheRead'),
+      messages: rows.filter((r) => !r.continuation).length };
+  };
+  const truth = { fresh: 4, output: 399, cacheWrite: 100, cacheRead: 1000, messages: 1 };
+  for (const order of [['parent', 'f1', 'f2', 'f3'], ['f1', 'f2', 'f3', 'parent'], ['f3', 'f1', 'parent', 'f2'], ['f2', 'f1', 'f3', 'parent']]) {
+    assert.deepEqual(read(order), truth, order.join(' → '));
+  }
+});
+
+test('A4: a line rewritten with lower usage is counted as coverage debt, never subtracted or silently kept', () => {
+  const first = call('claude-code', assistant({ ...usage, output_tokens: 40 }, { uuid: 'rewritten' }));
+  const lower = call('claude-code', assistant({ ...usage, output_tokens: 30 }, { uuid: 'rewritten' }), first.state);
+  assert.deepEqual(lower.records, []);
+  assert.equal(lower.state.coverageDebt.revisedDown, 1);
+  const higher = call('claude-code', assistant({ ...usage, output_tokens: 55 }, { uuid: 'rewritten' }), lower.state);
+  assert.equal(higher.records.length, 1);
+  assert.equal(higher.records[0].output, 15);
+  assert.notEqual(higher.records[0].id, first.records[0].id, 'growth on a known line is a new increment the hub will not drop');
+});
+
+test('A4: Bedrock and Vertex model ids are kept exactly, not turned into unknown', () => {
+  for (const model of ['us.anthropic.claude-opus-4-6-v1:0', 'claude-opus-4-6@20250805', 'claude-opus-4-6[1m]']) {
+    const row = call('claude-code', { ...assistant(usage), message: { id: 'm-' + model, model, usage } }).records[0];
+    assert.equal(row.model, model);
+  }
+});
+
+test('F5: fast mode and other service tiers are carried on the record', () => {
+  const tierOf = (extra) => call('claude-code', { ...assistant(usage), message: { id: 'tier-' + JSON.stringify(extra), model: 'claude-opus-5-5', usage: { ...usage, ...extra } } }).records[0].tier;
+  assert.equal(tierOf({ speed: 'fast', service_tier: 'standard' }), 'fast');
+  assert.equal(tierOf({ speed: 'standard', service_tier: 'standard' }), 'standard');
+  assert.equal(tierOf({ service_tier: 'priority' }), 'other');
+  assert.equal(tierOf({}), null);
+});
+
+test('A3: Codex per-response records are the events; replayed and repeated records add nothing', () => {
+  const meta = parseLine('codex', JSON.stringify({ type: 'session_meta', payload: { id: 'own-thread' } }), context).state;
+  const response = (id, thread, input, output, extra = {}) => ({ type: 'token_usage_record', timestamp: stamp, ...extra,
+    payload: { thread_id: thread, response_id: id, usage: { input_tokens: input, cached_input_tokens: 10, cache_write_input_tokens: 5, output_tokens: output } } });
+  let state = meta;
+  const out = [];
+  for (const row of [response('r-parent', 'parent-thread', 900, 90), response('r1', 'own-thread', 100, 20), tokens({ ...counters, input_tokens: 100, output_tokens: 20 }, { ordinal: 3 }),
+    response('r-compact', 'own-thread', 400, 30), response('r1', 'own-thread', 100, 20)]) {
+    const next = parseLine('codex', JSON.stringify(row), context, state);
+    state = next.state;
+    out.push(...next.records);
+  }
+  assert.deepEqual(out.map((r) => [r.fresh, r.cacheRead, r.cacheWrite, r.output]), [[85, 10, 5, 20], [385, 10, 5, 30]]);
 });
