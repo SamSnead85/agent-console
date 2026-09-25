@@ -119,13 +119,14 @@ test('classifier: secret files handed to any program that prints them', (t) => {
 });
 
 test('classifier stays fast on many-star globs and long pipe runs', () => {
-  for (const [command, rule] of [[`cat ${'*'.repeat(40)}zz 2>/dev/null; ${PUSH} --force origin main`, 'force_push'],
-    [`true < ${'*'.repeat(40)}zz; rm -rf ~/Documents/old`, 'delete_outside_repo'],
-    [`echo ${'|/'.repeat(300_000)}`, null], [`cat ${'*'.repeat(200_000)}.env`, 'credential_read']]) {
+  for (const [label, command, rule] of [['short glob before push', `cat ${'*'.repeat(40)}zz 2>/dev/null; ${PUSH} --force origin main`, 'force_push'],
+    ['short glob before delete', `true < ${'*'.repeat(40)}zz; rm -rf ~/Documents/old`, 'delete_outside_repo'],
+    ['long pipeline before delete', `echo ${'|/'.repeat(300_000)}; rm -rf ~/Documents/old`, 'delete_outside_repo'],
+    ['long credential glob', `cat ${'*'.repeat(200_000)}.env`, 'credential_read']]) {
     const started = process.hrtime.bigint();
     const found = facts(command);
     const ms = Number(process.hrtime.bigint() - started) / 1e6;
-    assert.ok(ms < 2000, `took ${Math.round(ms)} ms`);
+    assert.ok(ms < 2000, `${label} took ${Math.round(ms)} ms`);
     if (rule) assert.ok(found.includes(rule), rule);
   }
 });
