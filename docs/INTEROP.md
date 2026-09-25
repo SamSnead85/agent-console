@@ -73,7 +73,12 @@ and accepts nothing.
 
 The adapter ignores user, repository, session, prompt and tool attributes,
 keeps only count, model ID, timestamp and a salted series hash in bounded
-memory, and deduplicates retries. It never stores a raw OTLP body. The panel
+memory, and deduplicates retries. It never stores a raw OTLP body. A series is
+its resource's attributes (such as `service.instance.id`), its instrumentation
+scope, the metric and the point's attributes, each list sorted and each value
+read by its type, so a retry with its attributes in another order is the same
+point sent again, and two resources reporting the same point at the same time
+are two series and both count. Only the salted hash of that identity is kept. The panel
 labels the last 24 hours of received delta tokens and **does not add them to
 transcript totals**, because both can describe the same API request.
 
