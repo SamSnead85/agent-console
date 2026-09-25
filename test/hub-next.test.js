@@ -137,19 +137,22 @@ test("H02: a spike names its five minutes against the session's own median, and 
 test("H03: fleet alerts merge per machine; the coverage says which machines are not watched", () => {
   const { store, registry } = hub({ devices: [{ id: "dev_a", label: "Studio", local: true }, { id: "dev_b", label: "Laptop" }, { id: "dev_c", label: "Box" }, { id: "dev_d", label: "Gone" }] });
   registry.revoke("dev_d");
-  const fleet = createFleetSignals({ now: () => NOW });
+  const fleet = createFleetSignals({ now: () => NOW, startedAt: NOW - 2 * HOUR });
   const at = new Date(Math.floor((NOW - 2 * MINUTE) / MINUTE) * MINUTE).toISOString();
   const sent = alertsFor([{ id: h("x"), kind: "spike", at, sessionHash: h("sb"), count: 90_000, historical: false }]);
-  fleet.accept("dev_b", { alerts: sent });
-  fleet.accept("dev_b", { alerts: sent });   // the same envelope again: once
-  fleet.accept("dev_c", {});                 // a 0.3 reporter: no alerts key
+  const share = { alerts: "on", activity: "off" };
+  fleet.accept("dev_b", { share, alerts: sent });
+  fleet.accept("dev_b", { share, alerts: sent });   // the same envelope again: once
+  fleet.accept("dev_c", {});                        // a 0.3 reporter: no declaration
   const local = { list: () => [] };
   const view = buildConsole({ store, registry, now: NOW, hub: {}, alerts: allAlerts({ alerts: local, fleet, localId: "dev_a" }, NOW),
     signals: consoleSignals({ alerts: local, fleet }, NOW) });
   assert.equal(view.alerts.length, 1);
   assert.equal(view.alerts[0].deviceId, "dev_b");
   assert.equal(view.alerts[0].historical, false);
-  assert.deepEqual(view.alertsCoverage, { watched: 2, unwatched: 1, unwatchedDevices: ["dev_c"] });
+  assert.deepEqual({ ...view.alertsCoverage, byDevice: undefined }, { watched: 2, unwatched: 1, unwatchedDevices: ["dev_c"], since: null, reason: null, byDevice: undefined });
+  assert.deepEqual(view.alertsCoverage.byDevice.dev_c, { state: "undeclared", since: NOW, reason: "reporter-undeclared" });
+  assert.equal(view.alertsCoverage.byDevice.dev_b.state, "complete");
   assert.equal(view.asOf, NOW);
   assert.equal(view.alertsAsOf, NOW);
 });
@@ -169,6 +172,8 @@ test("H03/H11: the reporter sends alerts and activity only when asked, on the fi
   let clock = NOW;
   const extras = reporterExtras({ shareAlerts: true, shareToolActivity: true, now: () => clock });
   const hashIdentity = (k, v) => h(k + v);
+  // The collector's side of the cursor write (lib/collector/collector.js), done by hand here.
+  extras.journal.restore(null, { hashIdentity, deviceId: "dev_r" });
   for (let i = 0; i < 5; i += 1) {
     extras.onTranscriptLine({ tool: "claude-code", line: claudeToolLine(i, NOW - 60_000 + i, "mcp__canary-private-server__tool", { path: "/CANARY/secret" }),
       records: [], sessionHash: h("s"), projectHash: h("p"), hashIdentity });
@@ -179,13 +184,17 @@ test("H03/H11: the reporter sends alerts and activity only when asked, on the fi
   const fetch = async (_url, init) => { bodies.push(JSON.parse(init.body)); const n = JSON.parse(init.body).records.length;
     return { status: 200, json: async () => ({ accepted: n, duplicate: 0, expired: 0, rejected: [] }) }; };
   const records = Array.from({ length: 600 }, (_, i) => ({ ...rec({ device: "dev_r", at: NOW - i * 1000 }) }));
+  extras.journal.file(true);
+  assert.ok(extras.journal.prepare(), "sealed with the cursor");
+  extras.journal.commit();
   const taken = extras.outbox.take();
   await postRecords("http://127.0.0.1:9/api/ingest", { id: "dev_r", label: "Laptop" }, records,
-    { token: "t".repeat(40), fetch, sleep: async () => {}, freshness: { lastObservedAt: null, lastSyncedAt: null, mode: "live" }, ...taken });
+    { token: "t".repeat(40), fetch, sleep: async () => {}, freshness: { lastObservedAt: null, lastSyncedAt: null, mode: "live" }, share: extras.share, ...taken });
   extras.outbox.ack();
   assert.equal(bodies.length, 2);
   assert.ok(bodies[0].alerts && bodies[0].activity, "the first envelope carries them");
   assert.ok(!("alerts" in bodies[1]) && !("activity" in bodies[1]), "later batches do not repeat them");
+  for (const b of bodies) assert.deepEqual(b.share, { alerts: "on", activity: "on" }, "every envelope says what this run shares");
   assert.equal(bodies[0].alerts[0].kind, "loop");
   assert.equal(bodies[0].alerts[0].historical, true, "raised while reading the backlog");
   const activity = bodies[0].activity;
@@ -195,6 +204,7 @@ test("H03/H11: the reporter sends alerts and activity only when asked, on the fi
   assert.ok(!/canary|CANARY|secret|Bash/u.test(wire), "no tool name, argument, output or path leaves the machine");
   for (const e of activity) for (const k of Object.keys(e.calls)) assert.ok(ACTIVITY_KINDS.includes(k));
   assert.deepEqual(extras.outbox.take(), { alerts: [], activity: [] }, "acknowledged extras are not sent again");
+  assert.deepEqual(reporterExtras({}).share, { alerts: "off", activity: "off" }, "a run that shares nothing says so");
 });
 
 // ---------------------------------------------------------------------------
@@ -323,13 +333,15 @@ test("H11: tool names map to eight kinds on the machine; activity refuses anythi
   assert.equal(toolKind("claude-code", "SomeNewTool"), "other");
   assert.equal(toolKind("codex", "apply_patch"), "edit");
   assert.equal(toolKind("codex", "exec_command"), "shell");
-  const entry = { sessionHash: h("s"), at: "2026-09-24T15:30:00.000Z", calls: Object.fromEntries(ACTIVITY_KINDS.map((k) => [k, 1])),
+  const entry = { id: h("c1"), sessionHash: h("s"), at: "2026-09-24T15:30:00.000Z", calls: Object.fromEntries(ACTIVITY_KINDS.map((k) => [k, 1])),
     results: { ok: 1, error: 0 }, lastTool: { kind: "edit", at: "2026-09-24T15:30:00.000Z" } };
   assert.doesNotThrow(() => activityFor([entry]));
+  const { id: _id, ...noId } = entry;
   for (const bad of [{ ...entry, calls: { ...entry.calls, Bash: 1 } }, { ...entry, lastTool: { kind: "Bash", at: entry.at } },
-    { ...entry, tool: "Edit" }, { ...entry, results: { ok: 1, error: 0, output: "x" } }]) {
+    { ...entry, tool: "Edit" }, { ...entry, results: { ok: 1, error: 0, output: "x" } }, noId, { ...entry, id: "contribution-1" }]) {
     assert.throws(() => activityFor([bad]), /invalid/u);
   }
+  assert.throws(() => activityFor([entry, { ...entry }]), /invalid/u, "one contribution id twice in one envelope");
 });
 
 test("H11: a lane's Doing reading comes from its activity; an unshared machine says so", () => {
@@ -345,7 +357,12 @@ test("H11: a lane's Doing reading comes from its activity; an unshared machine s
   assert.ok(infra.activity.results.error > 0, "the demo's failing shell lane");
   const unshared = view.lanes.filter((l) => !l.activityShared);
   assert.ok(unshared.length >= 1);
-  for (const l of unshared) { assert.equal(l.activity, null); assert.equal(l.lastTool, null); }
+  for (const l of unshared) {
+    assert.equal(l.activity, null); assert.equal(l.lastTool, null);
+    assert.ok(["off", "undeclared", "unknown"].includes(l.activityCoverage.state), l.activityCoverage.state);
+    assert.ok(l.activityCoverage.reason);
+  }
+  for (const l of shared) assert.equal(l.activityCoverage.state, "complete");
 });
 
 test("demo: alerts tie to demo lanes, one is earlier, and two machines are not watched", () => {

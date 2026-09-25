@@ -129,6 +129,25 @@
   kinds, minutes and salted hashes only (docs/COLLECTOR-CONTRACT.md). The
   console says how many current machines are watched for alerts and names the
   ones that are not, instead of reading their silence as "no alert".
+- Shared alerts and activity are counted once, per machine, and only where
+  they are covered. Every report says what its run shares (`share`); a
+  machine that turns sharing off, a reporter older than 0.4 and the minutes
+  before the console last started are unavailable with their reason, never
+  zero (`activityCoverage` on each lane, `sharing` on each machine,
+  `alertsCoverage.since`, `reason` and `byDevice`). Activity travels as
+  contributions with salted ids: a resent report, a later batch that failed
+  or a restarted reporter adds nothing, two contributions to one minute both
+  count, and the same session on two machines stays two readings. What the
+  console has not acknowledged is kept in the reporter's cursor file, written
+  with the transcript positions it came from, and sent again under the same
+  ids.
+- One clock rule for alerts and activity: a minute, an alert or a last tool
+  more than two minutes ahead is refused and counted on its machine, never
+  stored, so it never becomes "now"; the five-minute window has two edges.
+- Claude Code tool results and Codex tool calls reach the activity and alert
+  readers. They carry no usage, so the reader used to skip them: most results
+  and Codex calls went uncounted, and a stall alert missed the tool successes
+  it is measured against. Token accounting still never sees these lines.
 - Tool activity, counts only: each tool call is mapped on the machine to one
   of eight kinds (read, edit, shell, search, web, agent, mcp, other) — never
   its name, arguments, output, a path or an MCP server's name — and each
@@ -155,7 +174,10 @@
   knows since when each machine has said.
 - OTel: a point sent again is dropped by its series and time, cumulative
   points are counted as ignored, and each telemetry source names what its
-  token total adds up.
+  token total adds up. A series is its resource, scope, metric and point
+  attributes in canonical order, kept only as a salted hash: a retry with its
+  attributes reordered is dropped, and two resources (two
+  `service.instance.id`s) with the same point at the same time both count.
 - `claude-haiku-4-5` prices through its published alias of
   `claude-haiku-4-5-20251001`; every model the benchmark generator writes has
   a price.
