@@ -151,6 +151,12 @@ test("on a phone the hour axis caption, the person's machine status and the lane
   // the state column holds the dot, the longest word the console says and the stamp at every width: 124px
   // (SILENT · DEMO needs 113, REMOVED · DEMO 121, RECONNECTING alone 107), never the 104, 96 or 92 that cut the stamp to DEM
   assert.match(phone, /\.lhead, \.lane \{[^}]*grid-template-columns: 124px 64px 64px 60px/u);
+  // the four on-screen columns end inside the scroller's 354px at 390: 16px left padding + State + 5 min + Est. $ + Last + three gaps
+  const phoneRule = phone.match(/\.lhead, \.lane \{[^}]*padding: 0 \d+px 0 (\d+)px; gap: (\d+)px; grid-template-columns: (\d+)px (\d+)px (\d+)px (\d+)px /u);
+  assert.ok(phoneRule, "the phone lane grid: padding, gap, then the four on-screen tracks");
+  const [, padL, phoneGap, st, fm, usd, la] = phoneRule.map(Number);
+  assert.ok(padL + st + fm + usd + la + 3 * phoneGap <= 354, `the on-screen four end at ${padL + st + fm + usd + la + 3 * phoneGap}px, past the 354px the scroller shows at 390`);
+  assert.ok(la >= 60, "Last holds a clock time on a phone");
   assert.equal((CSS.match(/grid-template-columns: calc\(124px \* var\(--k\)\) minmax\(calc\(1[3-9]\dpx \* var\(--k\)\)/gu) || []).length, 4, "desk, narrow, folded and wide lane grids");
   assert.doesNotMatch(CSS, /grid-template-columns: calc\((96|104)px \* var\(--k\)\) minmax\(calc\(1[3-9]\dpx/u);
   assert.doesNotMatch(phone, /grid-template-columns: (92|96|104)px 64px 64px (52|60)px/u);
@@ -177,6 +183,10 @@ test("between 1241 and 1439 every lane column fits the frame, header and value, 
   // the whole minimum fits the frame at 1241: 1241 − 2 × 24px shell − 2 × 2px canvas = 1189px for the row, less its own 20px + 16px padding
   const minimum = mins.reduce((a, b) => a + b, 0) + 13 * gap + 36;
   assert.ok(minimum <= 1189, `the lane grid's minimum is ${minimum}px, more than the 1189px the frame has at 1241`);
+  // the project name stays whole in the project track's minimum: "project b1d604" is 101px in Plex Mono 12px, and the name's share of the cell must hold it
+  const share = narrow.match(/\.lane \.pr b \{ max-width: (\d+)%; \}/u);
+  assert.ok(share, "the name's share of the project cell at this width");
+  assert.ok((mins[1] * Number(share[1])) / 100 >= 101, `the project name gets ${(mins[1] * Number(share[1])) / 100}px of a ${mins[1]}px track, less than the 101px "project b1d604" needs`);
   // the desk grid (1440 and up) keeps its own tracks, and its minimum fits 1440's 1388px
   const desk = CSS.match(/\n\.lhead, \.lane \{ display: grid;[^}]*grid-template-columns: ([^}]*); \}/u);
   assert.ok(desk, "the desk lane grid");

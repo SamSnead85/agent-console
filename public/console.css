@@ -755,6 +755,8 @@ dialog.pal[open] { animation: sheetin .18s var(--ease); }
 @media (min-width: 1241px) and (max-width: 1439px) {
   .lhead, .lane { gap: 8px; grid-template-columns: calc(124px * var(--k)) minmax(calc(136px * var(--k)), 1.2fr) minmax(calc(98px * var(--k)), .5fr) minmax(calc(94px * var(--k)), .4fr)
     calc(48px * var(--k)) calc(40px * var(--k)) calc(40px * var(--k)) calc(44px * var(--k)) calc(54px * var(--k)) calc(52px * var(--k)) calc(60px * var(--k)) minmax(calc(116px * var(--k)), 1fr) minmax(calc(78px * var(--k)), .5fr) calc(60px * var(--k)); }
+  /* the project name stays whole in the 136px track: "project b1d604" is 101px, and 70% of 136 (95) cut it; 78% gives 106, the branch or agent beside it takes the ellipsis as before */
+  .lane .pr b { max-width: 78%; }
 }
 
 /* ── narrow ────────────────────────────────────────────────
@@ -835,7 +837,8 @@ dialog.pal[open] { animation: sheetin .18s var(--ease); }
   .lhead .c-in, .lhead .c-out, .lane .in, .lane .out { display: none; }
   .lhead .c-usd, .lane .usd, .lhead .c-la, .lane .la { display: block; }
   /* state, then the figures that cost money and when the lane last spoke, on screen at 390; the name, the model, the hour and the day follow under the thumb */
-  .lhead, .lane { width: max-content; min-width: 100%; padding: 0 14px 0 16px; gap: 10px; grid-template-columns: 124px 64px 64px 60px 150px 96px 96px 60px; }
+  /* the scroller shows 354px at 390: 16px padding + 124 + 64 + 64 + 60 + three 8px gaps = 352, so Last ends inside the frame; a 10px gap put it 4px past */
+  .lhead, .lane { width: max-content; min-width: 100%; padding: 0 14px 0 16px; gap: 8px; grid-template-columns: 124px 64px 64px 60px 150px 96px 96px 60px; }
   .lhead .c-st, .lane .st { order: 0; }
   .lhead .c-fm, .lane .fm { order: 1; }
   .lhead .c-usd, .lane .usd { order: 2; }

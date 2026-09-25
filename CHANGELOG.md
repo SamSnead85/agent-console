@@ -31,7 +31,9 @@
   stay, nothing is folded, cut or hidden, and the frame at 1241 still has
   room. The Last column is 60px at every width, the width of a clock time,
   and a silent lane's Last is that time alone — the state column already
-  says SILENT — with the sentence on hover.
+  says SILENT — with the sentence on hover. On a phone the four on-screen
+  columns sit 8px apart so Last ends inside the scroller, and between 1241
+  and 1439 the project name keeps a share of its cell that holds it whole.
 - The instrument is denser and says less twice. The lanes carry a Doing
   column (the lane's newest alert, its subagents at work, a cache signal, a
   growing context, or its state in a word — never a prompt or a path), the
