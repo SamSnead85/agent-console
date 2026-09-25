@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SamSnead85/agent-console/docs/projects-v0.4.schema.json",
+  "title": "Agent Console /api/projects, v0.4 fields",
+  "description": "GET /api/projects?period=1h|24h|7d|30d. This machine's projects, keyed by salted folder hash, beside local Git; every figure computed at computedAt, including the whole team's totals (fleet). fixtures/projects-v0.4.json is a demo payload of this shape.",
+  "type": "object",
+  "required": ["demo", "computedAt", "asOf", "author", "period", "tokens", "cost", "sessions", "withRepo", "totals", "projects", "series", "fleet"],
+  "properties": {
+    "demo": { "type": "boolean" },
+    "computedAt": { "type": "integer" },
+    "asOf": { "type": "integer" },
+    "period": {
+      "type": "object", "required": ["id", "label", "basis", "from", "to", "branchesKept", "sessionsKept"],
+      "description": "basis utc-days (30 days) is the daily rollup, which keeps neither branches nor sessions (H14).",
+      "properties": { "basis": { "enum": ["minutes", "utc-days"] }, "branchesKept": { "type": "boolean" }, "sessionsKept": { "type": "boolean" } }
+    },
+    "cost": { "$ref": "#/$defs/cost" },
+    "sessions": { "type": ["integer", "null"] },
+    "projects": { "type": "array", "items": {
+      "type": "object",
+      "required": ["name", "projectHash", "parent", "repoHash", "tokens", "usd", "cost", "sessions", "branches", "repo", "costPerOutcome"],
+      "properties": {
+        "name": { "type": "string" },
+        "projectHash": { "$ref": "#/$defs/hash64" },
+        "parent": { "type": ["string", "null"], "description": "The folder the project sits in: one name, never a path (H07)." },
+        "repoHash": { "type": ["string", "null"], "description": "The repository's identity on this payload; projects in one repository share it." },
+        "tokens": { "type": "integer" },
+        "usd": { "type": ["number", "null"] },
+        "cost": { "$ref": "#/$defs/cost" },
+        "sessions": { "type": ["integer", "null"] },
+        "branches": { "type": "array", "items": { "type": "string" } },
+        "repo": { "type": ["object", "null"] }
+      }
+    } },
+    "series": {
+      "type": "object", "required": ["1h", "24h", "7d", "30d"],
+      "additionalProperties": { "type": "object", "required": ["byProject"], "additionalProperties": false,
+        "properties": { "byProject": { "$ref": "#/$defs/stack" } } }
+    },
+    "fleet": {
+      "type": "object", "required": ["1h", "24h", "7d", "30d"],
+      "description": "Every machine's totals at computedAt (H08). Git is read on this machine only, so commits is null.",
+      "additionalProperties": { "type": "object", "required": ["tokens", "cost", "commits"], "additionalProperties": false,
+        "properties": { "tokens": { "type": "integer" },
+          "cost": { "type": "object", "required": ["usd", "status"], "additionalProperties": false,
+            "properties": { "usd": { "type": ["number", "null"] }, "status": { "$ref": "#/$defs/status" } } },
+          "commits": { "type": "null" } } }
+    }
+  },
+  "$defs": {
+    "hash64": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "status": { "enum": ["priced", "partial", "unpriced", "none"] },
+    "cost": {
+      "type": "object", "required": ["usd", "status", "pricedMessages", "unpricedMessages", "unpricedTokens", "unpricedModels"], "additionalProperties": false,
+      "description": "partial: some usage had no verified price, so usd is a floor; unpriced: usd is null (H06).",
+      "properties": {
+        "usd": { "type": ["number", "null"] }, "status": { "$ref": "#/$defs/status" },
+        "pricedMessages": { "type": "integer" }, "unpricedMessages": { "type": "integer" }, "unpricedTokens": { "type": "integer" },
+        "unpricedModels": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "stack": {
+      "type": "object", "required": ["frame", "bands", "rest", "restCount"], "additionalProperties": false,
+      "properties": {
+        "frame": { "type": "object", "required": ["start", "step", "steps"], "additionalProperties": false,
+          "properties": { "start": { "type": "integer" }, "step": { "type": "integer" }, "steps": { "type": "integer" } } },
+        "bands": { "type": "array", "maxItems": 4, "items": { "type": "object", "required": ["projectHash", "tokens"], "additionalProperties": false,
+          "properties": { "projectHash": { "$ref": "#/$defs/hash64" }, "tokens": { "type": "array", "items": { "type": "integer" } } } } },
+        "rest": { "type": "array", "items": { "type": "integer" } },
+        "restCount": { "type": "integer" }
+      }
+    }
+  }
+}
