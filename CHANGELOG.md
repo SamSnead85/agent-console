@@ -2,6 +2,8 @@
 
 ## 0.3.0 — unreleased
 
+- Quote Node entry paths and reporter restart options literally in the platform's
+  shell, so special characters in installation or state paths stay part of the path.
 - Separate telemetry read and ingest credentials with independent live
   rotation. Exporters must use `metrics-token --scope ingest`.
 - Add `policy status --json` for installed-file/source drift checks; protect

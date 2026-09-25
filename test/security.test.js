@@ -547,7 +547,7 @@ test("S4: the check is the same text in the console, the join page and every com
   // Run from a kept, checked file, the reporter's own restart line names that file; otherwise it is the check again.
   const npxEntry = "/home/dev/.npm/_npx/abc/node_modules/@lockedinlabs/agent-console/bin/agent-console.mjs";
   assert.equal(invocation("9.9.9", npxEntry, { AGENT_CONSOLE_PACKAGE: "/home/dev/.agent-console/releases/" + releaseAsset("9.9.9") }),
-    `npx --yes "file:/home/dev/.agent-console/releases/${releaseAsset("9.9.9")}"`);
+    `npx --yes 'file:/home/dev/.agent-console/releases/${releaseAsset("9.9.9")}'`);
   assert.equal(invocation("9.9.9", npxEntry, {}), `node -e '${VERIFY_AND_RUN}' ${releaseUrl("9.9.9")}`);
   for (const odd of ["relative/" + releaseAsset("9.9.9"), "/tmp/other.tgz", `/tmp/a"b/${releaseAsset("9.9.9")}`]) {
     assert.equal(invocation("9.9.9", npxEntry, { AGENT_CONSOLE_PACKAGE: odd }), `node -e '${VERIFY_AND_RUN}' ${releaseUrl("9.9.9")}`, odd);

@@ -6,7 +6,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { executableCommand, invocation, verifiedRun } from "../lib/invocation.js";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+import { executableCommand, invocation, releaseAsset, shellArgument, verifiedRun } from "../lib/invocation.js";
+import { carriedOptions } from "../lib/reporter.js";
+
+const posixShell = { skip: process.platform === "win32" ? "sh is not on Windows" : false };
+// Each name carries something a shell would act on inside double quotes or bare.
+const HOSTILE = [
+  "tools$(touch PROOF)", "tools`touch PROOF`", "it's here", 'say "hi"', "My Tools",
+  "a;touch PROOF", "a&touch PROOF", "a|touch PROOF", "a<b", "a>PROOF", "a\\b", "$HOME",
+];
 
 const posix = (files, pathEnv, links = {}) => ({
   env: { PATH: pathEnv },
@@ -47,9 +59,64 @@ test("on Windows the name drops .exe, and a quoted path gets PowerShell's call o
   assert.equal(executableCommand(spaced, win([])), `& '${spaced}'`);
 });
 
-test("run under node, nothing changes", () => {
-  assert.match(invocation("0.2.2", "/tmp/agent-console/bin/agent-console.mjs", {}, null), /^node ".+agent-console\.mjs"$/u);
+test("run under node, the local entry is a literal argument and npx remains verified", () => {
+  assert.match(invocation("0.2.2", "/tmp/agent-console/bin/agent-console.mjs", {}, null), /^node '.+agent-console\.mjs'$/u);
   assert.equal(invocation("0.2.2", "/tmp/_npx/abc/node_modules/x/bin/agent-console.mjs", {}, null), verifiedRun("0.2.2"));
+});
+
+test("Node restart commands preserve the entry and carried paths without shell substitution", posixShell, () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-node-command-"));
+  try {
+    for (const [i, name] of HOSTILE.entries()) {
+      const entry = path.join(root, String(i), name, "fixture.cjs");
+      fs.mkdirSync(path.dirname(entry), { recursive: true });
+      fs.writeFileSync(entry, 'console.log(JSON.stringify(process.argv.slice(2)))');
+      const stateDir = path.join(root, name, "state");
+      const command = [invocation("0.3.0", entry, {}, null), "report", ...carriedOptions(new Map([["state-dir", stateDir]]))].join(" ");
+      const result = spawnSync("/bin/sh", ["-c", command], { cwd: root, encoding: "utf8" });
+      assert.equal(result.status, 0, `${command}\n${result.stderr}`);
+      assert.deepEqual(JSON.parse(result.stdout), ["report", "--state-dir", stateDir]);
+      assert.equal(fs.existsSync(path.join(root, "PROOF")), false, command);
+    }
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test("carried paths use PowerShell literal quoting, including typographic quotes", () => {
+  for (const name of ["it's here", "it’s here", "‘x‚‛", "tools$(whoami)", "tools`whoami`", "My Tools"]) {
+    const dir = path.resolve(name);
+    const args = carriedOptions(new Map([["state-dir", dir]]), undefined, "win32");
+    assert.deepEqual(args, ["--state-dir", "'" + dir.replace(/['‘’‚‛]/gu, "$&$&") + "'"]);
+  }
+});
+
+const pwsh = process.platform === "win32" ? "pwsh.exe" : "pwsh";
+const hasPowerShell = spawnSync(pwsh, ["-NoProfile", "-NonInteractive", "-Command", "exit 0"], { stdio: "ignore" }).status === 0;
+test("PowerShell runs the printed Node command and retained package with literal paths", { skip: process.platform !== "win32" && !hasPowerShell && "PowerShell is not installed here" }, () => {
+  assert.ok(hasPowerShell, "Windows CI must execute the native PowerShell regression");
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-powershell-command-"));
+  try {
+    for (const name of ["it's here", "it’s here", "‘x‚‛", "tools$(Get-Date)", "tools`Get-Date`", "My Tools", "tools”;Write-Output PROOF;#"]) {
+      const entry = path.join(root, name, "fixture.cjs");
+      fs.mkdirSync(path.dirname(entry), { recursive: true });
+      fs.writeFileSync(entry, 'console.log(JSON.stringify(process.argv.slice(2)))');
+      const stateDir = path.join(root, name, "state");
+      const prefix = process.platform === "win32" ? invocation("0.3.0", entry, {}, null) : `node ${shellArgument(entry, "win32")}`;
+      const command = [prefix, "report", ...carriedOptions(new Map([["state-dir", stateDir]]), undefined, "win32")].join(" ");
+      const result = spawnSync(pwsh, ["-NoProfile", "-NonInteractive", "-Command", command], { cwd: root, encoding: "utf8" });
+      assert.equal(result.status, 0, `${command}\n${result.stderr}`);
+      assert.deepEqual(JSON.parse(result.stdout), ["report", "--state-dir", stateDir]);
+    }
+    // Parse npx's actual printed package argument with a synthetic Node receiver;
+    // never fetch or install a package to exercise this quoting boundary.
+    const kept = path.join(root, "tools”;Write-Output PROOF;#", releaseAsset("0.3.0"));
+    const command = invocation("0.3.0", path.join(root, "_npx", "entry.mjs"), { AGENT_CONSOLE_PACKAGE: kept }, null);
+    assert.ok(command.startsWith("npx --yes "));
+    const receiver = path.join(root, "receiver.cjs");
+    fs.writeFileSync(receiver, 'console.log(JSON.stringify(process.argv.slice(2)))');
+    const parsed = spawnSync(pwsh, ["-NoProfile", "-NonInteractive", "-Command", `node ${shellArgument(receiver, "win32")} ${command.slice("npx --yes ".length)}`], { encoding: "utf8" });
+    assert.equal(parsed.status, 0, parsed.stderr);
+    assert.deepEqual(JSON.parse(parsed.stdout), [`file:${kept}`]);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 
 test("an executable names itself even when the environment carries a kept package", () => {
@@ -58,12 +125,6 @@ test("an executable names itself even when the environment carries a kept packag
 });
 
 /* ── Printed commands are literal: nothing in a file name is run by the shell ── */
-
-// Each name carries something a shell would act on inside double quotes or bare.
-const HOSTILE = [
-  "tools$(touch PROOF)", "tools`touch PROOF`", "it's here", 'say "hi"', "My Tools",
-  "a;touch PROOF", "a&touch PROOF", "a|touch PROOF", "a<b", "a>PROOF", "a\\b", "$HOME",
-];
 
 test("a full path is single-quoted for sh, with ' written as '\\''", () => {
   for (const dir of HOSTILE) {
@@ -88,8 +149,6 @@ test("PowerShell gets a single-quoted literal behind &, with ' (and its typograp
   const odd = "C:\\Tools\\agent-console$(calc).exe";
   assert.equal(executableCommand(odd, win([odd], "C:\\Tools")), "& 'agent-console$(calc)'");
 });
-
-const posixShell = { skip: process.platform === "win32" ? "sh is not on Windows" : false };
 
 test("sh runs the printed command as this very file, with its options, and runs nothing else", posixShell, async () => {
   const fs = await import("node:fs");
