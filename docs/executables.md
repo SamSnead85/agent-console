@@ -41,7 +41,7 @@ upper case.
 
 ## Signed or not, plainly
 
-The release page says beside each file whether it is signed.
+Release executables are unsigned unless the release notes say *signed and notarized*; v0.3.0 is unsigned.
 
 - **macOS: unsigned** unless the release page says *signed and notarized*.
   Unsigned means it carries only the ad-hoc signature Apple silicon requires of

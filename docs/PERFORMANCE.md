@@ -153,7 +153,12 @@ list needs no virtualisation.
 - **Lines that cannot change a record are not parsed.** For Codex that means
   anything but `session_meta`, `turn_context` and `token_count`. For Claude
   Code it means any line without usage. Tool output, prompts and replies are
-  most of the bytes.
+  most of the bytes. The one exception is a reader that counts tool activity
+  and raises alerts — the hub's own machine, and a reporter run with
+  `--share-alerts` or `--share-tool-activity` — which also parses tool-call
+  and tool-result lines, and hands them only to that reader, never to
+  accounting. On the 100,000-line synthetic history that is about a third
+  more parses on the first read; the budget above is measured without it.
 - **Salted hashes are computed once per value per pass**, not once per line.
   They are held only in memory.
 - **The spool is written in blocks**, not one write per record.

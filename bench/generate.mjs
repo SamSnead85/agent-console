@@ -54,6 +54,8 @@ function prng(seed) {
 const PROJECTS = ["api-server", "web-app", "mobile-app", "data-pipeline", "infra", "design-system", "billing", "search", "auth-service", "docs-site", "ml-training", "cli-tools"];
 const CLAUDE_MODELS = ["claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5", "claude-fable-5-1"];
 const CODEX_MODELS = ["gpt-5.6-sol", "gpt-6-astra"];
+/** Every model id the generator writes; each must price (test/prices-alias.test.js). */
+export const BENCH_MODELS = Object.freeze([...CLAUDE_MODELS, ...CODEX_MODELS]);
 const MINUTE = 60_000;
 
 export function generate(options) {

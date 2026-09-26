@@ -8,9 +8,8 @@ in a browser on the hub's computer. It runs on Node.js with no npm dependencies.
 This document describes the integrated v0.3 source at this revision; a
 published release may contain an earlier revision. The package includes
 observability, an optional project policy compiler for Claude Code, and
-opt-in local telemetry adapters. The separate private Enterprise gateway is
-outside this package. Its implementation, deployment and controls cannot be
-established by the public console's source or diagrams.
+opt-in local telemetry adapters. Agent Console observes; it does not route or
+authorize model or tool calls.
 
 ## System boundary
 
@@ -277,7 +276,7 @@ usage attestation. Read [SECURITY.md](../SECURITY.md) before network deployment.
 | --- | --- |
 | Entry and configuration | `bin/agent-console.mjs`, `server.js`, `lib/config.js`: command selection, configuration and listener lifecycle. |
 | Collection | `lib/collector/`: parsers, projection, identity, spool, transport and pricing. |
-| Reporter | `lib/reporter.js`: enrollment, local credentials, reporting and leave. |
+| Reporter | `lib/reporter.js`: enrollment, local credentials, reporting and leave. `lib/reporter-outbox.js`: opt-in alerts and activity pending until the console acknowledges them, kept in the collector's cursor file. |
 | Admin and enrollment | `lib/hub/admin.js`, `registry.js`, `tls.js`: browser sessions, invitation/device state and hub TLS identity. |
 | HTTP surfaces | `lib/hub/routes.js`, `http.js`: routing, access checks, bounded bodies, headers and static assets. |
 | Response redaction | `lib/redact.js`: recognizable credential patterns masked in ordinary JSON responses; not a provider or MCP gateway. |
@@ -336,37 +335,10 @@ can explicitly report a pending release; scheduled, manual and release checks
 require a working download. Pending availability does not establish a verified
 installation. See [download verification](../README.md#checking-a-download).
 
-## Enterprise and MCP integration boundary
-
-```mermaid
-flowchart LR
-  Native[Native agent runtime] -->|Model calls| Provider[Model providers]
-  Native -->|Tool calls| MCP[Model Context Protocol servers]
-  Local[Explicitly installed public policy hooks] -->|Native ask/deny decisions on covered events| Native
-  Native --> Logs[Local usage transcripts]
-  Logs --> Observe[Agent Console observability]
-  subgraph External[Private Enterprise boundary: activation not established here]
-    Control[Enterprise control plane]
-    Gateway[Managed model and MCP gateway integration]
-    Control -. Policy and identity integration .-> Gateway
-  end
-  Native -. Requires separate configuration and acceptance .-> Gateway
-  Gateway -. Managed model path .-> Provider
-  Gateway -. Managed tool path .-> MCP
-  Observe -. Usage integration .-> Control
-```
+## Model and MCP boundary
 
 MCP servers expose tools to their agent clients. This public package has no
 MCP server registry, MCP proxy, provider credential vault, centralized identity
 service or tenant-aware control plane. Its local hook matcher covers named
 native tools; it does not intercept every MCP tool. Response redaction in the
 dashboard does not establish secret masking on MCP requests or responses.
-
-Solid paths describe the public package and its runtime context; local hooks
-apply only when explicitly installed and honored by Claude Code. Dashed paths
-mark the separate private Enterprise integration boundary. They do not assert
-that private gateway implementation is complete, deployed or protecting a
-particular agent session. That requires independently verified identity,
-routing, authorization, secret-handling and deployment evidence from the
-Enterprise system. Agent Console's transcript and telemetry readings alone
-are not proof that a gateway authorized every agent action.
