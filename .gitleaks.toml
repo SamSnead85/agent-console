@@ -15,3 +15,10 @@ regexes = [
   '''^CANARY-[A-Z-]+-[0-9a-f]{4}$''',
   '''^ops:" \+ SECRETS\.[A-Za-z]+ \+ "$''',
 ]
+
+[[allowlists]]
+description = "Generated fixtures: a lane's key is a hex digest of synthetic demo ids, not a credential"
+condition = "AND"
+paths = ['''^fixtures/[a-z0-9.-]+\.json$''']
+regexTarget = "match"
+regexes = ['''^key": "[0-9a-f]{12,64}"$''']

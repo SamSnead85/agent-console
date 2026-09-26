@@ -43,7 +43,7 @@ test("absolute home paths name an account; placeholders and ~ do not", () => {
   assert.deepEqual(rulesHit(`${H}${ACCOUNT}/.claude/projects`), ["home-path"]);
   assert.deepEqual(rulesHit("C:" + "\\\\Users\\\\" + ACCOUNT + "\\\\app"), ["home-path"]);
   assert.deepEqual(rulesHit(`/tmp/claude-503/-Users-${ACCOUNT}-app/scratch`), ["home-path"]);
-  for (const ok of [`${U}me/app`, `${H}dev/app`, `${U}persona/work`, "~/.claude/projects", `${U}<you>/x`, `"${U}"`, `${H}runner/work`, `-Users-me-app`]) {
+  for (const ok of [`${U}me/app`, `${H}dev/app`, `${U}persona/work`, "~/.claude/projects", `${U}<you>/x`, `"${U}"`, `${H}runner/work`, `-Users-me-app`, `/tmp/x/home/.claude/projects`, `${U}.localized`]) {
     assert.deepEqual(rulesHit(ok), [], ok);
   }
 });

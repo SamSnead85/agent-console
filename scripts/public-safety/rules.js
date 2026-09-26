@@ -50,7 +50,8 @@ export const RULES = [
   {
     id: "home-path",
     why: "an absolute home folder names the account it belongs to; use ~, a relative path, or /home/dev",
-    pattern: new RegExp(String.raw`(?:/Users/|/home/|[A-Za-z]:\\+Users\\+)(?!${placeholder}(?![A-Za-z0-9._-]))(?![<$%{\[(*])[A-Za-z0-9._-]+`, "gu"),
+    // A segment that starts with a dot (/home/.claude, /Users/.localized) is a hidden folder, never an account name.
+    pattern: new RegExp(String.raw`(?:/Users/|/home/|[A-Za-z]:\\+Users\\+)(?!${placeholder}(?![A-Za-z0-9._-]))(?![<$%{\[(*.])[A-Za-z0-9._-]+`, "gu"),
   },
   {
     id: "home-path",

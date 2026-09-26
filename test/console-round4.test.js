@@ -31,12 +31,13 @@ import { test } from "node:test";
 import fs from "node:fs";
 import vm from "node:vm";
 
-const read = (file) => fs.readFileSync(new URL("../public/" + file, import.meta.url), "utf8");
+// A Windows checkout has CRLF endings; the functions are sliced out of the source by their LF-delimited ends.
+const read = (file) => fs.readFileSync(new URL("../public/" + file, import.meta.url), "utf8").replace(/\r\n/gu, "\n");
 const JS = read("console.js");
 const CSS = read("console.css");
 const JOIN_CSS = read("join.css");
 const HTML = read("index.html");
-const PROBES = fs.readFileSync(new URL("../scripts/ui-probes.mjs", import.meta.url), "utf8");
+const PROBES = fs.readFileSync(new URL("../scripts/ui-probes.mjs", import.meta.url), "utf8").replace(/\r\n/gu, "\n");
 
 const plural = (n, one, many = one + "s") => `${n} ${n === 1 ? one : many}`;
 const esc = (s) => String(s ?? "");
