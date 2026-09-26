@@ -228,6 +228,21 @@ await section("axe-core WCAG 2.2 AA", async () => {
         if (v.length) fail(`${view} ${width} ${theme}${tag(hub)}: ${v.join(", ")}`); else ok(`${view} ${width} ${theme}${tag(hub)}`);
         if (errors.length) fail(`${view} ${width} ${theme}${tag(hub)}: console errors: ${errors.slice(0, 2).join(" | ")}`);
         if (hub.name === "demo") await shot(page, `${view}-${width}-${theme}`);
+        // the add-a-machine sheet, open at its link step, is in the run too (J4-06): its disclosure and its buttons are targets
+        if (hub.name === "demo" && view === "console" && width === 1440) {
+          await page.evaluate(() => document.getElementById("addBtn").click());
+          await page.waitForTimeout(400);
+          await page.fill("#fPerson", "Teammate");
+          await page.evaluate(() => document.getElementById("createBtn").click());
+          await page.waitForFunction(() => !document.querySelector('#addDialog .step[data-step="link"]').hidden, null, { timeout: 8000 });
+          await page.waitForTimeout(500);
+          const ra = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+          const va = ra.violations.map((x) => `${x.id}×${x.nodes.length} (${x.nodes[0]?.target?.[0]})`);
+          if (va.length) fail(`add sheet (link step) ${width} ${theme}: ${va.join(", ")}`); else ok(`add sheet (link step) ${width} ${theme}`);
+          const small = await page.evaluate(() => [...document.querySelectorAll("#addDialog summary, #addDialog button, #addDialog a")].filter((e) => e.checkVisibility()).map((e) => { const r = e.getBoundingClientRect(); return [e.tagName + (e.id ? "#" + e.id : ""), Math.round(r.width), Math.round(r.height)]; }).filter(([, w, h]) => w < 24 || h < 24));
+          if (small.length) fail(`add sheet (link step) ${width} ${theme}: targets under 24px: ${small.map(([n, w, h]) => `${n} ${w}×${h}`).join(", ")}`); else ok(`add sheet (link step) ${width} ${theme}: every target is 24px`);
+          await page.keyboard.press("Escape");
+        }
         await context.close();
       }
     }
@@ -311,7 +326,8 @@ await section("composition", async () => {
         const att = document.getElementById("attention"), ax = att.querySelector(".astrip .bx");
         const axisWhole = !ax || getComputedStyle(att.querySelector(".astrip")).display === "none" || (r(ax).bottom <= r(att).bottom - 6 && r(ax).top >= r(att).top && [...ax.children].every((s) => r(s).height <= 20));
         const legendLines = [...document.querySelectorAll("#specLegend span")].filter((s) => s.checkVisibility()).map((s) => Math.round(r(s).height)).filter((h) => h > 20);
-        // nothing stands bare between the fold strip and the status bar (R3-02): a fold opens in the room or the lanes card keeps it
+        // what stands between the fold strip and the status bar (R3-02, J4-12): a fold opens in the room the lanes leave, and what no
+        // fold fills is the tray, as on Projects and Team — held to a quarter of the frame when the card hugs its rows, 48px otherwise
         const stripGap = Math.round(r(document.querySelector("footer.foot")).top - r(strip).bottom);
         // the Attention card draws only whole rows, and its hero's line is one line with nothing cut mid-word (R3-07)
         const list = document.getElementById("attnList"), lb = r(list);
@@ -320,11 +336,15 @@ await section("composition", async () => {
         const attnLine = { whole: line.scrollHeight <= line.clientHeight + 1, fits: line.scrollWidth <= line.clientWidth + 1, text: line.textContent.trim().slice(0, 60) };
         // every summary on the fold strip shows a reading or a reason (R3-08): never a bare label
         const emptyFs = [...document.querySelectorAll(".foldstrip .fs")].filter((x) => x.checkVisibility() && !x.innerText.trim()).map((x) => x.id);
+        // no hatched tile stands in for rows (J4-12): the lanes card holds rows, the hairline and the void that fills an empty pane only
+        const tile = document.querySelector("#cLanes .lanevoid");
         return { rows, room, drawn: lanes.length, under, hug: card.classList.contains("hug"), voidfill: Boolean(document.querySelector("#cLanes .empty.voidfill")), cold: document.querySelectorAll("#cLanes .lane.cold").length,
           band2: r(band2).height, stripVisible: r(strip).top >= c.top && r(strip).bottom <= c.bottom + 1, docScroll: document.documentElement.scrollHeight > innerHeight + 1,
-          foot: Math.round(r(document.querySelector("footer.foot")).height), caps, attention: document.getElementById("attention").classList.contains("hot"), axisWhole, legendLines, stripGap, cutRows, attnLine, emptyFs };
+          foot: Math.round(r(document.querySelector("footer.foot")).height), caps, attention: document.getElementById("attention").classList.contains("hot"), axisWhole, legendLines, stripGap, cutRows, attnLine, emptyFs, tile: tile ? Math.round(r(tile).height) : 0, folds: [...document.querySelectorAll("#fold .foldrow[open]")].map((d) => d.id) };
       });
-      if (m.stripGap > 48) fail(`console ${width}${tag(hub)}: ${m.stripGap}px of bare tray between the fold strip and the status bar (max 48)`); else ok(`console ${width}${tag(hub)}: ${m.stripGap}px between the fold strip and the status bar`);
+      const maxGap = m.hug ? Math.round(SIZES[width][1] / 4) : 48;
+      if (m.stripGap > maxGap) fail(`console ${width}${tag(hub)}: ${m.stripGap}px of bare tray between the fold strip and the status bar (max ${maxGap})`); else ok(`console ${width}${tag(hub)}: ${m.stripGap}px between the fold strip and the status bar${m.folds.length ? ` · open: ${m.folds.join(", ")}` : ""}${m.hug ? " · the card hugs its rows" : ""}`);
+      if (m.tile > 48) fail(`console ${width}${tag(hub)}: a ${m.tile}px hatched tile stands in for rows (max 48)`);
       if (m.cutRows) fail(`console ${width}${tag(hub)}: ${m.cutRows} Attention row(s) drawn cut by the list's edge`); else ok(`console ${width}${tag(hub)}: only whole Attention rows are drawn`);
       if (!m.attnLine.whole || (width >= 1440 && !m.attnLine.fits)) fail(`console ${width}${tag(hub)}: the Attention hero's line does not fit ("${m.attnLine.text}")`); else ok(`console ${width}${tag(hub)}: the Attention hero's line is one whole line`);
       if (m.emptyFs.length) fail(`console ${width}${tag(hub)}: fold summaries with no visible text: ${m.emptyFs.join(", ")}`); else ok(`console ${width}${tag(hub)}: every fold summary shows its reading or its reason`);
@@ -361,7 +381,7 @@ await section("composition", async () => {
 
 // ── 4. clipped text ─────────────────────────────────────────────────────
 await section("clipping", async () => {
-  const CLIP = ".pr b, .pr em, .mn .txt, .do, .mhead, .mhead span, .lhead span, .hc, .aline, .dv, .fs, .foldrow .fs, .count, .lane .md .mname, .cap, .capr, .bx span, .kv .s, .kv .l, .tline, .afoot, .xn b, .xn em, .speclegend span, .astrip .bx span, .ahead, .arow b em, .status .sh, .status .lk, #attnLine, #attnHead, .floorline";
+  const CLIP = ".pr b, .pr em, .mn .txt, .do, .mhead, .mhead span, .lhead span, .hc, .aline, .dv, .fs, .foldrow .fs, .count, .lane .md .mname, .cap, .capr, .bx span, .kv .s, .kv .l, .tline, .afoot, .xn b, .xn em, .speclegend span, .astrip .bx span, .ahead, .arow b em, .status .sh, .status .lk, #attnLine, #attnHead, .floorline, .lfoot, .lfoot span, #lFoot span";
   for (const hub of hubs) for (const width of hub.name === "demo" ? [360, 390, 1024, 1280, 1440] : [1024, 1440]) {
     for (const view of ["console", "projects", "team"]) {
       const { page, context } = await open(width, "dark", view, { hub, period: hub.name === "demo" ? null : "30d" });
@@ -392,6 +412,20 @@ await section("clipping", async () => {
       if (r.grp.length) fail(`${view} ${width}${tag(hub)}: the day group label is cut by its header: ${r.grp.join("; ")}`); else if (view !== "team" && width >= 1024) ok(`${view} ${width}${tag(hub)}: the "24 h" group label is whole inside its header`);
       if (r.small < 12) fail(`${view} ${width}${tag(hub)}: text at ${r.small}px (floor 12)`);
       if (width === 360 && r.hScroll) fail(`${view} 360 scrolls sideways`); else if (width === 360) ok(`${view} 360: no sideways scroll`);
+      // on a phone the lanes' footer is whole on its card (J4-07, F4-01): every part inside the card's right edge, the honesty line last
+      if (width <= 390 && view !== "team") {
+        const f = await page.evaluate((view) => { const foot = document.querySelector(view === "projects" ? "#pLaneCount" : "#lFoot"); if (!foot) return null; const fr = foot.getBoundingClientRect(); const cut = [...foot.querySelectorAll("span")].filter((s) => s.checkVisibility() && (s.getBoundingClientRect().right > fr.right + 1 || s.scrollWidth > s.clientWidth + 1)).map((s) => s.textContent.trim().slice(0, 40)); return { cut, scrolls: foot.scrollWidth > foot.clientWidth + 1, text: foot.textContent.trim().slice(0, 80) }; }, view);
+        if (view === "console") { if (!f || f.cut.length || f.scrolls) fail(`console ${width}${tag(hub)}: the lanes' footer is cut at the card's edge: ${f ? f.cut.join("; ") || "scrolls" : "no footer"}`); else ok(`console ${width}${tag(hub)}: the lanes' footer wraps whole ("${f.text.slice(0, 50)}…")`); }
+      }
+      // the Effort and Shipped tables keep every cell on a phone (J4-01): the Projects panes, and the Console's folds once opened
+      if (width <= 390 && view === "projects") {
+        const c = await page.evaluate(() => { const cells = [...document.querySelectorAll("#pEffortBody td, #pShipBody td, #pEffortBody tr, #pShipBody tr")]; return { n: cells.length, hidden: cells.filter((td) => getComputedStyle(td).display === "none" || td.getBoundingClientRect().width === 0).length }; });
+        if (!c.n || c.hidden) fail(`projects ${width}${tag(hub)}: ${c.hidden} of ${c.n} Effort/Shipped rows and cells are hidden`); else ok(`projects ${width}${tag(hub)}: every Effort and Shipped row and cell is drawn (${c.n})`);
+      }
+      if (width <= 390 && view === "console") {
+        const c = await page.evaluate(async () => { for (const id of ["foldEffort", "foldShipped", "foldProjects"]) document.getElementById(id).open = true; await new Promise((r) => setTimeout(r, 300)); const cells = [...document.querySelectorAll("#foldEffortBody td, #foldShipBody td, #foldProjBody td")]; return { n: cells.length, hidden: cells.filter((td) => getComputedStyle(td).display === "none" || td.getBoundingClientRect().width === 0).length }; });
+        if (!c.n || c.hidden) fail(`console ${width}${tag(hub)}: ${c.hidden} of ${c.n} fold table cells are hidden once the folds are opened`); else ok(`console ${width}${tag(hub)}: every fold table cell is drawn once the folds are opened (${c.n})`);
+      }
       await context.close();
     }
   }
@@ -641,13 +675,23 @@ await section("presenting", async () => {
     await p2.waitForTimeout(400);
     const plain = await p2.evaluate(() => document.getElementById("networkCmdShown").textContent);
     const home = process.env.HOME || "";
+    const user = home.split("/").filter(Boolean).pop() || "";
     if (home && plain.includes(home)) fail(`${hub.name}: the restart command shows the home directory (${home.replace(/[^/]+$/u, "…")})`); else ok(`${hub.name}: the restart command writes the home directory as ~`);
+    // a path outside the home directory carrying the account's name as a segment is masked there too (J4-09)
+    if (user.length >= 3 && new RegExp(`[\\\\/]${user.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}(?=[\\\\/\\s'"]|$)`, "u").test(plain)) fail(`${hub.name}: the restart command still carries the account's name in a path segment`); else ok(`${hub.name}: no path segment in the restart command is the account's name`);
+    // presenting is switched on from the console (J4-08): with the sheet's field focused, P would type a letter; the stamp is checked before the scan
+    await p2.keyboard.press("Escape");
+    await p2.waitForTimeout(300);
     await p2.keyboard.press("p");
     await p2.waitForTimeout(500);
-    const values = [...cmd.matchAll(/--(?:name|person)(?:=|\s+)(?:'((?:[^']|'\\'')*)'|"([^"]*)"|(\S+))/gu)].map((m) => m[1] ?? m[2] ?? m[3]).filter((v) => v && v.length >= 3);
+    const stamped = await p2.evaluate(() => { const s = document.getElementById("presentStamp"); return Boolean(s) && !s.hidden && s.textContent === "PRESENTING"; });
+    if (!stamped) { fail(`${hub.name}: P did not switch presenting on before the scan`); await c2.close(); continue; }
+    await p2.evaluate(() => document.getElementById("addBtn").click());
+    await p2.waitForTimeout(400);
+    const values = [...cmd.matchAll(/--(?:name|person|state-dir|claude-root|codex-root)(?:=|\s+)(?:'((?:[^']|'\\'')*)'|"([^"]*)"|(\S+))/gu)].map((m) => m[1] ?? m[2] ?? m[3]).filter((v) => v && v.length >= 3);
     const outer = await p2.evaluate(() => document.documentElement.outerHTML);
     const left = values.filter((v) => outer.includes(v)).concat(home && outer.includes(home) ? ["the home path"] : []);
-    if (left.length) fail(`${hub.name}: while presenting the document still holds ${left.length} of the command's names or the home path`); else ok(`${hub.name}: while presenting, the restart command's names and the home path are out of the document (${values.length} value(s) checked)`);
+    if (left.length) fail(`${hub.name}: while presenting the document still holds ${left.length} of the command's names, folders or the home path`); else ok(`${hub.name}: while presenting, the restart command's names, folders and the home path are out of the document (${values.length} value(s) checked)`);
     await c2.close();
   }
 });

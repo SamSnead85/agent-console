@@ -4,6 +4,49 @@
 
 ### Console
 
+- On a phone the Effort and Shipped tables — the Projects panes and the
+  Console's folds — keep every cell: they scroll sideways under a right-edge
+  fade like the lanes, and only the four dense tables (people, machines,
+  projects, days) become card rows. Before, every cell of them was hidden at
+  390 and the panes were two empty blocks.
+- A window in which nothing ran, on a hub whose machines have reported, names
+  its cause on every pane: "Nothing ran in the last hour · last usage 9:58 AM
+  · nothing is estimated in its place" on the spend spectrum, the by-model
+  rows, the class table's marks, the Team and Projects activity waves and the
+  chart, which is a drawn void rather than a flat line. "This hub does not
+  split its estimate" is said only of a hub that priced something and sent no
+  split; "no model has reported" only of a hub with no machine.
+- An alert raised before today carries a dated stamp ("yesterday 2:58 PM",
+  "Sep 23 9:10 AM") and sits under "earlier · before today" on Team, in the
+  alerts sheet and on the Attention card — never under "today", and never in
+  today's count.
+- The lanes' footer says where the lanes on unavailable machines are, by
+  state: "3 on silent machines · 2 drawn dimmed · 1 in the Cold fold", never
+  "(hidden)" over a row that is drawn; the hairline over the cold fill names
+  the states under it ("the day's most recent sessions · silent machine").
+- With no machine sharing its alerts, the Team head reads "not watched · 0 of
+  1 machine share alerts", its rows are one hatched sentence, the sixty-minute
+  strip is hatched whole and named "not watched", and the Attention stat says
+  so — a known zero no longer stands in for unknown. The unpriced-model hero
+  still ranks first.
+- The lanes' footer wraps whole on a phone: "80 of 316 shown" and the
+  provenance line are on the card, set off by dots, never cut at its edge.
+- The sheet's "Why a command…" disclosure and the phone's mark are 24px
+  targets; the add-a-machine sheet is in the axe run at its link step.
+- The restart command masks `--state-dir`, `--claude-root` and `--codex-root`
+  while presenting as it masks `--name` and `--person`, and outside presenting
+  masks the account's name in any path segment outside the home directory.
+- Every figure stays while presenting: one rule, on every pane — a shared
+  screen hides whose work it is, never what it cost; the strip's scope line
+  (counts only) stays. The hero "$1,729 est." and the Projects effort line no
+  longer disagree with the columns beside them.
+- The room the day's lanes leave under the strip goes to the folds that fit
+  it — the Cold fold among them, the tallest that fits first, then the next
+  that fits what is left — and the lanes card hugs its rows; what no fold
+  fills is the tray, as on Projects and Team, never a hatched tile.
+- A person's machine row in the inspector shows "Reporting · now" whole; the
+  join page's step ordinals stay one word so the three heads share a baseline
+  at 390.
 - The row the keyboard is on keeps its focus through every poll: lane rows
   are placed by position and moved only when their order changed, never
   re-appended, so J and K walk consecutive rows and a focused row is still

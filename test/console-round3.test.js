@@ -131,14 +131,20 @@ test("R3-09/R3-10: the restart command is shown with ~ for the home directory an
   assert.equal(plain, "~/.nvm/versions/node/v22.0.0/bin/node ~/work/agent-console/bin/agent-console.mjs --name 'Mac Studio' --person Sam --state-dir ~/.agent-console/hub2 --listen 0.0.0.0");
   const shown = run(true, cmd);
   assert.doesNotMatch(shown, /Mac Studio|Sam\b|\/Users\/someone/u);
-  assert.equal(shown, "~/.nvm/versions/node/v22.0.0/bin/node ~/work/agent-console/bin/agent-console.mjs --name '…' --person '…' --state-dir ~/.agent-console/hub2 --listen 0.0.0.0");
+  // while presenting a folder's name is a project's (J4-09): --state-dir and the transcript roots are masked as --name and --person are
+  assert.equal(shown, "~/.nvm/versions/node/v22.0.0/bin/node ~/work/agent-console/bin/agent-console.mjs --name '…' --person '…' --state-dir '…' --listen 0.0.0.0");
   assert.equal(run(true, "node x.mjs --name=\"Build box\" --person='O'\\''Neil' --listen 0.0.0.0"), "node x.mjs --name='…' --person='…' --listen 0.0.0.0");
   assert.equal(run(false, "C:\\Users\\someone\\node.exe \"C:\\Users\\someone\\x.mjs\""), "~\\node.exe \"~\\x.mjs\"");
   // the sheet takes the mask at once when presenting starts, and Copy still gives the hub's own command
   assert.match(JS, /if \(D && D\.hub\.networkCommand\) \$\("networkCmdShown"\)\.textContent = shownCommand\(D\.hub\.networkCommand\);/u);
   assert.match(JS, /copy\(D\.hub\.networkCommand, "Command copied\./u);
-  // while presenting, a header over a column whose every value stepped back steps back too
-  assert.match(CSS, /body\[data-present\] \.mhead:not\(\.tools\):not\(\.people\) > span:last-child, body\[data-present\] \.chead > span:last-child, body\[data-present\] \.lhead \.c-usd, body\[data-present\] th\.est \{ visibility: hidden; \}/u);
+  // while presenting every figure stays (J4-11): one rule, and it is that no list-price figure and no header over one steps back;
+  // the strip's scope line (counts only) stays; only the restart command's row, which carries this machine's addresses, steps back
+  assert.doesNotMatch(CSS, /body\[data-present\] [^{]*(?:th\.est|\.c-usd|\.chead|\.count)[^{]*\{ visibility: hidden; \}/u);
+  assert.match(CSS, /body\[data-present\] \[data-internal\] \{ visibility: hidden; \}/u);
+  assert.equal((JS.match(/data-internal/gu) || []).length, 0, "no figure in the page carries the presenting mark");
+  assert.equal((HTML.match(/data-internal/gu) || []).length, 1, "only the restart command's row carries it");
+  assert.match(HTML, /id="networkCmd" hidden data-internal/u);
   assert.equal((HTML.match(/class="r est"|class="r git est"/gu) || []).length, 5, "every Est. \\$, \\$ / commit and \\$ / merge head carries the class");
   // the select is the sheet's own material, and the button beside a tall command does not stretch to its height
   assert.match(CSS, /\.sheet select \{ appearance: none;/u);
@@ -207,10 +213,12 @@ test("U1: an empty console says where it looked, in mono, with the flag that poi
 test("U2/U3: the price table is the hub's own, a class with nothing in it is a clean void mark, the first start is not a restart, and an idle hour draws the day's recent sessions", () => {
   assert.match(JS, /const prices = D\.hub\.prices && \(D\.hub\.prices\.v \|\| D\.hub\.prices\.checkedOn\)/u);
   assert.match(JS, /"price table not reported by this hub"/u);
-  assert.match(JS, /: t\.total === 0 \? `<em class="usd void" title="No \$\{esc\(CLASS_LABEL\[k\]\)\} tokens in the \$\{esc\(PERIOD_TEXT\[period\]\[0\]\)\}, so nothing to price">—<\/em>`/u);
+  // a class with nothing in it names the window — and the quiet window's cause when nothing at all ran in it (J4-02)
+  assert.match(JS, /: t\.total === 0 \? `<em class="usd void" title="\$\{esc\(quietWindow\(\) \? quietReason\("nothing to price"\) : `No \$\{CLASS_LABEL\[k\]\} tokens in the \$\{PERIOD_TEXT\[period\]\[0\]\}, so nothing to price`\)\}">—<\/em>`/u);
   assert.doesNotMatch(JS, /— no reading/u);
   assert.match(JS, /"first-start": \(since\) => `The console first started at/u);
   assert.match(JS, /"first-start": "the console's first start; nothing ran before it"/u);
   assert.match(JS, /"first-start": \(t\) => `first start \$\{hhmm\(t\)\} · nothing before it`/u);
-  assert.match(JS, /"nothing in the last hour · the day's most recent sessions, idle"/u);
+  // the hairline names the states drawn under it (J4-04): "idle", or "silent machine", never "idle" over a silent machine's row
+  assert.match(JS, /"nothing in the last hour · the day's most recent sessions · " \+ which/u);
 });

@@ -45,12 +45,12 @@ test("G06: the lanes card hugs its rows when the day leaves the pane room, fills
   assert.match(JS, /const hugWanted = room > 0 && whole > 0 && whole < room;/u);
   // nothing in the last hour (U3): the day's most recent sessions are drawn, idle, rather than an empty hatch
   assert.match(JS, /const fill = hugWanted \? cold : room > visible\.length \+ 1 \? cold\.slice\(0, room - visible\.length - 1\) : !visible\.length \? cold\.slice\(0, room > 0 \? Math\.max\(1, room - 1\) : 8\) : \[\];/u);
-  // the card hugs its rows only when an open fold takes the room they leave (R3-02); otherwise it keeps the room and its void names it
-  assert.match(JS, /const hug = hugWanted && openPx > 0 && openPx >= \(room - whole\) \* rowH - 48;/u);
+  // the card hugs its rows whenever the day leaves the pane room (J4-12): the folds that fit take what they can, the rest is the tray
+  // as on Projects and Team — never a hatched tile standing in for rows
+  assert.match(JS, /const hug = hugWanted;/u);
   assert.match(JS, /box\.closest\("\.lanes"\)\.classList\.toggle\("hug", hug\);/u);
-  assert.match(JS, /laneVoid\.hidden = hug \|\| room <= whole;/u);
-  assert.match(JS, /laneVoid\.textContent = `nothing more today\$\{fill\.length \? ` · \$\{plural\(fill\.length, "cold lane"\)\} drawn` : ""\}`;/u);
-  assert.match(CSS, /\.lanevoid \{ flex: 1 1 auto;/u);
+  assert.doesNotMatch(JS, /laneVoid|lanevoid/u, "no void tile stands in for rows");
+  assert.doesNotMatch(CSS, /\.lanevoid \{/u);
   // the room is read from the canvas, never from the card that follows its rows
   assert.match(JS, /const room = canvas\.clientHeight - parseFloat\(cs\.paddingTop\) - parseFloat\(cs\.paddingBottom\)/u);
   // the cold fill sits under a hairline that names it, and the void is the pane
@@ -58,11 +58,14 @@ test("G06: the lanes card hugs its rows when the day leaves the pane room, fills
   assert.match(CSS, /\.lanes \.empty\.voidfill \{ flex: 1 1 auto;/u);
   assert.match(JS, /<div class="empty voidfill"><b>\$\{esc\(head\)\}<\/b>\$\{why \? `<span>\$\{esc\(why\)\}<\/span>` : ""\}/u);
   assert.match(JS, /<span>Nothing is estimated in its place\.<\/span><\/div>`;/u);
-  // the room under a hugging card is taken by the first fold with rows whose rendered height fits it (R3-02), measured, never a fixed
-  // row count; the reader's own choice, once made, is kept
-  assert.match(JS, /const AUTO_FOLDS = \["foldProjects", "foldEffort", "foldShipped"\];/u);
-  assert.match(JS, /if \(d\.offsetHeight <= leftover \+ 4\) \{ foldAuto = id; return d\.offsetHeight; \}/u);
-  assert.match(JS, /if \(!hugWanted\) \{ if \(foldAuto && !foldTouched\) \{ const d = \$\(foldAuto\); if \(d\.open\) d\.open = false; foldAuto = null; \} return openPx\(\); \}/u);
+  // the room under a hugging card is taken by the folds with rows whose rendered height fits it (R3-02, J4-12) — the Cold fold among
+  // them, the tallest that fits first, then the next that fits what is left — measured, never a fixed row count; the reader's own
+  // choice, once made, is kept
+  assert.match(JS, /const AUTO_FOLDS = \["foldCold", "foldProjects", "foldEffort", "foldShipped"\];/u);
+  assert.match(JS, /if \(id === "foldCold"\) return coldRows\.size > 0;/u);
+  assert.match(JS, /const sized = AUTO_FOLDS\.filter\(foldHasRows\)\.map\(\(id\) => \{ const d = \$\(id\); d\.open = true; const h = d\.offsetHeight; d\.open = false; return \[id, h\]; \}\)\.sort\(\(a, b\) => b\[1\] - a\[1\]\);/u);
+  assert.match(JS, /for \(const \[id, h\] of sized\) if \(h <= left \+ 4\) \{ \$\(id\)\.open = true; foldAuto\.add\(id\); opened \+= h; left -= h; \}/u);
+  assert.match(JS, /if \(!hugWanted\) \{ if \(foldAuto\.size && !foldTouched\) \{ for \(const id of foldAuto\) \{ const d = \$\(id\); if \(d\.open\) d\.open = false; \} foldAuto\.clear\(\); \} return openPx\(\); \}/u);
   assert.match(JS, /if \(ev\.target\.closest\("summary"\)\) foldTouched = true;/u);
   // rows are placed by position, never re-appended (R3-01), so the row the keyboard is on keeps its focus through every poll
   assert.match(JS, /if \(want !== node\) box\.insertBefore\(node, want\);/u);
@@ -71,8 +74,9 @@ test("G06: the lanes card hugs its rows when the day leaves the pane room, fills
 });
 
 test("G01: the Team head prints the day's alert count from the hub's counter and says how many are kept when the list is shorter", () => {
-  assert.match(JS, /const count = today \? today\.count : all\.length;/u);
-  assert.match(JS, /const kept = today \? today\.kept : all\.length;/u);
+  // without the hub's counter the figure is today's own list (J4-03): an alert from before today is never in it
+  assert.match(JS, /const count = today \? today\.count : dayList\.length;/u);
+  assert.match(JS, /const kept = today \? today\.kept : dayList\.length;/u);
   assert.match(JS, /\$\{plural\(count, "alert"\)\} today\$\{kept < count \? ` · \$\{kept\} kept` : ""\}/u);
   assert.ok(Number.isInteger(CONSOLE.alertsToday.count) && Number.isInteger(CONSOLE.alertsToday.kept), "the fixture carries the day counter");
   assert.ok(CONSOLE.alertsToday.count >= CONSOLE.alertsToday.kept);

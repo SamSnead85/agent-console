@@ -204,9 +204,9 @@
       </div>
       <section class="fold" id="fold" aria-label="The rest of the day, opened">
         <details class="foldrow" id="foldCold"><summary><span class="fk">Cold sessions</span><span class="fs" id="coldSumRow">idle for more than an hour, or on an unavailable machine</span></summary><div id="coldLanes" class="coldlanes"></div></details>
-        <details class="foldrow" id="foldProjects"><summary><span class="fk">Projects</span><span class="fs" id="projSumRow">this machine's projects in the period</span></summary><div id="foldProjBody" class="foldbody"></div></details>
-        <details class="foldrow" id="foldEffort"><summary><span class="fk">Effort</span><span class="fs" id="effortSumRow">every machine beside this machine's Git</span></summary><div id="foldEffortBody" class="foldbody"></div></details>
-        <details class="foldrow" id="foldShipped"><summary><span class="fk">Shipped</span><span class="fs" id="shipSumRow">what Git recorded on this machine</span></summary><div id="foldShipBody" class="foldbody"></div></details>
+        <details class="foldrow" id="foldProjects"><summary><span class="fk">Projects</span><span class="fs" id="projSumRow">this machine's projects in the period</span></summary><div id="foldProjBody" class="foldbody" aria-label="Projects table, scrollable"></div></details>
+        <details class="foldrow" id="foldEffort"><summary><span class="fk">Effort</span><span class="fs" id="effortSumRow">every machine beside this machine's Git</span></summary><div id="foldEffortBody" class="foldbody" aria-label="Effort table, scrollable"></div></details>
+        <details class="foldrow" id="foldShipped"><summary><span class="fk">Shipped</span><span class="fs" id="shipSumRow">what Git recorded on this machine</span></summary><div id="foldShipBody" class="foldbody" aria-label="Shipped table, scrollable"></div></details>
       </section>
 
       <section class="interop-panel" id="interopPanel" aria-label="Optional telemetry" hidden>
@@ -345,9 +345,9 @@
       </section>
       <section class="lanes tbl" aria-label="Effort and shipped" id="projEffortShipped">
         <div class="thead"><h3>Effort</h3><span class="hc" id="pEffortCount">—</span></div>
-        <div id="pEffortBody" class="foldbody"></div>
+        <div id="pEffortBody" class="foldbody" aria-label="Effort table, scrollable"></div>
         <div class="thead sub"><h3>Shipped</h3><span class="hc" id="pShipCount">—</span></div>
-        <div id="pShipBody" class="foldbody"></div>
+        <div id="pShipBody" class="foldbody" aria-label="Shipped table, scrollable"></div>
       </section>
     </div>
   </section>

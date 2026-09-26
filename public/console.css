@@ -602,10 +602,8 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .lanesep span { flex: none; }
 .lane.cold { opacity: .58; }
 .lane.cold:hover, .lane.cold:focus-within, .lane.cold.focused { opacity: 1; }
-/* the room the day's rows leave when no fold stands in it (R3-02): the pane's own hatched void, named, never bare tray under the strip */
-.lanevoid { flex: 1 1 auto; min-height: calc(26px * var(--k)); display: flex; align-items: center; justify-content: center; padding: 0 calc(16px * var(--k)); font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  background: repeating-linear-gradient(-45deg, var(--hatch) 0 5px, transparent 5px 11px); }
-.lanevoid[hidden] { display: none; }
+/* the room the day's rows leave (J4-12): the card hugs its rows, the folds that fit open under the strip, and what is left is the tray —
+   as on Projects and Team — never a hatched tile taller than 48px standing in for rows that do not exist */
 /* where this console looked (U1): the folders in mono with what each held, then the flag that points it elsewhere, one line each */
 .lanes .empty .where, #voidReason .roots { display: block; margin-top: 4px; white-space: normal; }
 .lanes .empty .where code, #voidReason code, .lanes .empty .hint code { font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); }
@@ -684,6 +682,8 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .alert-rows.team .alert-row { padding-left: calc(20px * var(--k)); border-radius: 0; }
 .alert-rows.team .alert-row::before { left: 8px; }
 .alert-rows .none { padding: calc(8px * var(--k)) calc(20px * var(--k)); color: var(--quiet); font: 400 calc(12px * var(--k)) var(--sans); }
+/* nothing can be known of alerts (J4-05): a drawn void with its reason, hatched, never a row that reads as "none" */
+.alert-rows .none.held { background: repeating-linear-gradient(-45deg, var(--hatch) 0 5px, transparent 5px 11px); box-shadow: inset 0 0 0 1px var(--hair2); white-space: normal; line-height: 1.4; }
 
 /* ── section heads ────────────────────────────────────────── */
 .head { display: flex; align-items: center; gap: calc(12px * var(--k)); margin: calc(12px * var(--k)) 0 calc(8px * var(--k)); flex-wrap: wrap; flex: none; }
@@ -856,7 +856,8 @@ dialog.sheet.dock[open] { animation: dockin .2s var(--ease); }
 .cmd { flex: 1; display: block; padding: 9px 12px; border-radius: 8px; background: var(--tile2); box-shadow: var(--inset);
   font: 400 calc(12px * var(--k))/1.5 var(--mono); color: var(--ink2); overflow-wrap: anywhere; user-select: none; }
 .sheet .fine { margin: 0; font-size: calc(12px * var(--k)); color: var(--quiet); }
-.sheet .why summary { cursor: pointer; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); list-style: none; }
+/* the disclosure is a 24px target (WCAG 2.5.8, J4-06): the line keeps its type, the row takes the height */
+.sheet .why summary { cursor: pointer; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); list-style: none; display: flex; align-items: center; min-height: 24px; }
 .sheet .why summary::before { content: "▸ "; }
 .sheet .why[open] summary::before { content: "▾ "; }
 .sheet .why summary::-webkit-details-marker { display: none; }
@@ -927,6 +928,11 @@ dialog.sheet.dock[open] { animation: dockin .2s var(--ease); }
    inside the cell the branch gives way first (a fraction track that can reach zero) and the name only when it is alone and too long */
 .inspect .irow { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) 56px 46px; gap: 8px; align-items: center; min-height: 26px; border-bottom: 1px solid var(--hair2); font: 400 12px var(--sans); color: var(--ink2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .inspect .irow:last-child { border-bottom: 0; }
+/* a person's machine row (J4-13): the name takes the room, and the state ("Reporting · now"), the tokens and the share take what
+   their words need, whole — never an ellipsis on a state word in a row with room to spare */
+.inspect .irow.mach { grid-template-columns: minmax(0, 1fr) auto auto auto; }
+.inspect .irow.mach .status { overflow: visible; }
+.inspect .irow.mach .status > span { overflow: visible; text-overflow: clip; }
 .inspect .irow .nm { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); align-items: baseline; column-gap: 6px; min-width: 0; overflow: hidden; }
 /* a long project name gives way inside its own cell (G08), its whole on the row's hover — never across the model and the figures */
 .inspect .irow b { font: 500 12.5px var(--sans); color: var(--ink); flex: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -978,11 +984,10 @@ dialog.pal[open] { animation: sheetin .18s var(--ease); }
 #toast.show button { pointer-events: auto; }
 #toast kbd { font: 500 12px var(--mono); padding: 1px 5px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--hair); margin: 0 2px; }
 
-/* ── presenting: names become stand-ins, internal figures step back, and the strip says so ── */
+/* ── presenting: names become stand-ins and the strip says so. Every figure stays (J4-11): a shared screen hides whose work it is,
+   never what it cost — one rule for every list-price figure on every pane, which is that none steps back; the strip's scope line
+   (counts only, no names) stays too. What steps back is the one row that carries this machine's addresses: the restart command. ── */
 body[data-present] [data-internal] { visibility: hidden; }
-body[data-present] .conhead .count { visibility: hidden; }
-/* a header over a column whose every value stepped back steps back with it (R3-09): no "EST. $" over an empty column on a shared screen */
-body[data-present] .mhead:not(.tools):not(.people) > span:last-child, body[data-present] .chead > span:last-child, body[data-present] .lhead .c-usd, body[data-present] th.est { visibility: hidden; }
 
 /* ── wide: a big screen gets more lanes, each a little tighter ── */
 @media (min-width: 1800px) {
@@ -1076,6 +1081,8 @@ body[data-present] .mhead:not(.tools):not(.people) > span:last-child, body[data-
   /* one 48px line: the mark, the palette, the theme, the add button as its glyph */
   .top { height: 48px; gap: 10px; }
   .top .word { display: none; }
+  /* the mark alone is still a 24px target (J4-06) */
+  .lockup { min-width: 24px; min-height: 24px; justify-content: center; }
   .top .right { gap: 8px; }
   .reach { display: none; }
   .btn.primary#addBtn { width: 36px; padding: 0; justify-content: center; }
@@ -1148,30 +1155,43 @@ body[data-present] .mhead:not(.tools):not(.people) > span:last-child, body[data-
   .lane { height: 44px; cursor: pointer; }
   .lane:active { background: var(--cobalt-wash); }
   .lane .sp { height: 20px; }
-  .lfoot { padding: 8px 14px; }
-  .lfoot span.end { flex-basis: 100%; margin-left: 0; padding-left: 0; box-shadow: none; }
+  /* the footer wraps whole (J4-07, F4-01): every part on the card — the count, "80 of 316 shown", the provenance line — none cut at the edge;
+     the parts are set off by a dot, since a hairline at the start of a wrapped line would read as a cell's edge */
+  .lfoot { padding: 8px 14px; flex-wrap: wrap; white-space: normal; overflow: visible; row-gap: 2px; }
+  .lfoot span { flex: 0 1 auto; min-width: 0; padding-right: 10px; }
+  .lfoot span + span { padding-left: 0; box-shadow: none; }
+  .lfoot span + span:not(.end)::before { content: "· "; opacity: .55; }
+  .lfoot span.end { flex-basis: 100%; margin-left: 0; padding-left: 0; box-shadow: none; overflow: visible; }
   .agent-tree { padding: 8px 14px; }
   .agent-node { grid-template-columns: 1fr 1fr; gap: 4px 10px; padding: 8px 4px 8px calc(4px + var(--depth) * 10px); }
   .agent-node span:last-child, .agent-node .abar { grid-column: 1 / -1; }
   .foldrow summary { padding: 8px 14px; min-height: 44px; white-space: normal; flex-wrap: wrap; }
   .interop-rows { grid-template-columns: 1fr; }
   .interop-row + .interop-row { border-left: 0; border-top: 1px solid var(--hair2); }
-  /* the tables: who and tokens with share on the first line; status, cache and estimate on the second; the rest in the row's inspector */
+  /* the four dense tables (people, machines, projects, days) become card rows: who and tokens with share on the first line; status,
+     cache and estimate on the second; the rest in the row's inspector. The Effort and Shipped tables — the Projects panes and the
+     Console folds — keep their grid (J4-01): a few short columns that scroll sideways under a right-edge fade, as the lanes do,
+     never cells hidden with no reason */
   .tablewrap { overflow: visible; }
-  table.grid, table.grid tbody { display: block; }
-  table.grid thead { display: none; }
-  table.grid tr { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 12px; padding: 8px 16px; border-bottom: 1px solid var(--hair2); min-height: 44px; }
-  table.grid tr:last-child { border-bottom: 0; }
-  table.grid td { display: none; padding: 0; border: 0; white-space: normal; min-width: 0; height: auto; }
-  table.grid td.k1 { display: block; flex: 1 1 42%; }
-  table.grid td.k2 { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; flex: 1 1 42%; }
-  table.grid td.k3 { display: inline-flex; gap: 5px; align-items: baseline; font: 400 12px var(--sans); color: var(--ink2); font-variant-numeric: tabular-nums; }
-  table.grid td.k3::before { content: attr(data-l); font: 400 12px var(--sans); color: var(--quiet); }
-  table.grid td.k3.full { flex: 1 1 100%; }
-  table.grid td.k3.full::before { content: none; }
-  table.grid tbody tr.door:hover td:first-child, table.grid tbody tr.door:focus-within td:first-child { box-shadow: none; }
-  table.grid .sharebar { min-width: 0; width: 100%; }
-  table.grid td[colspan] { display: block; flex: 1 1 100%; }
+  .tablewrap table.grid, .tablewrap table.grid tbody { display: block; }
+  .tablewrap table.grid thead { display: none; }
+  .tablewrap table.grid tr { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 12px; padding: 8px 16px; border-bottom: 1px solid var(--hair2); min-height: 44px; }
+  .tablewrap table.grid tr:last-child { border-bottom: 0; }
+  .tablewrap table.grid td { display: none; padding: 0; border: 0; white-space: normal; min-width: 0; height: auto; }
+  .tablewrap table.grid td.k1 { display: block; flex: 1 1 42%; }
+  .tablewrap table.grid td.k2 { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; flex: 1 1 42%; }
+  .tablewrap table.grid td.k3 { display: inline-flex; gap: 5px; align-items: baseline; font: 400 12px var(--sans); color: var(--ink2); font-variant-numeric: tabular-nums; }
+  .tablewrap table.grid td.k3::before { content: attr(data-l); font: 400 12px var(--sans); color: var(--quiet); }
+  .tablewrap table.grid td.k3.full { flex: 1 1 100%; }
+  .tablewrap table.grid td.k3.full::before { content: none; }
+  .tablewrap table.grid tbody tr.door:hover td:first-child, .tablewrap table.grid tbody tr.door:focus-within td:first-child { box-shadow: none; }
+  .tablewrap table.grid .sharebar { min-width: 0; width: 100%; }
+  .tablewrap table.grid td[colspan] { display: block; flex: 1 1 100%; }
+  .foldbody { overflow-x: auto; scrollbar-width: thin; scrollbar-color: var(--hair) transparent; }
+  .foldbody.fademore { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
+  .foldbody table.grid { width: max-content; min-width: 100%; }
+  .foldbody table.grid th:first-child, .foldbody table.grid td:first-child { padding-left: 14px; }
+  .foldbody .note { padding: 7px 14px; white-space: normal; }
   .thead { height: auto; min-height: 36px; padding: 6px 16px; }
   .invite { grid-template-columns: 1fr; gap: 4px; min-height: 44px; }
   .btn.small { min-height: 44px; }
