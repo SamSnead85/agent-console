@@ -28,7 +28,7 @@
 [The same screen in the light theme.](docs/console-demo-light.png)*
 
 ```sh
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --open
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz --open
 ```
 
 You need Node.js 22 or newer. There is no account to create, nothing else to
@@ -66,7 +66,7 @@ You need a Mac, a Linux machine or a Windows PC, and about two minutes.
 2. **Start it.** Paste this into the terminal and press Return:
 
    ```sh
-   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --open
+   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz --open
    ```
 
    That fetches Agent Console from this project's GitHub release (nothing to
@@ -266,7 +266,7 @@ import { ANALYSIS_VERSION, contextHealth } from '@lockedinlabs/agent-console/ana
 const health = contextHealth(samples, prices);
 ```
 
-The package is not on the npm registry yet; install it from the release tarball with `npm install https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz`.
+The package is not on the npm registry yet; install it from the release tarball with `npm install https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz`.
 
 `ANALYSIS_VERSION` is 1. `contextHealth` accepts only plain usage data:
 `samples` contains timestamps, token counts and model IDs; `prices` contains
@@ -355,9 +355,9 @@ suite that checks them to the token, are in [docs/accounting.md](docs/accounting
 Add `agent-policy.yaml` at your repository root, then, from that root:
 
 ```sh
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy diff
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy apply
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy remove
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz policy diff
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz policy apply
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz policy remove
 ```
 
 `policy diff` shows the proposed Claude Code agents, settings and hooks;
@@ -421,9 +421,9 @@ Nothing leaves that directory.
 out, with the release link:
 
 ```sh
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz join '<join link>'
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz report
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz leave
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz join '<join link>'
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz report
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz leave
 ```
 
 `join` enrols this computer, then keeps reporting. `report` keeps reporting after
@@ -601,9 +601,9 @@ The release page lists its SHA-256 in `SHA256SUMS`, and GitHub keeps a signed
 build provenance attestation for it. To check a file you downloaded:
 
 ```sh
-shasum -a 256 lockedinlabs-agent-console-0.3.0.tgz              # macOS, Linux
-Get-FileHash lockedinlabs-agent-console-0.3.0.tgz               # Windows PowerShell
-gh attestation verify lockedinlabs-agent-console-0.3.0.tgz -R SamSnead85/agent-console
+shasum -a 256 lockedinlabs-agent-console-0.4.0.tgz              # macOS, Linux
+Get-FileHash lockedinlabs-agent-console-0.4.0.tgz               # Windows PowerShell
+gh attestation verify lockedinlabs-agent-console-0.4.0.tgz -R SamSnead85/agent-console
 ```
 
 The standalone executables ([docs/executables.md](docs/executables.md)) are
