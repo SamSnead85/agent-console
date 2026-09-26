@@ -615,9 +615,23 @@
     if (showUnavailable) return true;
     return (l.state === "live" || l.state === "idle") && now - l.lastAt < 60 * 60_000;
   }
+  // Leave rows already in position attached: moving them can drop keyboard focus.
+  function placer(box) {
+    let cursor = null;
+    return (node) => {
+      const want = cursor ? cursor.nextSibling : box.firstChild;
+      if (want !== node) box.insertBefore(node, want);
+      cursor = node;
+    };
+  }
+  function keepFocus(box, active) {
+    if (!active || !active.closest || !active.closest(".lane") || document.activeElement !== document.body) return;
+    if (active.isConnected && box.contains(active) && !document.querySelector("dialog[open]")) active.focus({ preventScroll: true });
+  }
   function paintLanes() {
     const now = serverNow();
     const box = $("cLanes");
+    const active = document.activeElement;
     const visible = D.lanes.filter((l) => laneVisible(l, now));
     const hidden = D.lanes.length - visible.length;
     if (!visible.length) {
@@ -629,6 +643,7 @@
           : "<b>No session has reported in the last 24 hours.</b>"}</div>`;
     } else {
       if (box.querySelector(".empty")) box.innerHTML = "";
+      const place = placer(box);
       const keep = new Set();
       for (const l of visible) {
         keep.add(l.key);
@@ -642,10 +657,11 @@
           clearTimeout(row._timer);
           row._timer = setTimeout(() => fillLane(row, l, serverNow()), parseInt(l.key.slice(0, 6), 16) % 1700);
         }
-        box.appendChild(row);   // moves it into sorted position
-        box.appendChild(row._tree);
+        place(row);
+        place(row._tree);
       }
       for (const [key, row] of laneRows) if (!keep.has(key)) { row.remove(); row._tree.remove(); laneRows.delete(key); }
+      keepFocus(box, active);
     }
     // The lane burning hardest right now gets the reference's RUN treatment: rail, outline, its figure lit.
     const top = D.lanes.filter((l) => l.state === "live" && l.tokens5m > 0).sort((a, b) => b.tokens5m - a.tokens5m)[0] || null;
@@ -1284,17 +1300,20 @@
         laneTotal() > D.lanes.length ? { html: `${laneTotal() - D.lanes.length} more not sent by the hub`, pri: 2 } : null]
       : [{ html: "none · every session of the day is above", pri: 0 }], cold.length ? " · idle for more than an hour, or on a machine that is silent, catching up or gone · open" : " · open");
     const box = $("coldLanes");
+    const active = document.activeElement;
     if (!cold.length) { box.innerHTML = ""; coldRows.clear(); }
     else {
+      const place = placer(box);
       const keep = new Set();
       for (const l of cold) {
         keep.add(l.key);
         let row = coldRows.get(l.key);
         if (!row) { row = makeLaneRow(l); coldRows.set(l.key, row); }
         fillLane(row, l, now);
-        box.appendChild(row); box.appendChild(row._tree);
+        place(row); place(row._tree);
       }
       for (const [key, row] of coldRows) if (!keep.has(key)) { row.remove(); row._tree.remove(); coldRows.delete(key); }
+      keepFocus(box, active);
       roving(box);
     }
     // Projects, Effort, Shipped: one read per minute per period, never on every poll.
@@ -2139,16 +2158,19 @@
     const now = serverNow();
     const lanes = localLanes().slice().sort((a, b) => a.project.name.localeCompare(b.project.name) || (b.tokens5m ?? -1) - (a.tokens5m ?? -1));
     const box = $("pLanes");
+    const active = document.activeElement;
+    const place = placer(box);
     const keep = new Set();
     for (const l of lanes) {
       keep.add(l.key);
       let row = projLaneRows.get(l.key);
       if (!row) { row = makeLaneRow(l); projLaneRows.set(l.key, row); }
       fillLane(row, l, now);
-      box.appendChild(row); box.appendChild(row._tree);
+      place(row); place(row._tree);
     }
     for (const [key, row] of projLaneRows) if (!keep.has(key)) { row.remove(); row._tree.remove(); projLaneRows.delete(key); }
     if (!lanes.length) box.innerHTML = `<div class="empty"><b>No session on this machine in the last 24 hours.</b></div>`;
+    keepFocus(box, active);
     roving(box);
     if (box.closest(".lanebody")) watchScroll(box.closest(".lanebody"), "x");
     const live = lanes.filter((l) => l.state === "live").length;

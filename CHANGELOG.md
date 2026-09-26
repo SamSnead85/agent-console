@@ -16,6 +16,8 @@
   Include the affected session and its observed baseline with spike and stall alerts.
 - Add presenting mode with aliases for people, machines, projects and branches,
   including inspector addresses and the Add a machine dialog.
+- Keep keyboard focus on a session row or its controls through refreshes and
+  changes in row order, including after closing its inspector.
 
 ### Reporting reliability
 
