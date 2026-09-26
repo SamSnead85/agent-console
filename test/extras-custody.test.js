@@ -34,6 +34,7 @@ import { createActivityBook, ACTIVITY_KINDS } from "../lib/collector/activity.js
 import { activityFor, extrasFor } from "../lib/collector/transport.js";
 import { eventMeasurement } from "../lib/collector/measurement.js";
 import { createInteropStore } from "../lib/interop/ingest.js";
+import { createExtrasOutbox } from "../lib/reporter-outbox.js";
 import { parseLine } from "../lib/collector/parsers.js";
 
 const PRICES = JSON.parse(await fs.readFile(new URL("../lib/collector/prices.json", import.meta.url), "utf8"));
@@ -47,10 +48,10 @@ const CANARY = "CANARY-EXTRAS-PRIVATE";
 // A console's reporting handler on 127.0.0.1, and reporters that post to it
 // ---------------------------------------------------------------------------
 
-async function consoleFor(t) {
+async function consoleFor(t, { startedAt = Date.now() } = {}) {
   const registry = createRegistry({ dir: null });
   const store = createStore({ dir: null, retentionMs: 8 * DAY, prices: PRICES });
-  const fleet = createFleetSignals();
+  const fleet = createFleetSignals({ startedAt });
   const config = { demo: false, listen: "0.0.0.0", retentionDays: 8, inviteMinutes: 30, allowPublic: false };
   const handle = createReportingHandler({ config, registry, store, fleet, version: "0.0.0", publicDir: process.cwd() });
   const server = http.createServer((req, res) => { handle(req, res, { secure: true }); });
@@ -258,6 +259,7 @@ test("opt-out makes coverage unavailable", () => {
   const NOW = Date.UTC(2026, 8, 25, 22, 0, 30);
   const c = consoleWith({ now: NOW, startedAt: NOW - 2 * HOUR });
   const on = { alerts: "on", activity: "on" };
+  c.fleet.accept("dev_r", { share: on }, NOW - HOUR);   // sharing, as heard an hour ago
   c.fleet.accept("dev_r", { share: on, alerts: [], activity: activityFor([c.entry("c1", NOW - MINUTE)]) }, NOW);
   let v = c.view(NOW);
   assert.equal(c.lane(v, "busy").activity.calls.read, 2);
@@ -317,7 +319,8 @@ test("a reporter restart replays pending extras exactly once", async (t) => {
   await assert.rejects(r.pass(reporterExtras(opts), down.fetch));
   const kept = await r.cursor();
   assert.equal(kept.extras.activity.length, 1, "kept with the cursor that read it");
-  assert.deepEqual(Object.keys(kept.extras).sort(), ["activity", "alerts", "epoch", "seq", "v"]);
+  assert.deepEqual(Object.keys(kept.extras).sort(), ["activity", "alerts", "epoch", "lost", "seq", "v"]);
+  assert.deepEqual(kept.extras.lost, [], "nothing dropped, so no loss marker");
   const raw = await fs.readFile(path.join(r.directory, "cursor-v2.json"), "utf8");
   assert.ok(!raw.includes(CANARY) && !JSON.stringify(kept.extras).includes("Read"), "counts, kinds and hashes only");
   if (process.platform !== "win32") assert.equal((await fs.stat(path.join(r.directory, "cursor-v2.json"))).mode & 0o777, 0o600);
@@ -352,24 +355,108 @@ test("a hub restart shows the unavailable interval", () => {
   c.fleet.accept("dev_r", { share: { alerts: "on", activity: "on" }, activity: activityFor([c.entry("c1", NOW - MINUTE)]) }, NOW);
   let v = c.view(NOW);
   const busy = c.lane(v, "busy"), quiet = c.lane(v, "quiet"), local = c.lane(v, "local");
-  const gap = { state: "partial", since: startedAt, reason: "console-restarted" };
+  // Covered from the first "on" this console heard, and the window began before the console did.
+  const gap = { state: "partial", since: NOW, reason: "console-restarted" };
   assert.deepEqual(busy.activityCoverage, gap);
   assert.equal(busy.activity.calls.read, 2, "what is held is shown, as a floor");
   assert.deepEqual(quiet.activityCoverage, gap);
   assert.equal(quiet.activity, null, "nothing held since the restart is unavailable, not zero");
-  assert.deepEqual(local.activityCoverage, gap, "this machine's own reading restarted too");
+  assert.deepEqual(local.activityCoverage, { state: "partial", since: startedAt, reason: "console-restarted" }, "this machine's own reading restarted too");
   assert.equal(local.activity, null);
-  assert.equal(v.alertsCoverage.since, startedAt);
+  assert.equal(v.alertsCoverage.since, NOW);
   assert.equal(v.alertsCoverage.reason, "console-restarted");
   assert.deepEqual(v.devices.find((d) => d.id === "dev_r").sharing.activity, gap);
-  // Five whole minutes after the restart the window is covered again: zero is known.
-  v = c.view(startedAt + 6 * MINUTE);
+  // Five whole minutes after the first "on" the window is covered again: zero is known.
+  v = c.view(NOW + 6 * MINUTE);
   assert.equal(c.lane(v, "quiet").activityCoverage.state, "complete");
   assert.deepEqual(c.lane(v, "quiet").activity.calls, Object.fromEntries(ACTIVITY_KINDS.map((k) => [k, 0])));
-  // A machine that joined after the restart sent this console everything it ever read: no gap.
+  assert.equal(c.lane(v, "local").activityCoverage.state, "complete");
+  // Even a machine that joined after the restart is covered only from its first "on".
   const joined = consoleWith({ now: NOW, startedAt, createdAt: NOW - MINUTE });
   joined.fleet.accept("dev_r", { share: { alerts: "on", activity: "on" } }, NOW);
-  assert.equal(joined.lane(joined.view(NOW), "quiet").activityCoverage.state, "complete");
+  assert.equal(joined.lane(joined.view(NOW), "quiet").activityCoverage.state, "partial");
+});
+
+test("an off run then a restart with sharing on is never backdated: partial, not complete or zero", async (t) => {
+  // The console has run for two hours; this machine's reporter has not reached it yet.
+  const hub = await consoleFor(t, { startedAt: Date.now() - 2 * HOUR });
+  const r = await reporterFor(t, hub);
+  await r.append(Date.now() - 30_000, 1);
+  // A run with sharing off reads the Read call and moves its cursor past it; the console is unreachable.
+  await assert.rejects(r.pass(reporterExtras({}), wire({ unreachable: () => true }).fetch));
+  // Restarted with sharing on: the token record arrives, the Read's activity was never counted.
+  const net = wire();
+  await r.pass(reporterExtras(ACTIVITY_ONLY), net.fetch);
+  assert.ok(net.bodies[0].records.length > 0, "the tokens arrive");
+  assert.ok(!("activity" in net.bodies[0]), "no contribution: the call was read while sharing was off");
+  assert.deepEqual(net.bodies[0].share, { alerts: "off", activity: "on" });
+  const now = Date.now();
+  const view = buildConsole({ store: hub.store, registry: hub.registry, now, hub: {}, signals: consoleSignals({ fleet: hub.fleet }, now) });
+  const lane = view.lanes.find((l) => l.device.id === r.device.id);
+  assert.ok(lane, "the lane is there, from its tokens");
+  assert.equal(lane.activityCoverage.state, "partial", "covered from the first \"on\" the console heard, never from its own start");
+  assert.equal(lane.activityCoverage.reason, "sharing-started");
+  assert.ok(lane.activityCoverage.since >= now - MINUTE);
+  assert.equal(lane.activity, null, "unavailable — never read 0 for a Read that happened");
+  assert.equal(view.devices.find((d) => d.id === r.device.id).sharing.activity.state, "partial");
+});
+
+test("an outbox over its bound carries a loss marker, and the console reads partial with outbox-overflow", () => {
+  const NOW = Date.UTC(2026, 8, 25, 22, 0, 30);
+  const minute = floorMinute(NOW - 30_000);
+  const book = createActivityBook({ now: () => NOW });
+  const box = createExtrasOutbox({ activity: book, now: () => NOW });
+  box.journal.restore(null, { deviceId: "dev_r", hashIdentity: (k, v) => h(`${k}|${v}`) });
+  for (let i = 0; i < 1001; i += 1) {
+    book.observeLine({ tool: "claude-code", sessionHash: h(`session-${i}`),
+      line: { type: "assistant", timestamp: iso(NOW - 30_000), message: { content: [{ type: "tool_use", name: "Read" }] } } });
+  }
+  box.journal.file(true);
+  const saved = box.journal.prepare();
+  box.journal.commit();
+  assert.equal(saved.activity.length, 1000, "the bound holds");
+  assert.ok(!saved.activity.some((e) => e.sessionHash === h("session-0")), "the oldest went");
+  assert.equal(saved.lost.length, 1, "and it went with a marker, not in silence");
+  assert.deepEqual({ ...saved.lost[0], id: undefined }, { id: undefined, kind: "activity", count: 1, from: iso(minute), to: iso(minute) });
+  // The marker travels with the extras and passes the console's door.
+  const taken = box.take();
+  const share = { alerts: "off", activity: "on" };
+  const extras = extrasFor({ share, activity: taken.activity, lost: taken.lost });
+  assert.equal(extras.lost.length, 1);
+  const c = consoleWith({ now: NOW, startedAt: NOW - 2 * HOUR });
+  c.fleet.accept("dev_r", { share }, NOW - HOUR);   // sharing for an hour: the window would be whole
+  c.fleet.accept("dev_r", extras, NOW);
+  c.fleet.accept("dev_r", extras, NOW);             // resent: one gap, not two
+  let v = c.view(NOW);
+  const overflow = { state: "partial", since: minute + MINUTE, reason: "outbox-overflow" };
+  assert.deepEqual(c.lane(v, "quiet").activityCoverage, overflow);
+  assert.equal(c.lane(v, "quiet").activity, null, "never a known zero over the lost minute");
+  assert.deepEqual(v.devices.find((d) => d.id === "dev_r").sharing.activity, overflow);
+  // Acknowledged: the marker leaves the outbox.
+  assert.equal(box.ack(), true);
+  assert.deepEqual(box.saved().lost, []);
+  // Once the lost minute has left the window, the window is whole again.
+  v = c.view(NOW + 6 * MINUTE);
+  assert.equal(c.lane(v, "quiet").activityCoverage.state, "complete");
+  // A declared-off kind cannot carry a marker.
+  assert.throws(() => extrasFor({ share: { alerts: "off", activity: "off" }, lost: taken.lost }), /off/u);
+});
+
+test("a cursor write that landed although the pass saw it fail is adopted, not overwritten", () => {
+  const NOW = Date.UTC(2026, 8, 25, 22, 0, 30);
+  const ctx = { deviceId: "dev_r", hashIdentity: (k, v) => h(`${k}|${v}`) };
+  const book = createActivityBook({ now: () => NOW });
+  const box = createExtrasOutbox({ activity: book, now: () => NOW });
+  box.journal.restore(null, ctx);
+  book.observeLine({ tool: "claude-code", sessionHash: h("s"), line: { type: "assistant", timestamp: iso(NOW - 30_000), message: { content: [{ type: "tool_use", name: "Read" }] } } });
+  box.journal.file(true);
+  const onDisk = box.journal.prepare();
+  box.journal.abort();                    // the write landed; the pass was told it failed
+  box.journal.restore(onDisk, ctx);        // the next pass reads that cursor: its positions are past the line
+  const next = box.journal.prepare();
+  box.journal.commit();
+  assert.deepEqual(next.activity.map((e) => e.id), onDisk.activity.map((e) => e.id), "the landed contribution is kept, under its id");
+  assert.equal(box.saved().activity[0].calls.read, 1);
 });
 
 // ---------------------------------------------------------------------------
