@@ -77,7 +77,13 @@ body[data-demo="false"] .demo-only { display: none; }
   /* the lanes card takes the canvas's height: its rows scroll inside it under their own header, its footer sits at its foot,
      and nothing stands empty above the fold strip; with a fold open it keeps at least half the canvas and the canvas scrolls */
   #consoleCanvas .lanes { flex: 1 1 auto; min-height: 50%; display: flex; flex-direction: column; }
-  #consoleCanvas .lanebody { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--hair) transparent; }
+  /* the day's lanes leave the pane room (G06): the card hugs its rows, and what is left under the strip is the tray, as on Projects and Team */
+  #consoleCanvas .lanes.hug { flex: 0 0 auto; min-height: 0; }
+  #consoleCanvas .lanebody { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--hair) transparent; display: flex; flex-direction: column; }
+  /* the rows' box takes the pane's height, so an empty pane's void fills it (G06); the sticky header stays a flex item above it */
+  #consoleCanvas .lanebody > .lhead { flex: none; }
+  #consoleCanvas #cLanes { flex: 1 1 auto; display: flex; flex-direction: column; }
+  #consoleCanvas #cLanes > .lane, #consoleCanvas #cLanes > .agent-tree { flex: none; }
   #consoleCanvas .lanebody:focus-visible { outline: 2px solid var(--lit); outline-offset: -2px; }
   /* the strip carries each fold's summary; a fold itself takes no room until its button opens it under the strip */
   #consoleCanvas .foldrow:not([open]) { display: none; }
@@ -113,7 +119,13 @@ body[data-demo="false"] .demo-only { display: none; }
 }
 /* the words sit on the dark left; the glass and its light read from a third of the way across, and the far right dims again under the clock and the controls */
 .conhead::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: linear-gradient(90deg, #070B13 0%, #070B13 24%, rgba(7, 11, 19, .78) 38%, rgba(7, 11, 19, .34) 52%, rgba(7, 11, 19, .18) 70%, rgba(7, 11, 19, .5) 86%, rgba(7, 11, 19, .72) 100%), linear-gradient(0deg, rgba(5, 8, 14, .3), transparent 60%); }
+  background: linear-gradient(90deg, #070B13 0%, #070B13 24%, rgba(7, 11, 19, .78) 38%, rgba(7, 11, 19, .34) 50%, rgba(7, 11, 19, .2) 60%, rgba(7, 11, 19, .62) 68%, rgba(7, 11, 19, .82) 100%), linear-gradient(0deg, rgba(5, 8, 14, .3), transparent 60%); }
+/* the clock, the scan note and the two controls sit on a plate of the strip's own dark (G04): quiet ink over the brightest part of the
+   artwork has no contrast to speak of, so each carries its ground with it — .86 of the strip's black over the worst the image can be
+   (white) still leaves 5:1 under 12px quiet ink; the artwork reads through between them */
+.conhead .clock, .conhead .scan, .conhead .ctrls { background: rgba(7, 11, 19, .86); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-radius: 6px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
+.conhead .clock, .conhead .scan { padding: 3px 8px; }
+.conhead .ctrls { padding: 0 2px; }
 /* the instrument's name, in the display sans, and the view beside it */
 .conhead h1 { margin: 0; font: 300 calc(22px * var(--k))/1 var(--sans); letter-spacing: -.02em; color: var(--ink); white-space: nowrap; }
 .conhead .vt { font: 300 calc(22px * var(--k))/1 var(--sans); letter-spacing: -.02em; color: var(--ink2); margin-left: calc(-8px * var(--k)); white-space: nowrap; }
@@ -457,13 +469,14 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
   grid-template-columns: calc(124px * var(--k)) minmax(calc(150px * var(--k)), 1.2fr) minmax(calc(124px * var(--k)), .55fr) minmax(calc(92px * var(--k)), .5fr)
     calc(66px * var(--k)) calc(78px * var(--k)) calc(58px * var(--k)) calc(60px * var(--k)) calc(60px * var(--k)) calc(50px * var(--k)) calc(58px * var(--k)) minmax(calc(128px * var(--k)), 1fr) minmax(calc(76px * var(--k)), .6fr) calc(60px * var(--k)); }
 .lhead { height: calc(32px * var(--k)); align-items: end; padding-bottom: 4px; font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--quiet); white-space: nowrap;
-  background: var(--band-head); border-bottom: 1px solid var(--hair2); box-shadow: inset 0 1px 0 var(--rim); overflow: hidden; position: relative; }
+  background: var(--band-head); border-bottom: 1px solid var(--hair2); box-shadow: inset 0 1px 0 var(--rim); overflow: visible; position: relative; }
 .lhead span { overflow: hidden; }
-/* the four day figures are named for their window once: a bracket over their columns, the word sitting on its line, whatever the period control says */
-.lhead .grp { position: absolute; top: 3px; left: 0; right: 0; height: 9px; border-bottom: 1px solid var(--hair); font: 500 12px/1 var(--sans); letter-spacing: .1em; color: var(--quiet); text-align: center; pointer-events: auto; }
+/* the four day figures are named for their window once: a bracket over their columns, the word whole in a row of its own above the
+   bracket line (G03) — the row is as tall as the glyphs, so nothing of "24 H" is ever sliced by the header's edge */
+.lhead .grp { position: absolute; top: 0; left: 0; right: 0; height: 14px; border-bottom: 1px solid var(--hair); font: 500 12px/14px var(--sans); letter-spacing: .1em; color: var(--quiet); text-align: center; pointer-events: auto; overflow: visible; }
 .lhead .grp::before, .lhead .grp::after { content: ""; position: absolute; bottom: 0; width: 1px; height: 4px; background: var(--hair); }
 .lhead .grp::before { left: 0; } .lhead .grp::after { right: 0; }
-.lhead .grp span { position: relative; top: 3px; display: inline-block; padding: 0 6px; background: var(--band-head); }
+.lhead .grp span { position: relative; top: 0; display: inline-block; height: 14px; line-height: 14px; padding: 0 6px; background: var(--band-head); overflow: visible; }
 .lhead .c-in .long, .lhead .c-pr .long { display: inline; } .lhead .c-in .short, .lhead .c-pr .short { display: none; }
 .lhead .r, .lane .r { text-align: right; }
 .lane { position: relative; height: calc(26px * var(--k)); border-bottom: 1px solid var(--hair2); font-size: calc(12.5px * var(--k)); transition: background .18s var(--ease); cursor: pointer; }
@@ -556,6 +569,21 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .lanes .empty, .coldlanes .empty { padding: calc(16px * var(--k)) calc(20px * var(--k)); color: var(--quiet); font-size: calc(12.5px * var(--k));
   background: repeating-linear-gradient(-45deg, var(--hatch) 0 6px, transparent 6px 13px); }
 .lanes .empty b, .coldlanes .empty b { color: var(--ink2); font-weight: 500; }
+/* nothing to draw at all: the pane is the hatched void, sized to its room, the reason and "nothing is estimated" under the head (G06) */
+.lanes .empty.voidfill { flex: 1 1 auto; min-height: calc(120px * var(--k)); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3px; text-align: center; }
+.lanes .empty.voidfill b { font: 500 calc(13px * var(--k)) var(--sans); display: block; }
+.lanes .empty.voidfill span { font: 400 calc(12px * var(--k)) var(--sans); max-width: 56ch; white-space: normal; }
+/* the cold lanes that fill the room under the warm rows: dimmed, under a hairline that names them; a hover or the keyboard lifts one whole */
+.lanesep { height: calc(26px * var(--k)); flex: none; display: flex; align-items: center; gap: calc(10px * var(--k)); padding: 0 calc(16px * var(--k)) 0 calc(20px * var(--k)); border-bottom: 1px solid var(--hair2);
+  font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); white-space: nowrap; }
+.lanesep::before, .lanesep::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--hair); }
+.lanesep span { flex: none; }
+.lane.cold { opacity: .58; }
+.lane.cold:hover, .lane.cold:focus-within, .lane.cold.focused { opacity: 1; }
+/* one quiet line per pane once any figure in it is a floor (G11): what the + means and how many messages had no price */
+.floorline { display: inline-flex; align-items: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); font-variant-numeric: tabular-nums; }
+.floorrow { min-height: 24px; display: flex; align-items: center; margin-top: calc(1px * var(--k)); }
+.bx .floorline { display: block; }
 .lfoot { min-height: calc(24px * var(--k)); padding: calc(3px * var(--k)) calc(16px * var(--k)) calc(3px * var(--k)) calc(20px * var(--k)); font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet);
   display: flex; flex-wrap: nowrap; align-items: center; gap: 4px 0; background: var(--band-foot); border-top: 1px solid var(--hair2); font-variant-numeric: tabular-nums; overflow: hidden; white-space: nowrap; }
 .lfoot span { padding-right: 14px; flex: none; }
@@ -814,11 +842,16 @@ dialog.sheet.dock[open] { animation: dockin .2s var(--ease); }
 .context-details { font: 400 13px/1.55 var(--sans); color: var(--ink2); }
 .context-details b { color: var(--ink); font-weight: 500; }
 .context-details p { margin: 8px 0; }
-.cbars { display: flex; align-items: flex-end; gap: 3px; height: 72px; padding: 6px 6px 0; border-radius: 6px; background: var(--tile2); box-shadow: var(--inset); }
-.cbars i { flex: 1; min-width: 4px; border-radius: 2px 2px 0 0; background: var(--spark); position: relative; }
-.cbars i.last { background: var(--spark-hot); }
-.cbars i.brk::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px; background: var(--warn); }
+/* the context history as a stepped area (G15): each response a step in the chart's light, the latest lit, the flag a hairline, a cache signal a warn tick */
+.cstep { display: block; width: 100%; height: 72px; border-radius: 6px; background: var(--tile2); box-shadow: var(--inset); overflow: visible; }
+.cstep .area { fill: url(#wg); }
+.cstep .line { fill: none; stroke: var(--spark); stroke-width: 1.25; vector-effect: non-scaling-stroke; stroke-linejoin: miter; }
+.cstep .last { fill: none; stroke: var(--spark-hot); stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-linecap: round; }
+.cstep .flag { stroke: var(--warn); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; opacity: .85; }
+.cstep .brk { fill: var(--warn); }
+.cstep .hit { fill: transparent; }
 .cax { display: flex; justify-content: space-between; font: 400 12px var(--sans); color: var(--quiet); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.cax b { font-weight: 500; color: var(--ink2); }
 .context-details ol { margin: 6px 0; padding-left: 20px; }
 .context-details li { margin: 3px 0; font-family: var(--sans); font-size: 12px; font-variant-numeric: tabular-nums; }
 .context-details .ihead { margin-top: 10px; }
@@ -845,13 +878,18 @@ dialog.sheet.dock[open] { animation: dockin .2s var(--ease); }
 .inspect .mrow { grid-template-columns: 120px auto 1fr 60px 64px; }
 .inspect .irow { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 64px 60px; gap: 8px; align-items: center; min-height: 26px; border-bottom: 1px solid var(--hair2); font: 400 12px var(--sans); color: var(--ink2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .inspect .irow:last-child { border-bottom: 0; }
-.inspect .irow .nm { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
-.inspect .irow b { font: 500 12.5px var(--sans); color: var(--ink); flex: none; }
-.inspect .irow em { font-style: normal; font: 400 12px var(--mono); color: var(--quiet); overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.inspect .irow .nm { display: flex; align-items: baseline; gap: 6px; min-width: 0; overflow: hidden; }
+/* a long project name gives way inside its own cell (G08), its whole on the row's hover — never across the model and the figures */
+.inspect .irow b { font: 500 12.5px var(--sans); color: var(--ink); flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* the branch beside it gives way first — three times as readily as the name — so "atlas-web" keeps its word before "feat/checkout-flow" keeps its */
+.inspect .irow em { font-style: normal; font: 400 12px var(--mono); color: var(--quiet); overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 3 auto; white-space: nowrap; }
 .inspect .irow .r { text-align: right; }
 .inspect .irow .md { font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; }
 .inspect .irow .st { font: 500 12px var(--mono); letter-spacing: .06em; color: var(--quiet); }
+/* every cell keeps to its track — a long word gives way inside it, never across its neighbour (G08, at 390 too) */
+.inspect .irow > * { min-width: 0; }
 .inspect .irow .status { flex-wrap: nowrap; min-width: 0; overflow: hidden; }
+.inspect .irow .status > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .inspect .irow .st.live { color: var(--good); }
 body[data-demo="true"] .inspect .irow .st.live { color: var(--lit); }
 .inspect .iquiet, .context-details .iquiet { font: 400 12px var(--sans); color: var(--quiet); }

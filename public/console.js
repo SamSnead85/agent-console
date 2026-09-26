@@ -154,6 +154,17 @@
       title: floor ? `${why} · list-price estimate, a floor` : "List-price estimate. Not an invoice." };
   }
   const droppedOf = (d) => (d && d.coverage && Number.isFinite(d.coverage.dropped) ? d.coverage.dropped : 0);
+  /* One quiet line per pane once any figure in it is a floor (G11): what the "+" beside a dense figure means, and how many messages
+     had no verified price — said once, in the pane, never once per cell. Empty when nothing in the pane is a floor. */
+  function floorLine(cost, { dropped = 0, cls = "floorline" } = {}) {
+    if (!cost || (cost.status !== "partial" && !dropped)) return "";
+    const n = Number.isFinite(cost.unpricedMessages) ? cost.unpricedMessages : null;
+    const models = (cost.unpricedModels || []).join(", ");
+    // a count of zero is not a cause: only what made the figure a floor is named
+    const what = [n ? `${plural(n, "message")} unpriced` : n === null && cost.status === "partial" ? `${models || "a model"} unpriced` : "", dropped ? `${plural(dropped, "message")} not counted` : ""].filter(Boolean).join(" · ");
+    if (!what) return "";
+    return `<span class="${cls}" title="A figure marked + is a floor: ${esc(what)}${models ? ` (${esc(models)}: no verified list price)` : ""} · list-price estimates, never an invoice">+ a floor · ${esc(what)}</span>`;
+  }
   // Identity for a stacked-by-thing series (machines, projects): one accent stepped by
   // opacity over six steps, the biggest series solid, the rest of them quieter — never the
   // token-class ramp, which means price on this screen. Whatever is folded into "others" is
@@ -611,29 +622,72 @@
 
   // ── lanes ────────────────────────────────────────────────────────────
   const laneRows = new Map();
+  /* The pane is never left empty under its rows: when fewer warm lanes than the pane has room for are drawn, the most recently
+     active cold lanes fill it, dimmed, under a hairline that names them cold — the Cold fold keeps the rest. */
+  const fillRows = new Map();
+  let laneSep = null;
   function laneVisible(l, now) {
     if (showUnavailable) return true;
     return (l.state === "live" || l.state === "idle") && now - l.lastAt < 60 * 60_000;
+  }
+  /* How many rows the pane can hold at desk width, where it is a frame: the room the canvas gives the card with the fold strip under
+     it and no fold open — read from the canvas, never from the card's own height, which follows its rows once it hugs them. On a
+     phone the page scrolls and nothing is filled. */
+  function laneCapacity(box) {
+    const body = box.closest(".lanebody");
+    if (!body || !matchMedia("(min-width: 1024px)").matches) return 0;
+    const canvas = $("consoleCanvas"), card = body.closest(".lanes"), strip = $("foldStrip");
+    const head = body.querySelector(".lhead"), foot = card.querySelector(".lfoot");
+    const row = box.querySelector(".lane");
+    const rowH = (row && row.getBoundingClientRect().height) || 26;
+    const cs = getComputedStyle(canvas);
+    const room = canvas.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - (parseFloat(cs.rowGap) || 0) - strip.offsetHeight - (head ? head.offsetHeight : 0) - (foot ? foot.offsetHeight : 0);
+    return Math.max(0, Math.floor(room / rowH));
+  }
+  /* The room the day's lanes leave under the strip shows this machine's projects rather than the tray: when the card hugs its rows
+     and more than six rows of room remain, the Projects fold opens by itself, and closes again when the lanes take the room back.
+     The reader's own choice, once a fold is opened or closed by hand, is kept for the session. */
+  const AUTO_FOLD = "foldProjects";
+  let foldTouched = false, foldAuto = false;
+  function autoFold(hug, spare) {
+    if (foldTouched) return;
+    const d = $(AUTO_FOLD);
+    const open = $("fold").querySelector(".foldrow[open]");
+    const rows = foldFetched.data && Array.isArray(foldFetched.data.projects) ? foldFetched.data.projects.length : 0;
+    if (hug && spare >= 6 && !open && rows > 0) { d.open = true; foldAuto = true; }
+    else if (!hug && foldAuto && d.open) { d.open = false; foldAuto = false; }
   }
   function paintLanes() {
     const now = serverNow();
     const box = $("cLanes");
     const visible = D.lanes.filter((l) => laneVisible(l, now));
     const hidden = D.lanes.length - visible.length;
-    if (!visible.length) {
-      laneRows.clear();
-      box.innerHTML = `<div class="empty">${D.devices.length === 0
-        ? "<b>No machine is reporting yet.</b> This console reads this machine once it has Claude Code or Codex transcripts, and any machine you add."
-        : hidden
-          ? `<b>No lane has worked in the last hour.</b> ${hidden} older or unavailable lane${hidden === 1 ? " is" : "s are"} hidden — Show unavailable draws ${hidden === 1 ? "it" : "them"}.`
-          : "<b>No session has reported in the last 24 hours.</b>"}</div>`;
+    // the cold lanes that fill the room under the warm rows, most recently active first; one row is the hairline that names them
+    const room = laneCapacity(box);
+    const cold = showUnavailable ? [] : D.lanes.filter((l) => !laneVisible(l, now)).sort((a, b) => b.lastAt - a.lastAt);
+    // the day's lanes drawn whole (warm, the hairline, every cold one) leave the pane room: the card hugs its rows and what is left
+    // under the strip is the tray, as on Projects and Team — nothing stands empty under a row; otherwise the cold lanes fill the room
+    // under the warm rows and the rest wait in the Cold fold
+    const whole = visible.length + (cold.length ? cold.length + 1 : 0);
+    const hug = room > 0 && whole > 0 && whole < room;
+    const fill = hug ? cold : room > visible.length + 1 ? cold.slice(0, room - visible.length - 1) : [];
+    box.closest(".lanes").classList.toggle("hug", hug);
+    autoFold(hug, room - whole);
+    if (!visible.length && !fill.length) {
+      laneRows.clear(); fillRows.clear(); laneSep = null;
+      // nothing to draw at all: the pane is a drawn void with its reason, sized to the pane — never a line of text over dead space
+      const [head, why] = D.devices.length === 0
+        ? ["No machine is reporting yet", "This console reads this machine once it has Claude Code or Codex transcripts, and any machine you add."]
+        : hidden ? ["No lane has worked in the last hour", `${plural(hidden, "older or unavailable lane")} ${hidden === 1 ? "is" : "are"} in the Cold fold below — Show unavailable draws ${hidden === 1 ? "it" : "them"} here.`]
+        : ["No session has reported in the last 24 hours", "Every lane of the day is listed here as soon as a machine reports one."];
+      box.innerHTML = `<div class="empty voidfill"><b>${esc(head)}</b><span>${esc(why)}</span><span>Nothing is estimated in its place.</span></div>`;
     } else {
       if (box.querySelector(".empty")) box.innerHTML = "";
       const keep = new Set();
       for (const l of visible) {
         keep.add(l.key);
         let row = laneRows.get(l.key);
-        if (!row) { row = makeLaneRow(l); laneRows.set(l.key, row); }
+        if (!row) { row = fillRows.get(l.key) || makeLaneRow(l); fillRows.delete(l.key); laneRows.set(l.key, row); row.classList.remove("cold"); }
         // Every lane takes its new reading at its own moment inside the poll
         // interval, so the sparks never step together. The data is the same;
         // only when each row repaints differs.
@@ -646,6 +700,22 @@
         box.appendChild(row._tree);
       }
       for (const [key, row] of laneRows) if (!keep.has(key)) { row.remove(); row._tree.remove(); laneRows.delete(key); }
+      // then the cold fill under its hairline
+      const keepCold = new Set();
+      if (fill.length) {
+        if (!laneSep) { laneSep = document.createElement("div"); laneSep.className = "lanesep"; laneSep.setAttribute("aria-hidden", "true"); }
+        laneSep.innerHTML = `<span>cold · idle for more than an hour${cold.length > fill.length ? ` · ${cold.length - fill.length} more in the Cold fold` : ""}</span>`;
+        box.appendChild(laneSep);
+        for (const l of fill) {
+          keepCold.add(l.key);
+          let row = fillRows.get(l.key);
+          if (!row) { row = makeLaneRow(l); fillRows.set(l.key, row); }
+          fillLane(row, l, now); row._painted = true;
+          row.classList.add("cold");
+          box.appendChild(row); box.appendChild(row._tree);
+        }
+      } else if (laneSep) { laneSep.remove(); }
+      for (const [key, row] of fillRows) if (!keepCold.has(key)) { row.remove(); row._tree.remove(); fillRows.delete(key); }
     }
     // The lane burning hardest right now gets the reference's RUN treatment: rail, outline, its figure lit.
     const top = D.lanes.filter((l) => l.state === "live" && l.tokens5m > 0).sort((a, b) => b.tokens5m - a.tokens5m)[0] || null;
@@ -658,9 +728,10 @@
     const silent = D.lanes.filter((l) => l.state === "silent").length;
     const gone = D.lanes.filter((l) => l.state === "revoked").length;
     const catching = D.lanes.filter((l) => l.state === "catching-up" || l.state === "reconnecting").length;
-    // Idle lanes that have not worked for an hour are hidden too: say how many.
+    // Idle lanes that have not worked for an hour are cold: say how many, and where they are (drawn dimmed here, or in the Cold fold).
     const quiet = showUnavailable ? 0 : D.lanes.filter((l) => l.state === "idle" && !laneVisible(l, now)).length;
-    const parts = [sessionWords(), `${live} live`, `${idle} idle` + (quiet ? ` (${quiet} of them idle for more than an hour, hidden)` : "")];
+    const quietDrawn = quiet ? D.lanes.filter((l) => l.state === "idle" && fillRows.has(l.key)).length : 0;
+    const parts = [sessionWords(), `${live} live`, `${idle} idle` + (quiet ? ` (${quiet} of them idle for more than an hour${quiet > quietDrawn ? `, ${quiet - quietDrawn} in the Cold fold` : ", drawn dimmed"})` : "")];
     // The hub draws at most 80 lanes; the count above is over every one, and the table says what share it shows.
     if (laneTotal() > D.lanes.length) parts.push(`${D.lanes.length} of ${laneTotal()} shown`);
     if (catching) parts.push(`${catching} on machines still catching up${showUnavailable ? "" : " (hidden)"}`);
@@ -817,7 +888,7 @@
   }
   function closeTrees() {
     let any = false;
-    for (const rows of [laneRows, coldRows]) for (const [key, row] of rows) if (!row._tree.hidden) { any = true; openTree(row, key, false); }
+    for (const rows of [laneRows, fillRows, coldRows]) for (const [key, row] of rows) if (!row._tree.hidden) { any = true; openTree(row, key, false); }
     return any;
   }
 
@@ -971,10 +1042,33 @@
     return head + `<p>${c?.latest == null ? "No complete input reading is available." :
       `Latest response carried <b>${fmt(c.latest)} input tokens</b>. ${c.growth == null ? "Growth needs two readings." :
         `That is ${c.growth.toFixed(1)}× the first retained reading.`} ${c.status === "bloated" ? "This session is flagged for context weight." : ""}`}</p>` +
-      (samples.length ? `<div class="cbars" role="img" aria-label="${samples.length} recent responses, input tokens each">${samples.map((s, i) => `<i class="${i === samples.length - 1 ? "last" : ""}${breakAt.has(s.at) ? " brk" : ""}" style="height:${Math.max(4, Math.round((s.tokens / top) * 100))}%" title="${hhmm(s.at)} · ${fmt(s.tokens)} input tokens${breakAt.has(s.at) ? " · cache signal" : ""}"></i>`).join("")}</div><div class="cax"><span>${hhmm(samples[0].at)}</span><span>peak ${fmt(top)}</span><span>${hhmm(samples[samples.length - 1].at)}</span></div>` : "") +
+      (samples.length ? contextStep(samples, breakAt, top, c) : "") +
       `<p>Cache signals · <b>${breaks.length ? breaks.length + " recent" : "none in retained readings"}</b>${breaks.length ? ` · extra write cost ${extra > 0 && extra < 0.005 ? "&lt; $0.01" : money(extra)} est.${unpricedBreaks ? ` · ${unpricedBreaks} unpriced` : ""}` : ""}</p>` +
       (breaks.length ? `<ol>${breaks.map((b) => `<li>${hhmm(b.at)} · ${kind(b)}</li>`).join("")}</ol>` : "") +
       `<p class="iquiet">Inferred from token counts and minute timestamps; they cannot prove the cause of a cache write. Extra cost compares observed writes with a hypothetical cache read at offline list prices (table v${esc(c?.priceTable?.version ?? "?")}, checked ${esc(c?.priceTable?.checkedOn ?? "unknown")}).</p>`;
+  }
+
+  /* The context history as a stepped area (G15): each response's input tokens a step, the latest lit, a cache signal a warn tick
+     under the step it followed, the flag threshold a hairline, and the peak named on the axis — the same grammar as every other
+     series here, never a row of solid bars. The threshold is the analysis's own (lib/analysis/context.js): 160k tokens, or twice
+     the first retained reading past 80k. */
+  const CONTEXT_FLAG = 160_000, CONTEXT_GROWTH_FLOOR = 80_000;
+  function contextStep(samples, breakAt, top, c) {
+    const W = 300, H = 72, n = samples.length;
+    const first = samples[0].tokens;
+    const flagAt = first > 0 && Math.max(CONTEXT_GROWTH_FLOOR, 2 * first) < CONTEXT_FLAG ? Math.max(CONTEXT_GROWTH_FLOOR, 2 * first) : CONTEXT_FLAG;
+    const max = Math.max(top, flagAt <= top * 1.6 ? flagAt : 0, 1) * 1.08;
+    const xOf = (i) => (i / n) * W;
+    const yOf = (v) => H - 2 - (Math.max(0, v) / max) * (H - 10);
+    let d = `M0 ${yOf(samples[0].tokens).toFixed(1)}`;
+    for (let i = 0; i < n; i += 1) d += `H${xOf(i + 1).toFixed(1)}${i + 1 < n ? `V${yOf(samples[i + 1].tokens).toFixed(1)}` : ""}`;
+    const lastY = yOf(samples[n - 1].tokens).toFixed(1);
+    const ticks = samples.map((s, i) => (breakAt.has(s.at) ? `<rect class="brk" x="${xOf(i).toFixed(1)}" y="${H - 3}" width="${(W / n).toFixed(1)}" height="3"><title>${hhmm(s.at)} · cache signal</title></rect>` : "")).join("");
+    const steps = samples.map((s, i) => `<rect class="hit" x="${xOf(i).toFixed(1)}" y="0" width="${(W / n).toFixed(1)}" height="${H}"><title>${hhmm(s.at)} · ${fmt(s.tokens)} input tokens${i === n - 1 ? " · latest" : ""}${breakAt.has(s.at) ? " · cache signal" : ""}</title></rect>`).join("");
+    const flag = flagAt <= max ? `<line class="flag" x1="0" x2="${W}" y1="${yOf(flagAt).toFixed(1)}" y2="${yOf(flagAt).toFixed(1)}"><title>Flagged for context weight past ${fmt(flagAt)} input tokens${flagAt < CONTEXT_FLAG ? " (twice the first retained reading)" : ""}</title></line>` : "";
+    return `<svg class="cstep" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${n} recent responses, input tokens each, latest ${fmt(samples[n - 1].tokens)}, peak ${fmt(top)}${c?.status === "bloated" ? ", flagged" : ""}">
+        <path class="area" d="${d}L${W} ${H}L0 ${H}Z"/><path class="line" d="${d}"/><path class="last" d="M${xOf(n - 1).toFixed(1)} ${lastY}H${W}"/>${flag}${ticks}${steps}</svg>
+      <div class="cax"><span>${hhmm(samples[0].at)}</span><span>peak <b>${fmt(top)}</b>${flag ? ` · flag ${fmt(flagAt)}` : ""}</span><span>${hhmm(samples[n - 1].at)}</span></div>`;
   }
 
   const ALERT_LABEL = { loop: "Repeated tool call", spike: "Burn spike", stall: "Spending without progress" };
@@ -1034,14 +1128,25 @@
     $(capId).title = [known ? `Hatched to ${hhmm(known)}: alerts are held only from then (${SINCE_WHY[cov.reason] || "unknown before"})` : "",
       D.silentSince && D.silentSince > now - span ? `Hatched from ${hhmm(D.silentSince)}: a machine went silent, so alerts from it cannot be known` : "One tick per alert in the last sixty minutes"].filter(Boolean).join(" · ");
   }
-  /* The Team canvas lists today's alerts, live and earlier, each named for its machine. */
+  /* The Team canvas lists today's alerts, live and earlier, each named for its machine. The head is the day's count from the hub's
+     own counter (alertsToday, G01) — exact, never the length of the bounded list it sends to draw; when the list holds fewer than
+     the day raised, it says how many are kept. A hub without the counter says its figure is the list's. */
   function paintTeamAlerts() {
     const all = D.alerts || [];
     const live = liveAlerts().length;
     const cov = D.alertsCoverage || null;
     const known = cov && Number.isFinite(cov.since) ? cov.since : null;
-    $("teamAlertCount").textContent = (all.length ? `${plural(all.length, "alert")} · ${live} live` : "none today") + (cov && cov.unwatched > 0 ? ` · ${plural(cov.unwatched, "machine")} not watched` : "") + (known ? ` · known since ${hhmm(known)}` : "");
-    $("teamAlertCount").title = [cov && cov.unwatched > 0 ? `${cov.unwatchedDevices.map((id) => pn("machine", (deviceOf(id) || { label: id }).label)).join(", ")}: the reporter there does not share alerts (--share-alerts is off), so their silence is not "no alert"` : "Every current machine shares its alerts",
+    const today = D.alertsToday && Number.isFinite(D.alertsToday.count) ? D.alertsToday : null;
+    const count = today ? today.count : all.length;
+    const kept = today ? today.kept : all.length;
+    const exact = today ? today.exact !== false : false;
+    // the count is whole only from alertsToday.since: after midnight it is the day's; from later, it names its start
+    const countedFrom = today && Number.isFinite(today.since) && today.since > today.from ? today.since : null;
+    $("teamAlertCount").textContent = (count ? `${plural(count, "alert")} today${kept < count ? ` · ${kept} kept` : ""} · ${live} live` : "none today")
+      + (countedFrom ? ` · counted since ${hhmm(countedFrom)}` : "") + (cov && cov.unwatched > 0 ? ` · ${plural(cov.unwatched, "machine")} not watched` : "") + (known ? ` · known since ${hhmm(known)}` : "");
+    $("teamAlertCount").title = [today ? (exact ? `${count} alerts raised or accepted today by this console's clock${today.tz ? ` (${today.tz})` : ""}, counted as they came; the list below keeps the last ${kept}` : `This hub keeps no day counter: the figure is the ${kept} alerts its list still holds`) : `The ${all.length} alerts this hub's list holds`,
+      countedFrom ? `counting began at ${hhmm(countedFrom)}; today's alerts before then are unavailable, not zero` : "",
+      cov && cov.unwatched > 0 ? `${cov.unwatchedDevices.map((id) => pn("machine", (deviceOf(id) || { label: id }).label)).join(", ")}: the reporter there does not share alerts (--share-alerts is off), so their silence is not "no alert"` : "Every current machine shares its alerts",
       known ? `held only since ${hhmm(known)}: ${SINCE_WHY[cov.reason] || "unknown before"}` : ""].filter(Boolean).join(" · ");
     $("teamAlerts").innerHTML = all.length ? all.map((a) => alertRow(a, Boolean(a.historical))).join("") : `<div class="none">No alert ${known ? `held since ${hhmm(known)}` : "has been raised today"}${cov && cov.unwatched > 0 ? ` on the ${plural(cov.watched, "watched machine")}` : ""}.</div>`;
   }
@@ -1071,8 +1176,9 @@
       const lane = alertLane(top);
       head = ALERT_LABEL[top.kind] || "Alert";
       const who = `<b>${esc(alertWho(top))}</b>${lane?.branch ? ` <em>${esc(pn("branch", lane.branch))}</em>` : ""}${alertDevice(top) ? ` · ${esc(pn("machine", alertDevice(top).label))}` : ""}`;
-      const measure = top.kind === "spike" && Number.isFinite(top.tokens5m) ? `${fmt(top.tokens5m)} tokens / 5 min${alertFactor(top) ? ` · <span class="x">${alertFactor(top)}</span>` : ""}`
-        : top.kind === "stall" ? `${fmt(top.tokens)} tokens since the last tool success${alertFactor(top) ? ` · <span class="x">${alertFactor(top)}</span>` : ""}`
+      // the magnitude leads and the rate follows: if the line has to give way at 1440, it is the rate that goes, never the "× normal"
+      const measure = top.kind === "spike" && Number.isFinite(top.tokens5m) ? `${alertFactor(top) ? `<span class="x">${alertFactor(top)}</span> · ` : ""}${fmt(top.tokens5m)} tok / 5 min`
+        : top.kind === "stall" ? `${alertFactor(top) ? `<span class="x">${alertFactor(top)}</span> · ` : ""}${fmt(top.tokens)} tok since the last tool success`
         : `same tool and arguments ${fmt(top.tokens)} times`;
       line = `${who} · ${measure}`;
       foot = `<time>${hhmm(top.at)}</time>${D.hub.demo ? " · DEMO" : ""}${Number.isFinite(top.median5m) ? ` · normal ${fmt(top.median5m)} / 5 min` : ""}` + (lane ? `<button class="linkbtn" type="button" data-lane="${esc(lane.key)}">Open lane →</button>` : "");
@@ -1128,7 +1234,7 @@
   }
   /* Moving to a lane moves DOM focus to its row (document.activeElement is the row), so J/K, the palette and an alert row all land where the keyboard can act. */
   function focusLane(key, open = false) {
-    const row = laneRows.get(key) || coldRows.get(key);
+    const row = laneRows.get(key) || fillRows.get(key) || coldRows.get(key);
     if (!row) return false;
     if (coldRows.has(key)) $("foldCold").open = true;
     if (view !== "console") show("console");
@@ -1204,7 +1310,8 @@
       svg.innerHTML = parts.join("") + out + `<rect class="edge" x="0" y="${TOP[0]}" width="${W}" height="${TOP[1] - TOP[0]}"/>` + (compact ? "" : `<rect class="edge" x="0" y="${BOT[0]}" width="${W}" height="${BOT[1] - BOT[0]}"/>`);
       svg.setAttribute("aria-label", "Cost share over token share: " + ORDER.map((k) => `${CLASS_LABEL[k]} ${pct(byClass[k] / usd, 0)} of cost, ${pct(t[k] / total, 0)} of tokens`).join("; ") + (floor ? `; the estimate is a floor: ${w.cost.unpricedModels.join(", ")} unpriced` : ""));
       const partialWhy = floor ? ` · a floor: ${w.cost.unpricedModels.join(", ")} unpriced` : "";
-      $("specLegend").innerHTML = ORDER.map((k) => `<span title="${esc(CLASS_LABEL[k])}: ${money(byClass[k])}${floor} est. · ${pct(byClass[k] / usd)} of the estimate · ${pct(t[k] / total)} of tokens${esc(partialWhy)}"><i class="sw ${k}"></i>${CLASS_LABEL[k].replace("uncached ", "")} <b>${pct(byClass[k] / usd, 0)}</b><em>est.</em><em class="sep">·</em><b>${pct(t[k] / total, 0)}</b><em>tok</em></span>`).join("");
+      $("specLegend").innerHTML = ORDER.map((k) => `<span title="${esc(CLASS_LABEL[k])}: ${money(byClass[k])}${floor} est. · ${pct(byClass[k] / usd)} of the estimate · ${pct(t[k] / total)} of tokens${esc(partialWhy)}"><i class="sw ${k}"></i>${CLASS_LABEL[k].replace("uncached ", "")} <b>${pct(byClass[k] / usd, 0)}</b><em>est.</em><em class="sep">·</em><b>${pct(t[k] / total, 0)}</b><em>tok</em></span>`).join("")
+        + (floor ? floorLine(w.cost) : "");   // the pane's one floor line, flowing as a whole item of the legend (G11)
     }
     // Per model: its share of the money over its share of the tokens; the rest opens in place. The alerts sheet carries the same rows whole.
     $("specModels").innerHTML = specModelRows(w, "specModels", 3);
@@ -1277,11 +1384,14 @@
   let foldFetched = { key: null, at: 0, data: null, error: null };
   async function loadFold() {
     const now = serverNow();
-    const cold = showUnavailable ? [] : D.lanes.filter((l) => !laneVisible(l, now));
+    // the cold lanes the pane above drew, dimmed, to fill its room are not folded twice
+    const cold = showUnavailable ? [] : D.lanes.filter((l) => !laneVisible(l, now) && !fillRows.has(l.key));
     const coldTokens = cold.reduce((sum, l) => sum + (l.tokensDay || 0), 0);
     summary("coldSum", showUnavailable ? [{ html: "shown above · Show unavailable is on", pri: 0 }]
       : cold.length ? [{ html: `<b>${cold.length}</b> ${cold.length === 1 ? "session" : "sessions"}`, pri: 0 }, { html: `<b>${fmt(coldTokens)}</b> tokens · 24 h`, pri: 1 },
+        fillRows.size ? { html: `${fillRows.size} more drawn above, dimmed`, pri: 3 } : null,
         laneTotal() > D.lanes.length ? { html: `${laneTotal() - D.lanes.length} more not sent by the hub`, pri: 2 } : null]
+      : fillRows.size ? [{ html: `none folded · <b>${fillRows.size}</b> cold ${fillRows.size === 1 ? "session is" : "sessions are"} drawn above, dimmed`, pri: 0 }]
       : [{ html: "none · every session of the day is above", pri: 0 }], cold.length ? " · idle for more than an hour, or on a machine that is silent, catching up or gone · open" : " · open");
     const box = $("coldLanes");
     if (!cold.length) { box.innerHTML = ""; coldRows.clear(); }
@@ -1426,9 +1536,13 @@
     capWin("cMachineCap", "by machine", PERIOD_TEXT[period][1]);
     // the head carries the count and the share left out on hover: the strip already says how many report
     $("cMachineCap").title = hint + (D.devices.length ? ` · share of the ${PERIOD_TEXT[period][0]}` + (goneShare > 0 ? `; ${pct(goneShare)} of it from machines that left or were removed, hidden unless Show unavailable is on` : "") : "");
-    // the band shows up to five machines whole, or four and "n more", so the card keeps the height the lanes need
-    const whole = compactMQ.matches ? 4 : 5;
-    $("cMachines").innerHTML = machineRows(rows, now, false, moreOpen.has("cMachines") ? Infinity : rows.length > whole ? whole - 1 : whole, "cMachines");
+    // the band shows up to five machines whole, or four and "n more", so the card keeps the height the lanes need;
+    // when any machine's estimate is a floor the pane says so once under the rows (G11), and gives that line one row's room
+    const floors = rows.filter((d) => pw(d).cost.status === "partial" || droppedOf(d) > 0);
+    const line = floors.length ? floorLine({ status: "partial", unpricedMessages: floors.every((d) => Number.isFinite(pw(d).cost.unpricedMessages)) ? floors.reduce((a, d) => a + pw(d).cost.unpricedMessages, 0) : null,
+      unpricedModels: [...new Set(floors.flatMap((d) => pw(d).cost.unpricedModels || []))] }, { dropped: floors.reduce((a, d) => a + droppedOf(d), 0) }) : "";
+    const whole = (compactMQ.matches ? 4 : 5) - (line ? 1 : 0);
+    $("cMachines").innerHTML = machineRows(rows, now, false, moreOpen.has("cMachines") ? Infinity : rows.length > whole ? whole - 1 : whole, "cMachines") + (line ? `<div class="floorrow">${line}</div>` : "");
   }
   /* One row per machine, biggest first: its state as a ring or a lit dot, name, person, share, tokens, estimate.
      A silent machine keeps its name in warn and says when it stopped on hover — never a zero. The row is the
@@ -1486,6 +1600,8 @@
     const byClass = w.cost.byClass || null;
     const floor = w.cost.status === "partial";
     $("cLegend").innerHTML = ORDER.map((k) => `<span title="${esc(CLASS_LABEL[k])} · ${pct(w.shares[k])} of tokens${byClass ? ` · ${money(byClass[k])}${floor ? "+" : ""} est.${floor ? ` · a floor: ${esc(w.cost.unpricedModels.join(", "))} unpriced` : ""}` : ""}"><i class="sw ${k}"></i>${CLASS_LABEL[k]} <b>${fmt(w.tokens[k])}</b>${byClass ? `<em>${money(byClass[k])}${floor ? "+" : ""} est.</em>` : w.cost.status === "unpriced" ? `<em title="no verified list price">unpriced</em>` : ""}</span>`).join("");
+    // the pane's one floor line sits in the axis row's middle, where nothing wraps (G11)
+    $("axMid").innerHTML = byClass && floor ? floorLine(w.cost) : "";
     $("cFlow").setAttribute("aria-label", "Tokens over time, stacked by class: " + ORDER.map((k) => `${CLASS_LABEL[k]} ${fmt(w.tokens[k])}`).join(", "));
     // The scale, said once: the busiest whole step in the period, and how long a step is.
     const peak = Math.max(...s.values.slice(0, -1), 0);
@@ -1619,15 +1735,19 @@
     $("cBurn").innerHTML = excludedAll || none ? "—" : perSecond
       ? `${fmt(perMin / 60)}<span class="u">tok/s</span>` : `${fmt(perMin)}<span class="u">tok/min</span>`;
     const bc = D.burn.cost || { status: "estimated", unpricedModels: [] };
-    const per = perSecond ? "/min" : "/hour";
-    const dollars = D.burn.usdPerMinute === null
+    // one denominator per line (G14): the money is in the unit the tokens are in — per minute, or per second when the toggle says so;
+    // the same rate per hour is on hover, never beside a figure in another unit
+    const per = perSecond ? "/s" : "/min";
+    const usdRate = D.burn.usdPerMinute === null ? null : D.burn.usdPerMinute * (perSecond ? 1 / 60 : 1);
+    const tiny = (n) => (n !== null && n > 0 && n < 0.005 ? "< $0.01" : money(n));
+    const dollars = usdRate === null
       ? "—" + per + " · unpriced"
-      : money(D.burn.usdPerMinute * (perSecond ? 1 : 60)) + per + (bc.status === "partial" ? " est. · partial" : " est.");
-    // the dollars beside the figure; the other unit of the same rate on hover
+      : tiny(usdRate) + per + (bc.status === "partial" ? " est. · partial" : " est.");
+    // the dollars beside the figure; the other unit of the same rate, and the hour, on hover
     $("cRate").textContent = none ? "no machine has reported yet" : excludedAll ? "no machine reporting right now" : dollars;
     const names = bc.unpricedModels.join(", ");
     const has = bc.unpricedModels.length === 1 ? "has" : "have";
-    const alt = none || excludedAll ? "" : (perSecond ? fmt(perMin) + " per minute" : fmt(perMin / 60) + " per second") + " · ";
+    const alt = none || excludedAll ? "" : (perSecond ? fmt(perMin) + " per minute" : fmt(perMin / 60) + " per second") + (D.burn.usdPerMinute === null ? "" : ` · ${money(D.burn.usdPerMinute * 60)}/hour est.`) + " · ";
     $("cRate").title = alt + (bc.status === "unpriced" ? `${names} ${has} no verified list price, so no dollar rate is shown`
       : bc.status === "partial" ? `${names} ${has} no verified list price; ${fmt(bc.unpricedTokensPerMinute)} tok/min are not in this figure`
       : "Standard API list prices. Not an invoice.");
@@ -1717,18 +1837,22 @@
   $("foldStrip").addEventListener("click", (ev) => {
     const b = ev.target.closest("button[data-fold]"); if (!b) return;
     const d = $(b.dataset.fold);
+    foldTouched = true;
     d.open = true;
     d.scrollIntoView({ behavior: reducedMotion.matches || paused ? "auto" : "smooth", block: "start" });
     d.querySelector("summary").focus({ preventScroll: true });
   });
+  // a fold opened or closed by hand is the reader's choice: none opens or closes by itself after that
+  $("fold").addEventListener("click", (ev) => { if (ev.target.closest("summary")) foldTouched = true; });
   /* Presenting: P, or the palette. Every name becomes a stable stand-in, internal figures step back, the strip says PRESENTING. */
   function setPresent(on) {
     present = Boolean(on);
     document.body.toggleAttribute("data-present", present);
     $("presentStamp").hidden = !present;
     $("reach").title = present ? "" : $("reach").dataset.title || "";
-    // every row takes its new name at once, not at its own moment inside the poll interval
-    for (const rows of [laneRows, coldRows, projLaneRows]) for (const row of rows.values()) row._painted = false;
+    // every row takes its new name at once, not at its own moment inside the poll interval; a hover's cached title (data-t) is dropped too, so no pre-presenting name survives in an attribute
+    for (const rows of [laneRows, fillRows, coldRows, projLaneRows]) for (const row of rows.values()) row._painted = false;
+    for (const el of document.querySelectorAll("[data-t]")) delete el.dataset.t;
     if (D) { paintAll(); if (foldFetched.data) paintFold(); if (view === "projects") loadProjects(true); }
     // an open inspector's address takes the stand-in too, at once
     if (inspect.open && inspectDialog.open && inspect.kind !== "lane") setHash(`${view}/${inspect.kind}/${idInUrl(inspect.kind, inspect.id)}`);
@@ -1788,23 +1912,65 @@
     return urlTokens.get(key);
   }
   const idFromUrl = (token) => (urlBack.has(token) ? urlBack.get(token) : token);
+  /* A door's key in the DOM (data-inspect): the thing's own id, or — while presenting — the same opaque token the address uses, so a
+     person's name or a project's key never sits in an attribute on a shared screen; the click handler resolves the token on the way back. */
+  const doorId = (kind, id) => (present ? idInUrl(kind, id) : String(id));
   /* The opener, remembered by what names it rather than by its node: a lane row by its key, a machine, person or project row by its
      data-inspect, a control by its id — with the cell button inside a row kept too. Rows are repainted while a sheet is open, so the node
      that was clicked is often gone by the time the sheet closes; its successor is found by the same key and takes the focus. */
   const cssq = (v) => String(v).replace(/["\\]/gu, "\\$&");
+  /* The opener is found again inside the container it was in (the lanes, a Team table, the band's rows), so a Team table row is
+     never mistaken for the band row that opens the same person, and a row repainted while the sheet stayed open hands the focus to
+     its successor in the same place. When that place no longer holds the key, the section's own head takes the focus — never the body. */
+  const SCOPES = "#cLanes, #pLanes, #coldLanes, #peopleTable, #machineTable, #projTable, #dayTable, #cMachines, #tPeople, #tTools, #pShare, #pSpendRows, #pMergeRows, #attnList, #alertRows, #alertEarlier, #teamAlerts, #inspectBody, #invites";
   function openerRef(el) {
     if (!el || !el.closest) return null;
-    const anchor = el.closest("[data-key], [data-inspect], [id]");
-    if (!anchor) return { node: el, sel: null };
-    const sel = anchor.dataset.key ? `.lane[data-key="${cssq(anchor.dataset.key)}"]` : anchor.dataset.inspect ? `[data-inspect="${cssq(anchor.dataset.inspect)}"]` : `#${cssq(anchor.id)}`;
+    const anchor = el.closest("[data-key], [data-inspect], [data-lane], [id]");
+    if (!anchor) return { node: el, sel: null, scope: null };
+    const sel = anchor.dataset.key ? `.lane[data-key="${cssq(anchor.dataset.key)}"]` : anchor.dataset.inspect ? `[data-inspect="${cssq(anchor.dataset.inspect)}"]` : anchor.dataset.lane ? `[data-lane="${cssq(anchor.dataset.lane)}"]` : `#${cssq(anchor.id)}`;
     const inner = el === anchor ? "" : el.closest(".cx") ? " .cx button" : el.closest(".ag") ? " .ag button" : el.classList.contains("rowbtn") ? " .rowbtn" : "";
-    return { node: el, sel: sel + inner };
+    const scope = anchor.closest(SCOPES);
+    return { node: el, sel: sel + inner, scope: scope ? "#" + scope.id : null, section: (scope && scope.closest("section, .col, .fold")) || null };
   }
   function openerNode(ref) {
     if (!ref) return null;
-    if (ref.sel) for (const el of document.querySelectorAll(ref.sel)) if (el.isConnected && (!el.checkVisibility || el.checkVisibility())) return el;
-    return ref.node && ref.node.isConnected ? ref.node : null;
+    const visible = (el) => el.isConnected && (!el.checkVisibility || el.checkVisibility());
+    // a table row is a door but not a focus stop: its handle (the name button) takes the focus; anything else without a stop is given one
+    const stop = (el) => (el.matches("button, a[href], input, select, textarea, summary, [tabindex]") ? el : el.querySelector(".rowbtn, button, [tabindex]") || (el.setAttribute("tabindex", "-1"), el));
+    const root = ref.scope ? document.querySelector(ref.scope) : null;
+    if (ref.sel) {
+      // inside the opener's own container first; document-wide only for an opener that had none (a strip control, the palette's button)
+      for (const el of (root || document).querySelectorAll(ref.sel)) if (visible(el)) return stop(el);
+      if (root) {
+        // the row is gone from its place (the lane went cold, the person left): the section's head, so the focus stays where the reader was
+        const head = ref.section && ref.section.querySelector(".thead h3, .lanescroll, .mhead, .cap, summary");
+        if (head && visible(head)) return stop(head);
+      }
+    }
+    return ref.node && visible(ref.node) ? stop(ref.node) : null;
   }
+  /* Focus survives a repaint. The Team tables, the band's rows and the Projects lists are rebuilt under the poll, so the row the
+     keyboard was on — the one a sheet just handed the focus back to — can vanish a second later and drop the focus to the body.
+     The last door focused is remembered; when a repaint disconnects it while nothing else took the focus, its successor (the same
+     door in the same container) takes it, without scrolling. A reader who clicks away on purpose keeps their choice: the row they
+     left is still in the page, so nothing is restored. */
+  let lastDoor = null;
+  document.addEventListener("focusin", (ev) => {
+    const a = ev.target;
+    if (!(a instanceof Element)) return;
+    const key = a.dataset.inspect ? `[data-inspect="${cssq(a.dataset.inspect)}"]` : a.dataset.key ? `.lane[data-key="${cssq(a.dataset.key)}"]` : a.dataset.lane ? `[data-lane="${cssq(a.dataset.lane)}"]` : null;
+    const scope = key && a.closest(SCOPES);
+    lastDoor = scope ? { el: a, key, scope, btn: a.classList.contains("rowbtn") } : null;
+  });
+  new MutationObserver(() => {
+    if (!lastDoor || lastDoor.el.isConnected || document.activeElement !== document.body || !lastDoor.scope.isConnected || document.querySelector("dialog[open]")) return;
+    const all = [...lastDoor.scope.querySelectorAll(lastDoor.key)];
+    const el = all.find((x) => x.classList.contains("rowbtn") === lastDoor.btn) || all[0];
+    if (!el) { lastDoor = null; return; }
+    if (!el.matches("button, a[href], input, select, textarea, summary, [tabindex]")) el.setAttribute("tabindex", "-1");
+    lastDoor.el = el;
+    el.focus({ preventScroll: true });
+  }).observe(document.body, { childList: true, subtree: true });
   function openSheet(dialog, hash, from = null) {
     if (!dialog.open) {
       // whoever opened the sheet gets focus back when it closes: the row, the chip, the palette's button
@@ -1932,7 +2098,11 @@
     // Thirty days are read from the daily rollup, which keeps no sessions: the cell is a void with that reason, never the day's count under a month's caption.
     const lt = D.laneTotals || null;
     const tally = lt && lt.periods && lt.periods[period] ? lt.periods[period] : null;
-    const sessionsCell = (n, reason) => (n === null || n === undefined ? na("not kept", reason || (tally && tally.reason) || "Sessions are not kept for this period", true, true) : String(n));
+    // a period read from the daily rollup keeps no sessions: the cell is a plain void mark, the sentence said once in the pane's own hint and on the column head — never once per row (G10);
+    // an empty minute period is a counted 0 (G12), which the hub sends as 0, never as null
+    const notKeptWhy = (tally && tally.reason) || "Sessions are not kept for this period";
+    const sessionsCell = (n) => (n === null || n === undefined ? na("—", notKeptWhy) : String(n));
+    for (const head of document.querySelectorAll("#tToolCap, #tPeopleCap")) { const th = head.closest(".mhead").lastElementChild; th.title = tally && tally.sessionsKept === false ? notKeptWhy : `Sessions in the ${PERIOD_TEXT[period][0]}`; }
     const tools = new Map();
     if (tally) for (const [tool, t] of Object.entries(tally.byTool)) tools.set(tool, { tokens: t.tokens || 0, lanes: t.sessions, live: (lt.byTool && lt.byTool[tool] && lt.byTool[tool].live) || 0 });
     else if (lt && lt.byTool) for (const [tool, t] of Object.entries(lt.byTool)) tools.set(tool, { tokens: t.tokensDay || 0, lanes: t.sessions || 0, live: t.live || 0 });
@@ -1953,13 +2123,14 @@
     else for (const l of D.lanes) { const who = personOfDevice(l.device.id); lanesByPerson.set(who, (lanesByPerson.get(who) || 0) + 1); }
     const peopleRanked = D.people.slice().sort((a, b) => of(b).messages - of(a).messages);
     capWin("tPeopleCap", "by person", label);
-    $("tPeople").innerHTML = peopleRanked.length ? peopleRanked.map((p) => { const a = of(p); const n = lanesByPerson.has(p.person) ? lanesByPerson.get(p.person) : tally ? null : 0; return `<div class="xrow msgs door" data-inspect="person:${esc(p.person)}" tabindex="0" role="button" title="${esc(pn("person", p.person))} · ${a.messages.toLocaleString("en-US")} messages · ${pct(msgs ? a.messages / msgs : null)} of every message · open">
+    $("tPeople").innerHTML = peopleRanked.length ? peopleRanked.map((p) => { const a = of(p); const n = lanesByPerson.has(p.person) ? lanesByPerson.get(p.person) : tally ? null : 0; return `<div class="xrow msgs door" data-inspect="person:${esc(doorId("person", p.person))}" tabindex="0" role="button" title="${esc(pn("person", p.person))} · ${a.messages.toLocaleString("en-US")} messages · ${pct(msgs ? a.messages / msgs : null)} of every message · open">
         <span class="xn"><b>${esc(pn("person", p.person))}</b></span>
         <span class="xp" data-src="people.windows.messages">${pct(msgs ? a.messages / msgs : null, 0)}</span>
         <span class="xv" data-src="people.windows.messages">${a.messages.toLocaleString("en-US")}</span>
-        <span class="xc" title="Sessions in the ${esc(PERIOD_TEXT[period][0])}${lt ? ", over every session" : ""}">${sessionsCell(n)}</span>
+        <span class="xc" title="${n === null || n === undefined ? esc(notKeptWhy) : `Sessions in the ${esc(PERIOD_TEXT[period][0])}${lt ? ", over every session" : ""}`}">${sessionsCell(n)}</span>
       </div>`; }).join("") : `<div class="xrow"><span class="xn"><em>nobody yet</em></span></div>`;
-    $("tHint").textContent = tally ? (tally.sessionsKept ? `every figure here is the ${PERIOD_TEXT[period][0]}` : `${label} read the daily rollup: tokens only, sessions not kept`) : "models over the period · tools and sessions from the day";
+    $("tHint").textContent = tally ? (tally.sessionsKept ? `every figure here is the ${PERIOD_TEXT[period][0]}` : `${label} read the daily rollup: tokens only, sessions not kept (—)`) : "models over the period · tools and sessions from the day";
+    $("tHint").title = tally && !tally.sessionsKept ? notKeptWhy : "";
     for (const th of document.querySelectorAll("#peopleTable th.act, #machineTable th.act")) th.textContent = "Activity · " + label;
 
     const peopleRows = D.people.slice().sort((a, b) => of(b).tokens.total - of(a).tokens.total);
@@ -1975,8 +2146,8 @@
       // records a person's machines could not count make the estimate a floor, said with the money (G6)
       const dropped = p.devices.reduce((n, id) => n + droppedOf(deviceOf(id)), 0);
       const cost = costMark(a.cost, dropped);
-      return `<tr class="door" data-inspect="person:${esc(p.person)}">
-        <td class="k1"><button type="button" class="rowbtn" data-inspect="person:${esc(p.person)}" title="Open ${esc(pn("person", p.person))}">${esc(pn("person", p.person))}</button>${demoStamp()}</td>
+      return `<tr class="door" data-inspect="person:${esc(doorId("person", p.person))}">
+        <td class="k1"><button type="button" class="rowbtn" data-inspect="person:${esc(doorId("person", p.person))}" title="Open ${esc(pn("person", p.person))}">${esc(pn("person", p.person))}</button>${demoStamp()}</td>
         <td>${p.devices.map((id) => esc(pn("machine", (deviceOf(id) || {}).label || ""))).join(", ")}<em class="q">${p.reporting} of ${p.devices.length} reporting</em></td>
         <td>${rowSpark(p, s, Boolean(s && s.live > 0), pn("person", p.person))}</td>
         <td class="num r k3" data-l="tokens" data-src="people.windows.tokens.total" title="${fmt(a.tokens.total)} tokens · ${esc(label)}">${fmt(a.tokens.total)}</td><td class="k2">${shareBar(a.shareOfWhole, "people.windows.shareOfWhole")}</td>
@@ -2125,7 +2296,8 @@
     for (const cell of document.querySelectorAll("#projTable [data-live]")) {
       const s = by.get(cell.dataset.live);
       const live = s ? s.live : 0;
-      cell.innerHTML = `<span class="live-dot${live ? " on" : ""}${D.hub.demo ? " sim" : ""}" title="${live ? plural(live, "session") + " reported within the last two minutes" : "No session reported within the last two minutes"}"><i></i>${live || "—"}</span>`;
+      // a measured zero is printed as 0 (G15); the dash is kept for what is unknown
+      cell.innerHTML = `<span class="live-dot${live ? " on" : ""}${D.hub.demo ? " sim" : ""}" title="${live ? plural(live, "session") + " reported within the last two minutes" : "No session reported within the last two minutes"}"><i></i>${live}</span>`;
     }
     // Each project's activity over the period from the hub's own per-row series (spark); a 0.3 hub gives the hour from its lanes' sparks.
     for (const cell of document.querySelectorAll("#projTable [data-spark]")) {
@@ -2151,11 +2323,13 @@
     if (!lanes.length) box.innerHTML = `<div class="empty"><b>No session on this machine in the last 24 hours.</b></div>`;
     roving(box);
     if (box.closest(".lanebody")) watchScroll(box.closest(".lanebody"), "x");
-    const live = lanes.filter((l) => l.state === "live").length;
-    // sessions over every local lane from the hub's rollup (H05), not only the rows drawn
+    // sessions, live and subagents over every local lane from the hub's rollup (H05, R2-M1), never a sum over the rows drawn; a 0.3 hub gives the rows
     const lt = D.laneTotals && D.laneTotals.byLocalProject ? Object.values(D.laneTotals.byLocalProject) : null;
     const total = lt ? lt.reduce((a, t) => a + (t.sessions || 0), 0) : lanes.length;
-    $("pLaneCount").innerHTML = total ? `${plural(total, "session")} · ${live} live · ${plural(Math.max(0, lanes.reduce((a, l) => a + l.agents.total, 0)), "subagent")}${total > lanes.length ? ` · ${lanes.length} of ${total} shown` : ""} <span class="win">· 24 h</span>` : `none <span class="win">· 24 h</span>`;
+    const live = lt && lt.every((t) => Number.isFinite(t.live)) ? lt.reduce((a, t) => a + t.live, 0) : lanes.filter((l) => l.state === "live").length;
+    const subagents = lt && lt.every((t) => Number.isFinite(t.subagents)) ? lt.reduce((a, t) => a + t.subagents, 0) : lanes.reduce((a, l) => a + l.agents.total, 0);
+    $("pLaneCount").innerHTML = total ? `${plural(total, "session")} · ${live} live · ${plural(Math.max(0, subagents), "subagent")}${total > lanes.length ? ` · ${lanes.length} of ${total} shown` : ""} <span class="win">· 24 h</span>` : `none <span class="win">· 24 h</span>`;
+    $("pLaneCount").title = lt ? "Counted over every session on this machine in the last 24 hours, not only the rows drawn" : "Counted over the rows drawn";
     placeGroup();
   }
   const projLaneRows = new Map();
@@ -2194,8 +2368,8 @@
       <td class="num r" data-internal data-src="projects.costPerOutcome.perDefaultMergeUsd" title="Spend in the work window per local default-branch integration, not attribution">${m.per === null ? na(m.word, m.why, false, true) : money(m.per) + " est."}</td>
       <td class="num mono" data-src="projects.branches">${branchesCell}</td>`
       : `<td class="merged" colspan="7" data-src="projects.repo">${na("—", "Not a Git repository: no commits, lines, merges, spend per commit or branches to count; its tokens, estimate and sessions are still measured", false, true)}</td>`;
-    return `<tr class="door" data-inspect="project:${esc(key)}">
-      <td class="k1"><button type="button" class="rowbtn" data-inspect="project:${esc(key)}" title="Open ${esc(name)}${x.parent && !present ? ` · in ${esc(x.parent)}/` : ""}">${esc(name)}</button>${demoStamp()}${x.repo ? (x.repo.name !== x.name ? `<span class="sub">${esc(pn("project", x.repo.name))}</span>` : "") : ""}</td>
+    return `<tr class="door" data-inspect="project:${esc(doorId("project", key))}">
+      <td class="k1"><button type="button" class="rowbtn" data-inspect="project:${esc(doorId("project", key))}" title="Open ${esc(name)}${x.parent && !present ? ` · in ${esc(x.parent)}/` : ""}">${esc(name)}</button>${demoStamp()}${x.repo ? (x.repo.name !== x.name ? `<span class="sub">${esc(pn("project", x.repo.name))}</span>` : "") : ""}</td>
       <td class="k3" data-l="live" data-live="${esc(key)}"><span class="live-dot"><i></i>—</span></td>
       <td data-spark="${esc(key)}"><span class="sp none">—</span></td>
       <td class="num r k3" data-l="tokens" data-src="projects.tokens" title="${fmt(x.tokens)} tokens in this machine's transcripts · ${esc(label)}">${fmt(x.tokens)}</td><td class="k2">${shareBar(p.tokens ? x.tokens / p.tokens : null, "projects.tokens")}</td>
@@ -2251,7 +2425,7 @@
       const open = moreOpen.has("pShare");
       const shown = open ? ranked : ranked.slice(0, MODELS_SHOWN);
       capWin("pShareCap", "tokens by project", label);
-      $("pShare").innerHTML = shown.map((x) => `<div class="mrow door" data-inspect="project:${esc(projectKeyOf(x))}" tabindex="0" role="button" title="${esc(pn("project", x.name))} · ${fmt(x.tokens)} tokens · ${pct(p.tokens ? x.tokens / p.tokens : null)} of this machine · open">
+      $("pShare").innerHTML = shown.map((x) => `<div class="mrow door" data-inspect="project:${esc(doorId("project", projectKeyOf(x)))}" tabindex="0" role="button" title="${esc(pn("project", x.name))} · ${fmt(x.tokens)} tokens · ${pct(p.tokens ? x.tokens / p.tokens : null)} of this machine · open">
           <span class="mn"><span class="txt">${esc(pn("project", x.name))}</span></span><span class="ms">${demoStamp()}</span>
           <span class="mbar" aria-hidden="true"><i style="width:${Math.max(1, Math.round((x.tokens / max) * 100))}%"></i></span>
           <span class="mv" data-src="projects.tokens">${pct(p.tokens ? x.tokens / p.tokens : null, 0)}</span>
@@ -2268,14 +2442,14 @@
       const commitWhy = priced.length ? "" : anyGit ? "no priced commit in this period" : "no project here is in a Git repository";
       const mergeWhy = merged.length ? "" : anyGit ? (ranked.some((x) => mergeReading(x).count > 0) ? "no priced merge in this period" : "no default-branch merge in this period") : "";
       const voidLine = (why) => `<div class="xrow"><span class="xn"><em>${esc(why)}</em></span></div>`;
-      $("pSpendRows").innerHTML = priced.length ? priced.slice(0, MODELS_SHOWN).map((x) => `<div class="mrow door" data-inspect="project:${esc(projectKeyOf(x))}" tabindex="0" role="button" title="${esc(pn("project", x.name))} · spend in the window of the work per local commit — not attribution · open">
+      $("pSpendRows").innerHTML = priced.length ? priced.slice(0, MODELS_SHOWN).map((x) => `<div class="mrow door" data-inspect="project:${esc(doorId("project", projectKeyOf(x)))}" tabindex="0" role="button" title="${esc(pn("project", x.name))} · spend in the window of the work per local commit — not attribution · open">
           <span class="mn"><span class="txt">${esc(pn("project", x.name))}</span></span><span class="ms"></span>
           <span class="mbar" aria-hidden="true"><i style="width:${Math.max(1, Math.round((x.costPerOutcome.perCommitUsd / pmax) * 100))}%"></i></span>
           <span class="mv" data-src="projects.repo.commits">${x.repo ? x.repo.commits : "—"}</span>
           <span class="mc" data-internal data-src="projects.costPerOutcome.perCommitUsd">${money(x.costPerOutcome.perCommitUsd)}</span>
         </div>`).join("") : voidLine([commitWhy, merged.length ? "" : mergeWhy].filter(Boolean).join(" · "));
       $("pMergeHead").hidden = !merged.length;
-      $("pMergeRows").innerHTML = merged.length ? merged.slice(0, MODELS_SHOWN).map(([x, m]) => `<div class="mrow door" data-inspect="project:${esc(projectKeyOf(x))}" tabindex="0" role="button" title="${esc(pn("project", x.name))} · spend in the window of the work per local default-branch integration — not attribution · open">
+      $("pMergeRows").innerHTML = merged.length ? merged.slice(0, MODELS_SHOWN).map(([x, m]) => `<div class="mrow door" data-inspect="project:${esc(doorId("project", projectKeyOf(x)))}" tabindex="0" role="button" title="${esc(pn("project", x.name))} · spend in the window of the work per local default-branch integration — not attribution · open">
           <span class="mn"><span class="txt">${esc(pn("project", x.name))}</span></span><span class="ms"></span>
           <span class="mbar" aria-hidden="true"><i style="width:${Math.max(1, Math.round((m.per / mmax) * 100))}%"></i></span>
           <span class="mv" data-src="projects.costPerOutcome.defaultMerges">${m.count}</span>
@@ -2466,7 +2640,7 @@
     const other = ev.target.closest("button, a");
     if (other && !other.hasAttribute("data-inspect")) return;   // Remove and Cancel keep their own job
     const [kind, ...rest] = door.dataset.inspect.split(":");
-    openInspect(kind, rest.join(":"), door);
+    openInspect(kind, idFromUrl(rest.join(":")), door);
   });
   const ikv = (cells) => `<div class="ikv">${cells.map(([v, l, cls, src]) => `<div><div class="v${cls ? " " + cls : ""}"${src ? ` data-src="${src}"` : ""}>${v}</div><div class="l">${esc(l)}</div></div>`).join("")}</div>`;
   // What a machine's reporter said it could not count: a count, or a void with its reason when that version never said (never a zero).
@@ -2481,7 +2655,7 @@
     : `<div class="iquiet">No session in the last 24 hours.</div>`;
   const stateWord = (s) => s === "live" ? "LIVE" : s === "idle" ? "IDLE" : s === "revoked" ? "REMOVED" : s === "catching-up" ? "CATCHING UP" : s === "reconnecting" ? "RECONNECTING" : "SILENT";
   const laneList = (lanes, cap = "24 h", total = null) => lanes.length
-    ? `<div class="ihead">Sessions <span>${total && total > lanes.length ? `${lanes.length} of ${total}` : lanes.length} · ${esc(cap)}</span></div>` + lanes.slice(0, 12).map((l) => `<div class="irow" data-lane="${esc(l.key)}" tabindex="0" role="button" title="Open the lane · ${esc(pn("project", l.project.name))}${l.branch ? " · " + esc(pn("branch", l.branch)) : ""}"><span class="nm"><b>${esc(pn("project", l.project.name))}</b>${l.branch ? `<em>${esc(pn("branch", l.branch))}</em>` : ""}</span><span class="md">${esc(l.modelLabel)}</span><span class="r" data-src="lanes.tokensDay">${l.tokensDay == null ? "—" : fmt(l.tokensDay)}</span><span class="st ${l.state}">${stateWord(l.state)}</span></div>`).join("")
+    ? `<div class="ihead">Sessions <span>${total && total > lanes.length ? `${lanes.length} of ${total}` : lanes.length} · ${esc(cap)}</span></div>` + lanes.slice(0, 12).map((l) => `<div class="irow" data-lane="${esc(l.key)}" tabindex="0" role="button" title="Open the lane · ${esc(pn("project", l.project.name))}${l.branch ? " · " + esc(pn("branch", l.branch)) : ""}"><span class="nm"><b>${esc(pn("project", l.project.name))}</b>${l.branch ? `<em>${esc(pn("branch", l.branch))}</em>` : ""}</span><span class="md" title="${esc(l.modelLabel)}">${esc(l.modelLabel)}</span><span class="r" data-src="lanes.tokensDay">${l.tokensDay == null ? "—" : fmt(l.tokensDay)}</span><span class="st ${l.state}">${stateWord(l.state)}</span></div>`).join("")
       + (lanes.length > 12 ? `<div class="iquiet">${lanes.length - 12} more in the lanes</div>` : "")
       + (total && total > lanes.length ? `<div class="iquiet">${plural(total, "session")} in all; the hub sends ${lanes.length} to draw</div>` : "")
     : total ? `<div class="iquiet">${plural(total, "session")} in the last 24 hours, none among the lanes the hub sent to draw.</div>` : `<div class="iquiet">No session in the last 24 hours.</div>`;
@@ -2550,7 +2724,7 @@
           <div class="ihead">Last hour <span>${s ? fmt(s.spark.reduce((x, y) => x + y, 0)) + " tokens" : "—"}</span></div>${isparkHtml(s, p.reporting === 0)}
           ${modelList(a.models, cap)}
           <div class="ihead">Machines <span>${p.devices.length}</span></div>
-          ${p.devices.map((id) => deviceOf(id)).filter(Boolean).map((d) => `<div class="irow mach" data-inspect="machine:${esc(d.id)}" tabindex="0" role="button" title="Open ${esc(pn("machine", d.label))}"><b>${esc(pn("machine", d.label))}</b><span class="status ${d.status}"><i></i>${esc(statusText(d, now))}</span><span class="r" data-src="devices.windows.tokens.total">${fmt(pw(d).tokens.total)}</span><span class="r">${pct(pw(d).shareOfWhole, 0)}</span></div>`).join("")}
+          ${p.devices.map((id) => deviceOf(id)).filter(Boolean).map((d) => `<div class="irow mach" data-inspect="machine:${esc(d.id)}" tabindex="0" role="button" title="Open ${esc(pn("machine", d.label))}"><b>${esc(pn("machine", d.label))}</b><span class="status ${d.status}" title="${esc(statusText(d, now))}"><i></i><span>${esc(statusText(d, now))}</span></span><span class="r" data-src="devices.windows.tokens.total">${fmt(pw(d).tokens.total)}</span><span class="r">${pct(pw(d).shareOfWhole, 0)}</span></div>`).join("")}
           ${laneList(D.lanes.filter((l) => p.devices.includes(l.device.id)), "24 h", lt ? lt.sessions : null)}`;
       }
     } else if (inspect.kind === "project") {
@@ -2584,7 +2758,7 @@
           ${res ? `<div class="ihead">Tools · 5 min <span>${res.ok} ok · ${res.error} error${activityFloor(l) ? "<em class=\"part\">+</em>" : ""}</span></div><div class="iquiet">${Object.entries(l.activity.calls || {}).filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1]).map(([k, c]) => `${c} ${TOOL_KIND[k] || k}`).join(" · ") || "no tool call"} · kinds and counts only${activityFloor(l) ? ` · <b>a floor</b>: ${esc(activityWhy(l).replace(/^./u, (c) => c.toLowerCase()))}` : ""}</div>`
             : activityState(l) !== "complete" ? `<div class="ihead">Tools · 5 min <span>${esc(COVERAGE_WORD[activityCoverageOf(l).reason] || "unknown")}</span></div><div class="iquiet">${esc(activityWhy(l))}${activityState(l) === "partial" ? "; its recent tools are unavailable, not idle" : "; the lane may well be busy"}.</div>` : ""}
           <div class="ihead" id="inspectContext">Context</div><div class="context-details">${contextHtml(l)}</div>
-          ${(l.agentTree || []).length ? `<div class="ihead">Agents <span>${l.agentTree.length}</span></div>` + l.agentTree.map((agent, i) => `<div class="irow"><span class="nm"><b>${i === 0 ? "Orchestrator" : "↳ Subagent"}</b>${agent.firstAt ? `<em>${hhmm(agent.firstAt)}</em>` : ""}</span><span class="md">${esc(agent.modelLabel)}</span><span class="r">${agent.tokens == null ? "—" : fmt(agent.tokens)}</span><span class="r">${agent.tokens == null || !l.tokensDay ? "—" : pct(agent.tokens / l.tokensDay, 0)}</span></div>`).join("") : ""}`;
+          ${(l.agentTree || []).length ? `<div class="ihead">Agents <span>${l.agentTree.length}</span></div>` + l.agentTree.map((agent, i) => `<div class="irow"><span class="nm"><b>${i === 0 ? "Orchestrator" : "↳ Subagent"}</b>${agent.firstAt ? `<em>${hhmm(agent.firstAt)}</em>` : ""}</span><span class="md" title="${esc(agent.modelLabel)}">${esc(agent.modelLabel)}</span><span class="r">${agent.tokens == null ? "—" : fmt(agent.tokens)}</span><span class="r">${agent.tokens == null || !l.tokensDay ? "—" : pct(agent.tokens / l.tokensDay, 0)}</span></div>`).join("") : ""}`;
       }
     }
     $("inspectTitle").textContent = title;

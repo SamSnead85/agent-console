@@ -257,6 +257,7 @@ test("H05/H17: counts come from every lane, not the 80 sent; an old root keeps i
   assert.ok(!view.lanes.some((l) => l.key === h("child").slice(0, 16)), "a subagent is never its own lane");
   const all = Object.values(view.laneTotals.byLocalProject);
   assert.equal(all.reduce((a, p) => a + p.sessions, 0), 51, "this machine's lanes, by project");
+  assert.equal(all.reduce((a, p) => a + p.subagents, 0), 1, "this machine's subagents, by project (R2-M1): from the rollup, never the rows drawn");
   for (const p of all) assert.equal(p.hourSpark.length, 20);
 });
 

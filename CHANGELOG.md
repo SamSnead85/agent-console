@@ -2,6 +2,55 @@
 
 ## Unreleased
 
+- The lanes pane is never left standing empty: when the day's lanes leave it
+  room, the lanes idle for more than an hour fill it, dimmed, under a hairline
+  that names them cold, with the rest in the Cold fold; when every lane of the
+  day fits with room to spare, the card hugs its rows and this machine's
+  Projects fold opens in the room until the reader opens or closes a fold by
+  hand; with no lane at all the pane is the hatched void with its reason and
+  "Nothing is estimated in its place". The UI probe holds the gap under the
+  last row to 48px at 1440 and 1920 on the demo, a synthetic month and a
+  four-lane hub.
+- Team's alert head prints the day's count from the hub's own counter
+  (`alertsToday`), exact, and says "· 100 kept" when the list it draws is
+  shorter — never the length of the kept list as the day's figure. Projects'
+  sessions, live and subagent counts come from the hub's per-project rollup
+  over every lane on this machine, so the band, the strip and the Sessions
+  head agree.
+- The "24 h" group label over the four day columns has a row of its own inside
+  the lane header, whole at every width. The strip's clock, scan note and
+  presenter controls sit on a plate of the strip's own dark, so quiet ink reads
+  over the brightest part of the artwork; the probe samples the pixels behind
+  them and holds 4.5:1.
+- Closing a sheet returns focus to the row that opened it inside its own
+  container: a Team table row is never mistaken for the band's row for the
+  same person, a lane opened with Enter gets its focus back, and a row
+  repainted away hands the focus to its section's head, never to the body.
+  Focus then survives the next poll: when the Team tables, the band's rows or
+  the Projects lists are rebuilt under the row the keyboard is on, its
+  successor takes the focus, so a place in a table is never lost to a
+  repaint (the probe checks past the next poll).
+- While presenting, a person's or project's door (`data-inspect`) carries the
+  same opaque token as the address, so no name remains in any attribute; the
+  probe scans every attribute value, not only the text.
+- One quiet line per pane once any figure in it is a floor — "+ a floor · 3
+  messages not counted" under the by-machine rows, in the spend legend and
+  beside the class legend — never a bare "+" with no legend, never a zero
+  count named as a cause.
+- The burn rate's money is in the tokens' unit ($/min beside tok/min, $/s
+  beside tok/s; the hour on hover): one denominator per line. The lane
+  inspector's context history is a stepped area with the flag threshold as a
+  hairline and the peak named, not a row of bars. The Projects Live column
+  prints a measured 0 and keeps "—" for unknown. A period read from the daily
+  rollup marks sessions "—" per cell with the sentence once in the pane's hint
+  and on the column head, and an empty hour prints a counted 0. A long project
+  name in an inspector's session rows gives way inside its own cell with its
+  whole on hover. The join page's Copy with nothing to copy is drawn out, not
+  in the accent.
+- `scripts/ui-probes.mjs` no longer waits for a network that is never idle
+  (the console polls every two seconds): each page is waited for by its own
+  reading, every section fails by name instead of aborting the run, and the
+  last line counts checks and failures for the gate to read.
 - Every row's activity is the wave: the Console lanes, the Projects and
   Sessions tables, the Team People and Machines tables and the inspector's
   hour draw the same soft line over the chart's light as the activity chart,

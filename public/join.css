@@ -44,6 +44,8 @@
 .cmd.open .chk { display: inline; }
 .cmd.open .chk-fold { display: none; }
 .copyrow .btn { height: auto; min-height: 38px; flex: none; }
+/* a Copy with nothing to copy is out, and looks out (G13): the tray's own surface, quiet ink, no accent fill inviting the click; its reason stays on it */
+.copyrow .btn.primary:disabled { background: var(--tile2); color: var(--quiet); box-shadow: var(--inset); opacity: 1; transform: none; cursor: not-allowed; }
 .fine { font: 400 calc(12px * var(--k))/1.5 var(--sans) !important; color: var(--quiet) !important; margin-top: 8px !important; }
 .linkbtn { border: 0; background: none; cursor: pointer; font: 500 calc(12px * var(--k)) var(--sans); color: var(--lit); min-height: 24px; padding: 2px 0; }
 .linkbtn:hover { text-decoration: underline; }

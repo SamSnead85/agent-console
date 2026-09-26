@@ -54,8 +54,8 @@
         "byDevice": { "type": "object", "additionalProperties": { "$ref": "#/$defs/laneTally" } },
         "byPerson": { "type": "object", "additionalProperties": { "$ref": "#/$defs/laneTally" } },
         "byLocalProject": { "type": "object", "additionalProperties": {
-          "type": "object", "required": ["sessions", "live", "hourSpark"], "additionalProperties": false,
-          "properties": { "sessions": { "type": "integer" }, "live": { "type": "integer" },
+          "type": "object", "required": ["sessions", "live", "subagents", "hourSpark"], "additionalProperties": false,
+          "properties": { "sessions": { "type": "integer" }, "live": { "type": "integer" }, "subagents": { "type": "integer", "description": "Subagent threads folded into those sessions (R2-M1): the Projects view's count, over every lane on this machine." },
             "hourSpark": { "type": "array", "minItems": 20, "maxItems": 20, "items": { "type": "integer" } } } } },
         "subagentCount": { "type": "integer" },
         "periods": {
