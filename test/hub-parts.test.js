@@ -115,7 +115,7 @@ test("--listen takes an address, and the console never answers a foreign host", 
   assert.equal(readConfig(["--retention-days", "400"], {}).retentionDays, 90);
   assert.equal(readConfig(["--demo"], {}).stateDir, null, "demo keeps nothing on disk");
   assert.equal(readConfig(["--no-local"], {}).local, false);
-  assert.deepEqual(hubAddresses("127.0.0.1", 6787), { network: false, urls: ["http://127.0.0.1:6787"] });
+  assert.deepEqual(hubAddresses("127.0.0.1", 6787), { network: false, urls: ["http://127.0.0.1:6787"], advertised: false, wsl: false });
   assert.equal(hubAddresses("192.168.1.20", 6787).urls[0], "http://192.168.1.20:6787");
   const req = (host, remote) => ({ headers: { host }, socket: { remoteAddress: remote } });
   assert.equal(isLocalRequest(req("127.0.0.1:6787", "127.0.0.1")), true);

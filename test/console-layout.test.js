@@ -108,8 +108,9 @@ test("no numeric is cut and no unit is said twice", () => {
   assert.doesNotMatch(CSS, /table\.grid \.models \{[^}]*max-width/u);
   assert.doesNotMatch(CSS, /table\.grid \.models \.names \{[^}]*text-overflow: ellipsis/u);
   // the Projects table's estimate column: the header carries the one label for the estimate, the cell the figure, "+" when it is a floor
-  assert.match(HTML, /<th scope="col" class="r" title="List-price estimate, not an invoice">Est\. \$<\/th>/u);
-  const cell = JS.match(/data-l="est\." data-internal data-src="projects\.usd"[^>]*>\$\{x\.usd === null \? "unpriced" : money\(x\.usd\)\}\$\{projCost\(x\)\.status === "partial" \? "\+" : ""\}<\/td>/u);
+  // (the head carries `est` so that, while presenting, it steps back with the column's values — R3-09)
+  assert.match(HTML, /<th scope="col" class="r est" title="List-price estimate, not an invoice">Est\. \$<\/th>/u);
+  const cell = JS.match(/data-l="est\." data-money data-src="projects\.usd"[^>]*>\$\{x\.usd === null \? "unpriced" : money\(x\.usd\)\}\$\{projCost\(x\)\.status === "partial" \? "\+" : ""\}<\/td>/u);
   assert.ok(cell, "the Est. cell is the figure alone, marked + when partial");
   // one label for the estimate everywhere: "Est. $" in table heads, "est. $" in pane heads, "est." only as a suffix on a figure
   assert.doesNotMatch(HTML, /<th[^>]*>Est\. cost<\/th>/u);
@@ -177,7 +178,8 @@ test("a row that opens an inspector is a 24px target, and the type keeps its siz
   // every inspector-opening row still carries the door class the rule sizes
   assert.match(JS, /<div class="xrow door \$\{d\.status\}" title=/u);
   assert.match(JS, /<div class="xrow msgs door" data-inspect="person:/u);
-  assert.equal((JS.match(/<div class="mrow door" data-inspect="project:/gu) || []).length, 3, "share, spend-per-commit and spend-per-merge rows");
+  assert.equal((JS.match(/<div class="mrow (?:proj )?door" data-inspect="project:/gu) || []).length, 3, "share, spend-per-commit and spend-per-merge rows");
+  assert.match(CSS, /\.mrow\.proj \{ grid-template-columns: minmax\(0, 1fr\) auto/u, "the share rows give the project name the room (R3-15)");
 });
 
 test("on a phone the hour axis caption, the person's machine status and the lane's DEMO stamp are shown whole", () => {
@@ -201,7 +203,7 @@ test("on a phone the hour axis caption, the person's machine status and the lane
   const [, padL, phoneGap, st, pr, fm, la] = phoneRule.map(Number);
   assert.ok(padL + st + pr + fm + 2 * phoneGap <= 354, `the on-screen three end at ${padL + st + pr + fm + 2 * phoneGap}px, past the 354px the scroller shows at 390`);
   assert.equal(pr, 120, "the name has 120px, its branch on a 12px second line");
-  assert.match(phone, /\.lane \.pr \{ flex-direction: column;/u);
+  assert.match(phone, /\.lane \.pr \{ display: flex; flex-direction: column;/u);
   assert.ok(la >= 60, "Last holds a clock time on a phone");
   assert.equal((CSS.match(/grid-template-columns: calc\(124px \* var\(--k\)\) minmax\(calc\(1[3-9]\dpx \* var\(--k\)\)/gu) || []).length, 5, "desk, narrow, narrow from 1280, folded and wide lane grids");
   assert.doesNotMatch(CSS, /grid-template-columns: calc\((96|104)px \* var\(--k\)\) minmax\(calc\(1[3-9]\dpx/u);
@@ -230,10 +232,11 @@ test("between 1241 and 1439 every lane column fits the frame, header and value, 
   // the whole minimum fits the frame at 1241: 1241 − 2 × 24px shell − 2 × 8px tray = 1177px for the row, less its own 20px + 16px padding
   const minimum = mins.reduce((a, b) => a + b, 0) + 13 * gap + 36;
   assert.ok(minimum <= 1177, `the lane grid's minimum is ${minimum}px, more than the 1177px the frame has at 1241`);
-  // the project name stays whole in the project track's minimum: "project b1d604" is 101px in Plex Mono 12px, and the name's share of the cell must hold it
-  const share = narrow.match(/\.lane \.pr b \{ max-width: (\d+)%; \}/u);
-  assert.ok(share, "the name's share of the project cell at this width");
-  assert.ok((mins[1] * Number(share[1])) / 100 >= 101, `the project name gets ${(mins[1] * Number(share[1])) / 100}px of a ${mins[1]}px track, less than the 101px "project b1d604" needs`);
+  // the project name stays whole in the project track's minimum: "project b1d604" is 101px in Plex Mono 12px; the cell is a grid whose
+  // first track is the name's own width (R3-04), so the name may take the whole track and the branch gives way first — no fixed share
+  assert.doesNotMatch(narrow, /\.lane \.pr b \{ max-width: \d+%; \}/u, "no fixed cap on the name's share of the project cell");
+  assert.match(CSS, /\.lane \.pr \{ min-width: 0; display: grid; grid-template-columns: minmax\(0, auto\) minmax\(0, 1fr\);/u);
+  assert.ok(mins[1] >= 101, `the project track is ${mins[1]}px, less than the 101px "project b1d604" needs`);
   // the desk grid (1440 and up) keeps its own tracks, and its minimum fits 1440's 1376px (1440 − 48 shell − 16 tray)
   const desk = CSS.match(/\n\.lhead, \.lane \{ display: grid;[^}]*grid-template-columns: ([^}]*); \}/u);
   assert.ok(desk, "the desk lane grid");

@@ -184,3 +184,10 @@ passes, split mid-response, gives exactly the records of one pass.
   background needs the console to show that it is still loading.
 - A reporter's first catch-up holds its backlog in memory while it sends it
   in batches of 500. The hub's own machine no longer does.
+
+Live collectors also keep an in-memory directory scan. Between complete
+sweeps, they check recently active transcripts and folders where files can
+appear. A complete sweep runs in bounded slices at least once a minute; a
+replacement file is detected by its birth time even if its size and
+modification time are unchanged. This reduces idle scanning without changing
+token retention or the accounting identity rules.

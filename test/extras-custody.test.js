@@ -350,7 +350,9 @@ test("a reporter restart replays pending extras exactly once", async (t) => {
 
 test("a hub restart shows the unavailable interval", () => {
   const NOW = Date.UTC(2026, 8, 25, 22, 0, 30);
-  const startedAt = NOW - 2 * MINUTE;   // this console restarted two minutes ago
+  // This console restarted twenty seconds ago; the reporter, sharing all
+  // along, is heard at its next report, within one live interval.
+  const startedAt = NOW - 20_000;
   const c = consoleWith({ now: NOW, startedAt });
   c.fleet.accept("dev_r", { share: { alerts: "on", activity: "on" }, activity: activityFor([c.entry("c1", NOW - MINUTE)]) }, NOW);
   let v = c.view(NOW);

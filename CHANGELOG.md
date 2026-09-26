@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased
+
+- Keep keyboard focus on session rows and their Context buttons through live
+  refreshes and row reordering, without overriding dialogs or another control.
+- Preserve older executable caches during upgrades so a running console keeps
+  serving its interface; verify that behavior in every native build.
+- Make dense tables readable on phones, preserve full labels and totals while
+  presenting, and fit session lists and expandable sections to available space.
+- Distinguish quiet, unobserved and incomplete intervals in charts and tables.
+  Retained alerts are labeled as a bounded list, including after a restart;
+  they are not presented as a complete daily count.
+- Show separate session lanes for each reporting machine while keeping shared
+  record IDs globally deduplicated. The hash-based accounting report retains
+  its existing grouping and documents its attribution limits.
+- Find Claude Code and Codex transcripts in configured and archived folders,
+  report scan progress and empty-source locations, and honor the polling interval.
+- Reduce repeated directory scanning, and detect replacement transcripts even
+  when their size and modification time match the previous file.
+- Keep the configured retention and truthful partial-history behavior. Old
+  copied transcripts cannot enter the daily rollup through a separate import path.
+- Prefer reachable local network adapters for join links, support an explicit
+  advertised address, and explain Windows Subsystem for Linux networking.
+- Keep private names and command paths out of the full document source while
+  presenting, including script content and attributes.
+
 ## 0.4.0 — 2026-09-25
 
 ### Console and team visibility

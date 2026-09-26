@@ -169,7 +169,7 @@ button { font: inherit; color: inherit; }
 }
 
 /* the lockup: the real mark, then the product, then the firm */
-.lockup { display: inline-flex; align-items: center; gap: calc(10px * var(--k)); color: var(--ink); text-decoration: none; }
+.lockup { display: inline-flex; align-items: center; gap: calc(10px * var(--k)); color: var(--ink); text-decoration: none; min-height: 24px; padding: 1px 0; }
 .lockup svg { width: calc(22px * var(--k)); height: calc(22px * var(--k)); flex: none; }
 .lockup .p { font: 500 calc(13.5px * var(--k)) var(--sans); letter-spacing: -.005em; }
 .lockup .f { font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); }

@@ -77,7 +77,13 @@ body[data-demo="false"] .demo-only { display: none; }
   /* the lanes card takes the canvas's height: its rows scroll inside it under their own header, its footer sits at its foot,
      and nothing stands empty above the fold strip; with a fold open it keeps at least half the canvas and the canvas scrolls */
   #consoleCanvas .lanes { flex: 1 1 auto; min-height: 50%; display: flex; flex-direction: column; }
-  #consoleCanvas .lanebody { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--hair) transparent; }
+  /* the day's lanes leave the pane room (G06): the card hugs its rows, and what is left under the strip is the tray, as on Projects and Team */
+  #consoleCanvas .lanes.hug { flex: 0 0 auto; min-height: 0; }
+  #consoleCanvas .lanebody { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--hair) transparent; display: flex; flex-direction: column; }
+  /* the rows' box takes the pane's height, so an empty pane's void fills it (G06); the sticky header stays a flex item above it */
+  #consoleCanvas .lanebody > .lhead { flex: none; }
+  #consoleCanvas #cLanes { flex: 1 1 auto; display: flex; flex-direction: column; }
+  #consoleCanvas #cLanes > .lane, #consoleCanvas #cLanes > .agent-tree { flex: none; }
   #consoleCanvas .lanebody:focus-visible { outline: 2px solid var(--lit); outline-offset: -2px; }
   /* the strip carries each fold's summary; a fold itself takes no room until its button opens it under the strip */
   #consoleCanvas .foldrow:not([open]) { display: none; }
@@ -113,7 +119,13 @@ body[data-demo="false"] .demo-only { display: none; }
 }
 /* the words sit on the dark left; the glass and its light read from a third of the way across, and the far right dims again under the clock and the controls */
 .conhead::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: linear-gradient(90deg, #070B13 0%, #070B13 24%, rgba(7, 11, 19, .78) 38%, rgba(7, 11, 19, .34) 52%, rgba(7, 11, 19, .18) 70%, rgba(7, 11, 19, .5) 86%, rgba(7, 11, 19, .72) 100%), linear-gradient(0deg, rgba(5, 8, 14, .3), transparent 60%); }
+  background: linear-gradient(90deg, #070B13 0%, #070B13 24%, rgba(7, 11, 19, .78) 38%, rgba(7, 11, 19, .34) 50%, rgba(7, 11, 19, .2) 60%, rgba(7, 11, 19, .62) 68%, rgba(7, 11, 19, .82) 100%), linear-gradient(0deg, rgba(5, 8, 14, .3), transparent 60%); }
+/* the clock, the scan note and the two controls sit on a plate of the strip's own dark (G04): quiet ink over the brightest part of the
+   artwork has no contrast to speak of, so each carries its ground with it — .86 of the strip's black over the worst the image can be
+   (white) still leaves 5:1 under 12px quiet ink; the artwork reads through between them */
+.conhead .clock, .conhead .scan, .conhead .ctrls { background: rgba(7, 11, 19, .86); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-radius: 6px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
+.conhead .clock, .conhead .scan { padding: 3px 8px; }
+.conhead .ctrls { padding: 0 2px; }
 /* the instrument's name, in the display sans, and the view beside it */
 .conhead h1 { margin: 0; font: 300 calc(22px * var(--k))/1 var(--sans); letter-spacing: -.02em; color: var(--ink); white-space: nowrap; }
 .conhead .vt { font: 300 calc(22px * var(--k))/1 var(--sans); letter-spacing: -.02em; color: var(--ink2); margin-left: calc(-8px * var(--k)); white-space: nowrap; }
@@ -162,7 +174,7 @@ body.paused .conhead .cap i.on, body.paused .waiting i { animation: none; }
 .console > .col:first-child { padding-left: calc(16px * var(--k)); }
 .console > .col:last-child { padding-right: calc(16px * var(--k)); }
 /* a card answers the hand: it lifts under the pointer and settles under a press */
-@media (hover: hover) { .console > .col:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 var(--card-rim), inset 0 0 0 1px var(--card-edge), var(--card-lift); } }
+@media (hover: hover) { .console > .col:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--card-rim) 70%, #fff), inset 0 0 0 1px var(--card-edge), var(--card-lift); } }
 .console > .col:active { transform: translateY(0) scale(.997); box-shadow: inset 0 1px 0 var(--card-rim), inset 0 0 0 1px var(--card-edge), var(--card-press); }
 /* an instrument sits sunk into its card */
 .inst { background: var(--tile2); border-radius: 7px; box-shadow: var(--inset); padding: calc(6px * var(--k)) calc(6px * var(--k)) 0; }
@@ -296,6 +308,12 @@ body.paused .wave .top, .flowwrap.void .wave .top { filter: none; }
 .mrow { display: grid; grid-template-columns: calc(104px * var(--k)) auto 1fr calc(60px * var(--k)) calc(64px * var(--k)); align-items: center; gap: calc(8px * var(--k)); margin-top: calc(1px * var(--k)); line-height: 1.2; min-height: calc(17px * var(--k)); }
 /* a row that opens an inspector is a 24px target (WCAG 2.5.8): the type keeps its size, the row takes the height */
 .mrow.door { min-height: 24px; margin-top: 0; cursor: pointer; }
+/* a ranking of projects (R3-15): the name is the reading and takes the room, in the sans the Projects table names them in; the bar is the
+   illustration and is held to a short fixed span, the share and the estimate to what their figures need */
+.mrow.proj { grid-template-columns: minmax(0, 1fr) auto minmax(calc(48px * var(--k)), calc(72px * var(--k))) calc(44px * var(--k)) calc(64px * var(--k)); }
+/* a name longer than its track wraps to a second line (D07: two lines with the whole on hover, never an ellipsis on meaning) */
+.mrow.proj .mn { font-family: var(--sans); white-space: normal; }
+.mrow.proj .mn .txt { overflow: visible; text-overflow: clip; white-space: normal; line-height: 1.2; overflow-wrap: anywhere; }
 .mrow .ms { display: flex; min-width: 0; }
 .mrow .ms:empty { margin-left: calc(-8px * var(--k)); }
 .mn { font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); white-space: nowrap; display: flex; align-items: center; gap: calc(6px * var(--k)); min-width: 0; }
@@ -341,7 +359,10 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .attention .ahead { font: 500 calc(20px * var(--k))/1.15 var(--sans); letter-spacing: -.018em; color: var(--quiet); display: flex; align-items: center; gap: 8px; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .attention.hot .ahead { color: var(--warn); }
 .attention.hot .ahead::before { content: "▲ "; font-size: calc(13px * var(--k)); }
-.attention .aline { margin-top: calc(2px * var(--k)); font: 400 calc(12.5px * var(--k))/1.35 var(--sans); color: var(--ink); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; font-variant-numeric: tabular-nums; }
+/* the hero's second line is ordered parts on one line (R3-07): the least important drop whole when the card is tight, never a clamp that cuts a sentence mid-word; the whole line is on hover */
+.attention .aline { margin-top: calc(2px * var(--k)); font: 400 calc(12.5px * var(--k))/1.35 var(--sans); color: var(--ink); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.attention .aline .fseg[hidden] { display: none; }
+.attention .aline .sep { margin: 0 5px; opacity: .5; }
 .attention .aline em { font-style: normal; font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); }
 .attention .aline b { font-weight: 500; }
 .attention .aline .x { color: var(--warn); font-weight: 500; }
@@ -372,6 +393,10 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .arow time { grid-area: time; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); white-space: nowrap; font-variant-numeric: tabular-nums; padding-top: 1px; }
 .arow .cause { display: none; }
 .alist .rule { margin-top: 4px; padding: 2px 0 0; border-top: 1px solid var(--hair2); font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--quiet); }
+/* the rule over the earlier alerts is itself the door to the whole list ("6 alerts earlier · open"), never a heading over a cut row; a row the card's height would cut is hidden whole (R3-07) */
+.alist .rule.door { display: flex; align-items: center; min-height: 24px; width: 100%; border: 0; border-top: 1px solid var(--hair2); background: none; cursor: pointer; text-align: left; border-radius: 4px; transition: color .16s var(--ease), background .16s var(--ease); }
+.alist .rule.door:hover, .alist .rule.door:focus-visible { color: var(--ink2); background: var(--row-hover); }
+.alist > [hidden] { display: none; }
 /* the card's own series: sixty minutes, one tick per alert, hatched from the moment a machine went silent */
 .astrip { margin-top: auto; padding-top: calc(5px * var(--k)); }
 .astrip svg { display: block; width: 100%; height: calc(16px * var(--k)); border-radius: 3px; background: var(--tile2); box-shadow: var(--inset); }
@@ -453,20 +478,24 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .lanescroll:focus-visible { outline: 2px solid var(--lit); outline-offset: -2px; }
 /* the state column is 124px at every width: room for the longest word the console says (REMOVED, RECONNECTING) beside the DEMO stamp, never a stamp cut to DEM;
    the last column is 60px, the width of a clock time, so a silent lane's last report is never cut */
-.lhead, .lane { display: grid; align-items: center; gap: calc(12px * var(--k)); padding: 0 calc(16px * var(--k)) 0 calc(20px * var(--k));
-  grid-template-columns: calc(124px * var(--k)) minmax(calc(150px * var(--k)), 1.2fr) minmax(calc(124px * var(--k)), .55fr) minmax(calc(92px * var(--k)), .5fr)
-    calc(66px * var(--k)) calc(78px * var(--k)) calc(58px * var(--k)) calc(60px * var(--k)) calc(60px * var(--k)) calc(50px * var(--k)) calc(58px * var(--k)) minmax(calc(128px * var(--k)), 1fr) minmax(calc(76px * var(--k)), .6fr) calc(60px * var(--k)); }
+/* the desk grid (1440 up to 1799): each figure column is held to what its widest header or value needs, so the room a 1440 frame has
+   beyond the minimum (its minimum is 1288px of the 1376px the frame holds) goes first to the project name (1.4fr), then to Doing,
+   the model, the machine and the activity — at 1440 the name's track is ~190px, wider than a twenty-six-character name (R3-04) */
+.lhead, .lane { display: grid; align-items: center; gap: calc(10px * var(--k)); padding: 0 calc(16px * var(--k)) 0 calc(20px * var(--k));
+  grid-template-columns: calc(124px * var(--k)) minmax(calc(160px * var(--k)), 1.4fr) minmax(calc(116px * var(--k)), .5fr) minmax(calc(92px * var(--k)), .4fr)
+    calc(54px * var(--k)) calc(72px * var(--k)) calc(48px * var(--k)) calc(52px * var(--k)) calc(60px * var(--k)) calc(50px * var(--k)) calc(58px * var(--k)) minmax(calc(120px * var(--k)), 1fr) minmax(calc(76px * var(--k)), .6fr) calc(60px * var(--k)); }
 .lhead { height: calc(32px * var(--k)); align-items: end; padding-bottom: 4px; font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--quiet); white-space: nowrap;
-  background: var(--band-head); border-bottom: 1px solid var(--hair2); box-shadow: inset 0 1px 0 var(--rim); overflow: hidden; position: relative; }
+  background: var(--band-head); border-bottom: 1px solid var(--hair2); box-shadow: inset 0 1px 0 var(--rim); overflow: visible; position: relative; }
 .lhead span { overflow: hidden; }
 /* Short headings keep their full text within the spare column gap; data tracks stay aligned. */
 .lhead .c-sp, .lhead .c-cx { min-width: max-content; }
 .lhead .c-cx { justify-self: end; }
-/* the four day figures are named for their window once: a bracket over their columns, the word sitting on its line, whatever the period control says */
-.lhead .grp { position: absolute; top: 3px; left: 0; right: 0; height: 9px; border-bottom: 1px solid var(--hair); font: 500 12px/1 var(--sans); letter-spacing: .1em; color: var(--quiet); text-align: center; pointer-events: auto; }
+/* the four day figures are named for their window once: a bracket over their columns, the word whole in a row of its own above the
+   bracket line (G03) — the row is as tall as the glyphs, so nothing of "24 H" is ever sliced by the header's edge */
+.lhead .grp { position: absolute; top: 0; left: 0; right: 0; height: 14px; border-bottom: 1px solid var(--hair); font: 500 12px/14px var(--sans); letter-spacing: .1em; color: var(--quiet); text-align: center; pointer-events: auto; overflow: visible; }
 .lhead .grp::before, .lhead .grp::after { content: ""; position: absolute; bottom: 0; width: 1px; height: 4px; background: var(--hair); }
 .lhead .grp::before { left: 0; } .lhead .grp::after { right: 0; }
-.lhead .grp span { position: relative; top: 3px; display: inline-block; padding: 0 6px; background: var(--band-head); }
+.lhead .grp span { position: relative; top: 0; display: inline-block; height: 14px; line-height: 14px; padding: 0 6px; background: var(--band-head); overflow: visible; }
 .lhead .c-in .long, .lhead .c-pr .long { display: inline; } .lhead .c-in .short, .lhead .c-pr .short { display: none; }
 .lhead .r, .lane .r { text-align: right; }
 .lane { position: relative; height: calc(26px * var(--k)); border-bottom: 1px solid var(--hair2); font-size: calc(12.5px * var(--k)); transition: background .18s var(--ease); cursor: pointer; }
@@ -495,10 +524,13 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .lane.silent .st, .lane.revoked .st, .lane.catching-up .st, .lane.reconnecting .st { color: var(--quiet); }
 .lane.silent .st { color: var(--warn); }
 .lane.silent .st i, .lane.revoked .st i, .lane.catching-up .st i, .lane.reconnecting .st i { background: none; box-shadow: inset 0 0 0 1px currentColor; animation: none; }
-.lane .pr { min-width: 0; display: flex; align-items: baseline; gap: calc(8px * var(--k)); white-space: nowrap; overflow: hidden; }
-.lane .pr b { font: 500 calc(12.5px * var(--k)) var(--sans); flex: none; max-width: 70%; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+/* the name keeps its cell (R3-04): the cell is a grid whose first track takes the name's own width up to the cell, and the branch
+   (mono meta, its whole on the row's hover) takes what is left and gives way first — a three-word project is never cut beside a
+   four-letter branch, and alone it keeps the whole cell; only a name longer than the cell itself gives way, with the row's title */
+.lane .pr { min-width: 0; display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); align-items: baseline; column-gap: calc(8px * var(--k)); white-space: nowrap; overflow: hidden; }
+.lane .pr b { font: 500 calc(12.5px * var(--k)) var(--sans); min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
 .lane .pr b.hash { font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); }
-.lane .pr em { font-style: normal; font: 400 calc(12px * var(--k)) var(--mono); color: var(--quiet); overflow: hidden; text-overflow: ellipsis; }
+.lane .pr em { font-style: normal; font: 400 calc(12px * var(--k)) var(--mono); color: var(--quiet); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .lane .md { font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); white-space: nowrap; overflow: hidden; display: flex; align-items: center; gap: 6px; min-width: 0; }
 /* the tool as a chip before the model, whole at every width; the model name is the part that gives way, its whole on hover */
 .lane .md .tool { font-style: normal; font: 500 calc(12px * var(--k))/16px var(--mono); letter-spacing: .04em; color: var(--quiet); padding: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1px var(--hair2); flex: none; }
@@ -559,6 +591,28 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .lanes .empty, .coldlanes .empty { padding: calc(16px * var(--k)) calc(20px * var(--k)); color: var(--quiet); font-size: calc(12.5px * var(--k));
   background: repeating-linear-gradient(-45deg, var(--hatch) 0 6px, transparent 6px 13px); }
 .lanes .empty b, .coldlanes .empty b { color: var(--ink2); font-weight: 500; }
+/* nothing to draw at all: the pane is the hatched void, sized to its room, the reason and "nothing is estimated" under the head (G06) */
+.lanes .empty.voidfill { flex: 1 1 auto; min-height: calc(120px * var(--k)); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3px; text-align: center; }
+.lanes .empty.voidfill b { font: 500 calc(13px * var(--k)) var(--sans); display: block; }
+.lanes .empty.voidfill span { font: 400 calc(12px * var(--k)) var(--sans); max-width: 56ch; white-space: normal; }
+/* the cold lanes that fill the room under the warm rows: dimmed, under a hairline that names them; a hover or the keyboard lifts one whole */
+.lanesep { height: calc(26px * var(--k)); flex: none; display: flex; align-items: center; gap: calc(10px * var(--k)); padding: 0 calc(16px * var(--k)) 0 calc(20px * var(--k)); border-bottom: 1px solid var(--hair2);
+  font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); white-space: nowrap; }
+.lanesep::before, .lanesep::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--hair); }
+.lanesep span { flex: none; }
+.lane.cold { opacity: .58; }
+.lane.cold:hover, .lane.cold:focus-within, .lane.cold.focused { opacity: 1; }
+/* the room the day's rows leave (J4-12): the card hugs its rows, the folds that fit open under the strip, and what is left is the tray —
+   as on Projects and Team — never a hatched tile taller than 48px standing in for rows that do not exist */
+/* where this console looked (U1): the folders in mono with what each held, then the flag that points it elsewhere, one line each */
+.lanes .empty .where, #voidReason .roots { display: block; margin-top: 4px; white-space: normal; }
+.lanes .empty .where code, #voidReason code, .lanes .empty .hint code { font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); }
+.lanes .empty .held, #voidReason .held { color: var(--quiet); }
+.lanes .empty .hint, #voidReason .hint { display: block; margin-top: 4px; color: var(--quiet); }
+/* one quiet line per pane once any figure in it is a floor (G11): what the + means and how many messages had no price */
+.floorline { display: inline-flex; align-items: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); font-variant-numeric: tabular-nums; }
+.floorrow { min-height: 24px; display: flex; align-items: center; margin-top: calc(1px * var(--k)); }
+.bx .floorline { display: block; }
 .lfoot { min-height: calc(24px * var(--k)); padding: calc(3px * var(--k)) calc(16px * var(--k)) calc(3px * var(--k)) calc(20px * var(--k)); font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet);
   display: flex; flex-wrap: nowrap; align-items: center; gap: 4px 0; background: var(--band-foot); border-top: 1px solid var(--hair2); font-variant-numeric: tabular-nums; overflow: hidden; white-space: nowrap; }
 .lfoot span { padding-right: 14px; flex: none; }
@@ -628,6 +682,8 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .alert-rows.team .alert-row { padding-left: calc(20px * var(--k)); border-radius: 0; }
 .alert-rows.team .alert-row::before { left: 8px; }
 .alert-rows .none { padding: calc(8px * var(--k)) calc(20px * var(--k)); color: var(--quiet); font: 400 calc(12px * var(--k)) var(--sans); }
+/* nothing can be known of alerts (J4-05): a drawn void with its reason, hatched, never a row that reads as "none" */
+.alert-rows .none.held { background: repeating-linear-gradient(-45deg, var(--hatch) 0 5px, transparent 5px 11px); box-shadow: inset 0 0 0 1px var(--hair2); white-space: normal; line-height: 1.4; }
 
 /* ── section heads ────────────────────────────────────────── */
 .head { display: flex; align-items: center; gap: calc(12px * var(--k)); margin: calc(12px * var(--k)) 0 calc(8px * var(--k)); flex-wrap: wrap; flex: none; }
@@ -735,6 +791,11 @@ body[data-demo="true"] .status.reporting i { background: var(--lit); box-shadow:
 /* a cell the hub cannot fill says why in a word; a reading held back by a named cause is hatched; a row with nothing to count says so once across its cells */
 table.grid td .na { font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); }
 table.grid td .na.held { padding: 1px 6px; border-radius: 3px; background: repeating-linear-gradient(-45deg, var(--hatch) 0 3px, transparent 3px 7px); box-shadow: inset 0 0 0 1px var(--hair2); }
+/* no project in Git at all (R3-06): the Git columns are left out of the table and its head says so once */
+table.grid.nogit .git { display: none; }
+/* the days before this console's first record (R3-03): one hatched row, never a "no usage" per day */
+table.grid tr.void td { color: var(--quiet); }
+table.grid tr.partial td.k1 em.q { color: var(--quiet); }
 table.grid td.merged { text-align: left; }
 table.grid td.merged .na.held { display: inline-block; }
 .live-dot.on.sim i { background: var(--lit); box-shadow: 0 0 6px var(--cobalt-edge); }
@@ -785,6 +846,9 @@ dialog.sheet.dock[open] { animation: dockin .2s var(--ease); }
 .sheet input, .sheet select { height: calc(36px * var(--k)); border: 0; border-radius: 8px; padding: 0 12px; font: 400 calc(13.5px * var(--k)) var(--sans); color: var(--ink);
   background: var(--tile2); box-shadow: var(--inset); outline: none; min-width: 0; }
 .sheet input:focus, .sheet select:focus { box-shadow: inset 0 0 0 1px var(--cobalt-edge), 0 0 0 3px var(--cobalt-wash); }
+/* the select is the sheet's own material (R3-10): the tile ground, the inset, a drawn chevron — never the browser's grey control */
+.sheet select { appearance: none; -webkit-appearance: none; padding-right: 32px; cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5l5 5 5-5' fill='none' stroke='%237E8AA0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; }
 .sheet input[type="password"] { font-family: var(--mono); letter-spacing: .12em; }
 .copyrow { display: flex; gap: 8px; align-items: stretch; }
 .copyrow input { flex: 1; }
@@ -792,7 +856,8 @@ dialog.sheet.dock[open] { animation: dockin .2s var(--ease); }
 .cmd { flex: 1; display: block; padding: 9px 12px; border-radius: 8px; background: var(--tile2); box-shadow: var(--inset);
   font: 400 calc(12px * var(--k))/1.5 var(--mono); color: var(--ink2); overflow-wrap: anywhere; user-select: none; }
 .sheet .fine { margin: 0; font-size: calc(12px * var(--k)); color: var(--quiet); }
-.sheet .why summary { cursor: pointer; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); list-style: none; }
+/* the disclosure is a 24px target (WCAG 2.5.8, J4-06): the line keeps its type, the row takes the height */
+.sheet .why summary { cursor: pointer; font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); list-style: none; display: flex; align-items: center; min-height: 24px; }
 .sheet .why summary::before { content: "▸ "; }
 .sheet .why[open] summary::before { content: "▾ "; }
 .sheet .why summary::-webkit-details-marker { display: none; }
@@ -800,11 +865,14 @@ dialog.sheet.dock[open] { animation: dockin .2s var(--ease); }
 .warnline { margin: 0; padding: 10px 12px; border-radius: 8px; font-size: calc(12.5px * var(--k)); color: var(--ink2);
   background: linear-gradient(90deg, color-mix(in srgb, var(--warn) 14%, transparent), transparent); box-shadow: inset 3px 0 0 var(--warn); }
 .warnline .copyrow { margin-top: 8px; }
+.warnline .copyrow .btn { align-self: flex-start; }
 .warnline .cmd { font-size: max(12px, .95em); word-break: break-all; }
 .warnline code, .say code { font: 400 max(12px, .95em) var(--mono); color: var(--ink); }
 .waiting { margin: 0; display: flex; align-items: center; gap: 8px; font-size: calc(12.5px * var(--k)); color: var(--quiet); }
 .waiting i { width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--quiet); animation: bp 1.7s var(--ease) infinite; }
 .waiting.done { color: var(--good); }
+/* a wait that can never end is not drawn as live (R3-13): the demonstration's line is quiet, with no pulse */
+.waiting.demo i { animation: none; opacity: .6; }
 .waiting.done i { background: var(--good); box-shadow: none; animation: none; }
 .sheet footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; align-items: center; flex-wrap: wrap; }
 .sheet footer[hidden] { display: none; }
@@ -817,11 +885,16 @@ dialog.sheet.dock[open] { animation: dockin .2s var(--ease); }
 .context-details { font: 400 13px/1.55 var(--sans); color: var(--ink2); }
 .context-details b { color: var(--ink); font-weight: 500; }
 .context-details p { margin: 8px 0; }
-.cbars { display: flex; align-items: flex-end; gap: 3px; height: 72px; padding: 6px 6px 0; border-radius: 6px; background: var(--tile2); box-shadow: var(--inset); }
-.cbars i { flex: 1; min-width: 4px; border-radius: 2px 2px 0 0; background: var(--spark); position: relative; }
-.cbars i.last { background: var(--spark-hot); }
-.cbars i.brk::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px; background: var(--warn); }
+/* the context history as a stepped area (G15): each response a step in the chart's light, the latest lit, the flag a hairline, a cache signal a warn tick */
+.cstep { display: block; width: 100%; height: 72px; border-radius: 6px; background: var(--tile2); box-shadow: var(--inset); overflow: visible; }
+.cstep .area { fill: url(#wg); }
+.cstep .line { fill: none; stroke: var(--spark); stroke-width: 1.25; vector-effect: non-scaling-stroke; stroke-linejoin: miter; }
+.cstep .last { fill: none; stroke: var(--spark-hot); stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-linecap: round; }
+.cstep .flag { stroke: var(--warn); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; opacity: .85; }
+.cstep .brk { fill: var(--warn); }
+.cstep .hit { fill: transparent; }
 .cax { display: flex; justify-content: space-between; font: 400 12px var(--sans); color: var(--quiet); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.cax b { font-weight: 500; color: var(--ink2); }
 .context-details ol { margin: 6px 0; padding-left: 20px; }
 .context-details li { margin: 3px 0; font-family: var(--sans); font-size: 12px; font-variant-numeric: tabular-nums; }
 .context-details .ihead { margin-top: 10px; }
@@ -840,21 +913,38 @@ dialog.sheet.dock[open] { animation: dockin .2s var(--ease); }
 .inspect .ikv .v.warn, .context-details .ikv .v.warn { color: var(--warn); }
 .inspect .ikv .l, .context-details .ikv .l { font: 500 12px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--quiet); margin-top: 3px; }
 /* the inspector's last hour: the row wave, taller, sunk into its tile */
-.isparkwrap { padding: 6px 6px 0; border-radius: 6px; background: var(--tile2); box-shadow: var(--inset); }
+.isparkwrap { padding: 6px 6px 0; border-radius: 6px; background: var(--tile2); box-shadow: var(--inset); position: relative; }
+/* a drawn void reads as one (R3-11): the empty hour says so inside its tile, in quiet ink over the dotted base, as `.spw.none` does in a row */
+.isparkwrap .word { position: absolute; inset: 0 6px 8px; display: flex; align-items: center; justify-content: center; font: 400 12px var(--sans); color: var(--quiet); pointer-events: none; }
+/* one void for the Git that is not there (R3-06): a single hatched sentence in the inspector, never a "no Git" per figure */
+.inspect .iwide { display: block; margin-top: 6px; padding: 6px 8px; border-radius: 4px; font: 400 12px/1.4 var(--sans); color: var(--quiet); white-space: normal;
+  background: repeating-linear-gradient(-45deg, var(--hatch) 0 3px, transparent 3px 7px); box-shadow: inset 0 0 0 1px var(--hair2); }
 .ispark { display: block; width: 100%; height: 44px; overflow: visible; }
 .inspect .iline b.w { color: var(--warn); }
 .inspect .ihead, .context-details .ihead { display: flex; align-items: baseline; gap: 10px; margin-top: 4px; padding-bottom: 4px; border-bottom: 1px solid var(--hair2); font: 500 12px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); }
 .inspect .ihead span, .context-details .ihead span { margin-left: auto; font: 400 12px var(--sans); letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
 .inspect .mrow { grid-template-columns: 120px auto 1fr 60px 64px; }
-.inspect .irow { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 64px 60px; gap: 8px; align-items: center; min-height: 26px; border-bottom: 1px solid var(--hair2); font: 400 12px var(--sans); color: var(--ink2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* the name keeps its cell (R3-05): the name-and-branch column takes most of the row, the model and the state word only what they need;
+   inside the cell the branch gives way first (a fraction track that can reach zero) and the name only when it is alone and too long */
+.inspect .irow { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) 56px 46px; gap: 8px; align-items: center; min-height: 26px; border-bottom: 1px solid var(--hair2); font: 400 12px var(--sans); color: var(--ink2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .inspect .irow:last-child { border-bottom: 0; }
-.inspect .irow .nm { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
-.inspect .irow b { font: 500 12.5px var(--sans); color: var(--ink); flex: none; }
-.inspect .irow em { font-style: normal; font: 400 12px var(--mono); color: var(--quiet); overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* a person's machine row (J4-13): the name takes the room, and the state ("Reporting · now"), the tokens and the share take what
+   their words need, whole — never an ellipsis on a state word in a row with room to spare */
+.inspect .irow.mach { grid-template-columns: minmax(0, 1fr) auto auto auto; }
+.inspect .irow.mach .status { overflow: visible; }
+.inspect .irow.mach .status > span { overflow: visible; text-overflow: clip; }
+.inspect .irow .nm { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); align-items: baseline; column-gap: 6px; min-width: 0; overflow: hidden; }
+/* a long project name gives way inside its own cell (G08), its whole on the row's hover — never across the model and the figures */
+.inspect .irow b { font: 500 12.5px var(--sans); color: var(--ink); flex: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* the branch beside it gives way first — three times as readily as the name — so "atlas-web" keeps its word before "feat/checkout-flow" keeps its */
+.inspect .irow em { font-style: normal; font: 400 12px var(--mono); color: var(--quiet); overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 3 auto; white-space: nowrap; }
 .inspect .irow .r { text-align: right; }
 .inspect .irow .md { font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; }
 .inspect .irow .st { font: 500 12px var(--mono); letter-spacing: .06em; color: var(--quiet); }
+/* every cell keeps to its track — a long word gives way inside it, never across its neighbour (G08, at 390 too) */
+.inspect .irow > * { min-width: 0; }
 .inspect .irow .status { flex-wrap: nowrap; min-width: 0; overflow: hidden; }
+.inspect .irow .status > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .inspect .irow .st.live { color: var(--good); }
 body[data-demo="true"] .inspect .irow .st.live { color: var(--lit); }
 .inspect .iquiet, .context-details .iquiet { font: 400 12px var(--sans); color: var(--quiet); }
@@ -894,9 +984,10 @@ dialog.pal[open] { animation: sheetin .18s var(--ease); }
 #toast.show button { pointer-events: auto; }
 #toast kbd { font: 500 12px var(--mono); padding: 1px 5px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--hair); margin: 0 2px; }
 
-/* ── presenting: names become stand-ins, internal figures step back, and the strip says so ── */
+/* ── presenting: names become stand-ins and the strip says so. Every figure stays (J4-11): a shared screen hides whose work it is,
+   never what it cost — one rule for every list-price figure on every pane, which is that none steps back; the strip's scope line
+   (counts only, no names) stays too. What steps back is the one row that carries this machine's addresses: the restart command. ── */
 body[data-present] [data-internal] { visibility: hidden; }
-body[data-present] .conhead .count { visibility: hidden; }
 
 /* ── wide: a big screen gets more lanes, each a little tighter ── */
 @media (min-width: 1800px) {
@@ -912,8 +1003,7 @@ body[data-present] .conhead .count { visibility: hidden; }
 @media (min-width: 1241px) and (max-width: 1439px) {
   .lhead, .lane { gap: 8px; grid-template-columns: calc(124px * var(--k)) minmax(calc(160px * var(--k)), 1.2fr) minmax(calc(97px * var(--k)), .5fr) minmax(calc(93px * var(--k)), .4fr)
     calc(41px * var(--k)) calc(32px * var(--k)) calc(32px * var(--k)) calc(43px * var(--k)) calc(51px * var(--k)) calc(52px * var(--k)) calc(60px * var(--k)) minmax(calc(116px * var(--k)), 1fr) minmax(calc(76px * var(--k)), .5fr) calc(60px * var(--k)); }
-  /* the project name stays whole in the 160px track: "project b1d604" is 101px, and 70% of 160 (112) holds it; the branch or agent beside it takes the ellipsis, the whole on hover */
-  .lane .pr b { max-width: 70%; }
+  /* the project name stays whole in the 160px track: the cell's first track takes the name's own width, and the branch beside it takes the ellipsis, the whole on hover */
 }
 /* below 1440 the uncached-input column is 32px: its header is the short word, the long one on hover */
 @media (max-width: 1439px) {
@@ -991,6 +1081,8 @@ body[data-present] .conhead .count { visibility: hidden; }
   /* one 48px line: the mark, the palette, the theme, the add button as its glyph */
   .top { height: 48px; gap: 10px; }
   .top .word { display: none; }
+  /* the mark alone is still a 24px target (J4-06) */
+  .lockup { min-width: 24px; min-height: 24px; justify-content: center; }
   .top .right { gap: 8px; }
   .reach { display: none; }
   .btn.primary#addBtn { width: 36px; padding: 0; justify-content: center; }
@@ -1057,36 +1149,49 @@ body[data-present] .conhead .count { visibility: hidden; }
   .lhead .c-tot, .lane .tot { order: 5; }
   .lhead .c-md, .lane .md { order: 6; }
   .lhead .c-sp, .lane .sp { order: 7; }
-  .lane .pr { flex-direction: column; align-items: flex-start; gap: 0; line-height: 1.15; justify-content: center; }
+  .lane .pr { display: flex; flex-direction: column; align-items: flex-start; gap: 0; line-height: 1.15; justify-content: center; }
   .lane .pr b { max-width: 100%; }
   .lane .pr em { font-size: 12px; max-width: 100%; }
   .lane { height: 44px; cursor: pointer; }
   .lane:active { background: var(--cobalt-wash); }
   .lane .sp { height: 20px; }
-  .lfoot { padding: 8px 14px; }
-  .lfoot span.end { flex-basis: 100%; margin-left: 0; padding-left: 0; box-shadow: none; }
+  /* the footer wraps whole (J4-07, F4-01): every part on the card — the count, "80 of 316 shown", the provenance line — none cut at the edge;
+     the parts are set off by a dot, since a hairline at the start of a wrapped line would read as a cell's edge */
+  .lfoot { padding: 8px 14px; flex-wrap: wrap; white-space: normal; overflow: visible; row-gap: 2px; }
+  .lfoot span { flex: 0 1 auto; min-width: 0; padding-right: 10px; }
+  .lfoot span + span { padding-left: 0; box-shadow: none; }
+  .lfoot span + span:not(.end)::before { content: "· "; opacity: .55; }
+  .lfoot span.end { flex-basis: 100%; margin-left: 0; padding-left: 0; box-shadow: none; overflow: visible; }
   .agent-tree { padding: 8px 14px; }
   .agent-node { grid-template-columns: 1fr 1fr; gap: 4px 10px; padding: 8px 4px 8px calc(4px + var(--depth) * 10px); }
   .agent-node span:last-child, .agent-node .abar { grid-column: 1 / -1; }
   .foldrow summary { padding: 8px 14px; min-height: 44px; white-space: normal; flex-wrap: wrap; }
   .interop-rows { grid-template-columns: 1fr; }
   .interop-row + .interop-row { border-left: 0; border-top: 1px solid var(--hair2); }
-  /* the tables: who and tokens with share on the first line; status, cache and estimate on the second; the rest in the row's inspector */
+  /* the four dense tables (people, machines, projects, days) become card rows: who and tokens with share on the first line; status,
+     cache and estimate on the second; the rest in the row's inspector. The Effort and Shipped tables — the Projects panes and the
+     Console folds — keep their grid (J4-01): a few short columns that scroll sideways under a right-edge fade, as the lanes do,
+     never cells hidden with no reason */
   .tablewrap { overflow: visible; }
-  table.grid, table.grid tbody { display: block; }
-  table.grid thead { display: none; }
-  table.grid tr { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 12px; padding: 8px 16px; border-bottom: 1px solid var(--hair2); min-height: 44px; }
-  table.grid tr:last-child { border-bottom: 0; }
-  table.grid td { display: none; padding: 0; border: 0; white-space: normal; min-width: 0; height: auto; }
-  table.grid td.k1 { display: block; flex: 1 1 42%; }
-  table.grid td.k2 { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; flex: 1 1 42%; }
-  table.grid td.k3 { display: inline-flex; gap: 5px; align-items: baseline; font: 400 12px var(--sans); color: var(--ink2); font-variant-numeric: tabular-nums; }
-  table.grid td.k3::before { content: attr(data-l); font: 400 12px var(--sans); color: var(--quiet); }
-  table.grid td.k3.full { flex: 1 1 100%; }
-  table.grid td.k3.full::before { content: none; }
-  table.grid tbody tr.door:hover td:first-child, table.grid tbody tr.door:focus-within td:first-child { box-shadow: none; }
-  table.grid .sharebar { min-width: 0; width: 100%; }
-  table.grid td[colspan] { display: block; flex: 1 1 100%; }
+  .tablewrap table.grid, .tablewrap table.grid tbody { display: block; }
+  .tablewrap table.grid thead { display: none; }
+  .tablewrap table.grid tr { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 12px; padding: 8px 16px; border-bottom: 1px solid var(--hair2); min-height: 44px; }
+  .tablewrap table.grid tr:last-child { border-bottom: 0; }
+  .tablewrap table.grid td { display: none; padding: 0; border: 0; white-space: normal; min-width: 0; height: auto; }
+  .tablewrap table.grid td.k1 { display: block; flex: 1 1 42%; }
+  .tablewrap table.grid td.k2 { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; flex: 1 1 42%; }
+  .tablewrap table.grid td.k3 { display: inline-flex; gap: 5px; align-items: baseline; font: 400 12px var(--sans); color: var(--ink2); font-variant-numeric: tabular-nums; }
+  .tablewrap table.grid td.k3::before { content: attr(data-l); font: 400 12px var(--sans); color: var(--quiet); }
+  .tablewrap table.grid td.k3.full { flex: 1 1 100%; }
+  .tablewrap table.grid td.k3.full::before { content: none; }
+  .tablewrap table.grid tbody tr.door:hover td:first-child, .tablewrap table.grid tbody tr.door:focus-within td:first-child { box-shadow: none; }
+  .tablewrap table.grid .sharebar { min-width: 0; width: 100%; }
+  .tablewrap table.grid td[colspan] { display: block; flex: 1 1 100%; }
+  .foldbody { overflow-x: auto; scrollbar-width: thin; scrollbar-color: var(--hair) transparent; }
+  .foldbody.fademore { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
+  .foldbody table.grid { width: max-content; min-width: 100%; }
+  .foldbody table.grid th:first-child, .foldbody table.grid td:first-child { padding-left: 14px; }
+  .foldbody .note { padding: 7px 14px; white-space: normal; }
   .thead { height: auto; min-height: 36px; padding: 6px 16px; }
   .invite { grid-template-columns: 1fr; gap: 4px; min-height: 44px; }
   .btn.small { min-height: 44px; }
@@ -1099,6 +1204,8 @@ body[data-present] .conhead .count { visibility: hidden; }
   .bx.wrapcap { flex-wrap: wrap; row-gap: 2px; }
   .bx.wrapcap span:nth-child(2) { order: 3; flex: 1 1 100%; white-space: normal; overflow: visible; text-overflow: clip; }
   /* a person's machine row: the name and its figures on one line, the machine's status whole on the next */
+  /* below 400px the branch goes under the name (R3-05), so neither gives way */
+  .inspect .irow .nm { grid-template-columns: minmax(0, 1fr); row-gap: 1px; }
   .inspect .irow.mach { grid-template-columns: minmax(0, 1fr) 64px 60px; row-gap: 2px; padding: 4px 0; }
   .inspect .irow.mach > b { grid-area: 1 / 1; }
   .inspect .irow.mach .r { grid-row: 1; }

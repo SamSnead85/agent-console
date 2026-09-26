@@ -32,7 +32,7 @@
   const FRAGMENT = /^([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{43})$/;
   const SAFE_LINK = /^https?:\/\/(?:[a-z0-9._-]+|\[[0-9a-f:.]+\])(?::[0-9]{1,5})?\/join#[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}$/;
   const VERSION = /^[0-9]{1,4}\.[0-9]{1,4}\.[0-9]{1,4}$/;
-  const VERIFY = "const[u,...a]=process.argv.slice(1),p=require(`path`),n=p.basename(u),g=x=>fetch(x).then(r=>{if(!r.ok)throw Error(x+` answered `+r.status);return r.arrayBuffer()}).then(Buffer.from);(async()=>{if(!/^https:[/][/]github[.]com[/][A-Za-z0-9_.-]+[/][A-Za-z0-9_.-]+[/]releases[/]download[/]v[0-9.]+[/][A-Za-z0-9_.-]+[.]tgz(?![^])/.test(u))throw Error(`not a release file: `+u);const t=String(await g(p.posix.dirname(u)+`/SHA256SUMS`)).split(/[^0-9A-Za-z._-]+/),b=await g(u),h=require(`crypto`).createHash(`sha256`).update(b).digest(`hex`);if(h!==t[t.indexOf(n)-1])throw Error(n+` does not match the release SHA256SUMS; nothing was run`);const f=require(`fs`),d=p.join(require(`os`).homedir(),`.agent-console`,`releases`),k=p.join(d,n),w=process.platform==`win32`,q=String.fromCharCode(34);f.mkdirSync(d,{recursive:true});f.writeFileSync(k,b);console.error(n+` matches the release SHA256SUMS: `+h);const r=require(`child_process`).spawnSync(w?[`npx`,`--yes`,`file:`+k,...a].map(x=>q+x+q).join(` `):`npx`,w?[]:[`--yes`,`file:`+k,...a],{stdio:`inherit`,shell:w,env:{...process.env,AGENT_CONSOLE_PACKAGE:k}});process.exit(r.status??1)})().catch(e=>{console.error(String(e.message));process.exit(1)})";
+  const VERIFY = "const[u,...a]=process.argv.slice(1),p=require(`path`),n=p.basename(u),g=x=>fetch(x).then(r=>{if(!r.ok)throw Error(x+` answered `+r.status);return r.arrayBuffer()}).then(Buffer.from);(async()=>{if(!/^https:[/][/]github[.]com[/][A-Za-z0-9_.-]+[/][A-Za-z0-9_.-]+[/]releases[/]download[/]v[0-9.]+[/][A-Za-z0-9_.-]+[.]tgz(?![^])/.test(u))throw Error(`not a release file: `+u);const t=String(await g(p.posix.dirname(u)+`/SHA256SUMS`)).split(/[^0-9A-Za-z._-]+/),b=await g(u),h=require(`crypto`).createHash(`sha256`).update(b).digest(`hex`);if(h!==t[t.indexOf(n)-1])throw Error(n+` does not match the release SHA256SUMS; nothing was run`);const f=require(`fs`),d=p.join(require(`os`).homedir(),`.agent-console`,`releases`),k=p.join(d,n),w=process.platform==`win32`,q=String.fromCharCode(34);f.mkdirSync(d,{recursive:true});f.writeFileSync(k,b);console.error(n+` matches the release SHA256SUMS: `+h);const r=require(`child_process`).spawnSync(w?[`npx`,`--yes`,`file:`+k,...a].map(x=>q+x+q).join(` `):`npx`,w?[]:[`--yes`,`file:`+k,...a],{stdio:`inherit`,shell:w,env:{...process.env,AGENT_CONSOLE_PACKAGE:k}});process.exit(r.status??1)})().catch(e=>{const c=e.cause;console.error(String(e.message)+(c?` (`+String(c.code||c.name||c)+`)`:``));if(c)console.error(`Behind a proxy or TLS inspection? Set HTTPS_PROXY and NODE_USE_ENV_PROXY=1, and NODE_EXTRA_CA_CERTS=<your company root .pem>`);process.exit(1)})";
 
   const parts = FRAGMENT.exec((location.hash || "").slice(1));
   const code = parts ? parts[1] : null;
@@ -78,8 +78,9 @@
       command = `${run} join '${link}'`;
       showCommand($("cmd"), command.replace(code, "••••••••"));
     }
-    // The DEMO stamp renders only when the console says it is a demonstration; a real console never shows it.
-    if (info.demo) { $("demoStamp").hidden = false; $("demoNote").hidden = false; }
+    // The DEMO stamp renders only when the console says it is a demonstration; a real console never shows it. On a demonstration
+    // the one warn line is the demonstration's: a link that could never be used is not also reported as missing its code (R3-13).
+    if (info.demo) { $("demoStamp").hidden = false; $("demoNote").hidden = false; $("noCode").hidden = true; }
   }).catch(() => { $("status").textContent = "That console is not answering right now. Check you are on the same network, then reload."; });
 
   $("checkBtn").addEventListener("click", () => {

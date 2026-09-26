@@ -5,13 +5,21 @@
   "description": "GET /api/console. Every section is computed at one clock (asOf). Existing v0.3 sections are required by name; the fields added for v0.4 are described in full. An unknown reading is null, never 0. fixtures/console-v0.4.json is a demo payload of this shape.",
   "type": "object",
   "required": ["v", "now", "asOf", "alertsAsOf", "hub", "day", "windows", "coverage", "series", "burn", "lanes", "laneCount", "laneTotals",
-    "devices", "people", "team", "alerts", "alertsCoverage", "invitations"],
+    "devices", "people", "team", "alerts", "alertsToday", "alertsCoverage", "invitations"],
   "properties": {
     "v": { "const": 2 },
     "now": { "type": "integer" },
     "asOf": { "type": "integer", "description": "When this payload was computed (ms)." },
     "alertsAsOf": { "type": "integer" },
-    "hub": { "type": "object", "required": ["demo"], "properties": { "demo": { "type": "boolean" } } },
+    "hub": { "type": "object", "required": ["demo"], "properties": { "demo": { "type": "boolean" },
+      "prices": { "type": ["object", "null"], "description": "The offline price table this console prices with: its format version, the day its inventory was checked, the newest row's verification day, currency, basis and model count.",
+        "properties": { "v": { "type": ["integer", "null"] }, "checkedOn": { "type": ["string", "null"] }, "lastVerifiedOn": { "type": ["string", "null"] },
+          "currency": { "type": ["string", "null"] }, "basis": { "type": ["string", "null"] }, "models": { "type": "integer" } } },
+      "wsl": { "type": "boolean", "description": "The join addresses were read inside WSL and no --advertise was given: the first is likely reachable from this computer only." },
+      "local": { "type": "object", "properties": {
+        "roots": { "type": "array", "description": "Every folder read for this machine's transcripts: the tool, the path, whether it exists (null before the first read) and how many transcripts it holds.",
+          "items": { "type": "object", "required": ["tool", "path", "exists", "files"], "additionalProperties": false,
+            "properties": { "tool": { "enum": ["claude-code", "codex"] }, "path": { "type": "string" }, "exists": { "type": ["boolean", "null"] }, "files": { "type": ["integer", "null"] } } } } } } } },
     "windows": {
       "type": "object", "required": ["1h", "24h", "7d", "30d"],
       "additionalProperties": { "type": "object", "required": ["key", "basis", "from", "to", "tokens", "cost"],
@@ -54,8 +62,8 @@
         "byDevice": { "type": "object", "additionalProperties": { "$ref": "#/$defs/laneTally" } },
         "byPerson": { "type": "object", "additionalProperties": { "$ref": "#/$defs/laneTally" } },
         "byLocalProject": { "type": "object", "additionalProperties": {
-          "type": "object", "required": ["sessions", "live", "hourSpark"], "additionalProperties": false,
-          "properties": { "sessions": { "type": "integer" }, "live": { "type": "integer" },
+          "type": "object", "required": ["sessions", "live", "subagents", "hourSpark"], "additionalProperties": false,
+          "properties": { "sessions": { "type": "integer" }, "live": { "type": "integer" }, "subagents": { "type": "integer", "description": "Subagent threads folded into those sessions (R2-M1): the Projects view's count, over every lane on this machine." },
             "hourSpark": { "type": "array", "minItems": 20, "maxItems": 20, "items": { "type": "integer" } } } } },
         "subagentCount": { "type": "integer" },
         "periods": {
@@ -110,6 +118,23 @@
       }
     },
     "alerts": { "type": "array", "items": { "$ref": "#/$defs/alert" } },
+    "alertsToday": {
+      "type": "object", "additionalProperties": false,
+      "required": ["date", "tz", "from", "since", "count", "kept", "byKind", "lastHour", "exact"],
+      "description": "Counts from the bounded, in-memory alert list, not a complete ledger. count and kept are the retained alerts dated on the console's local calendar day; lastHour is the retained live alerts from the last hour, including across midnight. exact is false and since is null. Restart availability is described by alertsCoverage; an empty list does not establish zero daily alerts.",
+      "properties": {
+        "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "tz": { "type": "string" },
+        "from": { "type": "integer" },
+        "since": { "type": ["integer", "null"] },
+        "count": { "type": "integer" },
+        "kept": { "type": "integer" },
+        "byKind": { "type": "object", "required": ["loop", "spike", "stall"], "additionalProperties": false,
+          "properties": { "loop": { "type": "integer" }, "spike": { "type": "integer" }, "stall": { "type": "integer" } } },
+        "lastHour": { "type": "integer" },
+        "exact": { "type": "boolean" }
+      }
+    },
     "alertsCoverage": {
       "type": "object", "required": ["watched", "unwatched", "unwatchedDevices", "since", "reason", "byDevice"], "additionalProperties": false,
       "description": "Current machines (not removed) that watch for alerts: this console's own, and joined machines whose reporter declares share.alerts \"on\" (H03). since/reason: when some watched machine is covered for only part of the last hour, the latest time from which every watched machine's alerts are held, and why; before it \"no alert\" is not known. null when the hour is whole. byDevice: each current machine's coverage of the hour.",
@@ -131,7 +156,7 @@
   },
   "$defs": {
     "hash64": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-    "coverageReason": { "enum": ["console-restarted", "sharing-started", "outbox-overflow", "sharing-off", "reporter-undeclared", "not-heard"] },
+    "coverageReason": { "enum": ["console-restarted", "first-start", "sharing-started", "outbox-overflow", "sharing-off", "reporter-undeclared", "not-heard"] },
     "coverage": {
       "type": "object", "required": ["state", "since", "reason"], "additionalProperties": false,
       "description": "How much of a window a machine's opt-in alerts or activity cover. complete: the whole window, so nothing held is a known zero. partial: whole only since `since` (the console started inside the window, the console first heard the machine share then, or the machine's reporter reported a loss up to then); what is held is a floor and nothing held is unavailable. off: the machine's reporter says it does not share (since `since`). undeclared: an older reporter that does not say. unknown: nothing from the machine's reporter since the console started (`since`). Only complete may ever be drawn as zero.",

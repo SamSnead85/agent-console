@@ -37,6 +37,7 @@ const helpers = {
   modelRows: () => "",
   // presenting is off: names pass through; a project is keyed by its hash, or its name for a hub without one
   pn: (kind, value) => value,
+  doorId: (kind, id) => String(id),
   present: false,
   projectKeyOf: (x) => x.projectHash || x.name,
   hhmm: () => "",
