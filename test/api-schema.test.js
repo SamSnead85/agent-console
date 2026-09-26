@@ -12,13 +12,27 @@ import { test } from "node:test";
 import fs from "node:fs";
 
 import { validate } from "./helpers/schema.js";
-import { demoPayloads } from "../scripts/api-fixtures.mjs";
+import { demoPayloads, fixturePayloads } from "../scripts/api-fixtures.mjs";
 
 const read = (rel) => JSON.parse(fs.readFileSync(new URL("../" + rel, import.meta.url), "utf8"));
 const CONSOLE_SCHEMA = read("docs/console-v0.4.schema.json");
 const PROJECTS_SCHEMA = read("docs/projects-v0.4.schema.json");
 const CONSOLE = read("fixtures/console-v0.4.json");
 const PROJECTS = read("fixtures/projects-v0.4.json");
+
+test("saved examples use synthetic lane keys and retain their alert links", () => {
+  const original = { console: { lanes: [{ key: "original-lane" }], alerts: [{ lane: { key: "original-lane" } }, { lane: null }] }, projects: {} };
+  const result = fixturePayloads(original);
+  assert.equal(original.console.lanes[0].key, "original-lane", "runtime payloads are not modified");
+  assert.equal(result.console.lanes[0].key, "demo-lane-01");
+  assert.equal(result.console.alerts[0].lane.key, result.console.lanes[0].key);
+  assert.equal(result.console.alerts[1].lane, null);
+  const keys = new Set(CONSOLE.lanes.map((lane) => lane.key));
+  assert.equal(keys.size, CONSOLE.lanes.length);
+  assert.ok([...keys].every((key) => /^demo-lane-\d+$/u.test(key)));
+  assert.ok(CONSOLE.alerts.every((alert) => !alert.lane || keys.has(alert.lane.key)));
+  assert.throws(() => fixturePayloads({ console: { lanes: [], alerts: [{ lane: { key: "missing" } }] } }), /missing lane/u);
+});
 
 test("H18: the fixtures match the v0.4 schemas", () => {
   assert.deepEqual(validate(CONSOLE_SCHEMA, CONSOLE), []);

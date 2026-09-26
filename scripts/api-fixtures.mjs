@@ -14,7 +14,9 @@
  * estimate as well as priced ones, and the demo's laptop is made to have
  * begun sharing two minutes ago, so they carry partial alert and activity
  * coverage beside complete, off and undeclared. Every name in them is the
- * demo's; every figure is generated. docs/console-v0.4.schema.json and
+ * demo's; every figure is generated. Saved lane keys are explicit synthetic
+ * labels, with their alert references updated together. Runtime identifiers
+ * are unchanged. docs/console-v0.4.schema.json and
  * docs/projects-v0.4.schema.json describe them (test/api-schema.test.js).
  */
 
@@ -72,8 +74,22 @@ export async function demoPayloads({ period = "24h" } = {}) {
   return { console, projects };
 }
 
+/** Give saved examples recognizable, non-credential lane identifiers. */
+export function fixturePayloads(payloads) {
+  const result = structuredClone(payloads);
+  const keys = new Map(result.console.lanes.map((lane, i) => [lane.key, `demo-lane-${String(i + 1).padStart(2, "0")}`]));
+  for (const lane of result.console.lanes) lane.key = keys.get(lane.key);
+  for (const alert of result.console.alerts) {
+    if (!alert.lane) continue;
+    const key = keys.get(alert.lane.key);
+    if (!key) throw new Error("The synthetic alert refers to a missing lane.");
+    alert.lane.key = key;
+  }
+  return result;
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const { console: view, projects } = await demoPayloads();
+  const { console: view, projects } = fixturePayloads(await demoPayloads());
   fs.mkdirSync(path.join(ROOT, "fixtures"), { recursive: true });
   fs.writeFileSync(path.join(ROOT, "fixtures", "console-v0.4.json"), JSON.stringify(view, null, 1) + "\n");
   fs.writeFileSync(path.join(ROOT, "fixtures", "projects-v0.4.json"), JSON.stringify(projects, null, 1) + "\n");
