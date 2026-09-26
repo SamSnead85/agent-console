@@ -270,19 +270,8 @@ jobs:
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          probe="$RUNNER_TEMP/gatekeeper-probe"
-          cp "$RUNNER_TEMP/agent-console-bin/agent-console" "$probe"
-          xattr -w com.apple.quarantine "0081;$(printf %x "$(date +%s)");Safari;" "$probe"
-          codesign --verify --strict --verbose=2 "$probe"
-          for attempt in $(seq 1 20); do
-            if verdict="$(spctl --assess --type install -vv "$probe" 2>&1)" && printf '%s' "$verdict" | grep -q 'source=Notarized Developer ID'; then
-              printf '%s\n' "$verdict"; exit 0
-            fi
-            sleep 15
-          done
-          printf '%s\n' "$verdict"
-          echo "::error::Gatekeeper does not accept the published macOS executable as notarized."
-          exit 1
+          codesign --verify --strict --verbose=2 "$RUNNER_TEMP/agent-console-bin/agent-console"
+          node packaging/sea/notarized.mjs "$RUNNER_TEMP/agent-console-bin/agent-console"
       - name: The attestation covers what was installed
         if: runner.os == 'Linux'
         shell: bash

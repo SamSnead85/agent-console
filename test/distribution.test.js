@@ -335,7 +335,7 @@ test("a release stops before building anything when an Apple signing secret is m
   assert.match(release, /uses: \.\/\.github\/workflows\/binaries\.yml\n {4}with:\n {6}ref: .*\n {6}release: true/u);
   assert.match(release, /needs: \[authorize, signing, executables\]\n {4}if: .*needs\.signing\.result == 'success'/u, "nothing is attached without signing");
   assert.match(release, /release-signing-notes\.mjs labels/u);
-  assert.match(release, /spctl --assess --type install[\s\S]*source=Notarized Developer ID/u, "the published macOS file is checked with Gatekeeper");
+  assert.match(release, /if: runner\.os == 'macOS'\n[\s\S]*node packaging\/sea\/notarized\.mjs "\$RUNNER_TEMP\/agent-console-bin\/agent-console"/u, "the published macOS file is checked with Gatekeeper");
   for (const old of ["APPLE_DEVELOPER_ID_P12", "APPLE_NOTARY_KEY_P8"]) assert.doesNotMatch(release + read(".github/workflows/binaries.yml"), new RegExp(old, "u"));
 });
 
@@ -350,8 +350,11 @@ test("the executables workflow signs a release's macOS files or fails, and never
   const sign = build.slice(build.indexOf("function signMac"), build.indexOf("function codesignInfo"));
   const at = (text) => { const i = sign.indexOf(text); assert.ok(i >= 0, `signMac: ${text}`); return i; };
   assert.ok(at('"--options", "runtime", "--timestamp"') < at('"notarytool", "submit"'));
-  assert.ok(at('"notarytool", "submit"') < at("ticketContents") && at("ticketContents") < at('"spctl", ["--assess", "--type", "install"'));
-  assert.ok(at('"spctl", ["--assess"') < at('return "signed and notarized"'), "labelled signed only after Gatekeeper accepts it");
+  assert.ok(at('"notarytool", "submit"') < at("ticketContents") && at("ticketContents") < at("await waitUntilNotarized(file"));
+  assert.ok(at("await waitUntilNotarized(file") < at('return "signed and notarized"'), "labelled signed only after Gatekeeper accepts it");
+  const check = read("packaging/sea/notarized.mjs");
+  assert.match(check, /"spctl", \["--assess", "--type", "install", "-vv", probe\]/u);
+  assert.match(check, /source=Notarized Developer ID/u);
   const entitlements = read("packaging/sea/entitlements.plist");
   assert.deepEqual([...entitlements.matchAll(/<key>([^<]+)<\/key>/gu)].map((m) => m[1]),
     ["com.apple.security.cs.allow-jit", "com.apple.security.cs.allow-unsigned-executable-memory"]);

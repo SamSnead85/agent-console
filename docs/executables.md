@@ -122,8 +122,10 @@ hardened runtime with only the two entitlements V8 needs to compile JavaScript
 ([`entitlements.plist`](../packaging/sea/entitlements.plist); without
 `allow-jit` Node.js cannot start), submits to Apple's notary service, checks
 the ticket names the file's CDHash, and asks Gatekeeper to accept a
-quarantined copy. Only then is the file labelled signed, and only then do
-`SHA256SUMS` and the build attestation cover it. If any secret is missing,
+quarantined copy ([`notarized.mjs`](../packaging/sea/notarized.mjs); the
+release asks again of the file installed from the release page). Only then
+is the file labelled signed, and only then do `SHA256SUMS` and the build
+attestation cover it. If any secret is missing,
 the release stops before anything is built or attached; it never ships an
 unsigned macOS file in place of a signed one. Pull requests and manual runs
 build unsigned and say so. On a Mac with the Developer ID in its keychain,

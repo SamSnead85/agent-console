@@ -46,7 +46,8 @@ jobs:
   build:
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 25
+    # Notarization and waiting for Apple to publish the ticket take minutes.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:

@@ -35,6 +35,7 @@ import os from "node:os";
 import path from "node:path";
 import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
+import { waitUntilNotarized } from "./notarized.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..", "..");
@@ -151,7 +152,7 @@ run(process.execPath, [postject, exe, "NODE_SEA_BLOB", blob, "--sentinel-fuse", 
   ...(process.platform === "darwin" ? ["--macho-segment-name", "NODE_SEA"] : [])]);
 
 let signing = process.platform === "linux" ? "" : "unsigned";
-if (process.platform === "darwin") signing = signMac(exe);
+if (process.platform === "darwin") signing = await signMac(exe);
 
 function signtool() {
   const kits = "C:\\Program Files (x86)\\Windows Kits\\10\\bin";
@@ -163,10 +164,6 @@ function signtool() {
   return fail("signtool.exe was not found; Node's broken signature must be removed, not shipped");
 }
 
-function sleep(ms) {
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
-}
-
 /** notarytool's credentials: an App Store Connect API key (CI), or a stored keychain profile (a maintainer's Mac). */
 function notaryCredentials() {
   const { APPLE_NOTARY_KEY_PATH: key, APPLE_NOTARY_KEY_ID: keyId, APPLE_NOTARY_ISSUER: issuer, APPLE_NOTARY_KEYCHAIN_PROFILE: profile } = process.env;
@@ -175,7 +172,7 @@ function notaryCredentials() {
   return fail("a Developer ID signature without notarization is still blocked by Gatekeeper; set APPLE_NOTARY_KEY_PATH, APPLE_NOTARY_KEY_ID and APPLE_NOTARY_ISSUER (or APPLE_NOTARY_KEYCHAIN_PROFILE)");
 }
 
-function signMac(file) {
+async function signMac(file) {
   const identity = process.env.MACOS_SIGN_IDENTITY;
   if (!identity) {
     if (process.env.AGENT_CONSOLE_REQUIRE_SIGNING === "1") fail("this build must be signed and notarized, and MACOS_SIGN_IDENTITY is not set");
@@ -205,21 +202,12 @@ function signMac(file) {
   if (!(log.ticketContents || []).some((t) => t.cdhash === cdhash)) fail(`notarization ${result.id} holds no ticket for this file's CDHash ${cdhash}`);
   say(`notarized: ${result.id}, CDHash ${cdhash}`);
 
-  // Then ask Gatekeeper, as a browser download would be asked: a quarantined
-  // copy must be accepted as notarized. Apple publishes the ticket within minutes.
-  const probe = path.join(work, "gatekeeper-probe");
-  fs.copyFileSync(file, probe);
-  run("xattr", ["-w", "com.apple.quarantine", `0081;${Math.floor(Date.now() / 1000).toString(16)};Safari;`, probe]);
-  let verdict = "";
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    const assessed = spawnSync("spctl", ["--assess", "--type", "install", "-vv", probe], { encoding: "utf8" });
-    verdict = (assessed.stdout + assessed.stderr).trim();
-    if (assessed.status === 0 && /source=Notarized Developer ID/u.test(verdict)) break;
-    verdict = "";
-    sleep(15_000);
+  // Then ask Gatekeeper, as a browser download would be asked (notarized.mjs).
+  try {
+    say(await waitUntilNotarized(file, { log: say }));
+  } catch (error) {
+    fail(error.message);
   }
-  if (!verdict) fail("Gatekeeper did not accept the notarized executable within 10 minutes");
-  say(`gatekeeper: ${verdict.replace(`${probe}: `, "").split("\n").slice(0, 2).join(" ")}`);
   return "signed and notarized";
 }
 
