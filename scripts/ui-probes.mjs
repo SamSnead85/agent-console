@@ -773,25 +773,29 @@ await section("presenting after navigation", async () => {
       const page = await context.newPage();
       await page.goto(await signInUrl(hubs[0]), { waitUntil: "domcontentloaded" });
       await settled(page);
-      await page.evaluate(() => document.querySelector('.tab[data-view="team"]').click());
+      await page.locator('.tab[data-view="team"]').click();
       await page.waitForSelector("#peopleTable .rowbtn");
       await page.locator("#peopleTable .rowbtn").first().click();
       await page.waitForSelector("#inspectDialog[open]");
       await page.keyboard.press("Escape");
       await page.waitForSelector("#inspectDialog[open]", { state: "hidden" });
-      await page.evaluate(() => document.querySelector('.tab[data-view="projects"]').click());
+      await page.locator('.tab[data-view="projects"]').click();
       await page.waitForSelector("#projTable .rowbtn");
-      await page.evaluate(() => document.querySelector('.tab[data-view="console"]').click());
+      await page.locator('.tab[data-view="console"]').click();
       // The hidden Projects pane still holds a different period's last reading.
-      await page.evaluate(() => document.querySelector('#winSeg button[data-w="7d"]').click());
-      await page.evaluate(() => document.getElementById("addBtn").click());
+      await page.locator('#winSeg button[data-w="7d"]').click();
+      await page.locator("#addBtn").click();
       await page.waitForSelector("#addDialog[open]");
       await page.keyboard.press("Escape");
       await page.waitForSelector("#addDialog[open]", { state: "hidden" });
-      await page.evaluate(() => document.getElementById("palBtn").click());
+      await page.locator("#palBtn").click();
       await page.waitForSelector("#pal[open]");
       await page.keyboard.press("Escape");
       await page.waitForSelector("#pal[open]", { state: "hidden" });
+      // Use real pointer activation above and prove focus returned naturally;
+      // a programmatic click does not focus its button before opening a dialog.
+      await page.waitForFunction(() => document.activeElement === document.getElementById("palBtn"));
+      ok(`${width}: closing the palette returns focus to its opener before presenting`);
       const before = await page.evaluate(() => document.documentElement.outerHTML);
       if (!canaries.every((value) => before.includes(value))) {
         fail(`${width}: privacy fixture did not render every canary before presenting`);
