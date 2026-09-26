@@ -276,7 +276,7 @@ test("a session's context readings stay in time order and keep the newest 128, w
   for (const m of minutes) {
     store.ingest("dev_a", [record({ id: "ctx" + m, device: "dev_a", session: "ctx", at: now - (150 - m) * 60_000, fresh: 1000 + m })]);
   }
-  const samples = store.sessions.get(h("sctx")).contextSamples;
+  const samples = store.session("dev_a", h("sctx")).contextSamples;
   assert.equal(samples.length, 128);
   for (let i = 1; i < samples.length; i += 1) assert.ok(samples[i - 1].at <= samples[i].at, "in time order");
   assert.equal(samples.at(-1).at, Math.floor((now - 60_000) / 60_000) * 60_000, "the newest is kept");

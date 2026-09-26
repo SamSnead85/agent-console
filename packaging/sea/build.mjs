@@ -15,24 +15,33 @@
  *   dist/agent-console-<platform>-<arch>.tar.gz   it again, with its licences (not on Windows)
  *   labels/<file>.label                           what the release page says beside each file
  *
- * macOS: signed with a Developer ID and notarized when MACOS_SIGN_IDENTITY and
- * APPLE_NOTARY_KEY_PATH, APPLE_NOTARY_KEY_ID and APPLE_NOTARY_ISSUER are set;
- * otherwise given the ad-hoc signature Apple silicon needs to run anything, and
- * labelled unsigned. Windows: Node's own signature is removed, since injecting
- * the package breaks it, and the file is labelled unsigned. Never a fake one.
+ * macOS: signed with a Developer ID (hardened runtime, secure timestamp,
+ * identifier ai.lockedinlabs.agent-console) and notarized when
+ * MACOS_SIGN_IDENTITY is set, with APPLE_NOTARY_KEY_PATH, APPLE_NOTARY_KEY_ID
+ * and APPLE_NOTARY_ISSUER (CI) or APPLE_NOTARY_KEYCHAIN_PROFILE (a maintainer's
+ * Mac); it is labelled signed only after Apple's ticket names its CDHash and
+ * Gatekeeper accepts a quarantined copy. Otherwise it gets the ad-hoc signature
+ * Apple silicon needs to run anything and is labelled unsigned, unless
+ * AGENT_CONSOLE_REQUIRE_SIGNING=1 (a release), which makes that a failure.
+ * Windows: Node's own signature is removed, since injecting the package breaks
+ * it, and the file is labelled unsigned (there is no Authenticode certificate).
+ * Linux has no signing scheme. Never a fake signature anywhere.
  */
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
+import { waitUntilNotarized } from "./notarized.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..", "..");
 const FUSE = "NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2";
+// The macOS code signature's identifier: the same for every macOS build, never the file name.
+const MAC_IDENTIFIER = "ai.lockedinlabs.agent-console";
 const PLATFORM_NAMES = {
   "darwin-arm64": "macOS, Apple silicon",
   "darwin-x64": "macOS, Intel",
@@ -143,7 +152,7 @@ run(process.execPath, [postject, exe, "NODE_SEA_BLOB", blob, "--sentinel-fuse", 
   ...(process.platform === "darwin" ? ["--macho-segment-name", "NODE_SEA"] : [])]);
 
 let signing = process.platform === "linux" ? "" : "unsigned";
-if (process.platform === "darwin") signing = signMac(exe);
+if (process.platform === "darwin") signing = await signMac(exe);
 
 function signtool() {
   const kits = "C:\\Program Files (x86)\\Windows Kits\\10\\bin";
@@ -155,22 +164,58 @@ function signtool() {
   return fail("signtool.exe was not found; Node's broken signature must be removed, not shipped");
 }
 
-function signMac(file) {
+/** notarytool's credentials: an App Store Connect API key (CI), or a stored keychain profile (a maintainer's Mac). */
+function notaryCredentials() {
+  const { APPLE_NOTARY_KEY_PATH: key, APPLE_NOTARY_KEY_ID: keyId, APPLE_NOTARY_ISSUER: issuer, APPLE_NOTARY_KEYCHAIN_PROFILE: profile } = process.env;
+  if (key && keyId && issuer) return ["--key", key, "--key-id", keyId, "--issuer", issuer];
+  if (profile) return ["--keychain-profile", profile];
+  return fail("a Developer ID signature without notarization is still blocked by Gatekeeper; set APPLE_NOTARY_KEY_PATH, APPLE_NOTARY_KEY_ID and APPLE_NOTARY_ISSUER (or APPLE_NOTARY_KEYCHAIN_PROFILE)");
+}
+
+async function signMac(file) {
   const identity = process.env.MACOS_SIGN_IDENTITY;
   if (!identity) {
+    if (process.env.AGENT_CONSOLE_REQUIRE_SIGNING === "1") fail("this build must be signed and notarized, and MACOS_SIGN_IDENTITY is not set");
     run("codesign", ["--force", "--sign", "-", file]);
     return "unsigned";
   }
-  const { APPLE_NOTARY_KEY_PATH: key, APPLE_NOTARY_KEY_ID: keyId, APPLE_NOTARY_ISSUER: issuer } = process.env;
-  if (!key || !keyId || !issuer) fail("a Developer ID signature without notarization is still blocked by Gatekeeper; set the APPLE_NOTARY_* values too");
-  run("codesign", ["--force", "--sign", identity, "--options", "runtime", "--timestamp",
+  const credentials = notaryCredentials();
+  // Hardened runtime (notarization requires it), a secure timestamp, and only
+  // the entitlements V8 needs to compile JavaScript (entitlements.plist).
+  run("codesign", ["--force", "--sign", identity, "--identifier", MAC_IDENTIFIER, "--options", "runtime", "--timestamp",
     "--entitlements", path.join(HERE, "entitlements.plist"), file]);
   run("codesign", ["--verify", "--strict", "--verbose=2", file]);
+  const info = codesignInfo(file);
+  const cdhash = /^CDHash=([0-9a-f]{40})$/mu.exec(info)?.[1];
+  if (!/^Authority=Developer ID Application: /mu.test(info)) fail("the signature is not a Developer ID Application signature");
+  if (!/flags=0x10000\(runtime\)/u.test(info)) fail("the signature does not carry the hardened runtime");
+  if (!/^Timestamp=/mu.test(info)) fail("the signature has no secure timestamp");
+  if (!cdhash) fail("codesign printed no CDHash");
+
+  // Notarize: a bare executable cannot carry a stapled ticket, so Gatekeeper
+  // fetches it from Apple by the signature's CDHash. Check the ticket names this file.
   const zip = path.join(work, "notarize.zip");
   run("ditto", ["-c", "-k", "--keepParent", file, zip]);
-  const result = JSON.parse(run("xcrun", ["notarytool", "submit", zip, "--key", key, "--key-id", keyId, "--issuer", issuer, "--wait", "--output-format", "json"]));
+  const result = JSON.parse(run("xcrun", ["notarytool", "submit", zip, ...credentials, "--wait", "--timeout", "30m", "--output-format", "json"]));
   if (result.status !== "Accepted") fail(`notarization ended ${result.status}; see notarytool log ${result.id}`);
+  const log = JSON.parse(run("xcrun", ["notarytool", "log", result.id, ...credentials]));
+  if (!(log.ticketContents || []).some((t) => t.cdhash === cdhash)) fail(`notarization ${result.id} holds no ticket for this file's CDHash ${cdhash}`);
+  say(`notarized: ${result.id}, CDHash ${cdhash}`);
+
+  // Then ask Gatekeeper, as a browser download would be asked (notarized.mjs).
+  try {
+    say(await waitUntilNotarized(file, { log: say }));
+  } catch (error) {
+    fail(error.message);
+  }
   return "signed and notarized";
+}
+
+function codesignInfo(file) {
+  // codesign -d writes its report to stderr.
+  const shown = spawnSync("codesign", ["-dvvv", file], { encoding: "utf8" });
+  if (shown.status !== 0) fail(`codesign -d failed: ${shown.stderr}`);
+  return shown.stdout + shown.stderr;
 }
 
 /* ── a .tar.gz beside it: the executable keeps its mode, and its licences travel with it ── */

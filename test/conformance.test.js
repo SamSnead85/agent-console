@@ -96,9 +96,11 @@ test("context readings reconcile with the conformance suite's per-event input to
     if (!bySession.has(hash)) bySession.set(hash, []);
     bySession.get(hash).push(input);
   }
-  assert.equal(bySession.size, store.sessions.size);
+  // The store keeps a session per machine; the suite counts by session hash.
+  const readingsOf = (hash) => [...store.sessions.values()].filter((s) => s.sessionHash === hash).flatMap((s) => s.contextSamples.map((c) => c.tokens));
+  assert.equal(bySession.size, new Set([...store.sessions.values()].map((s) => s.sessionHash)).size);
   for (const [hash, inputs] of bySession) {
-    const readings = store.sessions.get(hash)?.contextSamples.map((s) => s.tokens);
+    const readings = readingsOf(hash);
     assert.deepEqual(readings?.sort((a, b) => a - b), inputs.sort((a, b) => a - b), hash);
   }
 });

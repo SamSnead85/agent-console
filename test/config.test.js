@@ -16,6 +16,8 @@ test("value-taking options take their value, in both spellings", () => {
   const config = readConfig(["--port", "7404", "--poll-ms", "2000", "--retention-days=3"], {});
   assert.equal(config.port, 7404);
   assert.equal(config.pollMs, 2000);
+  assert.equal(readConfig([], {}).pollMs, 2000, "the default: this machine is read every two seconds");
+  assert.equal(readConfig([], { AGENT_CONSOLE_POLL_MS: "15000" }).pollMs, 15000);
   assert.equal(config.retentionDays, 3);
 });
 

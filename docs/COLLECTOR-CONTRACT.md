@@ -275,6 +275,13 @@ Where it appears:
   the hour, the latest time from which every watched machine's alerts are
   held, and why — "no alert" is known only since then; `null` when the hour is
   whole. `byDevice` gives each current machine's coverage of the hour.
+- Lanes, sessions and subagent trees are per machine: the same session hash
+  reported by two machines (a synced home folder, a copied transcript that
+  went on elsewhere) is two lanes, each with its own machine, tokens and
+  activity, while the records they share are still counted once, by id. A
+  lane's `key` is its session hash's first 16 characters, as before; when two
+  machines share the hash, each key adds `-` and 8 hex characters naming its
+  machine, and an alert's `lane.key` names the lane of the alert's machine.
 - `hub.local.roots`: every folder this console reads for its own machine's
   transcripts, as `{ tool, path, exists, files }` — `exists` is null before
   the first read, `files` how many transcripts it holds. The defaults
