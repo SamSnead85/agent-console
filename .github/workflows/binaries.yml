@@ -14,11 +14,19 @@ on:
       - server.js
       - package.json
       - .github/workflows/binaries.yml
+  # Run by hand with release checked, on a branch, it signs and notarizes
+  # exactly as a release would: the dry run of signing before a tag.
   workflow_dispatch:
+    inputs:
+      release:
+        description: Sign and notarize the macOS builds, as a release does
+        type: boolean
+        default: false
   workflow_call:
     # A release (release.yml passes release: true) must be signed and
     # notarized: without all five secrets its macOS builds fail, never ship
-    # unsigned. Pull requests and manual runs build unsigned and say so.
+    # unsigned. Pull requests, and manual runs without release, build
+    # unsigned and say so.
     inputs:
       ref:
         description: The release tag to build from
