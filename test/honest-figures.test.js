@@ -113,11 +113,15 @@ test("burn on an unpriced model has no dollar rate at all, never $0.00", () => {
   assert.match(CONSOLE_JS, /D\.burn\.usdPerMinute === null\s*\?\s*"—" \+ per \+ " · unpriced"/u);
 });
 
-test("a machine's uncounted lines are said on the Team row, on a line of their own", () => {
-  // Counted by reason and shown, never dropped silently; on its own line so the
-  // machine column does not push the row's Remove button out of view.
-  assert.match(CONSOLE_JS, /const lost = d\.coverage && d\.coverage\.dropped \? `<span class="sub"><b title=/u);
-  assert.ok(CONSOLE_JS.includes('" by link" : "")}</span>${lost}</td>'), "the note follows the joined line");
+test("a machine's uncounted records make its money a floor, marked with the number and counted on hover", () => {
+  // Counted by reason and shown, never dropped silently; the mark sits with the money it qualifies, not under the machine's name.
+  assert.match(CONSOLE_JS, /const cost = costMark\(a\.cost, droppedOf\(d\)\);/u);
+  assert.match(CONSOLE_JS, /const costWhy = droppedOf\(d\) \? `\$\{cost\.title\} · \$\{esc\(d\.coverage\.reasons\.map\(\(r\) => r\.count \+ " × " \+ r\.label\)\.join\("; "\)\)\}` : cost\.title;/u);
+  assert.match(CONSOLE_JS, /data-src="devices\.windows\.cost\.usd" title="\$\{esc\(costWhy\)\}">\$\{cost\.html\}<\/td>/u);
+  assert.doesNotMatch(CONSOLE_JS, /const lost = d\.coverage && d\.coverage\.dropped \? `<span class="sub">/u, "the note no longer sits under the name");
+  // the Console band's machine rows and the people rows carry the same floor
+  assert.match(CONSOLE_JS, /const cost = costMark\(a\.cost, droppedOf\(d\), false\);/u);
+  assert.match(CONSOLE_JS, /const dropped = p\.devices\.reduce\(\(n, id\) => n \+ droppedOf\(deviceOf\(id\)\), 0\);/u);
 });
 
 test("the Team totals name the selected period and keep sessions apart from subagents", () => {

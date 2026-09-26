@@ -14,7 +14,7 @@ port 6788:
 docker volume create agent-console-state
 docker run --name agent-console-hub --network host \
   -v agent-console-state:/home/dev/.agent-console/hub \
-  ghcr.io/samsnead85/agent-console:v0.3.0
+  ghcr.io/samsnead85/agent-console:v0.4.0
 ```
 
 Open `http://127.0.0.1:6787` on that host and use the printed sign-in link.
@@ -26,6 +26,6 @@ hub refuses public-network clients; use a private network and do not add
 `--allow-public` unless you intend to accept them.
 
 The versioned image appears after its release workflow completes. Replace
-`v0.3.0` with the exact release tag you want; do not use a floating `latest`
+`v0.4.0` with the exact release tag you want; do not use a floating `latest`
 tag. On macOS and Windows, Docker's host-network behavior differs; use the
 native executable for a local hub there.

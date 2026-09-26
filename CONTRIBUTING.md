@@ -32,6 +32,8 @@ node bin/agent-console.mjs --open          # your own machine's sessions
 
 ## Tests
 
+There is no install step (zero dependencies): run `npm test` directly after cloning.
+
 ```sh
 npm test                          # the whole suite
 node --test test/hub-e2e.test.js  # one file

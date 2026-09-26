@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SamSnead85/agent-console/docs/console-v0.4.schema.json",
+  "title": "Agent Console /api/console, v0.4 fields",
+  "description": "GET /api/console. Every section is computed at one clock (asOf). Existing v0.3 sections are required by name; the fields added for v0.4 are described in full. An unknown reading is null, never 0. fixtures/console-v0.4.json is a demo payload of this shape.",
+  "type": "object",
+  "required": ["v", "now", "asOf", "alertsAsOf", "hub", "day", "windows", "coverage", "series", "burn", "lanes", "laneCount", "laneTotals",
+    "devices", "people", "team", "alerts", "alertsCoverage", "invitations"],
+  "properties": {
+    "v": { "const": 2 },
+    "now": { "type": "integer" },
+    "asOf": { "type": "integer", "description": "When this payload was computed (ms)." },
+    "alertsAsOf": { "type": "integer" },
+    "hub": { "type": "object", "required": ["demo"], "properties": { "demo": { "type": "boolean" } } },
+    "windows": {
+      "type": "object", "required": ["1h", "24h", "7d", "30d"],
+      "additionalProperties": { "type": "object", "required": ["key", "basis", "from", "to", "tokens", "cost"],
+        "properties": { "cost": { "$ref": "#/$defs/windowCost" } } }
+    },
+    "series": {
+      "type": "object", "required": ["1h", "24h", "7d", "30d"],
+      "properties": {
+        "1h": { "$ref": "#/$defs/periodSeries" },
+        "24h": { "$ref": "#/$defs/periodSeries" },
+        "7d": {
+          "allOf": [{ "$ref": "#/$defs/periodSeries" }],
+          "required": ["byLocalDay"],
+          "properties": {
+            "byLocalDay": {
+              "type": "object", "required": ["tz", "days"], "additionalProperties": false,
+              "description": "The week by this console's local calendar day (H12). Today is partial:true.",
+              "properties": {
+                "tz": { "type": "string", "description": "IANA zone, e.g. Europe/London." },
+                "days": { "type": "array", "minItems": 7, "maxItems": 7, "items": {
+                  "type": "object", "required": ["date", "tokens", "partial"], "additionalProperties": false,
+                  "properties": { "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }, "tokens": { "type": "integer" }, "partial": { "type": "boolean" } } } }
+              }
+            }
+          }
+        },
+        "30d": { "$ref": "#/$defs/periodSeries" }
+      }
+    },
+    "lanes": { "type": "array", "maxItems": 80, "items": { "$ref": "#/$defs/lane" } },
+    "laneCount": { "type": "integer" },
+    "laneTotals": {
+      "type": "object", "additionalProperties": false,
+      "description": "Counts over every lane the console holds, not only the 80 sent (H05, H17).",
+      "required": ["total", "shown", "byTool", "byDevice", "byPerson", "byLocalProject", "subagentCount", "cold", "periods"],
+      "properties": {
+        "total": { "type": "integer" },
+        "shown": { "type": "integer" },
+        "byTool": { "type": "object", "additionalProperties": { "$ref": "#/$defs/laneTally" } },
+        "byDevice": { "type": "object", "additionalProperties": { "$ref": "#/$defs/laneTally" } },
+        "byPerson": { "type": "object", "additionalProperties": { "$ref": "#/$defs/laneTally" } },
+        "byLocalProject": { "type": "object", "additionalProperties": {
+          "type": "object", "required": ["sessions", "live", "hourSpark"], "additionalProperties": false,
+          "properties": { "sessions": { "type": "integer" }, "live": { "type": "integer" },
+            "hourSpark": { "type": "array", "minItems": 20, "maxItems": 20, "items": { "type": "integer" } } } } },
+        "subagentCount": { "type": "integer" },
+        "periods": {
+          "type": "object", "required": ["1h", "24h", "7d", "30d"], "additionalProperties": false,
+          "description": "The same counts for each period, so the period control moves them: sessions are lanes (top-level sessions, subagents folded in) with usage inside the period. 30 days are read from the daily rollup, which keeps no sessions: sessionsKept false, every sessions null, and reason says why — never the day's count under a month's caption.",
+          "properties": { "1h": { "$ref": "#/$defs/periodTally" }, "24h": { "$ref": "#/$defs/periodTally" },
+            "7d": { "$ref": "#/$defs/periodTally" }, "30d": { "$ref": "#/$defs/periodTally" } }
+        },
+        "cold": { "type": "object", "required": ["sessions", "tokensDay"], "additionalProperties": false,
+          "properties": { "sessions": { "type": "integer" }, "tokensDay": { "type": "integer" } } }
+      }
+    },
+    "devices": { "type": "array", "items": {
+      "type": "object", "required": ["id", "label", "status", "coverage", "sharing", "windows", "sparks"],
+      "properties": {
+        "sparks": { "$ref": "#/$defs/sparks" },
+        "sharing": {
+          "type": "object", "required": ["alerts", "activity", "rejectedFuture"], "additionalProperties": false,
+          "description": "What the machine shares beyond its records: alerts over the last hour, tool activity over the last five minutes, and how many of its entries this console refused since it started for being dated more than two minutes ahead of its clock.",
+          "properties": { "alerts": { "$ref": "#/$defs/coverage" }, "activity": { "$ref": "#/$defs/coverage" }, "rejectedFuture": { "type": "integer" } }
+        },
+        "coverage": {
+          "type": "object", "required": ["dropped", "reasons", "recovered", "reported", "since"],
+          "description": "reported:false means the machine's reporter version never sent coverage: dropped is null, never 0 (H10).",
+          "properties": {
+            "dropped": { "type": ["integer", "null"] },
+            "reasons": { "type": "array" },
+            "recovered": { "type": "integer" },
+            "reported": { "type": "boolean" },
+            "since": { "type": ["integer", "null"] }
+          }
+        }
+      }
+    } },
+    "people": { "type": "array", "items": { "type": "object", "required": ["person", "devices", "windows", "sparks"],
+      "properties": { "sparks": { "$ref": "#/$defs/sparks" } } } },
+    "team": {
+      "type": "object", "required": ["perMachine"],
+      "properties": {
+        "perMachine": {
+          "type": "object", "required": ["1h", "24h", "7d", "30d"],
+          "description": "Per machine over the machines heard within the period and not removed (H09). usdReporting is their own estimate summed; usdPerMachine = usdReporting / reporting.",
+          "additionalProperties": {
+            "type": "object", "required": ["reporting", "current", "usdReporting", "usdPerMachine", "status"], "additionalProperties": false,
+            "properties": {
+              "reporting": { "type": "integer" }, "current": { "type": "integer" },
+              "usdReporting": { "type": ["number", "null"] }, "usdPerMachine": { "type": ["number", "null"] },
+              "status": { "enum": ["priced", "partial", "unpriced", "none"] }
+            }
+          }
+        }
+      }
+    },
+    "alerts": { "type": "array", "items": { "$ref": "#/$defs/alert" } },
+    "alertsCoverage": {
+      "type": "object", "required": ["watched", "unwatched", "unwatchedDevices", "since", "reason", "byDevice"], "additionalProperties": false,
+      "description": "Current machines (not removed) that watch for alerts: this console's own, and joined machines whose reporter declares share.alerts \"on\" (H03). since/reason: when some watched machine is covered for only part of the last hour, the latest time from which every watched machine's alerts are held, and why; before it \"no alert\" is not known. null when the hour is whole. byDevice: each current machine's coverage of the hour.",
+      "properties": { "watched": { "type": "integer" }, "unwatched": { "type": "integer" },
+        "unwatchedDevices": { "type": "array", "items": { "type": "string" } },
+        "since": { "type": ["integer", "null"] },
+        "reason": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/coverageReason" }] },
+        "byDevice": { "type": "object", "additionalProperties": { "$ref": "#/$defs/coverage" } } }
+    },
+    "interop": {
+      "type": ["object", "null"],
+      "properties": {
+        "otel": { "type": "object", "required": ["available", "tokenDefinition", "dedupedSamples", "cumulativeIgnored"],
+          "properties": { "tokenDefinition": { "const": "input+output+cache" }, "dedupedSamples": { "type": "integer" }, "cumulativeIgnored": { "type": "integer" } } },
+        "kong": { "type": "object", "required": ["available", "tokenDefinition"], "properties": { "tokenDefinition": { "const": "input+output" } } },
+        "litellm": { "type": "object", "required": ["available", "tokenDefinition"], "properties": { "tokenDefinition": { "const": "input+output" } } }
+      }
+    }
+  },
+  "$defs": {
+    "hash64": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "coverageReason": { "enum": ["console-restarted", "sharing-started", "outbox-overflow", "sharing-off", "reporter-undeclared", "not-heard"] },
+    "coverage": {
+      "type": "object", "required": ["state", "since", "reason"], "additionalProperties": false,
+      "description": "How much of a window a machine's opt-in alerts or activity cover. complete: the whole window, so nothing held is a known zero. partial: whole only since `since` (the console started inside the window, the console first heard the machine share then, or the machine's reporter reported a loss up to then); what is held is a floor and nothing held is unavailable. off: the machine's reporter says it does not share (since `since`). undeclared: an older reporter that does not say. unknown: nothing from the machine's reporter since the console started (`since`). Only complete may ever be drawn as zero.",
+      "properties": {
+        "state": { "enum": ["complete", "partial", "off", "undeclared", "unknown"] },
+        "since": { "type": ["integer", "null"] },
+        "reason": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/coverageReason" }] }
+      }
+    },
+    "kinds": { "enum": ["read", "edit", "shell", "search", "web", "agent", "mcp", "other"] },
+    "calls": {
+      "type": "object", "additionalProperties": false,
+      "required": ["read", "edit", "shell", "search", "web", "agent", "mcp", "other"],
+      "properties": { "read": { "type": "integer" }, "edit": { "type": "integer" }, "shell": { "type": "integer" }, "search": { "type": "integer" },
+        "web": { "type": "integer" }, "agent": { "type": "integer" }, "mcp": { "type": "integer" }, "other": { "type": "integer" } }
+    },
+    "results": { "type": "object", "required": ["ok", "error"], "additionalProperties": false,
+      "properties": { "ok": { "type": "integer" }, "error": { "type": "integer" } } },
+    "windowCost": { "type": "object", "required": ["usd", "status"],
+      "properties": { "usd": { "type": ["number", "null"] }, "status": { "enum": ["none", "estimated", "partial", "unpriced"] } } },
+    "stack": {
+      "type": "object", "required": ["frame", "bands", "rest", "restCount"], "additionalProperties": false,
+      "properties": {
+        "frame": { "type": "object", "required": ["start", "step", "steps"], "additionalProperties": false,
+          "properties": { "start": { "type": "integer" }, "step": { "type": "integer" }, "steps": { "type": "integer" } } },
+        "bands": { "type": "array", "maxItems": 4, "items": { "type": "object", "required": ["deviceId", "tokens"], "additionalProperties": false,
+          "properties": { "deviceId": { "type": "string" }, "tokens": { "type": "array", "items": { "type": "integer" } } } } },
+        "rest": { "type": "array", "items": { "type": "integer" } },
+        "restCount": { "type": "integer" }
+      }
+    },
+    "periodSeries": {
+      "type": "object", "required": ["start", "step", "values", "classes", "byDevice"],
+      "properties": { "byDevice": { "$ref": "#/$defs/stack" } }
+    },
+    "periodTallyRow": { "type": "object", "required": ["sessions", "tokens"], "additionalProperties": false,
+      "properties": { "sessions": { "type": ["integer", "null"] }, "tokens": { "type": "integer" } } },
+    "periodTally": { "type": "object", "required": ["basis", "sessionsKept", "reason", "sessions", "byTool", "byDevice", "byPerson"], "additionalProperties": false,
+      "properties": { "basis": { "enum": ["minutes", "utc-days"] }, "sessionsKept": { "type": "boolean" }, "reason": { "type": ["string", "null"] },
+        "sessions": { "type": ["integer", "null"] },
+        "byTool": { "type": "object", "additionalProperties": { "$ref": "#/$defs/periodTallyRow" } },
+        "byDevice": { "type": "object", "additionalProperties": { "$ref": "#/$defs/periodTallyRow" } },
+        "byPerson": { "type": "object", "additionalProperties": { "$ref": "#/$defs/periodTallyRow" } } } },
+    "spark": { "type": "object", "required": ["start", "step", "tokens"], "additionalProperties": false,
+      "description": "A row's tokens over a period at that period's stacked-series resolution (1h: 3 min, 24h: 15 min, 7d: 2 h, 30d: day); the same frame as series[period].byDevice.frame, and it adds up to the row's figure for the period.",
+      "properties": { "start": { "type": "integer" }, "step": { "type": "integer" }, "tokens": { "type": "array", "items": { "type": "integer" } } } },
+    "sparks": { "type": "object", "required": ["1h", "24h", "7d", "30d"], "additionalProperties": false,
+      "properties": { "1h": { "$ref": "#/$defs/spark" }, "24h": { "$ref": "#/$defs/spark" }, "7d": { "$ref": "#/$defs/spark" }, "30d": { "$ref": "#/$defs/spark" } } },
+    "laneTally": { "type": "object", "required": ["sessions", "live", "tokensDay"], "additionalProperties": false,
+      "properties": { "sessions": { "type": "integer" }, "live": { "type": "integer" }, "tokensDay": { "type": "integer" } } },
+    "lane": {
+      "type": "object",
+      "required": ["key", "state", "project", "tool", "model", "device", "tokensDay", "costDay", "agents", "agentTree", "lastAt", "activity", "lastTool", "activityShared", "activityCoverage"],
+      "properties": {
+        "activity": {
+          "type": ["object", "null"], "required": ["window", "calls", "results"], "additionalProperties": false,
+          "description": "Tool calls by kind and results in the last five minutes (H11). Zeros only when activityCoverage.state is complete; a floor when it is partial; null when nothing is held under partial coverage or the machine does not share: unavailable, not idle.",
+          "properties": { "window": { "const": "5m" }, "calls": { "$ref": "#/$defs/calls" }, "results": { "$ref": "#/$defs/results" } }
+        },
+        "lastTool": { "type": ["object", "null"], "required": ["kind", "at"], "additionalProperties": false,
+          "properties": { "kind": { "$ref": "#/$defs/kinds" }, "at": { "type": "integer" } } },
+        "activityShared": { "type": "boolean", "description": "true when activityCoverage.state is complete or partial." },
+        "activityCoverage": { "$ref": "#/$defs/coverage" },
+        "agentTree": { "type": "array", "items": { "type": "object", "required": ["sessionHash", "depth", "outcome", "results"],
+          "properties": { "results": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/results" }] } } } }
+      }
+    },
+    "alert": {
+      "type": "object",
+      "required": ["id", "kind", "at", "seenAt", "historical", "sessionHash", "laneHash", "projectHash", "deviceId", "count", "lane"],
+      "description": "at is the transcript line's own time; seenAt when it was read. historical:true = older than the hour, or raised while a first read replayed history: never counted as live (H01). spike and stall carry tokens5m, median5m and factor (H02).",
+      "properties": {
+        "id": { "type": "string" },
+        "kind": { "enum": ["loop", "spike", "stall"] },
+        "at": { "type": "integer" },
+        "seenAt": { "type": ["integer", "null"] },
+        "historical": { "type": "boolean" },
+        "sessionHash": { "type": "string" },
+        "laneHash": { "type": ["string", "null"] },
+        "projectHash": { "type": ["string", "null"] },
+        "deviceId": { "type": ["string", "null"] },
+        "count": { "type": ["integer", "null"] },
+        "tokens": { "type": ["integer", "null"] },
+        "tokens5m": { "type": ["integer", "null"] },
+        "median5m": { "type": ["number", "null"] },
+        "factor": { "type": ["number", "null"] },
+        "lane": {
+          "type": ["object", "null"], "required": ["key", "projectHash", "deviceId"], "additionalProperties": false,
+          "properties": { "key": { "type": "string" }, "projectHash": { "type": ["string", "null"] }, "deviceId": { "type": ["string", "null"] },
+            "displayName": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

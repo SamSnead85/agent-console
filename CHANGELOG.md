@@ -1,5 +1,53 @@
 # Changelog
 
+## 0.4.0 — 2026-09-25
+
+### Console and team visibility
+
+- Redesign Console, Team and Projects with compact instrument panels, layered
+  activity charts, keyboard navigation, light and dark themes, and mobile layouts.
+  Session rows and inspectors show the same activity readings and coverage.
+- Make period selection apply consistently to headline totals, people, machines,
+  projects and charts. Count all observed sessions, including those outside the
+  displayed row limit. Mark session and branch history that was not retained.
+- Show partial estimates as lower bounds and unavailable readings with their
+  reason. Unreadable Git history is never reported as zero commits.
+- Separate current alerts from alerts found while importing historical logs.
+  Include the affected session and its observed baseline with spike and stall alerts.
+- Add presenting mode with aliases for people, machines, projects and branches,
+  including inspector addresses and the Add a machine dialog.
+
+### Reporting reliability
+
+- Add optional sharing of alerts and tool activity using fixed categories, counts,
+  timestamps and salted identifiers. Raw commands, arguments and tool output stay
+  on the source machine. Sharing is disabled unless explicitly enabled.
+- Deduplicate activity by device and contribution, including lost responses,
+  later-batch failures and reporter restarts. Distinct contributions in the same
+  minute remain distinct.
+- Save pending activity and alerts atomically with their source positions. Report
+  bounded-outbox losses and unavailable coverage after opt-out or Console restart.
+  Coverage starts when sharing is observed; missing readings are never assumed zero.
+- Preserve valid loss intervals when overflow includes observations within the
+  two-minute clock-skew allowance. Activity and alert overflow no longer block
+  delivery of valid token records. Excessively future-dated readings remain rejected.
+- Include Claude Code tool results and Codex tool calls in activity analysis without
+  adding them to token usage.
+- Deduplicate OpenTelemetry points using resource, scope and metric-series identity.
+  Reordered attributes are treated as retries; distinct resources remain separate.
+
+### Distribution and integration
+
+- Publish versioned Console and Projects payload schemas with synthetic fixtures.
+- Clarify GitHub release installation, unsigned native downloads, and the current
+  availability of npm and Homebrew distribution.
+- Add browser checks for accessibility, keyboard interaction, presentation privacy,
+  desktop and mobile layouts, and synthetic multi-period data.
+
+Upgrade the Console before its reporters. Version 0.4 reporters with shared activity
+or alerts require a 0.4 Console; older reporters remain readable with unavailable
+activity coverage clearly identified. Cost figures remain estimates, not invoices.
+
 ## 0.3.0 — 2026-09-25
 
 - Six things the screen said that were not so. On Team and Projects the
@@ -14,7 +62,7 @@
   row is a door — to its lane, or to the alert list that carries it —
   by pointer and by keyboard. Projects fills its frame: the sessions behind
   the projects take the height the table leaves.
-- Three residuals the final captures still showed. Projects' Effort lines
+- Three more layout fixes. Projects' Effort lines
   wrap their figures whole under the label instead of cutting a 30-day
   estimate or the word after a number. Every row that opens an inspector —
   the machines on Console and in the agent tree, the people on Team, the
@@ -317,10 +365,10 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
   platform, checks the version they print, and on Linux their attestation.
 - **npm** receives the exact package file on the release, after it installed on
   macOS, Linux and Windows, checked against `SHA256SUMS` and its attestation,
-  with npm provenance. A tag push alone publishes nothing; without the owner's
-  `NPM_TOKEN` the release says so and skips npm.
+  with npm provenance. A tag push alone publishes nothing; without an `NPM_TOKEN` repository
+  secret the release says so and skips npm.
 - **A Homebrew formula** rendered only from a release's archive checksums
-  (`scripts/render-homebrew-formula.mjs`), for a tap the owner creates.
+  (`scripts/render-homebrew-formula.mjs`), for a Homebrew tap a maintainer publishes.
 - **A team hub image** for Linux amd64 and arm64 (arm64 built under QEMU), non-root,
   with a `HEALTHCHECK` on its join page. Pull requests build and start both
   architectures; a release pushes only the version tag, after starting it, and

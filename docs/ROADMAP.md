@@ -14,6 +14,10 @@ that compiles into Claude Code controls and can be removed; opt-in local
 metrics and telemetry; one period (1 hour to 30 days) on every view; and
 reporters that run in the background and survive a console's restart.
 
+In 0.4.0: a redesigned console with consistent period charts, optional shared
+alerts and tool activity, explicit coverage and loss reporting, durable pending
+contributions, and presentation aliases.
+
 Candidates for later:
 
 1. Installing the reporter as a login service for you (launchd, systemd, Task

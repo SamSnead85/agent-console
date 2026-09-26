@@ -4,8 +4,8 @@ name: Publish to npm
 # downloaded from the release, checked against SHA256SUMS and its signed build
 # attestation, and its version checked against the tag. Nothing is packed again.
 #
-# npm organisation ownership and the NPM_TOKEN secret are configured by the
-# owner. Until they are, this says so and publishes nothing; the download page
+# npm organisation ownership and the NPM_TOKEN secret are configured by a
+# maintainer. Until they are, this says so and publishes nothing; the download page
 # keeps npm marked "coming" until the registry has the version.
 on:
   workflow_call:
@@ -30,13 +30,13 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - name: Require the owner's npm token
+      - name: Require the npm token
         id: token
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::warning::NPM_TOKEN is not configured, so nothing was published to npm. The owner creates the lockedinlabs npm organisation and adds its automation token as the NPM_TOKEN repository secret."
+            echo "::warning::NPM_TOKEN is not configured, so nothing was published to npm. A maintainer creates the lockedinlabs npm organisation and adds its automation token as the NPM_TOKEN repository secret."
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"

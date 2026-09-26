@@ -10,15 +10,7 @@
 <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
-<!--
-  Agent Console · the open-source download page (GitHub Pages).
-  Drawn in the Command Center v3 frame (header, rail, canvas of panes, status bar) so the site reads as the
-  product's own front door: eight screens switched instantly, each deep-linked (#/install), the page never
-  scrolls at desktop sizes; panes scroll inside themselves. Graphite by default, light authored.
-  Every install path and figure on this page is real as of 24 Sep 2026: v0.2.1 on GitHub Releases with a SHA-256
-  and a signed build attestation; the npm package and Homebrew formula are not published yet and are marked "coming".
-  The hero is a capture of the released package running with --demo; the page's one demo stamp is its caption.
--->
+<!-- Agent Console · the open-source download page. Release facts are filled in at build by scripts/site-facts.mjs. -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
     <symbol id="mk-lockedin" viewBox="96 64 880 896">
@@ -48,7 +40,7 @@
     </a>
     <span class="sep" aria-hidden="true">/</span>
     <span class="crumb">Agent Console</span>
-    <span class="ver mono" title="Released 23 September 2026 · built by CI from the v0.2.1 tag">v0.2.1</span>
+    <span class="ver mono" title="Released 25 September 2026 · built by CI from the v0.3.0 tag">v0.3.0</span>
     <span class="grow"></span>
     <a class="ib" href="https://github.com/SamSnead85/agent-console" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#mk-github"/></svg><span class="t">GitHub</span></a>
     <button class="ib" id="themeBtn" type="button" aria-label="Switch theme"><svg aria-hidden="true"><use href="#i-sun"/></svg></button>
@@ -84,11 +76,11 @@
             <div class="get">
               <div class="cmd" data-cmd="npx">
                 <svg class="pr" aria-hidden="true"><use href="#i-term"/></svg>
-                <code id="cmdMain">npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --open</code>
-                <button class="tb primary copy" type="button" data-copy="npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button>
+                <code id="cmdMain">npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --open</code>
+                <button class="tb primary copy" type="button" data-copy="npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button>
               </div>
               <div class="alt">
-                <a class="tb" id="osBtn" href="https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz"><svg aria-hidden="true"><use href="#i-down"/></svg><span>Download for <b id="osName">your OS</b></span></a>
+                <a class="tb" id="osBtn" href="https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz"><svg aria-hidden="true"><use href="#i-down"/></svg><span>Download for <b id="osName">your OS</b></span></a>
                 <a class="tb" href="https://github.com/SamSnead85/agent-console" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#mk-github"/></svg><span>Source on GitHub</span></a>
                 <span class="fine mono">Node 22 or newer · MIT · <a href="#/install">other ways in</a></span>
               </div>
@@ -111,27 +103,27 @@
               <span class="r"><span class="lenses os" id="osSeg" role="group" aria-label="Operating system"><button type="button" data-os="mac">macOS</button><button type="button" data-os="linux">Linux</button><button type="button" data-os="win">Windows</button></span></span></div>
             <div class="pane-b">
               <div class="way">
-                <div class="k"><b>Terminal, one line</b><span>fetches the packaged console from the v0.2.1 release, reads the Claude Code and Codex history already on this computer, and opens it signed in at <code>127.0.0.1:6787</code>. CI runs this exact line against the published release.</span></div>
-                <div class="cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --open</code><button class="tb primary copy" type="button" data-copy="npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
-                <div class="cmd quiet-cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --demo --open</code><button class="tb copy" type="button" data-copy="npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz --demo --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="k"><b>Terminal, one line</b><span>fetches the packaged console from the v0.3.0 release, reads the Claude Code and Codex history already on this computer, and opens it signed in at <code>127.0.0.1:6787</code>. CI runs this exact line against the published release.</span></div>
+                <div class="cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --open</code><button class="tb primary copy" type="button" data-copy="npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="cmd quiet-cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --demo --open</code><button class="tb copy" type="button" data-copy="npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --demo --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
                 <div class="fine">The second line looks around first: a synthetic team of five machines, stamped DEMO, reading nothing of yours.</div>
               </div>
               <div class="way">
                 <div class="k"><b>Download</b><span>the same package, by hand. Unzip nowhere: <code>npx</code> runs the file where it sits. <span data-os-only="win">On Windows, use PowerShell.</span><span data-os-only="mac">On a Mac, use Terminal.</span><span data-os-only="linux">Any shell.</span></span></div>
                 <div class="dl">
-                  <a class="tb" href="https://github.com/SamSnead85/agent-console/releases/download/v0.2.1/lockedinlabs-agent-console-0.2.1.tgz"><svg aria-hidden="true"><use href="#i-down"/></svg><span>lockedinlabs-agent-console-0.2.1.tgz</span></a>
-                  <span class="fine mono">SHA-256 <span class="hash">15e53aa8…9c6aeb</span> · <a href="#/verify">verify it</a></span>
+                  <a class="tb" href="https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz"><svg aria-hidden="true"><use href="#i-down"/></svg><span>lockedinlabs-agent-console-0.3.0.tgz</span></a>
+                  <span class="fine mono">SHA-256 <span class="hash">c6377c1c…fef4f3</span> · <a href="#/verify">verify it</a></span>
                 </div>
-                <div class="cmd" data-os-only="mac linux"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>npx --yes ~/Downloads/lockedinlabs-agent-console-0.2.1.tgz --open</code><button class="tb copy" type="button" data-copy="npx --yes ~/Downloads/lockedinlabs-agent-console-0.2.1.tgz --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
-                <div class="cmd" data-os-only="win"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>npx --yes $HOME\Downloads\lockedinlabs-agent-console-0.2.1.tgz --open</code><button class="tb copy" type="button" data-copy="npx --yes $HOME\Downloads\lockedinlabs-agent-console-0.2.1.tgz --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="cmd" data-os-only="mac linux"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>npx --yes ~/Downloads/lockedinlabs-agent-console-0.3.0.tgz --open</code><button class="tb copy" type="button" data-copy="npx --yes ~/Downloads/lockedinlabs-agent-console-0.3.0.tgz --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="cmd" data-os-only="win"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>npx --yes $HOME\Downloads\lockedinlabs-agent-console-0.3.0.tgz --open</code><button class="tb copy" type="button" data-copy="npx --yes $HOME\Downloads\lockedinlabs-agent-console-0.3.0.tgz --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
               </div>
               <div class="way">
                 <div class="k"><b>From the source</b><span>clone it, or press <b>Code → Download ZIP</b> on GitHub, then start it with Node directly. No build step; there are no dependencies to install.</span></div>
                 <div class="cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>git clone https://github.com/SamSnead85/agent-console.git &amp;&amp; cd agent-console &amp;&amp; node bin/agent-console.mjs --open</code><button class="tb copy" type="button" data-copy="git clone https://github.com/SamSnead85/agent-console.git && cd agent-console && node bin/agent-console.mjs --open"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
               </div>
               <!-- fact:standalone -->
-              <div class="way coming">
-                <div class="k"><b>Standalone executable <span class="chip" data-tone="quiet">coming</span></b><span>One file per system with Node.js inside, for a computer without Node. This release does not carry them yet; the release that does gets an installer that checks the file against <code>SHA256SUMS</code> before it puts it in place.</span></div>
+              <div class="way">
+                <div class="k"><b>Standalone executable</b><span>one file per system with Node.js inside, for a computer without Node. <a href="https://github.com/SamSnead85/agent-console/blob/main/docs/standalone-install.md" target="_blank" rel="noopener">How to install it</a>.</span></div>
               </div>
               <!-- /fact:standalone -->
               <!-- fact:registries -->
@@ -259,7 +251,7 @@
               <p class="say2">Half the bill was the agents re-reading what they already knew. That is what caching is for; the cost is in the breaks. On that run's mean prefix of 366,011 tokens, one break on Opus 5.5 writes $1.83 of cache that a read would have served for seven cents.</p>
               <p class="say2">Anthropic's <code>/usage</code> shows cache misses for the current session. It does not show them across sessions, subagents or machines, or for Codex, and it does not price the week.</p>
             </div>
-            <div class="tfoot"><span>Today: the read/write split per machine and model</span><span>v0.3, in review (PR #3): each break flagged in its lane and priced</span></div>
+            <div class="tfoot"><span>Today: the read/write split per machine and model</span><span>Since v0.3: each break flagged in its lane and priced</span></div>
           </div>
         </div>
       </section>
@@ -320,28 +312,28 @@
             <div class="pane-b">
               <div class="way">
                 <div class="k"><b>1 · The hash</b><span>must print exactly the line below. <span data-os-only="win">PowerShell prints it in upper case; that is the same hash.</span></span></div>
-                <div class="cmd" data-os-only="mac linux"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>shasum -a 256 lockedinlabs-agent-console-0.2.1.tgz</code><button class="tb copy" type="button" data-copy="shasum -a 256 lockedinlabs-agent-console-0.2.1.tgz"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
-                <div class="cmd" data-os-only="win"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>Get-FileHash lockedinlabs-agent-console-0.2.1.tgz</code><button class="tb copy" type="button" data-copy="Get-FileHash lockedinlabs-agent-console-0.2.1.tgz"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
-                <div class="expect"><span class="l">expected · v0.2.1</span><code class="mono">15e53aa80504c98ddda86f0772642d9a15a4547992ed3c29139731679e9c6aeb</code><button class="tb copy" type="button" data-copy="15e53aa80504c98ddda86f0772642d9a15a4547992ed3c29139731679e9c6aeb"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="cmd" data-os-only="mac linux"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>shasum -a 256 lockedinlabs-agent-console-0.3.0.tgz</code><button class="tb copy" type="button" data-copy="shasum -a 256 lockedinlabs-agent-console-0.3.0.tgz"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="cmd" data-os-only="win"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>Get-FileHash lockedinlabs-agent-console-0.3.0.tgz</code><button class="tb copy" type="button" data-copy="Get-FileHash lockedinlabs-agent-console-0.3.0.tgz"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="expect"><span class="l">expected · v0.3.0</span><code class="mono">c6377c1c6c2c349ce45b91381c762b127ed305892d7567a53f5eb0bf84fef4f3</code><button class="tb copy" type="button" data-copy="c6377c1c6c2c349ce45b91381c762b127ed305892d7567a53f5eb0bf84fef4f3"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
               </div>
               <div class="way">
                 <div class="k"><b>2 · The attestation</b><span>proves this exact file was built by this repository's release workflow, from the tag, on GitHub's runners. Needs the <code>gh</code> CLI.</span></div>
-                <div class="cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>gh attestation verify lockedinlabs-agent-console-0.2.1.tgz -R SamSnead85/agent-console</code><button class="tb copy" type="button" data-copy="gh attestation verify lockedinlabs-agent-console-0.2.1.tgz -R SamSnead85/agent-console"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>gh attestation verify lockedinlabs-agent-console-0.3.0.tgz -R SamSnead85/agent-console</code><button class="tb copy" type="button" data-copy="gh attestation verify lockedinlabs-agent-console-0.3.0.tgz -R SamSnead85/agent-console"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
                 <div class="result">
-                  <div class="rh"><span class="st" data-tone="good">Verification succeeded</span><span class="mono">what the v0.2.1 attestation says, read on 24 Sep 2026 with <code>--format json</code></span></div>
+                  <div class="rh"><span class="st" data-tone="good">Verification succeeded</span><span class="mono">what the v0.3.0 attestation says, read on 25 Sep 2026 with <code>--format json</code></span></div>
                   <dl class="kv">
-                    <dt>subject</dt><dd class="mono">lockedinlabs-agent-console-0.2.1.tgz · sha256 15e53aa8…9c6aeb</dd>
-                    <dt>built by</dt><dd class="mono">.github/workflows/release.yml @ refs/tags/v0.2.1</dd>
-                    <dt>from commit</dt><dd class="mono">19644fed1f6f69c9496039dc63919104cd1bb1d4</dd>
+                    <dt>subject</dt><dd class="mono">lockedinlabs-agent-console-0.3.0.tgz · sha256 c6377c1c…fef4f3</dd>
+                    <dt>built by</dt><dd class="mono">.github/workflows/release.yml @ refs/tags/v0.3.0</dd>
+                    <dt>from commit</dt><dd class="mono">7958926233aca73d7afeef5fa7edd59326cec231</dd>
                     <dt>trigger · runner</dt><dd class="mono">release · github-hosted</dd>
                     <dt>predicate</dt><dd class="mono">https://slsa.dev/provenance/v1</dd>
-                    <dt>logged</dt><dd class="mono">rekor.sigstore.dev · 2026-09-22 22:36:49 −04:00</dd>
+                    <dt>logged</dt><dd class="mono">rekor.sigstore.dev · 2026-09-25 18:35:51 UTC</dd>
                   </dl>
                 </div>
               </div>
               <div class="way">
                 <div class="k"><b>3 · Or read the source</b><span>the package is a plain <code>npm pack</code> of the tagged tree: <code>bin/</code>, <code>lib/</code>, <code>public/</code>, <code>server.js</code>. There is no compiled or minified file in it.</span></div>
-                <div class="cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>tar tzf lockedinlabs-agent-console-0.2.1.tgz</code><button class="tb copy" type="button" data-copy="tar tzf lockedinlabs-agent-console-0.2.1.tgz"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+                <div class="cmd"><svg class="pr" aria-hidden="true"><use href="#i-term"/></svg><code>tar tzf lockedinlabs-agent-console-0.3.0.tgz</code><button class="tb copy" type="button" data-copy="tar tzf lockedinlabs-agent-console-0.3.0.tgz"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
               </div>
             </div>
           </div>
@@ -351,7 +343,7 @@
             <div class="pane-h"><h2>How a release is built</h2><span class="sub"><code>.github/workflows/release.yml</code></span></div>
             <div class="pane-b pad">
               <div class="trace">
-                <div class="step" data-v="passed"><div class="node"><svg aria-hidden="true"><use href="#i-check"/></svg></div><div><div class="k">Tag<span class="v">v0.2.1</span></div><div class="what">A release is published from the tag. Nothing is built on anyone's own machine.</div></div></div>
+                <div class="step" data-v="passed"><div class="node"><svg aria-hidden="true"><use href="#i-check"/></svg></div><div><div class="k">Tag<span class="v">v0.3.0</span></div><div class="what">A release is published from the tag. Nothing is built on anyone's own machine.</div></div></div>
                 <div class="step" data-v="passed"><div class="node"><svg aria-hidden="true"><use href="#i-check"/></svg></div><div><div class="k">Test<span class="v">npm test · smoke:pack</span></div><div class="what">The whole suite, including the multi-machine privacy canary, then a packed install started in <code>--demo</code>.</div></div></div>
                 <div class="step" data-v="passed"><div class="node"><svg aria-hidden="true"><use href="#i-check"/></svg></div><div><div class="k">Pack<span class="v">npm pack</span></div><div class="what">The version in <code>package.json</code> must equal the tag; <code>SHA256SUMS</code> is written beside the tarball.</div></div></div>
                 <div class="step" data-v="passed"><div class="node"><svg aria-hidden="true"><use href="#i-lock"/></svg></div><div><div class="k">Attest<span class="v">build provenance</span></div><div class="what">A signed attestation records the workflow, the commit and the file's digest, in Sigstore's public log.</div></div></div>
@@ -367,7 +359,7 @@
       <section class="space" data-space="policy" aria-label="Policy">
         <div class="col main">
           <div class="pane">
-            <div class="pane-h"><h2>A policy file that compiles into Claude Code's own controls</h2><span class="sub">version 1, as <code>policy init</code> writes it</span><span class="r"><span class="chip" data-tone="warn">v0.3 · in review</span></span></div>
+            <div class="pane-h"><h2>A policy file that compiles into Claude Code's own controls</h2><span class="sub">version 1, as <code>policy init</code> writes it</span><span class="r"><span class="chip" data-tone="quiet">since v0.3</span></span></div>
             <div class="pane-b code-b">
 <pre class="code mono"><span class="c"># agent-policy.yaml · platform team</span>
 version: 1
@@ -412,7 +404,7 @@ gates:
               <p class="say2">What a hook cannot see, the compiler says so. Hard token and dollar budgets, proof of a verifying test and a failed-attempt count are reported as <b>not enforceable yet</b>, because a tool-launch hook has no verified balance and no view of those facts. Budgets stay analysis thresholds the console watches.</p>
               <p class="say2">Hooks fail safe and never touch the network. On a malformed input or a policy read error, <code>on_error</code> applies, defaulting to ask.</p>
             </div>
-            <div class="tfoot"><span>The file and parser: PR #11</span><span>The compiler: PR #13</span><span>A managed-settings bundle for MDM follows</span></div>
+            <div class="tfoot"><span>Since v0.3</span><span>Details: <a href="https://github.com/SamSnead85/agent-console/blob/main/docs/policy.md" target="_blank" rel="noopener">docs/policy.md</a></span></div>
           </div>
         </div>
       </section>
@@ -433,8 +425,8 @@ gates:
                 <div><b>The console and everything it draws</b><span>the local reader for Claude Code and Codex</span></div>
                 <div><b>The self-hosted hub</b><span>join by link, TLS pinning, device tokens, team and machine roll-ups, 8 to 90 days of retention</span></div>
                 <div><b>The accounting spec and conformance suite</b><span>ground-truth totals for streamed duplicates, subagent sidechains, resumed sessions, Codex counter resets, one person on two machines</span></div>
-                <div><b>The policy layer</b><span>the file, the parser, <code>init | diff | apply | remove</code> <span class="chip" data-tone="warn">in review</span></span></div>
-                <div><b>Interop</b><span><code>/metrics</code> for Prometheus, OpenTelemetry ingest, LiteLLM and Kong gateway shapes <span class="chip" data-tone="warn">in review · PR #8</span></span></div>
+                <div><b>The policy layer</b><span>the file, the parser, <code>init | diff | apply | remove</code></span></div>
+                <div><b>Interop</b><span><code>/metrics</code> for Prometheus, OpenTelemetry ingest, LiteLLM and Kong gateway shapes</span></div>
               </div>
             </div>
           </div>
@@ -460,7 +452,7 @@ gates:
   </div>
 
   <footer class="status" id="status">
-    <span class="mono">v0.2.1 · 23 Sep 2026</span><span class="mono">MIT</span><span class="mono">Node ≥ 22</span><span class="mono plat">macOS · Linux · Windows</span>
+    <span class="mono">v0.3.0 · 25 Sep 2026</span><span class="mono">MIT</span><span class="mono">Node ≥ 22</span><span class="mono plat">macOS · Linux · Windows</span>
     <span class="right">
       <span class="sc"><span class="kbd">1</span>–<span class="kbd">8</span> sections · <span class="kbd">T</span> theme · <span class="kbd">?</span> keys</span>
       <button type="button" id="themeBtn2">Graphite</button>

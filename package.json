@@ -1,7 +1,7 @@
 {
   "name": "@lockedinlabs/agent-console",
-  "version": "0.3.0",
-  "description": "Agent Console by LockedIn Labs: one view of the AI coding agents on every machine you connect — sessions, tokens, cache reads and writes, models and spend. Zero dependencies.",
+  "version": "0.4.0",
+  "description": "Agent Console by LockedIn Labs: one view of the AI coding agents on every machine you connect \u2014 sessions, tokens, cache reads and writes, models and spend. Zero dependencies.",
   "keywords": [
     "claude-code",
     "codex",
@@ -50,7 +50,8 @@
     "test": "node scripts/test.mjs",
     "pack:check": "npm pack --dry-run --json",
     "smoke:pack": "node scripts/pack-smoke.mjs",
-    "check:public": "node scripts/public-safety/check.mjs"
+    "check:public": "node scripts/public-safety/check.mjs",
+    "lint": "node scripts/lint.mjs"
   },
   "license": "MIT",
   "dependencies": {},

@@ -24,16 +24,33 @@ import { fileURLToPath } from "node:url";
 
 import { CANARIES, writeHome } from "./fixtures/transcripts.js";
 import { readAdminKey, scrapeToken } from "../lib/hub/admin.js";
+import { REPORTER_SEARCH } from "../lib/reporter-search.js";
 
 const BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "bin", "agent-console.mjs");
 const INTENT = { "x-agent-console": "1" };
 
-function freePort() {
+function bindable(port) {
   return new Promise((resolve, reject) => {
     const probe = net.createServer();
     probe.on("error", reject);
-    probe.listen(0, "127.0.0.1", () => { const { port } = probe.address(); probe.close(() => resolve(port)); });
+    probe.listen(port, "127.0.0.1", () => { const { port: bound } = probe.address(); probe.close(() => resolve(bound)); });
   });
+}
+
+/**
+ * A port nothing is listening on: any the system offers, or, given `near`,
+ * one within the reporter's search span of it (the span a reporter looks in
+ * when its console's reporting port moves).
+ */
+async function freePort(near) {
+  if (near === undefined) return bindable(0);
+  for (let d = 1; d <= REPORTER_SEARCH; d += 1) {
+    for (const candidate of [near + d, near - d]) {
+      if (candidate <= 0 || candidate > 65_535) continue;
+      try { return await bindable(candidate); } catch { /* taken: try the next */ }
+    }
+  }
+  throw new Error(`no free port within ${REPORTER_SEARCH} of ${near}`);
 }
 
 function run(args, { env = {}, timeoutMs = 30_000 } = {}) {
@@ -112,7 +129,7 @@ const wholeAnswer = (a) => [a.status, JSON.stringify(a.headers), a.body].join("\
  * way for data to reach a screen or another machine cannot skip the canaries.
  */
 const CONSOLE_READS = ["/api/console", "/api/projects?period=24h", "/api/projects?period=3d", "/api/hello"];
-const REPORTING_READS = ["/join", "/join.js", "/join.css", "/house.css", "/brand/mark.svg", "/favicon.svg", "/api/join/info"];
+const REPORTING_READS = ["/join", "/join.js", "/join.css", "/house.css", "/theme.js", "/brand/mark.svg", "/brand/substrate.jpg", "/favicon.svg", "/api/join/info"];
 /** With --interop, read with the scrape token, never the cookie. */
 const METRICS_READS = ["/metrics"];
 
@@ -202,7 +219,8 @@ test("two machines join by link, report, roll up by person, and nothing private 
 
   const joinA = await run(["join", via(a), "--once", "--json", "--home", laptop, "--state-dir", path.join(root, "laptop-state")]);
   assert.equal(joinA.code, 0, joinA.out + joinA.err);
-  const joinB = await run(["join", via(b), "--once", "--json", "--home", workstation, "--state-dir", path.join(root, "ws-state")]);
+  // The workstation opts in to sending its alerts and tool activity (counts only); the laptop does not.
+  const joinB = await run(["join", via(b), "--once", "--json", "--home", workstation, "--state-dir", path.join(root, "ws-state"), "--share-alerts", "--share-tool-activity"]);
   assert.equal(joinB.code, 0, joinB.out + joinB.err);
   const eventsA = joinA.out.trim().split("\n").map((l) => JSON.parse(l));
   assert.equal(eventsA[0].event, "joined");
@@ -214,7 +232,19 @@ test("two machines join by link, report, roll up by person, and nothing private 
   assert.match(again.err, /not valid/u);
 
   const view = await consoleView(hub);
-  assert.deepEqual(view.alerts, [], 'the network console exposes no raw local alert fields');
+  assert.ok(view.alerts.every((a) => a.deviceId !== view.devices.find((d) => d.label === "Laptop")?.id), 'no alert from a machine that did not share them');
+  assert.deepEqual(view.alertsCoverage.unwatchedDevices, [view.devices.find((d) => d.label === "Laptop").id], "the laptop is named as not watched");
+  assert.equal(view.alertsCoverage.watched, 1);
+  for (const lane of view.lanes) {
+    const shared = lane.device.label === "Workstation";
+    assert.equal(lane.activityShared, shared, lane.device.label);
+    if (!shared) { assert.equal(lane.activity, null); assert.equal(lane.activityCoverage.state, "off"); continue; }
+    // A console started seconds ago, a machine just joined: covered from its first "on", so
+    // nothing held yet is unavailable, never zero.
+    assert.equal(lane.activityCoverage.state, "partial");
+    assert.ok(["console-restarted", "sharing-started"].includes(lane.activityCoverage.reason), lane.activityCoverage.reason);
+    if (lane.activity) assert.deepEqual(Object.keys(lane.activity.calls).sort(), ["agent", "edit", "mcp", "other", "read", "search", "shell", "web"]);
+  }
   assert.equal(view.devices.length, 2);
   for (const d of view.devices) {
     assert.equal(d.status, "reporting", d.label + " is not reporting");
@@ -230,7 +260,8 @@ test("two machines join by link, report, roll up by person, and nothing private 
   for (const lane of view.lanes) {
     assert.ok(Array.isArray(lane.agentTree) && lane.agentTree.length > 0);
     for (const agent of lane.agentTree) {
-      assert.deepEqual(Object.keys(agent).sort(), ["depth", "durationMinutes", "model", "modelLabel", "outcome", "parentSessionHash", "rootSessionHash", "sessionHash", "tokens"]);
+      assert.deepEqual(Object.keys(agent).sort(), ["depth", "durationMinutes", "model", "modelLabel", "outcome", "parentSessionHash", "results", "rootSessionHash", "sessionHash", "tokens"]);
+      assert.ok(agent.results === null || (Object.keys(agent.results).sort().join() === "error,ok"), "results are two counts");
       assert.ok(["succeeded", "failed", "unknown"].includes(agent.outcome));
       assert.ok(agent.tokens === null || Number.isSafeInteger(agent.tokens));
     }
@@ -262,9 +293,31 @@ test("two machines join by link, report, roll up by person, and nothing private 
     assert.ok(!kept.includes(canary), `"${canary}" was kept by a reporter`);
     assert.ok(!shown.includes(canary), `"${canary}" reached the console`);
   }
+  const extrasSent = { envelopes: 0, activity: 0 };
   for (const b of wire.bodies.filter((x) => x.url === "/api/ingest")) {
     const envelope = JSON.parse(b.body);
-    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "coverage", "backlog"]);
+    const workstation = envelope.device.label === "Workstation";
+    const lists = ["alerts", "activity", "lost"].filter((k) => k in envelope);
+    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "coverage", "share", ...lists, "backlog"]);
+    // Every envelope says what its run shares; only the machine that opted in sends a list.
+    assert.deepEqual(envelope.share, workstation ? { alerts: "on", activity: "on" } : { alerts: "off", activity: "off" });
+    assert.ok(workstation || lists.length === 0, "a list from a machine that does not share it");
+    if (lists.length) {
+      extrasSent.envelopes += 1; extrasSent.activity += envelope.activity?.length ?? 0;
+      // Alerts: a salted id, a kind, a minute, a salted session hash, a count and a flag.
+      for (const a of envelope.alerts ?? []) {
+        assert.deepEqual(Object.keys(a).sort(), ["at", "count", "historical", "id", "kind", "sessionHash"]);
+        assert.match(a.at, /:00\.000Z$/u);
+        assert.equal(a.historical, true, "raised while reading the backlog on a first join");
+      }
+      // Activity: per session and minute, eight kinds' counts, ok and error, and the last tool's kind.
+      for (const e of envelope.activity ?? []) {
+        assert.deepEqual(Object.keys(e).sort(), ["at", "calls", "id", "lastTool", "results", "sessionHash"]);
+        assert.match(e.id, /^[0-9a-f]{64}$/u, "a contribution is named by a salted hash");
+        assert.deepEqual(Object.keys(e.calls).sort(), ["agent", "edit", "mcp", "other", "read", "search", "shell", "web"]);
+        assert.match(e.at, /:00\.000Z$/u, "a time finer than a minute left the machine");
+      }
+    }
     // What could not be counted: reason names and counts, nothing else.
     for (const [kind, n] of Object.entries(envelope.coverage)) assert.ok(/^[a-z][A-Za-z]+$/.test(kind) && Number.isSafeInteger(n), kind);
     // How far a catch-up has got: two counts, nothing else.
@@ -280,6 +333,9 @@ test("two machines join by link, report, roll up by person, and nothing private 
       assert.match(r.at, /:00\.000Z$/u, "a time finer than a minute left the machine");
     }
   }
+  assert.equal(extrasSent.envelopes, 1, "the opt-in extras ride on one envelope");
+  assert.ok(view.lanes.some((l) => l.device.label === "Workstation" && l.lastTool), "the shared activity lands on its own lane");
+  assert.ok(extrasSent.activity > 0, "the workstation's tool activity was sent");
   // Project hashes use each reporter's own key, not the salt the hub holds, so
   // the hub cannot confirm a guess of a folder path against them.
   const orgSalt = Buffer.from(JSON.parse(fs.readFileSync(path.join(root, "laptop-state", "credentials.json"), "utf8")).orgSalt, "base64url");
@@ -457,13 +513,15 @@ test("a reporter follows its console to a new reporting port, by its pinned cert
   assert.equal((await run(["join", (await invite(hub, "You", "Laptop")).link, "--once", "--home", home, "--state-dir", state])).code, 0);
   one.child.kill("SIGTERM");
   await new Promise((r) => one.child.once("exit", r));
-  const two = startHub(["--no-local", "--state-dir", hubState, "--report-port", String(port + 3)]);
+  // A free port the reporter's search reaches, not a fixed guess that may be taken.
+  const movedPort = await freePort(port);
+  const two = startHub(["--no-local", "--state-dir", hubState, "--report-port", String(movedPort)]);
   t.after(() => two.child.kill("SIGKILL"));
   await two.ready;
   const moved = await run(["report", "--once", "--json", "--home", home, "--state-dir", state]);
   assert.equal(moved.code, 0, moved.out + moved.err);
   assert.match(moved.out, /"event":"moved"/u);
-  assert.equal(JSON.parse(fs.readFileSync(path.join(state, "credentials.json"), "utf8")).hub, `https://127.0.0.1:${port + 3}`);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(state, "credentials.json"), "utf8")).hub, `https://127.0.0.1:${movedPort}`);
 });
 
 test("the hub's own machine: nothing of it leaves through the reporting port", async (t) => {

@@ -35,7 +35,8 @@ test('collector-fed lines raise bounded local signals without retaining tool arg
   assert.ok(!JSON.stringify(engine.list()).includes('CANARY-PRIVATE-COMMAND'));
   for (const alert of engine.list()) {
     assert.deepEqual(Object.keys(alert).sort(),
-      ['at', 'id', 'kind', 'laneHash', 'projectHash', 'sessionHash', 'sourceAt', 'tokens']);
+      ['at', 'count', 'historical', 'id', 'kind', 'laneHash', 'projectHash', 'seenAt', 'sessionHash', 'sourceAt', 'tokens']);
+    assert.equal(alert.historical, false, 'a line read as it is written is live');
     assert.equal(alert.laneHash, sessionHash);
     assert.equal(alert.projectHash, projectHash);
   }

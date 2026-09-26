@@ -431,5 +431,14 @@
         "cacheRead": null
       }
     }
+  ],
+  "aliases": [
+    {
+      "model": "claude-haiku-4-5",
+      "aliasOf": "claude-haiku-4-5-20251001",
+      "verifiedOn": "2026-09-25",
+      "source": "https://platform.claude.com/docs/en/about-claude/models/overview",
+      "reason": "Anthropic publishes claude-haiku-4-5 as the alias of the dated id claude-haiku-4-5-20251001; the alias prices at the dated row."
+    }
   ]
 }
