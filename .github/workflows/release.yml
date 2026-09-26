@@ -254,6 +254,7 @@ jobs:
         run: |
           sh ./install.sh
           test "$("$AGENT_CONSOLE_INSTALL_DIR/agent-console" --version)" = "agent-console ${AGENT_CONSOLE_VERSION#v}"
+      # In Windows PowerShell 5.1, as the README runs it: the PowerShell every PC has.
       - name: Install with install.ps1 and run it
         if: runner.os == 'Windows'
         shell: pwsh
@@ -261,7 +262,8 @@ jobs:
           AGENT_CONSOLE_VERSION: ${{ github.event.release.tag_name }}
           AGENT_CONSOLE_INSTALL_DIR: ${{ runner.temp }}\agent-console-bin
         run: |
-          ./install.ps1
+          powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+          if ($LASTEXITCODE -ne 0) { throw "install.ps1 exited $LASTEXITCODE" }
           $printed = & (Join-Path $env:AGENT_CONSOLE_INSTALL_DIR 'agent-console.exe') --version
           if ($printed -ne ('agent-console ' + $env:AGENT_CONSOLE_VERSION.Substring(1))) { throw "installed executable printed: $printed" }
       # What a browser download meets: a quarantined copy must be accepted by

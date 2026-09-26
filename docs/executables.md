@@ -12,7 +12,7 @@ needs nothing else installed.
 | `agent-console-darwin-x64`, `agent-console-darwin-x64.tar.gz` | macOS, Intel |
 | `agent-console-linux-x64`, `agent-console-linux-x64.tar.gz` | Linux, x64 |
 | `agent-console-linux-arm64`, `agent-console-linux-arm64.tar.gz` | Linux, arm64 |
-| `agent-console-win32-x64.exe` | Windows, x64 |
+| `agent-console-win32-x64.exe` | Windows, x64 (Windows 11 on Arm runs it under emulation) |
 
 Each executable is about 115 MB; a `.tar.gz` is about 40 MB and holds the same
 executable with its execute permission kept, `LICENSE`, Node.js's licence as
@@ -44,7 +44,7 @@ upper case.
 The release page says beside each file whether it is signed, and the release
 notes say it per platform, from the same record the build wrote after signing.
 
-- **macOS: signed and notarized**, from the first release after 0.3.0. Each
+- **macOS: signed and notarized**, from 0.4.0. Each
   macOS executable is signed with an Apple Developer ID under the hardened
   runtime, with a secure timestamp and the identifier
   `ai.lockedinlabs.agent-console`, then notarized by Apple. It opens without a
@@ -77,7 +77,8 @@ notes say it per platform, from the same record the build wrote after signing.
   downloaded in a browser instead may meet SmartScreen's *Windows protected
   your PC*: check its hash, then choose **More info → Run anyway**. On a PC
   with Smart App Control turned on, Windows refuses unsigned programs
-  outright; there, use the npm package or `npx` (Node.js is signed).
+  outright; there, use Node.js, which is signed: the README's `npx.cmd` line
+  or the npm package.
 - **Linux:** no signing scheme applies; the hash and the attestation are the
   check.
 
@@ -94,8 +95,10 @@ into a folder named for its version and contents:
 | Windows | `%LOCALAPPDATA%\agent-console\Cache\` |
 
 `AGENT_CONSOLE_CACHE_DIR` chooses another folder. Every start checks the files
-again and puts back any that changed. It fetches nothing, and it keeps its data
-where the npm package does (`~/.agent-console/`). The commands it prints, such
+again and puts back any that changed, and clears away the folders other
+versions left there once no running copy uses them. It fetches nothing, and it
+keeps its data where the npm package does (`~/.agent-console/`).
+[uninstall.md](uninstall.md) lists everything to delete. The commands it prints, such
 as the one to run it again, name the executable, never `node`.
 
 ## How it is built
@@ -109,7 +112,8 @@ into a copy of the Node.js that ran the build, with
 [its lockfile](../packaging/sea/package-lock.json). CI builds each target on its
 own platform's runner and starts it there with no Node.js on `PATH`
 ([`smoke.mjs`](../packaging/sea/smoke.mjs)): version, unpack, repair of a
-changed file, demo console, sign-in and join page. The package itself still has
+changed file, clearing old copies, demo console, sign-in, join page and a
+background reporter. The package itself still has
 no dependencies.
 
 A release's macOS executables are signed and notarized on the macOS runners,

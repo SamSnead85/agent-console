@@ -40,7 +40,7 @@ function line(platform, status) {
       : `- **${platform.name}** (${file}): **not signed or notarized** (${status || "unsigned"}). macOS stops a browser download of it; see docs/executables.md.`;
   }
   if (platform.key.startsWith("win32")) {
-    return `- **${platform.name}** (${file}): **not code-signed**; there is no Authenticode certificate. Install it with \`install.ps1\`, which checks it against \`SHA256SUMS\` before copying it into place. Downloaded in a browser instead, SmartScreen may warn before its first start.`;
+    return `- **${platform.name}** (${file}): **not code-signed**; there is no Authenticode certificate. Install it with \`install.ps1\`, which checks it against \`SHA256SUMS\` before copying it into place, or use Node.js (\`npx.cmd\` or the npm package). Downloaded in a browser instead, SmartScreen may warn before its first start, and Smart App Control refuses it.`;
   }
   return `- **${platform.name}** (${file} and its \`.tar.gz\`): Linux has no code-signing scheme for it; \`SHA256SUMS\` and the build attestation are the check.`;
 }

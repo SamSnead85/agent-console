@@ -15,7 +15,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { signingNotes } from "../scripts/release-signing-notes.mjs";
-import { formulaMatches, nativeDownloads, parseSums, renderSite, shortDate, windowsInstallCommand } from "../scripts/site-facts.mjs";
+import { formulaMatches, macSignedFromLabels, nativeDownloads, parseSums, renderSite, shortDate, windowsInstallCommand } from "../scripts/site-facts.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 // Windows checks the tree out with CRLF; the checks below read lines.
@@ -26,18 +26,29 @@ const sha256 = (bytes) => crypto.createHash("sha256").update(bytes).digest("hex"
 
 const posixOnly = { skip: process.platform === "win32" ? "install.sh is for macOS and Linux" : false };
 
-function installFixture({ corrupt = false, omitLine = false } = {}) {
+/**
+ * A release on disk, a curl that serves it, and optionally stand-ins for
+ * uname, getconf and ldd (to be a Linux machine of a given C library), a
+ * login shell, and PATH entries of the user's own.
+ */
+function installFixture({ corrupt = false, omitLine = false, omitAsset = false, linux = null, shell = "/bin/zsh", onPath = false } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-install-"));
   const release = path.join(dir, "release");
   const bin = path.join(dir, "fake-bin");
   const dest = path.join(dir, "dest");
   fs.mkdirSync(release);
   fs.mkdirSync(bin);
-  const platform = process.platform === "darwin" ? "darwin" : "linux";
-  const arch = process.arch === "arm64" ? "arm64" : "x64";
+  const platform = linux ? "linux" : process.platform === "darwin" ? "darwin" : "linux";
+  const arch = linux ? "x64" : process.arch === "arm64" ? "arm64" : "x64";
   const asset = `agent-console-${platform}-${arch}`;
   const program = "#!/bin/sh\necho 'agent-console 9.9.9'\n";
-  fs.writeFileSync(path.join(release, asset), corrupt ? program + "# changed\n" : program);
+  if (!omitAsset) fs.writeFileSync(path.join(release, asset), corrupt ? program + "# changed\n" : program);
+  if (linux) {
+    const tool = (name, body) => fs.writeFileSync(path.join(bin, name), "#!/bin/sh\n" + body + "\n", { mode: 0o755 });
+    tool("uname", 'case "$1" in -s) echo Linux ;; -m) echo x86_64 ;; *) echo Linux ;; esac');
+    tool("getconf", linux.glibc ? `echo 'glibc ${linux.glibc}'` : "exit 1");
+    tool("ldd", linux.musl ? "echo 'musl libc (x86_64)' >&2; exit 1" : "echo 'ldd (GNU libc) 2.31'");
+  }
   const lines = [`${"0".repeat(64)}  lockedinlabs-agent-console-9.9.9.tgz`];
   if (!omitLine) lines.push(`${sha256(program)}  ${asset}`);
   fs.writeFileSync(path.join(release, "SHA256SUMS"), lines.join("\n") + "\n");
@@ -56,7 +67,7 @@ cp "${release}/\${url##*/}" "$out"
 `, { mode: 0o755 });
   const run = () => spawnSync("sh", [path.join(ROOT, "install.sh")], {
     encoding: "utf8",
-    env: { PATH: `${bin}:/usr/bin:/bin:/usr/sbin:/sbin`, HOME: dir, AGENT_CONSOLE_VERSION: "v9.9.9", AGENT_CONSOLE_INSTALL_DIR: dest },
+    env: { PATH: `${bin}:/usr/bin:/bin:/usr/sbin:/sbin${onPath ? `:${dest}` : ""}`, HOME: dir, SHELL: shell, AGENT_CONSOLE_VERSION: "v9.9.9", AGENT_CONSOLE_INSTALL_DIR: dest },
   });
   return { dir, dest, run };
 }
@@ -92,6 +103,61 @@ test("install.sh refuses a release whose SHA256SUMS does not list the file", pos
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+test("install.sh gives the exact line that puts its folder on PATH, for the shell in use", posixOnly, () => {
+  const expected = [
+    ["/bin/zsh", null, `echo 'export PATH="$HOME/dest:$PATH"' >> ~/.zshrc`],
+    ["/bin/bash", { glibc: "2.31" }, `echo 'export PATH="$HOME/dest:$PATH"' >> ~/.bashrc`],
+    ["/usr/bin/fish", null, "fish_add_path "],
+    ["/bin/ksh", null, `echo 'export PATH="$HOME/dest:$PATH"' >> ~/.profile`],
+  ];
+  if (process.platform === "darwin") expected.push(["/bin/bash", null, `echo 'export PATH="$HOME/dest:$PATH"' >> ~/.bash_profile`]);
+  for (const [shell, linux, line] of expected) {
+    const { dir, dest, run } = installFixture({ shell, linux });
+    try {
+      const result = run();
+      assert.equal(result.status, 0, result.stderr);
+      assert.match(result.stdout, /^Installed v9\.9\.9 to .*\/dest\/agent-console\n/u);
+      assert.ok(result.stdout.includes(`Start it:  ${dest}/agent-console --open\n`), result.stdout);
+      assert.ok(result.stdout.includes(`is not on your PATH. To run it as just agent-console, run:\n  ${line}`), `${shell}:\n${result.stdout}`);
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  }
+  const { dir, run } = installFixture({ onPath: true });
+  try {
+    const result = run();
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /\nStart it: {2}agent-console --open\n$/u);
+    assert.doesNotMatch(result.stdout, /not on your PATH/u);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("install.sh refuses a Linux its executable cannot run, and names the npx line instead", posixOnly, () => {
+  for (const [linux, named] of [[{ musl: true }, "musl libc"], [{ glibc: "2.17" }, "glibc 2.17"]]) {
+    const { dir, dest, run } = installFixture({ linux });
+    try {
+      const result = run();
+      assert.notEqual(result.status, 0);
+      assert.ok(result.stderr.includes(`This Linux has ${named}; the Agent Console executable needs glibc 2.28 or newer. Nothing was installed.`), result.stderr);
+      assert.ok(result.stderr.includes("npx --yes https://github.com/SamSnead85/agent-console/releases/download/v9.9.9/lockedinlabs-agent-console-9.9.9.tgz --open"));
+      assert.equal(fs.existsSync(dest), false);
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  }
+  const { dir, run } = installFixture({ linux: { glibc: "2.28" } });
+  try {
+    assert.equal(run().status, 0, "glibc 2.28 is enough");
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("install.sh says what to set behind a proxy when a download fails", posixOnly, () => {
+  const { dir, dest, run } = installFixture({ omitAsset: true });
+  try {
+    const result = run();
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /^Could not download https:\/\/github\.com\/\S+\/agent-console-\S+\. Nothing was installed\.\nBehind a proxy\? Set HTTPS_PROXY=/mu);
+    assert.match(result.stderr, /CURL_CA_BUNDLE/u);
+    assert.equal(fs.existsSync(dest), false);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 test("install.ps1 compares Get-FileHash with SHA256SUMS before it copies anything into place", () => {
   const script = read("install.ps1");
   const hash = script.indexOf("Get-FileHash");
@@ -99,6 +165,31 @@ test("install.ps1 compares Get-FileHash with SHA256SUMS before it copies anythin
   const copy = script.indexOf("Copy-Item");
   assert.ok(hash > 0 && mismatch > hash && copy > mismatch, "hash, then refusal, then copy");
   assert.doesNotMatch(script, /Start-Process|Invoke-Expression|iex\b|& \$binary/u, "never runs the download");
+});
+
+test("install.ps1 downloads quickly in Windows PowerShell 5.1, over TLS 1.2, without the GitHub API", () => {
+  const script = read("install.ps1");
+  const first = script.indexOf("Invoke-WebRequest");
+  const before = (text) => { const i = script.indexOf(text); return i > 0 && i < first; };
+  assert.ok(before("$ProgressPreference = 'SilentlyContinue'"), "no progress bar before the first download");
+  assert.ok(before("[Net.ServicePointManager]::SecurityProtocol -bor 3072"), "TLS 1.2 before the first download");
+  assert.doesNotMatch(script, /api\.github\.com|Invoke-RestMethod/u, "no API, so no rate limit");
+  assert.match(script, /Invoke-WebRequest -UseBasicParsing -Method Head -Uri "https:\/\/github\.com\/\$repo\/releases\/latest"/u);
+  for (const call of script.match(/Invoke-WebRequest[^\n]*/gu)) assert.match(call, /-UseBasicParsing/u, call);
+});
+
+test("install.ps1 puts its folder on the user's PATH, keeping %VARIABLES%, unless told not to", () => {
+  const script = read("install.ps1");
+  const copy = script.indexOf("Copy-Item");
+  const registry = script.indexOf("[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)");
+  assert.ok(copy > 0 && registry > copy, "PATH only after the checked file is in place");
+  assert.match(script, /GetValue\('Path', '', \[Microsoft\.Win32\.RegistryValueOptions\]::DoNotExpandEnvironmentNames\)/u);
+  assert.match(script, /SetValue\('Path', [^\n]*\[Microsoft\.Win32\.RegistryValueKind\]::ExpandString\)/u);
+  assert.match(script, /\$env:AGENT_CONSOLE_NO_MODIFY_PATH -ne '1'/u);
+  assert.match(script, /SendMessageTimeout\(\[IntPtr\] 0xffff, 0x1A,[^\n]*'Environment'/u, "tells Windows the environment changed");
+  assert.doesNotMatch(script, /SetEnvironmentVariable\('Path'[^\n]*'User'\)/u, "that would flatten %VARIABLES% in the user's PATH");
+  // Windows 11 on Arm runs the x64 executable; Windows 10 on Arm is refused with the npx line.
+  assert.match(script, /if \(\[Environment\]::OSVersion\.Version\.Build -lt 22000\) \{\s+throw "[^"]*npx\.cmd --yes \$package --open"/u);
 });
 
 /* ── Homebrew formula ── */
@@ -248,6 +339,21 @@ test("npm and Homebrew each go live on their own, and an executable missing from
   assert.throws(() => parseSums(`${"a".repeat(64)}  x\n${"b".repeat(64)}  x\n`), /duplicate/u);
 });
 
+test("the download page calls the macOS executables signed only when the release's labels say so", () => {
+  const label = (name, signing) => ({ name, label: `${name} · x${signing ? `, ${signing}` : ""}` });
+  const signed = ["agent-console-darwin-arm64", "agent-console-darwin-arm64.tar.gz", "agent-console-darwin-x64", "agent-console-darwin-x64.tar.gz"]
+    .map((name) => label(name, "signed and notarized"));
+  assert.equal(macSignedFromLabels([...signed, label("agent-console-win32-x64.exe", "unsigned"), label("agent-console-linux-x64", "")]), true);
+  assert.equal(macSignedFromLabels([...signed.slice(1), label("agent-console-darwin-arm64", "unsigned")]), false, "one unsigned file is enough to say nothing");
+  assert.equal(macSignedFromLabels([]), false);
+  const native = nativeDownloads({ tag: "v9.9.9", assetNames: new Set(["agent-console-darwin-arm64"]), sums: parseSums(`${"3".repeat(64)}  agent-console-darwin-arm64\n`) });
+  const yes = renderSite({ ...FACTS, native, installers: true, macSigned: true }).html;
+  assert.match(yes, /On macOS it is signed with an Apple Developer ID and notarized by Apple; on Windows it is not code-signed/u);
+  const no = renderSite({ ...FACTS, native, installers: true }).html;
+  assert.doesNotMatch(no, /notarized/u);
+  assert.match(no, /Unsigned files say so on the release page\./u);
+});
+
 test("the copied macOS and Linux command installs the page's release even when a newer one is latest", posixOnly, () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-site-pin-"));
   try {
@@ -306,7 +412,9 @@ test("the copied Windows command downloads to a new temporary file, stops on any
   const at = (text) => { const i = command.indexOf(text); assert.ok(i >= 0, `missing: ${text}`); return i; };
   // Its own scope, so the stop-on-error preference does not outlive the command.
   assert.ok(command.startsWith("& { $ErrorActionPreference = 'Stop'; ") && command.endsWith(" }"));
+  const quick = at("$ProgressPreference = 'SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072; ");
   const temp = at("$f = Join-Path ([IO.Path]::GetTempPath()) ('agent-console-install-' + [Guid]::NewGuid().ToString('N') + '.ps1')");
+  assert.ok(quick < temp);
   const download = at(`Invoke-WebRequest -UseBasicParsing -Uri '${url}' -OutFile $f`);
   const check = at("if (-not (Test-Path -LiteralPath $f) -or (Get-Item -LiteralPath $f).Length -eq 0) { throw");
   const version = at("$env:AGENT_CONSOLE_VERSION = 'v9.9.9'");
@@ -402,4 +510,62 @@ test("the README's Install section lists every way in, in order, pinned to this 
   assert.match(install, /Windows \(x64; not code-signed\)[\s\S]*install\.ps1/u);
   for (const [, tag] of readme.matchAll(/ghcr\.io\/samsnead85\/agent-console:v([0-9][^\s`]*)/gu)) assert.equal(tag, version, "the Docker tag is this version");
   assert.match(install, /ghcr\.io\/samsnead85\/agent-console:v/u);
+});
+
+test("the README gives Windows PowerShell lines its default policy runs, and says the executable is unsigned", () => {
+  const readme = read("README.md");
+  const { version } = JSON.parse(read("package.json"));
+  const url = `https://github.com/SamSnead85/agent-console/releases/download/v${version}/lockedinlabs-agent-console-${version}.tgz`;
+  const install = readme.slice(readme.indexOf("\n## Install\n"), readme.indexOf("\n## Start here\n"));
+  const start = readme.slice(readme.indexOf("\n## Start here\n"), readme.indexOf("\n### Add another computer\n"));
+  // npx.ps1 and npm.ps1 are what plain npx and npm resolve to in PowerShell; the Restricted policy refuses them.
+  for (const part of [install, start]) assert.ok(part.includes(`npx.cmd --yes ${url} --open`), "npx.cmd line");
+  assert.ok(install.includes("npm.cmd install -g"));
+  assert.ok(install.includes("powershell -NoProfile -ExecutionPolicy Bypass -File .\\install.ps1"));
+  assert.match(install, /\*\*On Windows\*\* the executable is not code-signed/u);
+  assert.match(install, /NODE_USE_ENV_PROXY=1[\s\S]*NODE_EXTRA_CA_CERTS/u, "the join check behind a proxy");
+  assert.match(readme, /\n## Uninstall\n[\s\S]*\(docs\/uninstall\.md\)/u);
+});
+
+test("the uninstall guide names every file, folder and background item Agent Console creates", () => {
+  const guide = read("docs/uninstall.md");
+  const main = read("packaging/sea/main.cjs");
+  // The standalone executable's cache, per system, as main.cjs computes it.
+  assert.match(main, /path\.join\(home, "Library", "Caches", "agent-console"\)/u);
+  assert.match(main, /path\.join\(home, "\.cache"\)[\s\S]*"agent-console"/u);
+  assert.match(main, /"agent-console", "Cache"/u);
+  for (const place of [
+    "~/.agent-console", "hub/", "reporter/", "releases/", "policy/",
+    "~/Library/Caches/agent-console/", "~/.cache/agent-console/", "%LOCALAPPDATA%\\agent-console\\", "AGENT_CONSOLE_CACHE_DIR",
+    "_npx", "agent-console leave", "agent-console policy remove",
+    "launchctl bootout gui/$(id -u)/ai.lockedinlabs.agent-console.reporter", "~/Library/LaunchAgents/ai.lockedinlabs.agent-console.reporter.plist",
+    "systemctl --user disable --now agent-console-reporter", "Unregister-ScheduledTask -TaskName \"Agent Console reporter\"",
+    "npm uninstall -g @lockedinlabs/agent-console", "brew uninstall agent-console", "~/.local/bin/agent-console",
+    "Programs\\AgentConsole", "DoNotExpandEnvironmentNames", "docker volume rm agent-console-state", "--state-dir",
+  ]) assert.ok(guide.includes(place), `uninstall.md does not mention ${place}`);
+  // The background recipes' own names and paths are the ones the guide removes.
+  const background = read("docs/BACKGROUND.md");
+  for (const name of ["ai.lockedinlabs.agent-console.reporter", "agent-console-reporter.service", "Agent Console reporter", "Library/Logs/agent-console-reporter.log"]) {
+    assert.ok(background.includes(name) && guide.includes(name.replace("/Users/you/", "~/")), name);
+  }
+});
+
+test("the background recipes restart a failed reporter and leave alone one that stopped for a reason", posixOnly, () => {
+  const background = read("docs/BACKGROUND.md");
+  const plist = /```xml\n([\s\S]*?)```/u.exec(background)[1];
+  assert.doesNotMatch(plist, /<key>KeepAlive<\/key><true\/>/u, "KeepAlive true restarts even a stop on request");
+  assert.match(plist, /<key>KeepAlive<\/key>\s*<dict>\s*<key>SuccessfulExit<\/key><false\/>\s*<\/dict>/u);
+  assert.match(plist, /<key>EnvironmentVariables<\/key>\s*<dict>\s*<key>PATH<\/key>/u, "npx and the npm command need node on PATH");
+  assert.match(plist, /<key>ThrottleInterval<\/key><integer>60<\/integer>/u);
+  assert.match(background, /^RestartPreventExitStatus=2 3 4$/mu);
+  assert.match(background, /New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries/u);
+  // Run the plist's own program around a stand-in reporter that exits with each code.
+  const program = /<string>-c<\/string>\s*<string>([\s\S]*?)<\/string>/u.exec(plist)[1].replace(/&amp;/gu, "&").replace(/&lt;/gu, "<").replace(/&gt;/gu, ">");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "agent-console-launchd-"));
+  try {
+    const reporter = path.join(dir, "reporter");
+    fs.writeFileSync(reporter, "#!/bin/sh\nexit \"$1\"\n", { mode: 0o755 });
+    const exits = [0, 1, 2, 3, 4, 5].map((code) => spawnSync("/bin/sh", ["-c", program, reporter, String(code)]).status);
+    assert.deepEqual(exits, [0, 1, 0, 0, 0, 5], "launchd restarts only on a non-zero exit: 1 and 5 come back, 0, 2, 3 and 4 do not");
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });

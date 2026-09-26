@@ -61,26 +61,61 @@ Every way in runs the same console. Pick one:
 1. **No install, from the release** (Node.js 22+):
 
    ```sh
-   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --open
+   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz --open
    ```
-2. **npm** (Node.js 22+): `npm install -g @lockedinlabs/agent-console`, then `agent-console --open`.
+
+   In Windows PowerShell, type `npx.cmd` where it says `npx`:
+   PowerShell's default policy refuses `npx`'s script form with *running
+   scripts is disabled on this system*. In Command Prompt, `npx` works as
+   written.
+
+   ```powershell
+   npx.cmd --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz --open
+   ```
+2. **npm** (Node.js 22+): `npm install -g @lockedinlabs/agent-console`, then
+   `agent-console --open`. In Windows PowerShell: `npm.cmd install -g
+   @lockedinlabs/agent-console`, then `agent-console.cmd --open`.
 3. **Homebrew** (macOS, Linux): `brew install SamSnead85/tap/agent-console`, then `agent-console --open`.
 4. **Standalone executable**, no Node.js needed. macOS (signed with an Apple
    Developer ID and notarized by Apple) and Linux:
    `curl -fsSLO https://raw.githubusercontent.com/SamSnead85/agent-console/main/install.sh && sh ./install.sh`.
-   Windows (x64; not code-signed), in PowerShell: download
-   [`install.ps1`](install.ps1), then run
-   `powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1`. Both
-   installers check the executable against the release's `SHA256SUMS` before
-   installing it ([details](docs/standalone-install.md)).
+   It installs to `~/.local/bin` and, if that folder is not on your `PATH`,
+   prints the one line that adds it for your shell.
+   Windows (x64; not code-signed), in PowerShell:
+
+   ```powershell
+   Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/SamSnead85/agent-console/main/install.ps1 -OutFile install.ps1
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+   ```
+
+   It installs for your user only and adds its folder to your `PATH`, so
+   `agent-console --open` works in a new window. Both installers check the
+   executable against the release's `SHA256SUMS` before installing it
+   ([details](docs/standalone-install.md)).
 5. **Docker**, a team hub on Linux:
-   `docker run --network host -v agent-console-state:/home/dev/.agent-console/hub ghcr.io/samsnead85/agent-console:v0.3.0`
+   `docker run --network host -v agent-console-state:/home/dev/.agent-console/hub ghcr.io/samsnead85/agent-console:v0.4.0`
    ([details](docs/docker-hub.md)).
 6. **From source** (Node.js 22+): `git clone https://github.com/SamSnead85/agent-console.git`,
    then `cd agent-console && node bin/agent-console.mjs --open`.
 
 Every release file is listed in the release's `SHA256SUMS` and covered by a
 signed build attestation ([Checking a download](#checking-a-download)).
+
+**On Windows** the executable is not code-signed: there is no Authenticode
+certificate. Install it with `install.ps1`, which checks it first, or use
+Node.js (ways 1 and 2). A copy of the `.exe` downloaded in a browser meets
+SmartScreen's warning, and Smart App Control refuses it
+([details](docs/executables.md#signed-or-not-plainly)).
+
+**Behind a proxy or TLS inspection.** `npx`, `npm` and `curl` use
+`HTTPS_PROXY`; Node.js's own downloads, such as the check at the start of a
+join command, use it only with `NODE_USE_ENV_PROXY=1` as well (Node.js 22.21
+or newer). Where the network inspects TLS, point Node.js at your company's
+root certificate with `NODE_EXTRA_CA_CERTS=<file>.pem`. A join command that
+stops with `fetch failed` on a company network needs these
+([details](docs/standalone-install.md#behind-a-proxy)).
+
+**To remove it**, see [Uninstall](#uninstall).
 
 ## Start here
 
@@ -95,6 +130,13 @@ You need a Mac, a Linux machine or a Windows PC, and about two minutes.
 
    ```sh
    npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz --open
+   ```
+
+   In Windows PowerShell, type `npx.cmd` in place of `npx` (PowerShell's
+   default policy refuses `npx`'s script form, `npx.ps1`):
+
+   ```powershell
+   npx.cmd --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz --open
    ```
 
    That fetches Agent Console from this project's GitHub release (nothing to
@@ -115,12 +157,13 @@ Node.js inside, and an installer that checks it before installing
 curl -fsSLO https://raw.githubusercontent.com/SamSnead85/agent-console/main/install.sh && sh ./install.sh
 ```
 
-On Windows, [docs/standalone-install.md](docs/standalone-install.md#windows-powershell)
-has the PowerShell line (`install.ps1`). Both installers compare the
-executable's SHA-256 with the release's `SHA256SUMS` line for it and install
-nothing if it differs; then `agent-console --open` starts the console. The
-files, and how to check one yourself, are under
-[Checking a download](#checking-a-download).
+On Windows, [Install](#install) and
+[docs/standalone-install.md](docs/standalone-install.md#windows-powershell)
+have the PowerShell lines (`install.ps1`); the Windows executable is not
+code-signed. Both installers compare the executable's SHA-256 with the
+release's `SHA256SUMS` line for it and install nothing if it differs; then
+`agent-console --open` starts the console. The files, and how to check one
+yourself, are under [Checking a download](#checking-a-download).
 
 **Or download it.** On the [GitHub page](https://github.com/SamSnead85/agent-console),
 press the green **Code** button, then **Download ZIP**, and unzip it. You get a
@@ -621,6 +664,17 @@ directory on a local disk that supports hard links. One running hub owns a
 state directory, even if another start chooses different ports; use a separate
 `--state-dir` for a separate hub. Older versions must be stopped because they
 do not honor the new ownership lock.
+
+## Uninstall
+
+Stop what runs, remove the program, then its data. In short: `leave` on each
+reporting computer (and remove any login service you set up from
+[BACKGROUND.md](docs/BACKGROUND.md) first), `policy remove` in each repository
+you applied a policy to, then `npm uninstall -g @lockedinlabs/agent-console`,
+`brew uninstall agent-console`, or delete the executable the installer put in
+place; last, delete `~/.agent-console/` and the executable's cache folder.
+[docs/uninstall.md](docs/uninstall.md) lists every file, folder and background
+item, per system.
 
 ## Checking a download
 

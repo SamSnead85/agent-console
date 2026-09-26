@@ -93,6 +93,8 @@ export function windowsInstallCommand(url, tag) {
   const pin = tag ? `$env:AGENT_CONSOLE_VERSION = '${tag}'; ` : '';
   const unpin = tag ? '; $env:AGENT_CONSOLE_VERSION = $v' : '';
   return "& { $ErrorActionPreference = 'Stop'; "
+    // Windows PowerShell 5.1: no per-block progress redraw, and TLS 1.2 (3072), which GitHub requires.
+    + "$ProgressPreference = 'SilentlyContinue'; [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072; "
     + "$f = Join-Path ([IO.Path]::GetTempPath()) ('agent-console-install-' + [Guid]::NewGuid().ToString('N') + '.ps1'); "
     + keep
     + `try { Invoke-WebRequest -UseBasicParsing -Uri '${url}' -OutFile $f; `
@@ -103,10 +105,19 @@ export function windowsInstallCommand(url, tag) {
     + `} finally { Remove-Item -LiteralPath $f -Force -ErrorAction SilentlyContinue${unpin} } }`;
 }
 
-function standaloneBlock(tag) {
+/** True when every macOS executable on the release is labelled signed and notarized by the build that signed it. */
+export function macSignedFromLabels(assets) {
+  const mac = assets.filter((asset) => /^agent-console-darwin-(arm64|x64)(\.tar\.gz)?$/.test(asset.name));
+  return mac.length > 0 && mac.every((asset) => /, signed and notarized$/.test(String(asset.label || '')));
+}
+
+function standaloneBlock(tag, macSigned) {
   const raw = `https://raw.githubusercontent.com/${REPO}/${tag}`;
+  const signing = macSigned
+    ? 'On macOS it is signed with an Apple Developer ID and notarized by Apple; on Windows it is not code-signed, and this installer is the way to install it.'
+    : 'Unsigned files say so on the release page.';
   return `<div class="way">
-                <div class="k"><b>Standalone executable</b><span>one file with Node.js inside, for a computer without Node. The installer fetches the file for this computer and the release's <code>SHA256SUMS</code>, and installs nothing unless the SHA-256 matches. <span data-os-only="mac linux">It installs to <code>~/.local/bin</code>.</span><span data-os-only="win">It installs to <code>AppData\\Local\\Programs\\AgentConsole</code> for your user only.</span> Unsigned files say so on the release page.</span></div>
+                <div class="k"><b>Standalone executable</b><span>one file with Node.js inside, for a computer without Node. The installer fetches the file for this computer and the release's <code>SHA256SUMS</code>, and installs nothing unless the SHA-256 matches. <span data-os-only="mac linux">It installs to <code>~/.local/bin</code>, and prints the line that puts that folder on your PATH if it is not there yet.</span><span data-os-only="win">It installs to <code>AppData\\Local\\Programs\\AgentConsole</code> for your user only, and adds that folder to your PATH.</span> ${signing}</span></div>
                 ${cmdRow(`curl -fsSLO ${raw}/install.sh && AGENT_CONSOLE_VERSION=${tag} sh ./install.sh`, { osOnly: 'mac linux' })}
                 ${cmdRow(windowsInstallCommand(`${raw}/install.ps1`, tag), { osOnly: 'win' })}
                 <div class="fine">Or use the <b>Download</b> button on the overview for the file itself, and <a href="#/verify">verify it</a> before you run it.</div>
@@ -148,7 +159,7 @@ function swapFact(html, name, block) {
 }
 
 /** Pure: the page and script for these release facts. */
-export function renderSite({ html, script, tag, publishedAt, digest, cert, logged, prices, native, npm, brew, installers }) {
+export function renderSite({ html, script, tag, publishedAt, digest, cert, logged, prices, native, npm, brew, installers, macSigned = false }) {
   const version = tag.slice(1);
   // The template carries v0.3.0's facts, so read as it stands it points at a real release.
   html = replace(html, '0.3.0', version);
@@ -166,7 +177,7 @@ export function renderSite({ html, script, tag, publishedAt, digest, cert, logge
 
   const standalone = installers && Object.keys(native).length > 0;
   if (standalone) {
-    html = swapFact(html, 'standalone', standaloneBlock(tag));
+    html = swapFact(html, 'standalone', standaloneBlock(tag, macSigned));
     html = replace(html, '<h2>Three ways in</h2>', '<h2>Four ways in</h2>');
     html = replace(html, 'one package for every operating system; Node 22 or newer runs it', 'the package runs on Node 22 or newer; the standalone executable needs nothing');
   } else {
@@ -264,7 +275,8 @@ async function gather() {
   const npm = await npmServes(version, sha1);
   const formulaDoc = ghMaybe(`repos/${TAP}/contents/Formula/agent-console.rb`);
   const brew = formulaMatches(formulaDoc?.content ? Buffer.from(formulaDoc.content, 'base64').toString('utf8') : null, version, sums);
-  return { tag, publishedAt: release.publishedAt, digest, cert, logged, native, installers, npm, brew, assetCount: assetNames.size };
+  const macSigned = macSignedFromLabels(release.assets);
+  return { tag, publishedAt: release.publishedAt, digest, cert, logged, native, installers, npm, brew, macSigned, assetCount: assetNames.size };
 }
 
 async function main() {

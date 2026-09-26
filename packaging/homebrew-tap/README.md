@@ -22,8 +22,10 @@ gh attestation verify "$(brew --cache agent-console)" -R SamSnead85/agent-consol
 ```
 
 Upgrade with `brew upgrade agent-console`; remove with
-`brew uninstall agent-console` (the console's data in `~/.agent-console/` is
-yours and stays).
+`brew uninstall agent-console`. The console's data in `~/.agent-console/` is
+yours and stays until you delete it;
+[the uninstall guide](https://github.com/SamSnead85/agent-console/blob/main/docs/uninstall.md)
+lists everything Agent Console creates.
 
 ## How this tap is updated
 

@@ -1,0 +1,93 @@
+name: Installers
+# install.sh and install.ps1 from this checkout, run the way the README says,
+# against the latest published release: the tag found without the GitHub API,
+# the executable checked against SHA256SUMS, the version it prints, and the
+# PATH advice (install.sh) or the user PATH entry (install.ps1). Windows runs
+# both Windows PowerShell 5.1, which every Windows PC has and the README's
+# command uses, and PowerShell 7. release.yml runs the same installers against
+# each new release's own files.
+on:
+  pull_request:
+    paths:
+      - install.sh
+      - install.ps1
+      - .github/workflows/installers.yml
+  push:
+    branches: [main]
+    paths:
+      - install.sh
+      - install.ps1
+      - .github/workflows/installers.yml
+  schedule:
+    - cron: "41 6 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unix:
+    name: install.sh (${{ matrix.runner }})
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the latest release with install.sh
+        shell: bash
+        env:
+          AGENT_CONSOLE_INSTALL_DIR: ${{ runner.temp }}/agent-console-bin
+          SHELL: /bin/zsh
+        run: |
+          set -euo pipefail
+          latest="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$GITHUB_REPOSITORY/releases/latest")"
+          tag="${latest##*/}"
+          sh ./install.sh | tee out.txt
+          grep -qx "Installed $tag to $AGENT_CONSOLE_INSTALL_DIR/agent-console" out.txt
+          # Not on PATH here: the exact line for the shell is printed, $HOME kept as $HOME.
+          case "$AGENT_CONSOLE_INSTALL_DIR" in
+            "$HOME"/*) shown="\$HOME/${AGENT_CONSOLE_INSTALL_DIR#"$HOME"/}" ;;
+            *) shown="$AGENT_CONSOLE_INSTALL_DIR" ;;
+          esac
+          grep -qF "echo 'export PATH=\"$shown:\$PATH\"' >> ~/.zshrc" out.txt
+          test "$("$AGENT_CONSOLE_INSTALL_DIR/agent-console" --version)" = "agent-console ${tag#v}"
+
+  windows:
+    name: install.ps1 (${{ matrix.shell }})
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [powershell, pwsh]
+    runs-on: windows-2025
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the latest release with install.ps1, twice
+        shell: pwsh
+        env:
+          AGENT_CONSOLE_INSTALL_DIR: ${{ runner.temp }}\agent-console-bin
+          RUN_IN: ${{ matrix.shell }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $major = & $env:RUN_IN -NoProfile -Command '$PSVersionTable.PSVersion.Major'
+          if ($major -ne $(if ($env:RUN_IN -eq 'powershell') { '5' } else { '7' })) { throw "$env:RUN_IN is PowerShell $major" }
+          # The README's command, exactly, in that PowerShell.
+          & $env:RUN_IN -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+          if ($LASTEXITCODE -ne 0) { throw "install.ps1 exited $LASTEXITCODE" }
+          & $env:RUN_IN -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+          if ($LASTEXITCODE -ne 0) { throw "install.ps1 exited $LASTEXITCODE the second time" }
+          $response = Invoke-WebRequest -UseBasicParsing -Method Head -Uri "https://github.com/$env:GITHUB_REPOSITORY/releases/latest"
+          $tag = ([string] $response.BaseResponse.RequestMessage.RequestUri).TrimEnd('/').Split('/')[-1]
+          $printed = & (Join-Path $env:AGENT_CONSOLE_INSTALL_DIR 'agent-console.exe') --version
+          if ($printed -ne ('agent-console ' + $tag.Substring(1))) { throw "installed executable printed: $printed" }
+          # On the user's PATH, once, however many times it was installed.
+          $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment')
+          $userPath = [string] $key.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+          $key.Close()
+          $entries = @($userPath -split ';' | Where-Object { $_.TrimEnd('\') -eq $env:AGENT_CONSOLE_INSTALL_DIR.TrimEnd('\') })
+          if ($entries.Count -ne 1) { throw "the user PATH holds the install folder $($entries.Count) times: $userPath" }
