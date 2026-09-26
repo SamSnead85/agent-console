@@ -26,6 +26,8 @@ It installs to `~/.local/bin/agent-console`, or `$XDG_BIN_HOME/agent-console`
 when set. Set `AGENT_CONSOLE_INSTALL_DIR` to choose a different user directory.
 It checks the executable against the release's `SHA256SUMS` before installing.
 
+On macOS, `~/.local/bin` is not on the default `PATH`: run the full path the installer prints, or add `export PATH="$HOME/.local/bin:$PATH"` to `~/.zshrc`.
+
 ## Windows PowerShell
 
 Download, inspect, and run the script:

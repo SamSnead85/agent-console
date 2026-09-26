@@ -6,7 +6,7 @@ name: Download page
 # npm and Homebrew really serve it. A fact that cannot be read fails the build.
 #
 # A pull request builds it; a push to main builds and, only when GitHub Pages
-# is enabled for this repository, deploys it. Enabling Pages is the owner's
+# is enabled for this repository, deploys it. Enabling Pages is a maintainer's
 # decision (a repository setting); until then the deploy job is skipped and
 # says so, and no environment or deployment is created.
 on:
@@ -68,7 +68,7 @@ jobs:
             echo "GitHub Pages is enabled ($(cat build_type)); deploying."
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::GitHub Pages is not enabled for this repository, so the page was built and checked but not deployed. The owner enables it with Source: GitHub Actions."
+            echo "::notice::GitHub Pages is not enabled for this repository, so the page was built and checked but not deployed. A maintainer enables it with Source: GitHub Actions."
           fi
 
   deploy:

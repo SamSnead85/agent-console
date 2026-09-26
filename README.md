@@ -62,6 +62,7 @@ You need a Mac, a Linux machine or a Windows PC, and about two minutes.
    [nodejs.org](https://nodejs.org). To check, open a terminal (*Terminal* on a
    Mac, *PowerShell* on Windows) and type `node --version` — it should say
    `v22` or higher.
+   No Node.js? [Install the standalone executable](docs/standalone-install.md) instead.
 2. **Start it.** Paste this into the terminal and press Return:
 
    ```sh
@@ -264,6 +265,8 @@ through the versioned `@lockedinlabs/agent-console/analysis` subpath:
 import { ANALYSIS_VERSION, contextHealth } from '@lockedinlabs/agent-console/analysis';
 const health = contextHealth(samples, prices);
 ```
+
+The package is not on the npm registry yet; install it from the release tarball with `npm install https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz`.
 
 `ANALYSIS_VERSION` is 1. `contextHealth` accepts only plain usage data:
 `samples` contains timestamps, token counts and model IDs; `prices` contains
