@@ -228,9 +228,13 @@ activity cover, as a `coverage`: `{ "state", "since", "reason" }`.
 `reason` is one fixed word, or `null` for `complete`:
 
 - `console-restarted`: these counts are kept in memory, and this console
-  started inside the window; it holds nothing from before its start.
+  started inside the window; it holds nothing from before its start. Given
+  only when the "on" is the first thing the console heard from the machine,
+  within one live report interval (60 seconds) of its start — a reporter
+  that was sharing all along is heard that soon.
 - `sharing-started`: the console first heard this machine say it shares at
-  `since`; before that, nobody can say.
+  `since` — later than that, or after hearing it say "off" or nothing;
+  before that, nobody can say.
 - `outbox-overflow`: the machine's reporter had to drop pending extras from
   minutes up to just before `since` (a `lost` marker).
 - `sharing-off`, `reporter-undeclared`, `not-heard`: with `off`, `undeclared`
@@ -250,6 +254,11 @@ Where it appears:
   the hour, the latest time from which every watched machine's alerts are
   held, and why — "no alert" is known only since then; `null` when the hour is
   whole. `byDevice` gives each current machine's coverage of the hour.
+- `alertsToday`: the alerts of the console's calendar day, counted as each
+  is raised here or accepted from a machine and kept in the console's state
+  directory, so it is exact however many `alerts[]` keeps (100 per machine).
+  `kept` says how many of them the list still holds, `lastHour` the live
+  ones of the hour, and `since` from when the count is whole.
 
 ## How it is delivered
 

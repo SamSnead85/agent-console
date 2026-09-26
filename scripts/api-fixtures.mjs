@@ -66,7 +66,7 @@ export async function demoPayloads({ period = "24h" } = {}) {
     networkCommand: null, fingerprint: "0".repeat(64), retentionDays: 8,
     release: { url: null, page: null }, local: { enabled: true, tools: ["claude-code", "codex"], firstRunComplete: true, progress: null, error: null } };
   const console = buildConsole({ store, registry, names: demo.names, now, hub,
-    alerts: allAlerts({ alerts, fleet }, now), signals: consoleSignals({ alerts, fleet, activity }, now) });
+    alerts: allAlerts({ alerts, fleet }, now), signals: consoleSignals({ alerts, fleet, activity }, now), alertDay: demo.alertDay(now) });
   console.interop = demoInterop(now);
   const projects = await projectsPayload({ store, registry, names: demo.names, period, demo: true, now });
   return { console, projects };
