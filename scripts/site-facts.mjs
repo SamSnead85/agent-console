@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Turn the approved static page into a release-specific Pages artifact.
+// Turn the static page in site/ into a release-specific Pages artifact.
 // A failed release lookup, checksum, or attestation stops deployment. Every
 // install path the page offers is one that exists for this release: the
 // standalone executables only when the release carries them under its
@@ -111,6 +111,10 @@ function standaloneBlock(tag) {
               </div>`;
 }
 
+const STANDALONE_COMING = `<div class="way coming">
+                <div class="k"><b>Standalone executable <span class="chip" data-tone="quiet">coming</span></b><span>One file per system with Node.js inside, for a computer without Node. This release does not carry them yet; the release that does gets an installer that checks the file against <code>SHA256SUMS</code> before it puts it in place.</span></div>
+              </div>`;
+
 function registriesBlock({ npm, brew, version }) {
   const rows = [];
   rows.push(npm
@@ -144,17 +148,16 @@ function swapFact(html, name, block) {
 /** Pure: the page and script for these release facts. */
 export function renderSite({ html, script, tag, publishedAt, digest, cert, logged, prices, native, npm, brew, installers }) {
   const version = tag.slice(1);
-  html = replace(html, '0.2.1', version);
-  html = replace(html, `recorded from ${tag} with`, 'recorded from v0.2.1 with');
-  html = replace(html, '15e53aa80504c98ddda86f0772642d9a15a4547992ed3c29139731679e9c6aeb', digest);
-  html = replace(html, '15e53aa8…9c6aeb', `${digest.slice(0, 8)}…${digest.slice(-6)}`);
-  html = replace(html, 'Released 23 September 2026', `Released ${longDate(publishedAt)}`);
-  html = replace(html, `${tag} · 23 Sep 2026`, `${tag} · ${shortDate(publishedAt)}`);
-  html = replace(html, 'read on 24 Sep 2026', 'checked at build');
-  html = replace(html, '19644fed1f6f69c9496039dc63919104cd1bb1d4', cert.githubWorkflowSHA);
-  html = replace(html, '2026-09-22 22:36:49 −04:00', `${new Date(logged.timestamp).toISOString().slice(0, 19).replace('T', ' ')} UTC`);
+  // The template carries v0.3.0's facts, so read as it stands it points at a real release.
+  html = replace(html, '0.3.0', version);
+  html = replace(html, 'c6377c1c6c2c349ce45b91381c762b127ed305892d7567a53f5eb0bf84fef4f3', digest);
+  html = replace(html, 'c6377c1c…fef4f3', `${digest.slice(0, 8)}…${digest.slice(-6)}`);
+  html = replace(html, 'Released 25 September 2026', `Released ${longDate(publishedAt)}`);
+  html = replace(html, `${tag} · 25 Sep 2026`, `${tag} · ${shortDate(publishedAt)}`);
+  html = replace(html, 'read on 25 Sep 2026', 'checked at build');
+  html = replace(html, '7958926233aca73d7afeef5fa7edd59326cec231', cert.githubWorkflowSHA);
+  html = replace(html, '2026-09-25 18:35:51 UTC', `${new Date(logged.timestamp).toISOString().slice(0, 19).replace('T', ' ')} UTC`);
   html = replace(html, 'release · github-hosted', `${cert.githubWorkflowTrigger} · ${cert.runnerEnvironment}`);
-  html = replace(html, 'Every install path and figure on this page is real as of 24 Sep 2026:', 'Release facts on this page are checked at build:');
   html = replace(html, 'prices checked 2026-09-20', `prices checked ${prices.inventoryCheckedOn}`);
   const opus = prices.rows.find((row) => row.model === 'claude-opus-5-5');
   html = replace(html, 'Opus 5.5 2026-09-22', `Opus 5.5 ${opus.verifiedOn}`);
@@ -165,7 +168,7 @@ export function renderSite({ html, script, tag, publishedAt, digest, cert, logge
     html = replace(html, '<h2>Three ways in</h2>', '<h2>Four ways in</h2>');
     html = replace(html, 'one package for every operating system; Node 22 or newer runs it', 'the package runs on Node 22 or newer; the standalone executable needs nothing');
   } else {
-    html = swapFact(html, 'standalone', html.slice(html.indexOf('<!-- fact:standalone -->') + '<!-- fact:standalone -->'.length, html.indexOf('<!-- /fact:standalone -->')).trim());
+    html = swapFact(html, 'standalone', STANDALONE_COMING);
   }
   html = npm || brew
     ? swapFact(html, 'registries', registriesBlock({ npm, brew, version }))
