@@ -23,6 +23,7 @@ function samples(tmp) {
     "--json": null,             // every run uses --json
     "--report-port": ["0"],
     "--listen": ["127.0.0.1"],
+    "--advertise": ["192.168.1.20"],
     "--allow-public": [],
     "--allow-cgnat": [],
     "--demo": [],

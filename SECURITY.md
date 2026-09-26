@@ -102,7 +102,7 @@ the command they were sent, and check that it starts with `node -e`, names
 `https://github.com/SamSnead85/agent-console/releases/download/`, and ends
 with the link in single quotes, with nothing after it. Those parts alone do not
 pin what runs: the check between the first two single quotes must be the
-published one. Its SHA-256 is `114422b34fdc2721cd70e125908fe2ef381b4afddf6c7317d3e540710ec03737`, listed in the README
+published one. Its SHA-256 is `77aea0b4b487f2e39065b5739377f16678d6977b0fbd6d1ab0ef901052e581bc`, listed in the README
 ("The check in every command") and in each release's notes. This command
 prints the SHA-256 of the check in a command pasted into it, without running
 anything (paste, Return, then Ctrl+D; Ctrl+Z and Return in PowerShell):

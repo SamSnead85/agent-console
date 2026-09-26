@@ -16,9 +16,20 @@ token from the same transcripts. The suite checks that.
 
 ## 1. Sources
 
-- **Claude Code:** the JSONL transcripts under `~/.claude/projects/`: main
-  sessions, `<session>/subagents/*.jsonl`, and any other `*.jsonl` below.
-- **Codex:** the rollout JSONL under `~/.codex/sessions/`.
+- **Claude Code:** the JSONL transcripts under `$CLAUDE_CONFIG_DIR/projects/`
+  when that is set (each folder of a comma-separated list), otherwise
+  `~/.claude/projects/`, and `~/.config/claude/projects/` where it exists:
+  main sessions, `<session>/subagents/*.jsonl`, and any other `*.jsonl` below.
+- **Codex:** the rollout JSONL under `$CODEX_HOME/sessions/` (otherwise
+  `~/.codex/sessions/`), and under `archived_sessions/` beside it, where Codex
+  moves a thread when it is archived. A thread that moves is the same thread:
+  an implementation MUST NOT count what it holds again. This one knows a moved
+  rollout by its first line (the thread's `session_meta`) and keeps reading it
+  from where it was; record identity (§2) never includes a path, so a copy is
+  counted once too.
+- An explicit folder (`--claude-root`, `--codex-root`) replaces that tool's
+  list. A `--home` stands for another machine's layout, so this user's
+  `CLAUDE_CONFIG_DIR` and `CODEX_HOME` do not apply to it.
 
 Transcripts are read locally and read-only. A transcript is evidence of what
 the tool recorded. It is not the provider's invoice (§12).
@@ -234,11 +245,20 @@ the Console headline and chart, Team, and Projects.
   the console's daily totals. The console keeps a per-day rollup (by machine,
   model, project and price tier) for 400 days, long after its minute buckets
   are pruned at the retention edge. A record joins the daily totals when it
-  arrives inside minute retention; one that arrives later (a reporter off for
-  longer than the retention) is counted as `pastRetention` (§3.2) and the
-  period is marked `partial`. The rollup keeps no sessions, so a session count
+  arrives inside minute retention. A machine's **first read** (the console's
+  own on a first start, a reporter's first delivery, which says so with
+  `backfill`) goes back the whole 30 days: records of days wholly past the
+  minute retention go straight into the daily totals, once per machine and
+  day. The first time a first read touches such a day it replaces what the
+  rollup held for that machine and day, and once the read is complete the day
+  is done: a later reading of the same day adds nothing, so a re-read never
+  counts twice. Any other record that arrives past minute retention (a
+  reporter off for longer than the retention) is counted as `pastRetention`
+  (§3.2) and the period is marked `partial`, unless a first read already made
+  that machine's day whole. The rollup keeps no sessions, so a session count
   for 30 days is unknown, not zero. A console that has not kept daily totals
-  for all 30 days says from which day it has (`since`).
+  for all 30 days says from which day it has (`since`), and each day of the
+  30-day series says whether it is whole (`whole`).
 - A minute period longer than the minute retention (7 days with
   `--retention-days` below 7) covers only the minutes still kept: it is
   marked `partial`, with `since` the retention edge.
