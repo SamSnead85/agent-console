@@ -14,7 +14,7 @@
   row is a door — to its lane, or to the alert list that carries it —
   by pointer and by keyboard. Projects fills its frame: the sessions behind
   the projects take the height the table leaves.
-- Three residuals the final captures still showed. Projects' Effort lines
+- Three more layout fixes. Projects' Effort lines
   wrap their figures whole under the label instead of cutting a 30-day
   estimate or the word after a number. Every row that opens an inspector —
   the machines on Console and in the agent tree, the people on Team, the
@@ -317,10 +317,10 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
   platform, checks the version they print, and on Linux their attestation.
 - **npm** receives the exact package file on the release, after it installed on
   macOS, Linux and Windows, checked against `SHA256SUMS` and its attestation,
-  with npm provenance. A tag push alone publishes nothing; without the owner's
-  `NPM_TOKEN` the release says so and skips npm.
+  with npm provenance. A tag push alone publishes nothing; without an `NPM_TOKEN` repository
+  secret the release says so and skips npm.
 - **A Homebrew formula** rendered only from a release's archive checksums
-  (`scripts/render-homebrew-formula.mjs`), for a tap the owner creates.
+  (`scripts/render-homebrew-formula.mjs`), for a Homebrew tap a maintainer publishes.
 - **A team hub image** for Linux amd64 and arm64 (arm64 built under QEMU), non-root,
   with a `HEALTHCHECK` on its join page. Pull requests build and start both
   architectures; a release pushes only the version tag, after starting it, and
