@@ -25,7 +25,7 @@ import { fileURLToPath } from "node:url";
 
 import { help, readConfig } from "./lib/config.js";
 import { createRegistry } from "./lib/hub/registry.js";
-import { acquireStateLock } from "./lib/hub/state-lock.js";
+import { acquireStateLock, stateLockOwner } from "./lib/hub/state-lock.js";
 import { createStore } from "./lib/hub/store.js";
 import { createNames, startLocalCollection } from "./lib/hub/local.js";
 import { startDemo } from "./lib/hub/demo.js";
@@ -35,9 +35,10 @@ import { createAlertDay } from "./lib/hub/alert-day.js";
 import { createActivityBook } from "./lib/collector/activity.js";
 import { createConsoleHandler, createReportingHandler, hubAddresses, joinAssetsPresent, isCgnatAddress } from "./lib/hub/routes.js";
 import { choosePort, chooseFreePort } from "./lib/hub/port.js";
+import { emptyReadNotice, olderConsoleNotice, lockedStateNotice, remedy, compareVersions, stopCommand } from "./lib/hub/notices.js";
 import { createAdmin, readAdminKey, requestSignIn } from "./lib/hub/admin.js";
 import { hubCertificate } from "./lib/hub/tls.js";
-import { defaultRoots } from "./lib/collector/collector.js";
+import { transcriptRoots } from "./lib/collector/collector.js";
 import { createGitStatsStore } from "./lib/gitstats.js";
 import { createInteropStore } from './lib/interop/ingest.js';
 import { PRODUCT_NAME, productTitle } from "./lib/brand.js";
@@ -122,6 +123,18 @@ if (consoleChoice.action === "already-running") {
   // opens only on a console that proved it holds the same key.
   const key = ownKey;
   const answer = proofs.get(consoleChoice.port) ?? (key ? await requestSignIn({ port: consoleChoice.port, key }) : { verified: false });
+  // An older version answering here is never opened, or pointed to, as if it
+  // were this one: it is named, with the command that stops it. Its process
+  // id is used only when it proved it holds this state directory.
+  const lockPid = answer.verified ? stateLockOwner(config.stateDir)?.pid ?? null : null;
+  // (One that could not prove this state directory's key is refused below, and named as older there.)
+  const older = (answer.verified || !key) && olderConsoleNotice({ running: consoleChoice.running, version: VERSION, url: base, port: consoleChoice.port, pid: lockPid, command: COMMAND });
+  if (older) {
+    if (config.json) process.stdout.write(JSON.stringify({ ok: false, alreadyRunning: true, older: true, running: consoleChoice.running.version, version: VERSION,
+      stop: stopCommand({ pid: lockPid, port: consoleChoice.port }), dashboard: { name: PRODUCT_NAME, url: base, port: consoleChoice.port } }) + "\n");
+    else process.stderr.write(older + "\n");
+    process.exit(1);
+  }
   if (!key) {
     // No key to prove (a demo keeps none): ask the running console to print a
     // new sign-in link in its own window. Nothing secret is sent, and nothing
@@ -144,10 +157,13 @@ if (consoleChoice.action === "already-running") {
     if (config.json) {
       process.stdout.write(JSON.stringify({ ok: false, alreadyRunning: true, verified: false, dashboard: { name: PRODUCT_NAME, url: base, port: consoleChoice.port } }) + "\n");
     } else {
-      process.stderr.write("\n  Something on port " + consoleChoice.port + " answers as " + PRODUCT_NAME + ", but it is not the console for\n"
+      const version = consoleChoice.running?.version;
+      const olderCopy = typeof version === "string" && compareVersions(version, VERSION) < 0;
+      process.stderr.write("\n  " + (olderCopy ? "An older " + PRODUCT_NAME + " (" + version + ")" : "Something that answers as " + PRODUCT_NAME)
+        + " is on port " + consoleChoice.port + ", and it is not the console for\n"
         + "  " + config.stateDir + " (it could not prove it holds that console's key). Nothing was sent to it.\n"
-        + "  If it is an older copy of the console, or one with another --state-dir, stop it first.\n"
-        + "  Otherwise start on another port:  " + COMMAND + " --port " + (consoleChoice.port + 2) + "\n\n");
+        + "  To stop it:  " + stopCommand({ port: consoleChoice.port }) + "\n"
+        + "  Or start this one on another port:  " + COMMAND + " --port " + (consoleChoice.port + 2) + "\n\n");
     }
     process.exit(1);
   }
@@ -196,7 +212,9 @@ try {
   stateLock = acquireStateLock(config.stateDir);
   config.stateDir = stateLock.dir;
 } catch (error) {
-  process.stderr.write("\n  " + error.message + "\n\n");
+  process.stderr.write(error?.code === "ELOCKED"
+    ? lockedStateNotice({ dir: config.stateDir, owner: stateLockOwner(config.stateDir) }) + "\n"
+    : "\n  " + remedy(error, { what: "opening the console's data folder", path: config.stateDir, command: COMMAND }) + "\n\n");
   process.exit(1);
 }
 let registry = null, names = null, store = null, alertDay = null;
@@ -209,11 +227,17 @@ if (!config.demo) {
   });
   for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => process.exit(signal === "SIGINT" ? 130 : 143));
 }
-registry = createRegistry({ dir: config.stateDir });
-store = createStore({ dir: config.stateDir, retentionMs, prices: PRICES });
-if (!config.demo) store.load();
-const admin = createAdmin({ dir: config.stateDir });
-const certificate = hubCertificate(config.stateDir);
+let admin, certificate;
+try {
+  registry = createRegistry({ dir: config.stateDir });
+  store = createStore({ dir: config.stateDir, retentionMs, prices: PRICES });
+  if (!config.demo) store.load();
+  admin = createAdmin({ dir: config.stateDir });
+  certificate = hubCertificate(config.stateDir);
+} catch (error) {
+  process.stderr.write("\n  " + remedy(error, { what: "reading the console's data", path: config.stateDir, command: COMMAND }) + "\n\n");
+  process.exit(1);
+}
 names = config.demo ? null : createNames(config.stateDir, { retentionMs });
 let local = null;
 let alertEngine = null;
@@ -224,7 +248,7 @@ let alertEngine = null;
 // transcripts starts from the beginning, so it counts the whole day.
 alertDay = config.demo ? null : createAlertDay({ file: path.join(config.stateDir, "alerts-today.json"),
   fromMidnight: config.local && !fs.existsSync(path.join(config.stateDir, "local", "cursor-v2.json")) });
-const fleet = createFleetSignals({ day: alertDay });
+const fleet = createFleetSignals({ day: alertDay, firstStart: !config.demo && registry.previousRunSeenAt === null });
 let activityBook = null;
 if (config.demo) {
   activityBook = createActivityBook();
@@ -233,9 +257,8 @@ if (config.demo) {
   alertEngine = { list: () => demo.alerts() };
   alertDay = { read: (t) => demo.alertDay(t), flush() {} };
 } else if (config.local) {
-  const roots = defaultRoots(config.home);
-  roots[0].directory = config.claudeRoot;
-  roots[1].directory = config.codexRoot;
+  const roots = transcriptRoots({ home: config.home, env: config.homeGiven ? {} : process.env,
+    claudeRoot: config.claudeRoot, codexRoot: config.codexRoot });
   // No alert is live until the first read of this machine's transcripts is
   // done: a first run replays history, and history is not "now".
   alertEngine = createAlerts({ repeat: config.alertRepeat, spikeFactor: config.alertSpikeFactor,
@@ -247,7 +270,8 @@ if (config.demo) {
     intervalMs: 2_000, onTranscriptLine: (args) => { alertEngine.observeLine(args); activityBook.observeLine(args); },
     journal: activityBook.journal,
     label: config.machineName, person: config.person,
-    onError: (error) => process.stderr.write("  this machine: " + String(error && error.message) + "\n"),
+    onError: (error) => process.stderr.write("  this machine: " + (error?.code ? remedy(error, { what: "reading this machine's transcripts", command: COMMAND })
+      : String(error && error.message)) + "\n"),
   });
 }
 
@@ -316,7 +340,7 @@ function listenError(what, port) {
   return (error) => {
     if (error.code === "EADDRINUSE") process.stderr.write("\n  Port " + port + " (" + what + ") is already in use.\n\n");
     else if (error.code === "EADDRNOTAVAIL") process.stderr.write("\n  This machine has no network address " + config.listen + ". Try --listen 0.0.0.0.\n\n");
-    else process.stderr.write("\n  " + what + ": " + error.message + "\n\n");
+    else process.stderr.write("\n  " + what + ": " + remedy(error, { what: "opening a port", port, command: COMMAND }) + "\n\n");
     process.exit(1);
   };
 }
@@ -336,7 +360,7 @@ if (REPORTING_FILE && config.reportPort && !config.demo && !(reportChoice.movedF
 
 const address = "http://127.0.0.1:" + config.port;
 const signIn = () => address + "/login?ticket=" + admin.ticket();
-const reach = hubAddresses(config.listen, config.reportPort);
+const reach = hubAddresses(config.listen, config.reportPort, { advertise: config.advertise });
 
 if (config.json) {
   process.stdout.write(JSON.stringify({
@@ -372,6 +396,10 @@ if (config.json) {
       "  Only machines holding a join code or a device token get in; reports travel over TLS",
       "  pinned to this console's certificate. The console itself answers only on this machine.",
     );
+    if (reach.wsl && !reach.advertised) {
+      lines.push("  This is WSL: " + new URL(reach.urls[0]).hostname + " is usually reachable from this computer only. Give other machines",
+        "  Windows' own network address with --advertise <address>, and forward port " + config.reportPort + " to WSL (or use WSL's mirrored networking).");
+    }
     const cgnat = reach.urls.filter((u) => isCgnatAddress(new URL(u).hostname));
     if (cgnat.length && !config.allowCgnat && !config.allowPublic) {
       lines.push("  " + cgnat.map((u) => new URL(u).hostname).join(", ") + " is in 100.64.0.0/10 (Tailscale or carrier-grade NAT): machines",
@@ -421,7 +449,10 @@ Promise.resolve(local && local.ready).then(() => {
   if (!config.json) {
     const machines = registry.list().length;
     process.stdout.write("  ready: " + (config.demo ? "demo team" : machines + " machine" + (machines === 1 ? "" : "s"))
-      + " · " + store.recordCount.toLocaleString("en-US") + " records in the last " + config.retentionDays + " days\n\n");
+      + " · " + store.recordCount.toLocaleString("en-US") + " records in the last " + config.retentionDays + " days\n");
+    // Nothing found on this machine: say where it looked, and how to point it elsewhere.
+    if (local && store.recordCount === 0) process.stdout.write(emptyReadNotice(local.status.rootsRead, COMMAND) + "\n");
+    process.stdout.write("\n");
   }
   openOnce();
 });
