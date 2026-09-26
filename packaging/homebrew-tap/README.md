@@ -1,5 +1,7 @@
 # Agent Console Homebrew tap
 
+**Not available yet:** the tap repository is not published, so `brew install` does not work today. Use the README install or the standalone executables.
+
 This directory is the source for the Agent Console Homebrew tap repository
 (`SamSnead85/homebrew-tap`). A maintainer publishes the tap after a release
 carries the standalone archives and `SHA256SUMS`.
