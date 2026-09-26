@@ -41,26 +41,43 @@ upper case.
 
 ## Signed or not, plainly
 
-Release executables are unsigned unless the release notes say *signed and notarized*; v0.3.0 is unsigned.
+The release page says beside each file whether it is signed, and the release
+notes say it per platform, from the same record the build wrote after signing.
 
-- **macOS: unsigned** unless the release page says *signed and notarized*.
-  Unsigned means it carries only the ad-hoc signature Apple silicon requires of
-  every program, not a Developer ID. Fetched with `curl`, or by Homebrew for a
-  formula, it runs as it is: macOS quarantines files that apps such as browsers
-  and mail save. Downloaded in a browser, macOS stops its first start. After checking its hash
-  and attestation, either clear the quarantine on that one file:
+- **macOS: signed and notarized**, from the first release after 0.3.0. Each
+  macOS executable is signed with an Apple Developer ID under the hardened
+  runtime, with a secure timestamp and the identifier
+  `ai.lockedinlabs.agent-console`, then notarized by Apple. It opens without a
+  Gatekeeper warning however it arrives: `install.sh`, Homebrew, or a browser
+  download. To check it yourself:
 
   ```sh
-  xattr -d com.apple.quarantine ./agent-console-darwin-arm64
+  codesign -dv agent-console-darwin-arm64                  # TeamIdentifier=643FW3ZH6M
+  spctl --assess --type install -vv agent-console-darwin-arm64   # source=Notarized Developer ID
   ```
 
-  or run it once, open **System Settings → Privacy & Security**, choose **Open
-  Anyway** beside its name, and run it again. Never turn Gatekeeper off for the
-  whole computer.
-- **Windows: unsigned.** Node.js's own signature is removed when the package is
-  put inside, because the change breaks it; there is no Authenticode signature
-  in its place. If SmartScreen says *Windows protected your PC*, choose **More
-  info → Run anyway**, after checking the hash.
+  A bare executable cannot carry its notarization ticket inside it, so the
+  first start on a Mac asks Apple for the ticket; a Mac that is offline the
+  first time it runs a browser-downloaded copy cannot confirm it. (`spctl
+  --type execute` answers *does not seem to be an app* for every command-line
+  program, notarized or not; `--type install` is the assessment that applies.)
+
+  Releases up to 0.3.0 are unsigned: they carry only the ad-hoc signature Apple
+  silicon requires of every program. Fetched with `curl` or Homebrew they run
+  as they are; downloaded in a browser, macOS stops their first start. After
+  checking the hash and attestation, clear the quarantine on that one file
+  (`xattr -d com.apple.quarantine ./agent-console-darwin-arm64`) or choose
+  **Open Anyway** in **System Settings → Privacy & Security**. Never turn
+  Gatekeeper off for the whole computer.
+- **Windows: not code-signed.** There is no Authenticode certificate. Node.js's
+  own signature is removed when the package is put inside, because the change
+  breaks it, and nothing is put in its place. Install it with
+  [`install.ps1`](../install.ps1) ([how](standalone-install.md#windows-powershell)):
+  it checks the file against `SHA256SUMS` before copying it into place. A copy
+  downloaded in a browser instead may meet SmartScreen's *Windows protected
+  your PC*: check its hash, then choose **More info → Run anyway**. On a PC
+  with Smart App Control turned on, Windows refuses unsigned programs
+  outright; there, use the npm package or `npx` (Node.js is signed).
 - **Linux:** no signing scheme applies; the hash and the attestation are the
   check.
 
@@ -95,11 +112,20 @@ own platform's runner and starts it there with no Node.js on `PATH`
 changed file, demo console, sign-in and join page. The package itself still has
 no dependencies.
 
-Signing with a Developer ID and notarization need five repository secrets:
-`APPLE_DEVELOPER_ID_P12` (the base64 of a *Developer ID Application*
-certificate exported as .p12), `APPLE_DEVELOPER_ID_P12_PASSWORD`,
-`APPLE_NOTARY_KEY_P8` (the base64 of an App Store Connect API key),
-`APPLE_NOTARY_KEY_ID` and `APPLE_NOTARY_ISSUER`. With all five set, a release's
-macOS executables are signed under the hardened runtime
-([`entitlements.plist`](../packaging/sea/entitlements.plist)) and notarized
-before they are attached; without them, they are labelled unsigned.
+A release's macOS executables are signed and notarized on the macOS runners,
+from five repository secrets: `MACOS_CERT_P12_BASE64` (the base64 of a
+*Developer ID Application* certificate and its key, exported as .p12),
+`MACOS_CERT_P12_PASSWORD`, `APPLE_API_KEY_P8_BASE64` (the base64 of an App
+Store Connect API key), `APPLE_API_KEY_ID` and `APPLE_API_ISSUER`. The
+certificate goes into a throwaway keychain; `build.mjs` signs under the
+hardened runtime with only the two entitlements V8 needs to compile JavaScript
+([`entitlements.plist`](../packaging/sea/entitlements.plist); without
+`allow-jit` Node.js cannot start), submits to Apple's notary service, checks
+the ticket names the file's CDHash, and asks Gatekeeper to accept a
+quarantined copy. Only then is the file labelled signed, and only then do
+`SHA256SUMS` and the build attestation cover it. If any secret is missing,
+the release stops before anything is built or attached; it never ships an
+unsigned macOS file in place of a signed one. Pull requests and manual runs
+build unsigned and say so. On a Mac with the Developer ID in its keychain,
+the same build runs with `MACOS_SIGN_IDENTITY` and
+`APPLE_NOTARY_KEYCHAIN_PROFILE` (a `notarytool store-credentials` profile).

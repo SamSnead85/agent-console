@@ -39,27 +39,58 @@ jobs:
           TAG: ${{ github.event.release.tag_name }}
         run: node scripts/release-source-check.mjs
 
+  # A release's macOS executables are signed and notarized or the release
+  # does not go out: checked first, so a missing secret stops everything
+  # before a single file is attached (nothing to delete and re-run around).
+  signing:
+    name: Apple signing secrets present
+    needs: authorize
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require the five Apple signing secrets
+        env:
+          P12: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.MACOS_CERT_P12_PASSWORD }}
+          API_KEY: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
+          API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          missing=()
+          [ -n "$P12" ] || missing+=(MACOS_CERT_P12_BASE64)
+          [ -n "$P12_PASSWORD" ] || missing+=(MACOS_CERT_P12_PASSWORD)
+          [ -n "$API_KEY" ] || missing+=(APPLE_API_KEY_P8_BASE64)
+          [ -n "$API_KEY_ID" ] || missing+=(APPLE_API_KEY_ID)
+          [ -n "$API_ISSUER" ] || missing+=(APPLE_API_ISSUER)
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::This release cannot ship: its macOS executables must be signed with a Developer ID and notarized, and these repository secrets are missing: ${missing[*]}. Nothing was built or attached. Add them, then re-run all jobs."
+            exit 1
+          fi
+
   executables:
     name: Standalone executables
-    needs: authorize
+    needs: [authorize, signing]
     uses: ./.github/workflows/binaries.yml
     with:
       ref: ${{ github.event.release.tag_name }}
+      release: true
     secrets:
-      APPLE_DEVELOPER_ID_P12: ${{ secrets.APPLE_DEVELOPER_ID_P12 }}
-      APPLE_DEVELOPER_ID_P12_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_P12_PASSWORD }}
-      APPLE_NOTARY_KEY_P8: ${{ secrets.APPLE_NOTARY_KEY_P8 }}
-      APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
-      APPLE_NOTARY_ISSUER: ${{ secrets.APPLE_NOTARY_ISSUER }}
+      MACOS_CERT_P12_BASE64: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+      MACOS_CERT_P12_PASSWORD: ${{ secrets.MACOS_CERT_P12_PASSWORD }}
+      APPLE_API_KEY_P8_BASE64: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
 
   asset:
     name: Build, attest and attach the package
-    # Waits for the executables but is never held back by them: if they fail,
-    # the package still ships and is still accepted below, and the
-    # "Every executable attached" job fails to say what is missing. It is
-    # never started for a source that failed authorization.
-    needs: [authorize, executables]
-    if: ${{ !cancelled() && needs.authorize.result == 'success' }}
+    # Waits for the executables, so SHA256SUMS and the attestation are
+    # computed over the signed and notarized files, never before signing. If
+    # the executables fail to build, the package still ships and is still
+    # accepted below, and "Every executable attached" fails to say what is
+    # missing. It is never started for a source that failed authorization, or
+    # for a release whose signing secrets are missing.
+    needs: [authorize, signing, executables]
+    if: ${{ !cancelled() && needs.authorize.result == 'success' && needs.signing.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -121,6 +152,18 @@ jobs:
             if [ -f "$label" ]; then files+=("$f#$(cat "$label")"); else files+=("$f"); fi
           done
           gh release upload "$TAG" "${files[@]}" SHA256SUMS --repo "$GITHUB_REPOSITORY"
+      # Say, per platform, what is signed, from the labels the build wrote
+      # after signing (so the notes cannot claim more than the files carry).
+      - name: State in the release notes what is signed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body > notes.md
+          if ! grep -q '^### Signing, per platform' notes.md; then
+            node scripts/release-signing-notes.mjs labels >> notes.md
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file notes.md
+          fi
       # Whoever is sent a join command compares the check in it with this
       # (README, "The check in every command"). npm test above holds the
       # published value equal to the check's real SHA-256.
@@ -221,6 +264,25 @@ jobs:
           ./install.ps1
           $printed = & (Join-Path $env:AGENT_CONSOLE_INSTALL_DIR 'agent-console.exe') --version
           if ($printed -ne ('agent-console ' + $env:AGENT_CONSOLE_VERSION.Substring(1))) { throw "installed executable printed: $printed" }
+      # What a browser download meets: a quarantined copy must be accepted by
+      # Gatekeeper as notarized (Apple publishes the ticket within minutes).
+      - name: Gatekeeper accepts it as notarized
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          probe="$RUNNER_TEMP/gatekeeper-probe"
+          cp "$RUNNER_TEMP/agent-console-bin/agent-console" "$probe"
+          xattr -w com.apple.quarantine "0081;$(printf %x "$(date +%s)");Safari;" "$probe"
+          codesign --verify --strict --verbose=2 "$probe"
+          for attempt in $(seq 1 20); do
+            if verdict="$(spctl --assess --type install -vv "$probe" 2>&1)" && printf '%s' "$verdict" | grep -q 'source=Notarized Developer ID'; then
+              printf '%s\n' "$verdict"; exit 0
+            fi
+            sleep 15
+          done
+          printf '%s\n' "$verdict"
+          echo "::error::Gatekeeper does not accept the published macOS executable as notarized."
+          exit 1
       - name: The attestation covers what was installed
         if: runner.os == 'Linux'
         shell: bash
@@ -230,7 +292,7 @@ jobs:
 
   image:
     name: Team hub image
-    needs: authorize
+    needs: [authorize, signing]
     uses: ./.github/workflows/ghcr.yml
     with:
       tag: ${{ github.event.release.tag_name }}

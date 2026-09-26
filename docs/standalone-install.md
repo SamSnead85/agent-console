@@ -1,10 +1,11 @@
 # Install a standalone executable
 
 The release executables do not require Node.js. They are prepared for macOS
-(Apple silicon and Intel), Linux (arm64 and x64), and Windows (x64). Use the
-assets attached to a release; source ZIP files are not executables. Only a
-release built with `binaries.yml` carries them (0.3.0 and later); for an
-earlier release the installers stop without installing anything.
+(Apple silicon and Intel; signed and notarized), Linux (arm64 and x64), and
+Windows (x64; not code-signed). Use the assets attached to a release; source
+ZIP files are not executables. Only a release built with `binaries.yml`
+carries them (0.3.0 and later); for an earlier release the installers stop
+without installing anything.
 
 ## macOS or Linux
 
@@ -61,7 +62,10 @@ The release carries `SHA256SUMS` and signed build attestations. Compare your
 download's SHA-256 with the line for its exact filename in `SHA256SUMS`, then
 verify the attestation with `gh attestation verify FILE -R SamSnead85/agent-console`.
 
-macOS builds without Apple Developer ID signing are labelled unsigned. macOS
-may quarantine an unsigned download; after checking its SHA-256 and attestation,
-open **System Settings → Privacy & Security** and choose **Open Anyway** for
-that downloaded file. Do not use a system-wide Gatekeeper bypass.
+The macOS executables are signed with an Apple Developer ID and notarized by
+Apple (from the first release after 0.3.0), so they open without a Gatekeeper
+warning. The Windows executable is not code-signed; `install.ps1` is the way
+to install it, because it checks the file against `SHA256SUMS` first. Signing,
+per platform, is stated in each release's notes and in
+[executables.md](executables.md#signed-or-not-plainly), with what to do for
+an unsigned 0.3.0 macOS download.

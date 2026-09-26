@@ -54,6 +54,34 @@ account. (Three opt-ins, each off unless you pass it: `--share-project-names`
 sends each project folder's *name*, never its path; `--share-alerts` and
 `--share-tool-activity` send alerts and tool calls as kinds and counts.)
 
+## Install
+
+Every way in runs the same console. Pick one:
+
+1. **No install, from the release** (Node.js 22+):
+
+   ```sh
+   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --open
+   ```
+2. **npm** (Node.js 22+): `npm install -g @lockedinlabs/agent-console`, then `agent-console --open`.
+3. **Homebrew** (macOS, Linux): `brew install SamSnead85/tap/agent-console`, then `agent-console --open`.
+4. **Standalone executable**, no Node.js needed. macOS (signed with an Apple
+   Developer ID and notarized by Apple) and Linux:
+   `curl -fsSLO https://raw.githubusercontent.com/SamSnead85/agent-console/main/install.sh && sh ./install.sh`.
+   Windows (x64; not code-signed), in PowerShell: download
+   [`install.ps1`](install.ps1), then run
+   `powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1`. Both
+   installers check the executable against the release's `SHA256SUMS` before
+   installing it ([details](docs/standalone-install.md)).
+5. **Docker**, a team hub on Linux:
+   `docker run --network host -v agent-console-state:/home/dev/.agent-console/hub ghcr.io/samsnead85/agent-console:v0.3.0`
+   ([details](docs/docker-hub.md)).
+6. **From source** (Node.js 22+): `git clone https://github.com/SamSnead85/agent-console.git`,
+   then `cd agent-console && node bin/agent-console.mjs --open`.
+
+Every release file is listed in the release's `SHA256SUMS` and covered by a
+signed build attestation ([Checking a download](#checking-a-download)).
+
 ## Start here
 
 You need a Mac, a Linux machine or a Windows PC, and about two minutes.
@@ -612,6 +640,13 @@ same attestation: `agent-console-darwin-arm64`, `agent-console-darwin-x64`,
 `agent-console-linux-x64`, `agent-console-linux-arm64` and
 `agent-console-win32-x64.exe`, and a `.tar.gz` of each of the first four.
 Check one the same way, by its own file name.
+
+The macOS executables also carry an Apple Developer ID signature and Apple's
+notarization. `codesign -dv agent-console-darwin-arm64` shows
+`TeamIdentifier=643FW3ZH6M`, and
+`spctl --assess --type install -vv agent-console-darwin-arm64` says
+`source=Notarized Developer ID`. The Windows executable is not code-signed
+([why, and what to check instead](docs/executables.md#signed-or-not-plainly)).
 
 ## The check in every command
 

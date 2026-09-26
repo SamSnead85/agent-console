@@ -56,3 +56,7 @@ mkdir -p "$dest_dir"
 install -m 755 "$tmp/$asset" "$dest_dir/agent-console"
 printf 'Installed %s to %s\n' "$version" "$dest_dir/agent-console"
 printf 'Run: %s --open\n' "$dest_dir/agent-console"
+case ":$PATH:" in
+  *":$dest_dir:"*) ;;
+  *) printf 'To run it as just agent-console, add %s to your PATH.\n' "$dest_dir" ;;
+esac

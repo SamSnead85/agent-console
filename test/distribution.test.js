@@ -14,6 +14,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { signingNotes } from "../scripts/release-signing-notes.mjs";
 import { formulaMatches, nativeDownloads, parseSums, renderSite, shortDate, windowsInstallCommand } from "../scripts/site-facts.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -114,7 +115,9 @@ test("the Homebrew formula is rendered from the release's SHA256SUMS, and a miss
     const ok = spawnSync(process.execPath, [path.join(ROOT, "scripts", "render-homebrew-formula.mjs"), "v9.9.9", sums, out], { encoding: "utf8" });
     assert.equal(ok.status, 0, ok.stderr);
     const formula = fs.readFileSync(out, "utf8");
-    assert.match(formula, /version "9\.9\.9"/u);
+    // Homebrew reads the version from the release URLs; a version line is redundant (brew audit --strict).
+    assert.doesNotMatch(formula, /^\s*version /mu);
+    assert.equal((formula.match(/releases\/download\/v9\.9\.9\//gu) || []).length, 4);
     for (const d of digests) assert.ok(formula.includes(`sha256 "${d}"`));
     assert.doesNotMatch(formula, /@[A-Z0-9_]+@/u);
     assert.equal(formulaMatches(formula, "9.9.9", parseSums(fs.readFileSync(sums, "utf8"))), true);
@@ -163,8 +166,8 @@ test("the release authorizes its source before building anything, and publishes 
     return next < 0 ? release.slice(at) : release.slice(at, at + 1 + next);
   };
   assert.match(job("authorize"), /release-source-check\.mjs/u);
-  assert.match(job("executables"), /needs: authorize/u);
-  assert.match(job("image"), /needs: authorize/u);
+  assert.match(job("executables"), /needs: \[authorize, signing\]/u);
+  assert.match(job("image"), /needs: \[authorize, signing\]/u);
   assert.match(job("asset"), /needs\.authorize\.result == 'success'/u);
   assert.match(job("asset"), /release-source-check\.mjs/u, "the job that packs checks its own checkout");
   assert.match(job("acceptance"), /readme-install\.mjs --expected-version/u);
@@ -318,4 +321,82 @@ test("the copied Windows command downloads to a new temporary file, stops on any
   // The documented one-line form is the same command.
   assert.ok(read("docs/standalone-install.md").includes(windowsInstallCommand("https://raw.githubusercontent.com/SamSnead85/agent-console/main/install.ps1", null)));
   assert.doesNotMatch(read("docs/standalone-install.md"), /install\.ps1; powershell/u);
+});
+
+/* ── signing: macOS signed and notarized or no release; the notes say what each platform carries ── */
+
+const APPLE_SECRETS = ["MACOS_CERT_P12_BASE64", "MACOS_CERT_P12_PASSWORD", "APPLE_API_KEY_P8_BASE64", "APPLE_API_KEY_ID", "APPLE_API_ISSUER"];
+
+test("a release stops before building anything when an Apple signing secret is missing", () => {
+  const release = read(".github/workflows/release.yml");
+  const signing = release.slice(release.indexOf("\n  signing:\n"), release.indexOf("\n  executables:\n"));
+  for (const name of APPLE_SECRETS) assert.ok(signing.includes(`secrets.${name}`), `signing checks ${name}`);
+  assert.match(signing, /::error::[^\n]*missing[\s\S]*exit 1/u);
+  assert.match(release, /uses: \.\/\.github\/workflows\/binaries\.yml\n {4}with:\n {6}ref: .*\n {6}release: true/u);
+  assert.match(release, /needs: \[authorize, signing, executables\]\n {4}if: .*needs\.signing\.result == 'success'/u, "nothing is attached without signing");
+  assert.match(release, /release-signing-notes\.mjs labels/u);
+  assert.match(release, /spctl --assess --type install[\s\S]*source=Notarized Developer ID/u, "the published macOS file is checked with Gatekeeper");
+  for (const old of ["APPLE_DEVELOPER_ID_P12", "APPLE_NOTARY_KEY_P8"]) assert.doesNotMatch(release + read(".github/workflows/binaries.yml"), new RegExp(old, "u"));
+});
+
+test("the executables workflow signs a release's macOS files or fails, and never labels an unsigned file signed", () => {
+  const binaries = read(".github/workflows/binaries.yml");
+  for (const name of APPLE_SECRETS) assert.ok(binaries.includes(`secrets.${name}`), name);
+  assert.match(binaries, /SIGN_MAC: \$\{\{ inputs\.release == true && startsWith\(matrix\.target, 'darwin-'\) \}\}/u);
+  assert.match(binaries, /Require the Apple signing secrets for a release[\s\S]*::error::[\s\S]*exit 1/u);
+  assert.match(binaries, /AGENT_CONSOLE_REQUIRE_SIGNING: \$\{\{ env\.SIGN_MAC == 'true' && '1' \|\| '' \}\}/u);
+  const build = read("packaging/sea/build.mjs");
+  assert.match(build, /AGENT_CONSOLE_REQUIRE_SIGNING === "1"\) fail/u);
+  const sign = build.slice(build.indexOf("function signMac"), build.indexOf("function codesignInfo"));
+  const at = (text) => { const i = sign.indexOf(text); assert.ok(i >= 0, `signMac: ${text}`); return i; };
+  assert.ok(at('"--options", "runtime", "--timestamp"') < at('"notarytool", "submit"'));
+  assert.ok(at('"notarytool", "submit"') < at("ticketContents") && at("ticketContents") < at('"spctl", ["--assess", "--type", "install"'));
+  assert.ok(at('"spctl", ["--assess"') < at('return "signed and notarized"'), "labelled signed only after Gatekeeper accepts it");
+  const entitlements = read("packaging/sea/entitlements.plist");
+  assert.deepEqual([...entitlements.matchAll(/<key>([^<]+)<\/key>/gu)].map((m) => m[1]),
+    ["com.apple.security.cs.allow-jit", "com.apple.security.cs.allow-unsigned-executable-memory"]);
+});
+
+test("the release notes say, per platform, exactly what the build labels say", () => {
+  const notes = signingNotes([
+    "agent-console-darwin-arm64 · macOS, Apple silicon executable, signed and notarized\n",
+    "agent-console-darwin-arm64.tar.gz · macOS, Apple silicon archive, signed and notarized\n",
+    "agent-console-darwin-x64 · macOS, Intel executable, unsigned\n",
+    "agent-console-linux-x64 · Linux, x64 executable\n",
+    "agent-console-win32-x64.exe · Windows, x64 executable, unsigned\n",
+  ]);
+  assert.match(notes, /^### Signing, per platform$/mu);
+  assert.match(notes, /\*\*macOS, Apple silicon\*\*[^\n]*\*\*signed\*\*[^\n]*\*\*notarized\*\*/u);
+  assert.match(notes, /\*\*macOS, Intel\*\*[^\n]*\*\*not signed or notarized\*\*/u, "an unsigned file is never called signed");
+  assert.match(notes, /\*\*Windows, x64\*\*[^\n]*\*\*not code-signed\*\*[^\n]*install\.ps1/u);
+  assert.match(notes, /\*\*Linux, arm64\*\*: no executable in this release\./u);
+});
+
+test("the npm job fails, visibly, when the release cannot be published to npm", () => {
+  const npm = read(".github/workflows/npm-publish.yml");
+  assert.match(npm, /if \[ -z "\$NODE_AUTH_TOKEN" \]; then\n\s+echo "::error::[^"]*NOT published[^"]*"\n\s+exit 1/u);
+  assert.doesNotMatch(npm, /::warning::|ready=false|steps\.token\.outputs/u, "never a green run that published nothing");
+});
+
+test("the tap is updated only from archives that match SHA256SUMS and carry this repository's attestation", posixOnly, () => {
+  const script = read("scripts/update-homebrew-tap.sh");
+  const at = (text) => { const i = script.indexOf(text); assert.ok(i >= 0, text); return i; };
+  assert.ok(at("does not match SHA256SUMS") < at("gh attestation verify") && at("gh attestation verify") < at('node "$here/scripts/render-homebrew-formula.mjs"'));
+  assert.ok(at('if [ "$push" = "--push" ]') > at("git -C \"$tap\" commit"), "pushes only when asked, after committing");
+  const usage = spawnSync("sh", [path.join(ROOT, "scripts", "update-homebrew-tap.sh"), "latest", "/nonexistent"], { encoding: "utf8" });
+  assert.equal(usage.status, 2);
+});
+
+test("the README's Install section lists every way in, in order, pinned to this version", () => {
+  const readme = read("README.md");
+  const { version } = JSON.parse(read("package.json"));
+  const install = readme.slice(readme.indexOf("\n## Install\n"), readme.indexOf("\n## Start here\n"));
+  const order = ["**No install, from the release**", "**npm**", "**Homebrew**", "**Standalone executable**", "**Docker**", "**From source**"].map((t) => install.indexOf(t));
+  assert.ok(order.every((i, n) => i > 0 && (n === 0 || i > order[n - 1])), "npx, npm, Homebrew, executables, Docker, source");
+  assert.ok(install.includes("npm install -g @lockedinlabs/agent-console"));
+  assert.ok(install.includes("brew install SamSnead85/tap/agent-console"));
+  assert.match(install, /signed with an Apple\s+Developer ID and notarized/u);
+  assert.match(install, /Windows \(x64; not code-signed\)[\s\S]*install\.ps1/u);
+  for (const [, tag] of readme.matchAll(/ghcr\.io\/samsnead85\/agent-console:v([0-9][^\s`]*)/gu)) assert.equal(tag, version, "the Docker tag is this version");
+  assert.match(install, /ghcr\.io\/samsnead85\/agent-console:v/u);
 });

@@ -58,8 +58,10 @@ export function nativeDownloads({ tag, assetNames, sums }) {
 /** True only when a formula names this version and exactly the release's archive checksums. */
 export function formulaMatches(formula, version, sums) {
   if (typeof formula !== 'string') return false;
+  // Homebrew reads the version from the URLs (checked below); an explicit
+  // version line, if there is one, must agree with them.
   const named = /^\s*version\s+"([^"]+)"/m.exec(formula);
-  if (!named || named[1] !== version) return false;
+  if (named && named[1] !== version) return false;
   return BREW_ARCHIVES.every((file) => {
     const digest = sums.get(file);
     if (!digest) return false;
