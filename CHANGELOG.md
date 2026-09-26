@@ -181,7 +181,10 @@
   count, and the same session on two machines stays two readings. What the
   console has not acknowledged is kept in the reporter's cursor file, written
   with the transcript positions it came from, and sent again under the same
-  ids.
+  ids. Coverage starts when the console hears "on", never earlier, since a
+  run with sharing off may have read past activity nobody counted; and what
+  the reporter's bounded outbox has to drop travels as a loss marker
+  (`lost`), so those minutes read partial (`outbox-overflow`), never whole.
 - One clock rule for alerts and activity: a minute, an alert or a last tool
   more than two minutes ahead is refused and counted on its machine, never
   stored, so it never becomes "now"; the five-minute window has two edges.
@@ -228,6 +231,22 @@
   (`node scripts/api-fixtures.mjs` regenerates the fixtures from the demo).
 - README: a "No Node.js?" path under Start here, and the nine standalone
   files listed under Checking a download.
+- The day's alerts are counted, not read off the list: `/api/console`
+  `alertsToday` counts every alert raised or accepted today, by its own time
+  on the console's calendar, and keeps the count in the state directory
+  across restarts. The retained list stops at 100 per machine; a busy day no
+  longer reads "100 alerts". `kept` names how many the list still holds,
+  `lastHour` the live ones of the hour.
+- Projects counts sessions as the Console counts lanes: a subagent thread,
+  at any depth, is folded into its top-level session, and counted apart as
+  `subagents` on each row and on the payload. The Projects band and the
+  lanes no longer give two numbers for the sessions on this machine.
+- Team's counts for a minute period give every current machine, person and
+  tool a row: an hour with nothing in it is a counted 0, and only the daily
+  rollup's sessions are null ("not kept").
+- A partial interval names its true cause: "console restarted" only when the
+  machine's first "on" came within one live report interval of the
+  console's start; heard later, or after an "off", it is "sharing started".
 
 ## 0.3.0 — 2026-09-25
 

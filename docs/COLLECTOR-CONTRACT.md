@@ -96,8 +96,14 @@ not the presence of a list, is what the console trusts: a later batch carries
 no lists and changes nothing; `"off"` makes that machine's alerts or activity
 unavailable on the console from that envelope on; a reporter older than 0.4
 sends no `share` and is accepted as before, its alerts and activity shown as
-unavailable, never as zero. An envelope that carries a list its own `share`
-says is off is refused.
+unavailable, never as zero. An envelope that carries a list (or a `lost`
+marker) its own `share` says is off is refused.
+
+Coverage starts when the console hears an `"on"`, never earlier — not from
+the console's own start, and not from the machine's join. A run with sharing
+off still reads the transcripts and moves its cursor past them, so activity
+from before the first `"on"` may have been read and never counted; nobody can
+say, and the console shows that interval as partial (`sharing-started`).
 
 `alerts` is optional and sent only when `share.alerts` is `"on"`. It is the
 alerts the reporter's own collector raised that the console has not yet
@@ -174,16 +180,37 @@ again. A transcript that fails half-way, or a pass that fails before its
 cursor is written, has its lines read again rather than counted twice. It
 holds exactly the envelope's shapes — counts, fixed kinds, minutes and salted
 hashes — at most 1,000 contributions no older than an hour and 100 alerts no
-older than a day, and it drops a kind as soon as a run does not share it. It
-is emptied as the console acknowledges it, and replayed with the same ids
-until then. `leave` deletes it with the cursor.
+older than a day, and it drops a kind as soon as a run does not share it
+(an opt-out, shown as `off`, not a loss). It is emptied as the console
+acknowledges it, and replayed with the same ids until then. The cursor file is
+renamed into place as the last step of its write, so a write reported as
+failed never landed; should one land anyway, the next pass adopts the file,
+which is ahead of the process. `leave` deletes it with the cursor.
+
+What the bound drops is never dropped in silence. It becomes a loss marker,
+kept and sent like any pending extra, on the first envelope, until
+acknowledged:
+
+```json
+"lost": [
+  { "id": "64 hex characters", "kind": "activity", "count": 1,
+    "from": "2026-09-20T12:34:00.000Z", "to": "2026-09-20T12:34:00.000Z" }
+]
+```
+
+`kind` is `activity` or `alerts`, `count` how many entries were dropped (`null`
+when kept state could not be read back), and `from` and `to` the first and
+last minute they covered. At most 20; two markers of a kind merge into one
+wider one rather than vanish. The console reads that machine's coverage of
+those minutes as partial (`outbox-overflow`), and a resent marker counts once.
 
 **Custody on the console.** The console keeps these counts in memory: alerts
 for a day, activity for a quarter of an hour. After it restarts it does not
 hold what it had, and it says so rather than showing zero (below).
 
-A console older than 0.4 ignores `share` and both lists; a 0.4 console refuses
-an envelope whose `share` or lists do not have exactly these shapes.
+A console older than 0.4 ignores `share`, both lists and `lost`; a 0.4 console
+refuses an envelope whose `share`, lists or `lost` do not have exactly these
+shapes.
 
 ### What the console shows for them
 
@@ -193,17 +220,25 @@ activity cover, as a `coverage`: `{ "state", "since", "reason" }`.
 | `state` | Meaning | What a screen may draw |
 | --- | --- | --- |
 | `complete` | Shared for the whole window. | Counts, and zero where nothing was held. |
-| `partial` | Shared only since `since`. | Counts as a floor; where nothing is held, unavailable — never zero. |
+| `partial` | Whole only since `since`. | Counts as a floor; where nothing is held, unavailable — never zero. |
 | `off` | The machine's reporter says it does not share (since `since`). | Unavailable. |
 | `undeclared` | An older reporter that does not say. | Unavailable. |
 | `unknown` | Nothing from the machine's reporter since the console started (`since`). | Unavailable. |
 
-`reason` is one fixed word, or `null` for `complete`: `console-restarted`
-(these counts are kept in memory; before this console started at `since` they
-are not held), `sharing-started` (the machine began sharing at `since`),
-`sharing-off`, `reporter-undeclared`, `not-heard`. A machine that joined after
-the console started has sent it everything it ever read, so its first `"on"`
-has no gap.
+`reason` is one fixed word, or `null` for `complete`:
+
+- `console-restarted`: these counts are kept in memory, and this console
+  started inside the window; it holds nothing from before its start. Given
+  only when the "on" is the first thing the console heard from the machine,
+  within one live report interval (60 seconds) of its start — a reporter
+  that was sharing all along is heard that soon.
+- `sharing-started`: the console first heard this machine say it shares at
+  `since` — later than that, or after hearing it say "off" or nothing;
+  before that, nobody can say.
+- `outbox-overflow`: the machine's reporter had to drop pending extras from
+  minutes up to just before `since` (a `lost` marker).
+- `sharing-off`, `reporter-undeclared`, `not-heard`: with `off`, `undeclared`
+  and `unknown`.
 
 Where it appears:
 
@@ -219,6 +254,11 @@ Where it appears:
   the hour, the latest time from which every watched machine's alerts are
   held, and why — "no alert" is known only since then; `null` when the hour is
   whole. `byDevice` gives each current machine's coverage of the hour.
+- `alertsToday`: the alerts of the console's calendar day, counted as each
+  is raised here or accepted from a machine and kept in the console's state
+  directory, so it is exact however many `alerts[]` keeps (100 per machine).
+  `kept` says how many of them the list still holds, `lastHour` the live
+  ones of the hour, and `since` from when the count is whole.
 
 ## How it is delivered
 

@@ -221,8 +221,12 @@ test("two machines join by link, report, roll up by person, and nothing private 
   for (const lane of view.lanes) {
     const shared = lane.device.label === "Workstation";
     assert.equal(lane.activityShared, shared, lane.device.label);
-    if (shared) assert.deepEqual(Object.keys(lane.activity.calls).sort(), ["agent", "edit", "mcp", "other", "read", "search", "shell", "web"]);
-    else assert.equal(lane.activity, null);
+    if (!shared) { assert.equal(lane.activity, null); assert.equal(lane.activityCoverage.state, "off"); continue; }
+    // A console started seconds ago, a machine just joined: covered from its first "on", so
+    // nothing held yet is unavailable, never zero.
+    assert.equal(lane.activityCoverage.state, "partial");
+    assert.ok(["console-restarted", "sharing-started"].includes(lane.activityCoverage.reason), lane.activityCoverage.reason);
+    if (lane.activity) assert.deepEqual(Object.keys(lane.activity.calls).sort(), ["agent", "edit", "mcp", "other", "read", "search", "shell", "web"]);
   }
   assert.equal(view.devices.length, 2);
   for (const d of view.devices) {
@@ -276,7 +280,7 @@ test("two machines join by link, report, roll up by person, and nothing private 
   for (const b of wire.bodies.filter((x) => x.url === "/api/ingest")) {
     const envelope = JSON.parse(b.body);
     const workstation = envelope.device.label === "Workstation";
-    const lists = ["alerts", "activity"].filter((k) => k in envelope);
+    const lists = ["alerts", "activity", "lost"].filter((k) => k in envelope);
     assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "coverage", "share", ...lists, "backlog"]);
     // Every envelope says what its run shares; only the machine that opted in sends a list.
     assert.deepEqual(envelope.share, workstation ? { alerts: "on", activity: "on" } : { alerts: "off", activity: "off" });
