@@ -2,6 +2,161 @@
 
 ## Unreleased
 
+### Console
+
+- The row the keyboard is on keeps its focus through every poll: lane rows
+  are placed by position and moved only when their order changed, never
+  re-appended, so J and K walk consecutive rows and a focused row is still
+  focused after two polls with no key pressed (the probe presses J five
+  times and waits 4.6 s).
+- Nothing stands bare between the fold strip and the status bar on a tall
+  screen: when the day's lanes leave the pane room, the first fold with rows
+  whose rendered height fits that room (Projects, then Effort, then Shipped)
+  opens in it, measured, and when none fits the lanes card keeps the room
+  with its own hatched line, "nothing more today · 3 cold lanes drawn". The
+  probe holds the gap under the strip to 48px at 1920×1080 and 1440×900.
+- When nothing ran in the last hour, the lanes pane draws the day's most
+  recent sessions, dimmed as cold with when they last spoke, under a hairline
+  that says so — never an empty hatch on the first screen.
+- An empty console says where it looked (`hub.local.roots`): each folder in
+  mono with what it held ("~/.claude/projects (0 files), ~/.codex/sessions
+  (not there)") and the exact flag or variable that points it elsewhere
+  (`--claude-root`, `--codex-root`, `CLAUDE_CONFIG_DIR`, `CODEX_HOME`); the
+  chart's void says the same. A path under the home directory is always
+  written with `~`.
+- Team's Days table: the days before this console's first record are one
+  hatched row, "21 days before this console's first record · not kept",
+  never "no usage" per day; a held day with nothing in it is a counted zero
+  and prints 0; the head reads "7 of 9 kept days with usage"; a day the
+  rollup holds only in part is marked "part held" with a "+" on its figure
+  (`series["30d"].whole`).
+- A project name alone in its lane cell keeps the whole cell; the 70% cap
+  applies only when a branch shares the cell. In every inspector's session
+  rows the name-and-branch column takes most of the row (2.2fr against the
+  model's 1fr, 56px and 46px for the figure and the state), and inside it
+  only the branch gives way; below 400px the branch goes under the name.
+- The Attention card draws only whole rows — a row the card's height would
+  cut is hidden outright — and the rule over the earlier alerts is a door,
+  "6 alerts earlier · open"; the hero's second line is ordered parts on one
+  line that drop whole when the card is tight ("restarted 10:34 PM · nothing
+  held from before"; "247M tokens · no verified price · left out of the
+  estimate"), never a clamp that cuts a sentence mid-word, the whole line on
+  hover. The console's very first start is "first start", never "restarted".
+- The first part of a fitted line (a fold summary, the hero's line) is never
+  folded away: a line always shows its reading or its reason, and Git nobody
+  could read is the short "not in Git" with the hub's whole sentence on hover.
+- One void for the Git that is not there: a project outside Git is one
+  hatched sentence in its inspector ("Not a Git repository · commits, lines,
+  PR-linked commits, $ per commit and $ per merge are not counted"), keeping
+  its estimate and sessions; in the Projects table and the Projects fold a
+  folder outside Git is one merged hatched cell, "not in Git", with the
+  reason on hover and for a screen reader, and when no project at all is in
+  Git the seven Git columns leave the table and the head says so once.
+- Every dash says why where it reads: the Effort table's fleet column says
+  "this machine only" for commits and carries the reason for messages and
+  the estimate on hover; the Shipped table's "no remote", "no default" and
+  "no merge" carry theirs.
+- Presenting steps a column's header back with its values ("EST. $" over the
+  lanes, the by-model, by-machine and Projects rows, the Team and Projects
+  tables), and the add-a-machine sheet's restart command is shown with
+  `--name '…' --person '…'` and the home directory as `~`, so no name and no
+  home path survives anywhere in the document (the probe scans the page
+  source, hidden nodes included). Copy still gives the real command.
+- The add-a-machine sheet: the restart command's paths are written with `~`,
+  the Copy button beside a tall command sits at its top instead of
+  stretching to its height, and the minutes select is the sheet's own
+  material with a drawn chevron, not the browser's grey control.
+- An inspector's empty hour reads as a drawn void: "Nothing in the last hour"
+  inside the tile over the dotted base, and its head says "nothing" rather
+  than "0 tokens".
+- The class table draws a clean void mark with its reason for a class with
+  nothing in it (never "— no reading" running past the card), and the status
+  bar names the price table from the hub's own `hub.prices` (version, the
+  inventory's check date, model count and newest verification on hover),
+  never "not reported" for a table that ships with the console.
+- The header lockup is a 24px target (WCAG 2.5.8); a card lifts 2px under
+  the pointer with its rim brightened. Projects' "tokens by project" rows
+  give the name the room (minmax 120px, 1fr) and fix the bar at 90px.
+- A demonstration's join page shows one warn line — a link that could never
+  be used is not also reported as missing its code — and its add-link sheet
+  says "A demonstration console cannot be joined" quietly, with no pulse,
+  instead of waiting for a machine that can never come.
+- `scripts/ui-probes.mjs`: the five-J walk, the strip-to-status-bar gap, whole
+  Attention rows, the hero's one line, non-empty fold summaries, a
+  twenty-four-character lane name alone and in an inspector row, the presented
+  page source, and — on a console that listens on this machine only — the
+  restart command's `~` and its masked names while presenting.
+
+### Hub (first-install round)
+
+- The 30-day view is whole on a first install. The console's first read of
+  its own machine, and a reporter's first delivery (which says so with
+  `backfill: { from }` on each envelope until complete), go back 30 UTC days
+  instead of the 8-day minute retention; records of days wholly past
+  retention go straight into the daily totals, once per machine and day, and
+  a re-read never counts twice. A first read interrupted by a hub restart is
+  rebuilt from the records it wrote. `windows["30d"].since` is the first
+  read's first day and `series["30d"].whole` says per day whether the rollup
+  holds it whole. Those records do not count against a machine's daily
+  allowance.
+- Codex threads in `archived_sessions` are read, and a thread that moves
+  there when it is archived keeps its place: nothing in it is counted or
+  alerted on twice.
+- `CLAUDE_CONFIG_DIR` (`<dir>/projects`, a comma list read in full),
+  `~/.config/claude/projects` and `CODEX_HOME` (`<dir>/sessions` and
+  `archived_sessions`) are read; `--claude-root` and `--codex-root` still
+  replace their tool's list. `/api/console` `hub.local.roots` names every
+  folder read with `{ tool, path, exists, files }`.
+- Idle CPU on a 21,000-transcript history: 47.9% of a core before, 1.5%
+  after (idle memory 441 MB to 242 MB): a scanner looks between sweeps only
+  at what can be changing and sweeps everything once a minute in 15 ms
+  slices; a first read's alert analysis skips history older than the day it
+  keeps. The reporter uses the scanner too.
+- A newer version that finds an older console on its port says so plainly,
+  gives the exact stop command, and never opens it; a state directory held by
+  another console names the process and how to stop it. A start that fails
+  says one line and the remedy, never a stack trace.
+- Join links carry a LAN-reachable address (wired and Wi-Fi adapters before
+  VPNs, virtual switches and link-local addresses last); `--advertise
+  <address>` puts an address first; inside WSL the window says the address
+  is likely this computer's only, and how to fix it (`hub.wsl`).
+- `hub.prices` names the offline price table (format version, inventory
+  check date, newest verification date, currency, basis, model count), and a
+  console's very first start reads `first-start`, never `console-restarted`.
+- The join command's download check names why it failed ("fetch failed
+  (UNABLE_TO_GET_ISSUER_CERT_LOCALLY)") and, whenever there is a cause, the
+  fix behind a proxy or TLS inspection (`HTTPS_PROXY`, `NODE_USE_ENV_PROXY=1`,
+  `NODE_EXTRA_CA_CERTS`). The check's SHA-256 is now
+  `77aea0b4b487f2e39065b5739377f16678d6977b0fbd6d1ab0ef901052e581bc`.
+
+### Distribution
+
+- macOS executables are signed with a Developer ID (hardened runtime, secure
+  timestamp) and notarized; the release checks Apple's ticket names the
+  file's CDHash and that Gatekeeper accepts a quarantined copy before
+  labelling it signed, and computes SHA256SUMS and attestations over the
+  signed files. A manual run of the binaries workflow can sign and notarize
+  as a dry run, uploading only workflow artifacts. Where Gatekeeper
+  assessments are off, the check asks Apple's ticket service instead.
+- `install.ps1` works in Windows PowerShell 5.1 (no progress bar, TLS 1.2,
+  `-UseBasicParsing`), takes the latest release from the releases/latest
+  redirect, adds its folder to the user's PATH (`AGENT_CONSOLE_NO_MODIFY_PATH=1`
+  opts out), installs the x64 executable on Windows 11 on Arm and refuses
+  Windows 10 on Arm and 32-bit Windows with the `npx.cmd` line. `install.sh`
+  prints the exact PATH line for the shell in use, refuses musl and glibc
+  older than 2.28 with the npx line, and names `HTTPS_PROXY` and
+  `CURL_CA_BUNDLE` when a download fails. `docs/uninstall.md` lists every
+  file, folder and background item, per system.
+- Upgrading the standalone executable no longer leaves the previous version's
+  unpacked copy behind: each version's cache folder is marked in use by its
+  process id, and other versions' folders nobody runs from are removed on
+  start.
+- The Docker image carries the licence and third-party notices; shell scripts
+  keep LF in a Windows checkout; the README lists the environment variables
+  the code reads and the options that have none.
+
+### Earlier in this cycle
+
 - The lanes pane is never left standing empty: when the day's lanes leave it
   room, the lanes idle for more than an hour fill it, dimmed, under a hairline
   that names them cold, with the rest in the Cold fold; when every lane of the

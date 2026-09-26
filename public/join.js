@@ -78,8 +78,9 @@
       command = `${run} join '${link}'`;
       showCommand($("cmd"), command.replace(code, "••••••••"));
     }
-    // The DEMO stamp renders only when the console says it is a demonstration; a real console never shows it.
-    if (info.demo) { $("demoStamp").hidden = false; $("demoNote").hidden = false; }
+    // The DEMO stamp renders only when the console says it is a demonstration; a real console never shows it. On a demonstration
+    // the one warn line is the demonstration's: a link that could never be used is not also reported as missing its code (R3-13).
+    if (info.demo) { $("demoStamp").hidden = false; $("demoNote").hidden = false; $("noCode").hidden = true; }
   }).catch(() => { $("status").textContent = "That console is not answering right now. Check you are on the same network, then reload."; });
 
   $("checkBtn").addEventListener("click", () => {

@@ -42,20 +42,32 @@ const text = (html) => html.replace(/<[^>]+>/gu, "");
 test("G06: the lanes card hugs its rows when the day leaves the pane room, fills the room with cold lanes otherwise, and draws a void sized to the pane when there is no lane", () => {
   assert.match(CSS, /#consoleCanvas \.lanes\.hug \{ flex: 0 0 auto; min-height: 0; \}/u);
   assert.match(JS, /const whole = visible\.length \+ \(cold\.length \? cold\.length \+ 1 : 0\);/u);
-  assert.match(JS, /const hug = room > 0 && whole > 0 && whole < room;/u);
-  assert.match(JS, /const fill = hug \? cold : room > visible\.length \+ 1 \? cold\.slice\(0, room - visible\.length - 1\) : \[\];/u);
+  assert.match(JS, /const hugWanted = room > 0 && whole > 0 && whole < room;/u);
+  // nothing in the last hour (U3): the day's most recent sessions are drawn, idle, rather than an empty hatch
+  assert.match(JS, /const fill = hugWanted \? cold : room > visible\.length \+ 1 \? cold\.slice\(0, room - visible\.length - 1\) : !visible\.length \? cold\.slice\(0, room > 0 \? Math\.max\(1, room - 1\) : 8\) : \[\];/u);
+  // the card hugs its rows only when an open fold takes the room they leave (R3-02); otherwise it keeps the room and its void names it
+  assert.match(JS, /const hug = hugWanted && openPx > 0 && openPx >= \(room - whole\) \* rowH - 48;/u);
   assert.match(JS, /box\.closest\("\.lanes"\)\.classList\.toggle\("hug", hug\);/u);
+  assert.match(JS, /laneVoid\.hidden = hug \|\| room <= whole;/u);
+  assert.match(JS, /laneVoid\.textContent = `nothing more today\$\{fill\.length \? ` · \$\{plural\(fill\.length, "cold lane"\)\} drawn` : ""\}`;/u);
+  assert.match(CSS, /\.lanevoid \{ flex: 1 1 auto;/u);
   // the room is read from the canvas, never from the card that follows its rows
   assert.match(JS, /const room = canvas\.clientHeight - parseFloat\(cs\.paddingTop\) - parseFloat\(cs\.paddingBottom\)/u);
   // the cold fill sits under a hairline that names it, and the void is the pane
   assert.match(JS, /laneSep\.className = "lanesep"/u);
   assert.match(CSS, /\.lanes \.empty\.voidfill \{ flex: 1 1 auto;/u);
-  assert.match(JS, /<div class="empty voidfill"><b>\$\{esc\(head\)\}<\/b><span>\$\{esc\(why\)\}<\/span><span>Nothing is estimated in its place\.<\/span><\/div>/u);
-  // the room under a hugging card shows this machine's projects until the reader chooses otherwise
-  assert.match(JS, /const AUTO_FOLD = "foldProjects";/u);
-  assert.match(JS, /if \(hug && spare >= 6 && !open && rows > 0\) \{ d\.open = true; foldAuto = true; \}/u);
-  assert.match(JS, /else if \(!hug && foldAuto && d\.open\) \{ d\.open = false; foldAuto = false; \}/u);
+  assert.match(JS, /<div class="empty voidfill"><b>\$\{esc\(head\)\}<\/b>\$\{why \? `<span>\$\{esc\(why\)\}<\/span>` : ""\}/u);
+  assert.match(JS, /<span>Nothing is estimated in its place\.<\/span><\/div>`;/u);
+  // the room under a hugging card is taken by the first fold with rows whose rendered height fits it (R3-02), measured, never a fixed
+  // row count; the reader's own choice, once made, is kept
+  assert.match(JS, /const AUTO_FOLDS = \["foldProjects", "foldEffort", "foldShipped"\];/u);
+  assert.match(JS, /if \(d\.offsetHeight <= leftover \+ 4\) \{ foldAuto = id; return d\.offsetHeight; \}/u);
+  assert.match(JS, /if \(!hugWanted\) \{ if \(foldAuto && !foldTouched\) \{ const d = \$\(foldAuto\); if \(d\.open\) d\.open = false; foldAuto = null; \} return openPx\(\); \}/u);
   assert.match(JS, /if \(ev\.target\.closest\("summary"\)\) foldTouched = true;/u);
+  // rows are placed by position, never re-appended (R3-01), so the row the keyboard is on keeps its focus through every poll
+  assert.match(JS, /if \(want !== node\) box\.insertBefore\(node, want\);/u);
+  assert.match(JS, /if \(active\.isConnected && box\.contains\(active\)\) active\.focus\(\{ preventScroll: true \}\);/u);
+  assert.doesNotMatch(JS, /box\.appendChild\(row\);\s*\/\/ moves it into sorted position/u);
 });
 
 test("G01: the Team head prints the day's alert count from the hub's counter and says how many are kept when the list is shorter", () => {
@@ -128,7 +140,8 @@ test("G10/G12/G15/G08/G13: a void mark per cell with its sentence once; a counte
   assert.match(JS, /peak <b>\$\{fmt\(top\)\}<\/b>/u);
   assert.doesNotMatch(JS, /<div class="cbars"/u, "the context history is still a row of bars");
   assert.match(JS, /<i><\/i>\$\{live\}<\/span>`;/u, "the Live column prints its measured zero");
-  assert.match(CSS, /\.inspect \.irow b \{[^}]*flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; \}/u);
+  // the name keeps its cell (R3-05): it is a fixed item whose track can still clamp it when it is alone and too long
+  assert.match(CSS, /\.inspect \.irow b \{[^}]*flex: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; \}/u);
   assert.match(CSS, /\.inspect \.irow > \* \{ min-width: 0; \}/u, "every inspector cell keeps to its track");
   assert.match(CSS, /\.inspect \.irow \.status > span \{ min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; \}/u);
   assert.match(JS, /<span class="md" title="\$\{esc\(l\.modelLabel\)\}">\$\{esc\(l\.modelLabel\)\}<\/span>/u, "a model that gives way carries its whole on hover");

@@ -108,7 +108,8 @@ test("no numeric is cut and no unit is said twice", () => {
   assert.doesNotMatch(CSS, /table\.grid \.models \{[^}]*max-width/u);
   assert.doesNotMatch(CSS, /table\.grid \.models \.names \{[^}]*text-overflow: ellipsis/u);
   // the Projects table's estimate column: the header carries the one label for the estimate, the cell the figure, "+" when it is a floor
-  assert.match(HTML, /<th scope="col" class="r" title="List-price estimate, not an invoice">Est\. \$<\/th>/u);
+  // (the head carries `est` so that, while presenting, it steps back with the column's values — R3-09)
+  assert.match(HTML, /<th scope="col" class="r est" title="List-price estimate, not an invoice">Est\. \$<\/th>/u);
   const cell = JS.match(/data-l="est\." data-internal data-src="projects\.usd"[^>]*>\$\{x\.usd === null \? "unpriced" : money\(x\.usd\)\}\$\{projCost\(x\)\.status === "partial" \? "\+" : ""\}<\/td>/u);
   assert.ok(cell, "the Est. cell is the figure alone, marked + when partial");
   // one label for the estimate everywhere: "Est. $" in table heads, "est. $" in pane heads, "est." only as a suffix on a figure
@@ -177,7 +178,8 @@ test("a row that opens an inspector is a 24px target, and the type keeps its siz
   // every inspector-opening row still carries the door class the rule sizes
   assert.match(JS, /<div class="xrow door \$\{d\.status\}" title=/u);
   assert.match(JS, /<div class="xrow msgs door" data-inspect="person:/u);
-  assert.equal((JS.match(/<div class="mrow door" data-inspect="project:/gu) || []).length, 3, "share, spend-per-commit and spend-per-merge rows");
+  assert.equal((JS.match(/<div class="mrow (?:proj )?door" data-inspect="project:/gu) || []).length, 3, "share, spend-per-commit and spend-per-merge rows");
+  assert.match(CSS, /\.mrow\.proj \{ grid-template-columns: minmax\(calc\(120px \* var\(--k\)\), 1fr\)/u, "the share rows give the project name the room (R3-15)");
 });
 
 test("on a phone the hour axis caption, the person's machine status and the lane's DEMO stamp are shown whole", () => {

@@ -246,8 +246,10 @@ await section("axe-core WCAG 2.2 AA", async () => {
     await context.close();
     // a link without a join code: Copy is out and says why, and is not drawn in the accent as if it were live; the box says what is missing
     const bare = await openJoin(width, theme);
-    const noCode = await bare.page.evaluate(() => { const b = document.getElementById("copyBtn"); const s = getComputedStyle(b); return { disabled: b.disabled, title: b.title, cmd: document.getElementById("cmd").textContent, refused: !document.getElementById("noCode").hidden, bg: s.backgroundColor, opacity: parseFloat(s.opacity), accent: getComputedStyle(document.documentElement).getPropertyValue("--cobalt") }; });
-    if (!noCode.disabled || !/nothing to copy/iu.test(noCode.title) || !noCode.refused || noCode.cmd === "—") fail(`join ${width} ${theme}: a link without a code leaves a live Copy (${JSON.stringify(noCode)})`); else ok(`join ${width} ${theme}: no code → Copy disabled with its reason`);
+    // the box says what is missing — on a demonstration the one warn line is the demonstration's (R3-13), never two states at once
+    const noCode = await bare.page.evaluate(() => { const b = document.getElementById("copyBtn"); const s = getComputedStyle(b); const warn = ["noCode", "demoNote"].filter((id) => !document.getElementById(id).hidden); return { disabled: b.disabled, title: b.title, cmd: document.getElementById("cmd").textContent, warn, bg: s.backgroundColor, opacity: parseFloat(s.opacity), accent: getComputedStyle(document.documentElement).getPropertyValue("--cobalt") }; });
+    const expectWarn = info.demo ? "demoNote" : "noCode";
+    if (!noCode.disabled || !/nothing to copy/iu.test(noCode.title) || noCode.warn.join() !== expectWarn || noCode.cmd === "—") fail(`join ${width} ${theme}: a link without a code leaves a live Copy or two warn lines (${JSON.stringify(noCode)})`); else ok(`join ${width} ${theme}: no code → Copy disabled with its reason, one warn line (${expectWarn})`);
     const accentFill = rgbOf(noCode.bg).join(",") === rgbOf(noCode.accent).join(",");
     if (accentFill || noCode.opacity < 1) fail(`join ${width} ${theme}: the disabled Copy is still drawn as the primary action (${noCode.bg} at opacity ${noCode.opacity})`); else ok(`join ${width} ${theme}: the disabled Copy is drawn out, not in the accent`);
     await bare.context.close();
@@ -309,10 +311,23 @@ await section("composition", async () => {
         const att = document.getElementById("attention"), ax = att.querySelector(".astrip .bx");
         const axisWhole = !ax || getComputedStyle(att.querySelector(".astrip")).display === "none" || (r(ax).bottom <= r(att).bottom - 6 && r(ax).top >= r(att).top && [...ax.children].every((s) => r(s).height <= 20));
         const legendLines = [...document.querySelectorAll("#specLegend span")].filter((s) => s.checkVisibility()).map((s) => Math.round(r(s).height)).filter((h) => h > 20);
+        // nothing stands bare between the fold strip and the status bar (R3-02): a fold opens in the room or the lanes card keeps it
+        const stripGap = Math.round(r(document.querySelector("footer.foot")).top - r(strip).bottom);
+        // the Attention card draws only whole rows, and its hero's line is one line with nothing cut mid-word (R3-07)
+        const list = document.getElementById("attnList"), lb = r(list);
+        const cutRows = [...list.children].filter((x) => !x.hidden && r(x).height > 0 && (r(x).bottom > lb.bottom + 1 || r(x).top < lb.top - 1)).length;
+        const line = document.getElementById("attnLine");
+        const attnLine = { whole: line.scrollHeight <= line.clientHeight + 1, fits: line.scrollWidth <= line.clientWidth + 1, text: line.textContent.trim().slice(0, 60) };
+        // every summary on the fold strip shows a reading or a reason (R3-08): never a bare label
+        const emptyFs = [...document.querySelectorAll(".foldstrip .fs")].filter((x) => x.checkVisibility() && !x.innerText.trim()).map((x) => x.id);
         return { rows, room, drawn: lanes.length, under, hug: card.classList.contains("hug"), voidfill: Boolean(document.querySelector("#cLanes .empty.voidfill")), cold: document.querySelectorAll("#cLanes .lane.cold").length,
           band2: r(band2).height, stripVisible: r(strip).top >= c.top && r(strip).bottom <= c.bottom + 1, docScroll: document.documentElement.scrollHeight > innerHeight + 1,
-          foot: Math.round(r(document.querySelector("footer.foot")).height), caps, attention: document.getElementById("attention").classList.contains("hot"), axisWhole, legendLines };
+          foot: Math.round(r(document.querySelector("footer.foot")).height), caps, attention: document.getElementById("attention").classList.contains("hot"), axisWhole, legendLines, stripGap, cutRows, attnLine, emptyFs };
       });
+      if (m.stripGap > 48) fail(`console ${width}${tag(hub)}: ${m.stripGap}px of bare tray between the fold strip and the status bar (max 48)`); else ok(`console ${width}${tag(hub)}: ${m.stripGap}px between the fold strip and the status bar`);
+      if (m.cutRows) fail(`console ${width}${tag(hub)}: ${m.cutRows} Attention row(s) drawn cut by the list's edge`); else ok(`console ${width}${tag(hub)}: only whole Attention rows are drawn`);
+      if (!m.attnLine.whole || (width >= 1440 && !m.attnLine.fits)) fail(`console ${width}${tag(hub)}: the Attention hero's line does not fit ("${m.attnLine.text}")`); else ok(`console ${width}${tag(hub)}: the Attention hero's line is one whole line`);
+      if (m.emptyFs.length) fail(`console ${width}${tag(hub)}: fold summaries with no visible text: ${m.emptyFs.join(", ")}`); else ok(`console ${width}${tag(hub)}: every fold summary shows its reading or its reason`);
       if (!m.axisWhole) fail(`console ${width}${tag(hub)}: the Attention timeline's axis is cut by the card's edge`); else ok(`console ${width}${tag(hub)}: the Attention timeline's axis is whole inside the card`);
       if (m.legendLines.length) fail(`console ${width}${tag(hub)}: ${m.legendLines.length} spend legend item(s) wrap mid-item`); else ok(`console ${width}${tag(hub)}: every spend legend item is one line`);
       const need = Math.min(MIN_ROWS[width], m.drawn);
@@ -419,12 +434,33 @@ await section("clipping", async () => {
           }
         }
       }
-      return { rows: rows.length, bad: bad.slice(0, 5), gaveWay: b ? b.scrollWidth > b.clientWidth : null };
+      // a twenty-four-character name keeps its cell whole beside its branch (R3-05): only the branch gives way
+      const short = "twenty-four-char-project";
+      let kept = null;
+      if (b) { b.textContent = short; kept = b.scrollWidth <= b.clientWidth + 1; }
+      return { rows: rows.length, bad: bad.slice(0, 5), gaveWay: b ? b.scrollWidth > b.clientWidth : null, kept };
     });
     if (r.none) fail(`person inspector ${width}: no session rows to check`);
     else if (r.bad.length) fail(`person inspector ${width}: ${r.bad.join("; ")}`);
     else ok(`person inspector ${width}: ${r.rows} rows keep every cell in its place, a forty-character name ${r.gaveWay ? "giving way with its whole on hover" : "fitting whole"}`);
+    if (r.kept === false) fail(`person inspector ${width}: a twenty-four-character project name is cut inside its cell`); else if (r.kept) ok(`person inspector ${width}: a twenty-four-character name keeps its cell whole`);
     await shot(page, `sheet-person-long-${width}-dark`);
+    await context.close();
+  }
+  // a lane's name alone in its cell keeps the whole cell (R3-04): a twenty-four-character name with no branch is never cut at 1440 or 1920
+  for (const width of [1440, 1920]) {
+    const { page, context } = await open(width, "dark");
+    const r = await page.evaluate(() => {
+      const row = document.querySelector("#cLanes .lane");
+      if (!row) return null;
+      const pr = row.querySelector(".pr"), b = pr.querySelector("b"), em = pr.querySelector("em");
+      b.textContent = "twenty-four-char-project"; if (em) em.textContent = ""; pr.classList.remove("branched");
+      const alone = b.scrollWidth <= b.clientWidth + 1;
+      b.textContent = "twenty-four-char-project"; if (em) em.textContent = "feat/branch"; pr.classList.add("branched");
+      return { alone, cap: Math.round(parseFloat(getComputedStyle(b).maxWidth) || 0), cell: Math.round(pr.clientWidth) };
+    });
+    if (!r) fail(`lanes ${width}: no lane row to probe`);
+    else if (!r.alone) fail(`lanes ${width}: a twenty-four-character project name with no branch is cut inside a ${r.cell}px cell`); else ok(`lanes ${width}: a twenty-four-character name alone keeps its ${r.cell}px cell`);
     await context.close();
   }
 });
@@ -442,6 +478,20 @@ await section("keyboard", async () => {
   await page.waitForTimeout(150);
   const back = await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("lane") ? document.activeElement.dataset.key : null);
   if (!first || !second || first === second || back !== first) fail(`J/K do not move DOM focus across rows (${first}, ${second}, ${back})`); else ok("J/K move DOM focus onto the rows");
+  // five more presses land on five consecutive rows, none skipped, and the focus is still on that row after two polls with no key pressed (R3-01)
+  const order = await page.evaluate(() => [...document.querySelectorAll("#cLanes .lane")].map((r) => r.dataset.key));
+  const walk = [];
+  for (let i = 0; i < 5; i += 1) {
+    await page.keyboard.press("j");
+    await page.waitForTimeout(150);
+    walk.push(await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("lane") ? document.activeElement.dataset.key : null));
+  }
+  await page.waitForTimeout(4600);
+  const held = await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("lane") ? document.activeElement.dataset.key : (document.activeElement && document.activeElement.tagName) || null);
+  const consecutive = walk.every((k, i) => k && order.indexOf(k) === Math.min(order.length - 1, order.indexOf(first) + 1 + i));
+  if (!consecutive) fail(`J skips rows or loses focus across polls: ${walk.map((k) => (k ? order.indexOf(k) : "BODY")).join(" → ")} from row ${order.indexOf(first)}`); else ok(`five J presses land on five consecutive rows (${walk.map((k) => order.indexOf(k)).join(" → ")})`);
+  if (held !== walk[4]) fail(`the focused row is on ${held} 4.6 s later with no key pressed`); else ok("the focused row keeps DOM focus through two polls");
+  for (let i = 0; i < 5; i += 1) { await page.keyboard.press("k"); await page.waitForTimeout(120); }
   await page.keyboard.press("Enter");
   await page.waitForTimeout(400);
   const opened = await page.evaluate(() => document.getElementById("inspectDialog").open);
@@ -547,6 +597,11 @@ await section("presenting", async () => {
     });
     const leaked = [...names].filter((n) => n.length >= 3 && pattern(n).test(dom.text));
     if (leaked.length) fail(`${view}: presenting still shows ${leaked.slice(0, 5).join(", ")}`); else ok(`${view}: presenting hides every project, branch, machine, person and host name from the text (${names.size} checked)`);
+    // the page source itself, hidden nodes included (R3-09): no name and no home path anywhere in the document
+    const outer = await page.evaluate(() => document.documentElement.outerHTML);
+    const inSource = [...names].filter((n) => n.length >= 3 && pattern(n).test(outer));
+    const homePath = /\/(?:Users|home)\/[A-Za-z0-9._-]+\//u.test(outer) || outer.includes(process.env.HOME || "\u0000");
+    if (inSource.length || homePath) fail(`${view}: the presented document's source still holds ${inSource.slice(0, 4).join(", ") || "a home path"}`); else ok(`${view}: the presented document's source holds no name and no home path (hidden nodes included)`);
     const inAttrs = [];
     for (const n of names) if (n.length >= 3) { const hit = dom.attrs.find((a) => pattern(n).test(a.slice(a.indexOf("=") + 1))); if (hit) inAttrs.push(`${n} in ${hit.slice(0, 60)}`); }
     if (inAttrs.length) fail(`${view}: presenting leaves a name in an attribute: ${inAttrs.slice(0, 4).join("; ")}`); else ok(`${view}: no name remains in any attribute (${dom.attrs.length} attribute values scanned)`);
@@ -576,6 +631,25 @@ await section("presenting", async () => {
     await page.keyboard.press("p");
   }
   await context.close();
+  // a console that listens on this machine only (any hub given with --also): its add-a-machine sheet carries the restart command, and while
+  // presenting neither the account's home path nor the --name / --person values survive anywhere in the document (R3-09, R3-10)
+  for (const hub of hubs.slice(1)) {
+    const { page: p2, context: c2 } = await open(1440, "dark", "console", { hub });
+    const cmd = await p2.evaluate(async () => (await (await fetch("/api/console", { headers: { "x-agent-console": "1" } })).json()).hub.networkCommand);
+    if (!cmd) { ok(`${hub.name}: listens on the network already, no restart command to mask`); await c2.close(); continue; }
+    await p2.evaluate(() => document.getElementById("addBtn").click());
+    await p2.waitForTimeout(400);
+    const plain = await p2.evaluate(() => document.getElementById("networkCmdShown").textContent);
+    const home = process.env.HOME || "";
+    if (home && plain.includes(home)) fail(`${hub.name}: the restart command shows the home directory (${home.replace(/[^/]+$/u, "…")})`); else ok(`${hub.name}: the restart command writes the home directory as ~`);
+    await p2.keyboard.press("p");
+    await p2.waitForTimeout(500);
+    const values = [...cmd.matchAll(/--(?:name|person)(?:=|\s+)(?:'((?:[^']|'\\'')*)'|"([^"]*)"|(\S+))/gu)].map((m) => m[1] ?? m[2] ?? m[3]).filter((v) => v && v.length >= 3);
+    const outer = await p2.evaluate(() => document.documentElement.outerHTML);
+    const left = values.filter((v) => outer.includes(v)).concat(home && outer.includes(home) ? ["the home path"] : []);
+    if (left.length) fail(`${hub.name}: while presenting the document still holds ${left.length} of the command's names or the home path`); else ok(`${hub.name}: while presenting, the restart command's names and the home path are out of the document (${values.length} value(s) checked)`);
+    await c2.close();
+  }
 });
 
 await browser.close();
