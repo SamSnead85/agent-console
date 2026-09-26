@@ -547,36 +547,54 @@ async function focusThroughReorder(page, contextButton) {
 }
 await section("keyboard", async () => {
   const { page, context } = await open(1440, "dark");
+  // The live demo can reorder rows between keys. Capture the expected adjacent
+  // row at keydown, then observe focus after the app's handler for that event.
+  await page.evaluate(() => {
+    window.laneProbeSteps = [];
+    const steps = new WeakMap();
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "j" && event.key !== "k") return;
+      const rows = [...document.querySelectorAll("#cLanes .lane")];
+      const from = rows.indexOf(document.activeElement);
+      const next = from < 0 ? (event.key === "j" ? rows[0] : rows.at(-1))
+        : (rows[from + (event.key === "j" ? 1 : -1)] || rows[from]);
+      const step = { key: event.key, from, expected: next?.dataset.key || null, actual: null };
+      steps.set(event, step);
+      window.laneProbeSteps.push(step);
+    }, true);
+    document.addEventListener("keydown", (event) => {
+      const step = steps.get(event);
+      if (step) step.actual = document.activeElement?.classList.contains("lane") ? document.activeElement.dataset.key : null;
+    });
+  });
   await page.keyboard.press("j");
   await page.waitForTimeout(150);
-  const first = await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("lane") ? document.activeElement.dataset.key : null);
   await page.keyboard.press("j");
   await page.waitForTimeout(150);
-  const second = await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("lane") ? document.activeElement.dataset.key : null);
   await page.keyboard.press("k");
   await page.waitForTimeout(150);
-  const back = await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("lane") ? document.activeElement.dataset.key : null);
-  if (!first || !second || first === second || back !== first) fail(`J/K do not move DOM focus across rows (${first}, ${second}, ${back})`); else ok("J/K move DOM focus onto the rows");
-  // five more presses land on five consecutive rows, none skipped, and the focus is still on that row after two polls with no key pressed (R3-01)
-  const order = await page.evaluate(() => [...document.querySelectorAll("#cLanes .lane")].map((r) => r.dataset.key));
-  const walk = [];
+  const opening = await page.evaluate(() => window.laneProbeSteps.slice());
+  const adjacent = (step) => step.expected && step.actual === step.expected;
+  if (opening.length !== 3 || !opening.every(adjacent)) fail("J/K do not move DOM focus to the adjacent row at keydown"); else ok("J/K move DOM focus onto the rows");
+  // Five more keys follow the current order; a poll may move a row during the
+  // walk, but may neither skip its successor nor take its focus afterward.
   for (let i = 0; i < 5; i += 1) {
     await page.keyboard.press("j");
     await page.waitForTimeout(150);
-    walk.push(await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("lane") ? document.activeElement.dataset.key : null));
   }
+  const walk = await page.evaluate(() => window.laneProbeSteps.slice(3));
   await page.waitForTimeout(4600);
   const held = await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("lane") ? document.activeElement.dataset.key : (document.activeElement && document.activeElement.tagName) || null);
-  const consecutive = walk.every((k, i) => k && order.indexOf(k) === Math.min(order.length - 1, order.indexOf(first) + 1 + i));
-  if (!consecutive) fail(`J skips rows or loses focus across polls: ${walk.map((k) => (k ? order.indexOf(k) : "BODY")).join(" → ")} from row ${order.indexOf(first)}`); else ok(`five J presses land on five consecutive rows (${walk.map((k) => order.indexOf(k)).join(" → ")})`);
-  if (held !== walk[4]) fail(`the focused row is on ${held} 4.6 s later with no key pressed`); else ok("the focused row keeps DOM focus through two polls");
+  if (walk.length !== 5 || !walk.every(adjacent)) fail("J skips the adjacent row in the order present at its keydown"); else ok("five J presses each reach the next row in the current order");
+  if (!walk[4]?.actual || held !== walk[4].actual) fail(`the focused row is on ${held} 4.6 s later with no key pressed`); else ok("the focused row keeps DOM focus through two polls");
   for (let i = 0; i < 5; i += 1) { await page.keyboard.press("k"); await page.waitForTimeout(120); }
+  const openerKey = await page.evaluate(() => document.activeElement?.classList.contains("lane") ? document.activeElement.dataset.key : null);
   await page.keyboard.press("Enter");
   await page.waitForTimeout(400);
   const opened = await page.evaluate(() => document.getElementById("inspectDialog").open);
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
-  const returned = await page.evaluate((k) => document.activeElement && document.activeElement.classList.contains("lane") && document.activeElement.dataset.key === k, first);
+  const returned = openerKey && await page.evaluate((k) => document.activeElement && document.activeElement.classList.contains("lane") && document.activeElement.dataset.key === k, openerKey);
   if (!opened) fail("Enter on a focused row does not open its inspector"); else ok("Enter opens the row's inspector");
   if (!returned) fail("closing the inspector opened with Enter does not return focus to the row"); else ok("closing the sheet returns focus to the row it was opened from with Enter");
   // a machine row opens its inspector; five seconds later (two repaints) Escape still lands on that machine's row
