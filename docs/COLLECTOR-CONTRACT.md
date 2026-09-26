@@ -228,9 +228,15 @@ activity cover, as a `coverage`: `{ "state", "since", "reason" }`.
 `reason` is one fixed word, or `null` for `complete`:
 
 - `console-restarted`: these counts are kept in memory, and this console
-  started inside the window; it holds nothing from before its start.
+  started inside the window; it holds nothing from before its start. Given
+  only when the "on" is the first thing the console heard from the machine,
+  within one live report interval (60 seconds) of its start — a reporter
+  that was sharing all along is heard that soon.
+- `first-start`: the same, on the console's very first start (a new state
+  directory): nothing ran before it, so it is never described as a restart.
 - `sharing-started`: the console first heard this machine say it shares at
-  `since`; before that, nobody can say.
+  `since` — later than that, or after hearing it say "off" or nothing;
+  before that, nobody can say.
 - `outbox-overflow`: the machine's reporter had to drop pending extras from
   minutes up to just before `since` (a `lost` marker).
 - `sharing-off`, `reporter-undeclared`, `not-heard`: with `off`, `undeclared`
@@ -250,6 +256,43 @@ Where it appears:
   the hour, the latest time from which every watched machine's alerts are
   held, and why — "no alert" is known only since then; `null` when the hour is
   whole. `byDevice` gives each current machine's coverage of the hour.
+- Lanes, sessions and subagent trees are per machine: the same session hash
+  reported by two machines (a synced home folder, a copied transcript that
+  went on elsewhere) is two lanes, each with its own machine, tokens and
+  activity, while the records they share are still counted once, by id. A
+  lane's `key` is its session hash's first 16 characters, as before; when two
+  machines share the hash, each key adds `-` and 8 hex characters naming its
+  machine, and an alert's `lane.key` names the lane of the alert's machine.
+- `hub.local.roots`: every folder this console reads for its own machine's
+  transcripts, as `{ tool, path, exists, files }` — `exists` is null before
+  the first read, `files` how many transcripts it holds. The defaults
+  (`~/.claude/projects`, `~/.codex/sessions`, `~/.codex/archived_sessions`),
+  `$CLAUDE_CONFIG_DIR/projects`, `$CODEX_HOME/sessions` and `archived_sessions`
+  when those are set, and `~/.config/claude/projects` when it exists; an
+  explicit `--claude-root` or `--codex-root` replaces its tool's list. A
+  screen with nothing to show names them; the console's own window does too
+  when its first read finds nothing, with the `--claude-root` and
+  `--codex-root` hint. The first read follows configured minute retention;
+  the 30-day view remains partial where daily history is unavailable.
+- `hub.prices`: the offline price table estimates are made with —
+  `{ v, checkedOn, lastVerifiedOn, currency, basis, models }`: its format
+  version, the day its inventory was checked, the newest row's verification
+  day, and how many models it prices. It ships with the package; nothing is
+  fetched.
+- `hub.wsl`: true when the join addresses were read inside WSL and no
+  `--advertise` was given — the first is likely reachable from this computer
+  only; the console's window says to use `--advertise` with Windows' own
+  address and a port forward.
+- `series["30d"].whole`: per day of the 30-day series, whether the daily
+  totals hold it whole — from `windows["30d"].since` on. A day before it
+  is drawn as partial. A first read follows configured retention and does
+  not establish complete coverage for older days.
+- `alertsToday`: counts from the bounded, in-memory alert list (up to 100
+  per machine). `count` and `kept` both describe retained alerts dated on the
+  console's calendar day; `lastHour` describes retained live alerts from the
+  last hour, including across midnight. `exact` is false and `since` is null:
+  these are not complete daily or hourly totals. Restart coverage remains
+  explicit in `alertsCoverage`; a new empty list does not establish no alerts.
 
 ## How it is delivered
 

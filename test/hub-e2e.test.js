@@ -242,7 +242,7 @@ test("two machines join by link, report, roll up by person, and nothing private 
     // A console started seconds ago, a machine just joined: covered from its first "on", so
     // nothing held yet is unavailable, never zero.
     assert.equal(lane.activityCoverage.state, "partial");
-    assert.ok(["console-restarted", "sharing-started"].includes(lane.activityCoverage.reason), lane.activityCoverage.reason);
+    assert.ok(["first-start", "sharing-started"].includes(lane.activityCoverage.reason), lane.activityCoverage.reason);
     if (lane.activity) assert.deepEqual(Object.keys(lane.activity.calls).sort(), ["agent", "edit", "mcp", "other", "read", "search", "shell", "web"]);
   }
   assert.equal(view.devices.length, 2);
@@ -298,7 +298,10 @@ test("two machines join by link, report, roll up by person, and nothing private 
     const envelope = JSON.parse(b.body);
     const workstation = envelope.device.label === "Workstation";
     const lists = ["alerts", "activity", "lost"].filter((k) => k in envelope);
-    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "coverage", "share", ...lists, "backlog"]);
+    // A first delivery says so on each of its envelopes, with the first UTC day it covers.
+    const first = "backfill" in envelope ? ["backfill"] : [];
+    assert.deepEqual(Object.keys(envelope), ["v", "device", "freshness", "records", "coverage", "share", ...first, ...lists, "backlog"]);
+    if (first.length) assert.deepEqual(Object.keys(envelope.backfill), ["from"]);
     // Every envelope says what its run shares; only the machine that opted in sends a list.
     assert.deepEqual(envelope.share, workstation ? { alerts: "on", activity: "on" } : { alerts: "off", activity: "off" });
     assert.ok(workstation || lists.length === 0, "a list from a machine that does not share it");

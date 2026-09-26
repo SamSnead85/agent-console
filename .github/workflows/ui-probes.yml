@@ -39,7 +39,7 @@ jobs:
           node bench/generate.mjs --out "$RUNNER_TEMP/bench" --days 30 --sessions 120 --lines 40000 --homes 1 --seed 1 > /dev/null
           node bin/agent-console.mjs --port 6972 --state-dir "$RUNNER_TEMP/state-bench" --retention-days 30 \
             --claude-root "$RUNNER_TEMP/bench/home-1/.claude/projects" --codex-root "$RUNNER_TEMP/bench/home-1/.codex/sessions" \
-            --name "Build box" --person "Engineer" > "$RUNNER_TEMP/bench.log" 2>&1 &
+            --name "Probe machine" --person "Engineer" > "$RUNNER_TEMP/bench.log" 2>&1 &
           for i in $(seq 1 120); do curl -sf -o /dev/null http://127.0.0.1:6972/ && break; sleep 0.5; done
           for i in $(seq 1 120); do grep -q "ready:" "$RUNNER_TEMP/bench.log" && break; sleep 1; done
       - name: Run the probes

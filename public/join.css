@@ -23,9 +23,10 @@
 .console { display: flex; flex-direction: column; gap: 8px; padding: 8px; background: var(--tray); box-shadow: inset 0 0 0 1px var(--tray-edge), inset 0 2px 6px rgba(0, 0, 0, .22); }
 .col { padding: calc(12px * var(--k)) calc(16px * var(--k)) calc(14px * var(--k)); border-radius: 10px; min-width: 0;
   background: linear-gradient(180deg, var(--card-a), var(--card-b)); box-shadow: inset 0 1px 0 var(--card-rim), inset 0 0 0 1px var(--card-edge), var(--card-shadow); }
-.cap { display: flex; align-items: center; gap: 10px; font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); min-height: 18px; }
-/* the step's ordinal, in the label's own voice, set off by a hairline: "STEP 1 | CHECK YOU HAVE…" — never a coloured circle */
-.cap .step { color: var(--ink2); padding-right: 10px; box-shadow: inset -1px 0 0 var(--hair); }
+.cap { display: flex; align-items: baseline; gap: 10px; font: 500 calc(12px * var(--k))/1.3 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); min-height: 18px; }
+/* the step's ordinal, in the label's own voice, set off by a hairline: "STEP 1 | CHECK YOU HAVE…" — never a coloured circle;
+   the ordinal stays one word and the caption beside it wraps, so the three heads share a baseline at 390 (J4-10) */
+.cap .step { color: var(--ink2); padding-right: 10px; box-shadow: inset -1px 0 0 var(--hair); white-space: nowrap; flex: none; }
 .col p { margin: 8px 0 0; font: 400 calc(13.5px * var(--k))/1.55 var(--sans); color: var(--ink2); }
 .col p em { font-style: normal; color: var(--ink); }
 .col p code, .col .fine code { font: 400 calc(12.5px * var(--k)) var(--mono); color: var(--ink); overflow-wrap: anywhere; }
@@ -44,6 +45,8 @@
 .cmd.open .chk { display: inline; }
 .cmd.open .chk-fold { display: none; }
 .copyrow .btn { height: auto; min-height: 38px; flex: none; }
+/* a Copy with nothing to copy is out, and looks out (G13): the tray's own surface, quiet ink, no accent fill inviting the click; its reason stays on it */
+.copyrow .btn.primary:disabled { background: var(--tile2); color: var(--quiet); box-shadow: var(--inset); opacity: 1; transform: none; cursor: not-allowed; }
 .fine { font: 400 calc(12px * var(--k))/1.5 var(--sans) !important; color: var(--quiet) !important; margin-top: 8px !important; }
 .linkbtn { border: 0; background: none; cursor: pointer; font: 500 calc(12px * var(--k)) var(--sans); color: var(--lit); min-height: 24px; padding: 2px 0; }
 .linkbtn:hover { text-decoration: underline; }

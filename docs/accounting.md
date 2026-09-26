@@ -16,9 +16,20 @@ token from the same transcripts. The suite checks that.
 
 ## 1. Sources
 
-- **Claude Code:** the JSONL transcripts under `~/.claude/projects/`: main
-  sessions, `<session>/subagents/*.jsonl`, and any other `*.jsonl` below.
-- **Codex:** the rollout JSONL under `~/.codex/sessions/`.
+- **Claude Code:** the JSONL transcripts under `$CLAUDE_CONFIG_DIR/projects/`
+  when that is set (each folder of a comma-separated list), otherwise
+  `~/.claude/projects/`, and `~/.config/claude/projects/` where it exists:
+  main sessions, `<session>/subagents/*.jsonl`, and any other `*.jsonl` below.
+- **Codex:** the rollout JSONL under `$CODEX_HOME/sessions/` (otherwise
+  `~/.codex/sessions/`), and under `archived_sessions/` beside it, where Codex
+  moves a thread when it is archived. A thread that moves is the same thread:
+  an implementation MUST NOT count what it holds again. This one knows a moved
+  rollout by its first line (the thread's `session_meta`) and keeps reading it
+  from where it was; record identity (§2) never includes a path, so a copy is
+  counted once too.
+- An explicit folder (`--claude-root`, `--codex-root`) replaces that tool's
+  list. A `--home` stands for another machine's layout, so this user's
+  `CLAUDE_CONFIG_DIR` and `CODEX_HOME` do not apply to it.
 
 Transcripts are read locally and read-only. A transcript is evidence of what
 the tool recorded. It is not the provider's invoice (§12).
@@ -389,3 +400,9 @@ These are counts from one heavily used machine, taken read-only on
   rollout.
 - An over-long Claude Code line is recovered only when its usage, uuid and
   time are outside the message content, where Claude Code writes them.
+
+The Console keeps separate lanes for each machine and session hash while
+shared record IDs still count once across machines. The accounting report
+retains its session-hash grouping; when it needs machine-specific session
+facts, it uses the latest reporting machine. Use the Console machine view
+for per-machine lane attribution.

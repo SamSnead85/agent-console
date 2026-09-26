@@ -644,6 +644,7 @@ node bin/agent-console.mjs join --help     # the reporter
 | `--port <n>` | `6787`: the console, on this computer only |
 | `--report-port <n>` | the port above it (`6788`): where other computers join and report |
 | `--listen <address>` | `127.0.0.1`; `0.0.0.0` lets other computers reach the reporting port |
+| `--advertise <address>` | the address join links carry, as other computers reach this one (WSL, several network adapters, a port forward) |
 | `--allow-public` | accept reports from outside private networks |
 | `--allow-cgnat` | also accept 100.64.0.0/10 (Tailscale, carrier-grade NAT) |
 | `--demo` | a synthetic team; reads nothing, accepts no machine |
@@ -652,7 +653,8 @@ node bin/agent-console.mjs join --help     # the reporter
 | `--state-dir <path>` | `~/.agent-console/hub` |
 | `--retention-days <n>` | `8` (1–90) |
 | `--invite-minutes <n>` | `30` (at most 60) |
-| `--claude-root`, `--codex-root` | where this computer's transcripts are |
+| `--claude-root`, `--codex-root` | where this computer's transcripts are, instead of the folders found below |
+| `--poll-ms <n>` | `2000`: how often this computer's transcripts are read, in milliseconds (1000 or more) |
 | `--json` | print launch details as JSON and keep running |
 
 Some console options can also be set in the environment, for a console that a
@@ -664,6 +666,7 @@ over its variable. A yes/no variable counts as on for `1`, `true`, `yes` or `on`
 | `AGENT_CONSOLE_PORT` | `--port` |
 | `AGENT_CONSOLE_REPORT_PORT` | `--report-port` |
 | `AGENT_CONSOLE_LISTEN` | `--listen` |
+| `AGENT_CONSOLE_ADVERTISE` | `--advertise` |
 | `AGENT_CONSOLE_ALLOW_CGNAT` | `--allow-cgnat` (yes/no) |
 | `AGENT_CONSOLE_DEMO` | `--demo` (yes/no) |
 | `AGENT_CONSOLE_NAME_MACHINE` | `--name` |
@@ -678,7 +681,7 @@ over its variable. A yes/no variable counts as on for `1`, `true`, `yes` or `on`
 | `AGENT_CONSOLE_ALERT_SPIKE_FACTOR` | `--alert-spike-factor` |
 | `AGENT_CONSOLE_ALERT_STALL_MINUTES` | `--alert-stall-minutes` |
 | `AGENT_CONSOLE_INTEROP` | `--interop` (yes/no) |
-| `AGENT_CONSOLE_POLL_MS` | `--poll-ms`, which is accepted but currently changes nothing |
+| `AGENT_CONSOLE_POLL_MS` | `--poll-ms` |
 
 `--open`, `--allow-public`, `--person`, `--invite-minutes` and `--json` have no
 variable. The reporter reads two: `AGENT_CONSOLE_REPORTER_DIR` in place of its
@@ -688,11 +691,17 @@ and `AGENT_CONSOLE_VENDOR` change the product and vendor names that the console
 and the reporter print. `AGENT_CONSOLE_PACKAGE` is set by the check in a
 join command, for the reporter it starts; it is not one to set yourself.
 
-Claude Code's `CLAUDE_CONFIG_DIR` and Codex's `CODEX_HOME` are not read to find
-transcripts: the console and the reporter read `.claude/projects` and
-`.codex/sessions` in the home folder. If yours are elsewhere, pass
-`--claude-root` / `--codex-root`. (`policy` reads `CLAUDE_CONFIG_DIR` only to
-stay out of your user-level Claude Code settings.)
+The console and the reporter find transcripts where Claude Code and Codex put
+them: Claude Code's `CLAUDE_CONFIG_DIR` (its `projects` folder; a
+comma-separated list is read in full) when it is set, `~/.claude/projects`,
+and `~/.config/claude/projects` where it exists; Codex's `CODEX_HOME` (its
+`sessions` folder, and `archived_sessions`, where Codex moves a thread it
+archives) when it is set, and `~/.codex/sessions` with `~/.codex/archived_sessions`.
+`--claude-root` / `--codex-root` (or their variables) replace their tool's
+list. With `--home`, these two variables are not used: that home stands for
+another computer's layout. The console names every folder it read, and says
+so in its window when it finds nothing. (`policy` reads `CLAUDE_CONFIG_DIR`
+too, to stay out of your user-level Claude Code settings.)
 
 The installers and the standalone executable have their own:
 `AGENT_CONSOLE_VERSION`, `AGENT_CONSOLE_INSTALL_DIR` and
@@ -754,7 +763,7 @@ compare its check with the published one, not only its first words. The
 check's SHA-256 is:
 
 ```text
-114422b34fdc2721cd70e125908fe2ef381b4afddf6c7317d3e540710ec03737
+77aea0b4b487f2e39065b5739377f16678d6977b0fbd6d1ab0ef901052e581bc
 ```
 
 This command prints the SHA-256 of the check in any command you paste into it,
@@ -768,7 +777,7 @@ node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(requ
 The check itself, verbatim:
 
 ```text
-const[u,...a]=process.argv.slice(1),p=require(`path`),n=p.basename(u),g=x=>fetch(x).then(r=>{if(!r.ok)throw Error(x+` answered `+r.status);return r.arrayBuffer()}).then(Buffer.from);(async()=>{if(!/^https:[/][/]github[.]com[/][A-Za-z0-9_.-]+[/][A-Za-z0-9_.-]+[/]releases[/]download[/]v[0-9.]+[/][A-Za-z0-9_.-]+[.]tgz(?![^])/.test(u))throw Error(`not a release file: `+u);const t=String(await g(p.posix.dirname(u)+`/SHA256SUMS`)).split(/[^0-9A-Za-z._-]+/),b=await g(u),h=require(`crypto`).createHash(`sha256`).update(b).digest(`hex`);if(h!==t[t.indexOf(n)-1])throw Error(n+` does not match the release SHA256SUMS; nothing was run`);const f=require(`fs`),d=p.join(require(`os`).homedir(),`.agent-console`,`releases`),k=p.join(d,n),w=process.platform==`win32`,q=String.fromCharCode(34);f.mkdirSync(d,{recursive:true});f.writeFileSync(k,b);console.error(n+` matches the release SHA256SUMS: `+h);const r=require(`child_process`).spawnSync(w?[`npx`,`--yes`,`file:`+k,...a].map(x=>q+x+q).join(` `):`npx`,w?[]:[`--yes`,`file:`+k,...a],{stdio:`inherit`,shell:w,env:{...process.env,AGENT_CONSOLE_PACKAGE:k}});process.exit(r.status??1)})().catch(e=>{console.error(String(e.message));process.exit(1)})
+const[u,...a]=process.argv.slice(1),p=require(`path`),n=p.basename(u),g=x=>fetch(x).then(r=>{if(!r.ok)throw Error(x+` answered `+r.status);return r.arrayBuffer()}).then(Buffer.from);(async()=>{if(!/^https:[/][/]github[.]com[/][A-Za-z0-9_.-]+[/][A-Za-z0-9_.-]+[/]releases[/]download[/]v[0-9.]+[/][A-Za-z0-9_.-]+[.]tgz(?![^])/.test(u))throw Error(`not a release file: `+u);const t=String(await g(p.posix.dirname(u)+`/SHA256SUMS`)).split(/[^0-9A-Za-z._-]+/),b=await g(u),h=require(`crypto`).createHash(`sha256`).update(b).digest(`hex`);if(h!==t[t.indexOf(n)-1])throw Error(n+` does not match the release SHA256SUMS; nothing was run`);const f=require(`fs`),d=p.join(require(`os`).homedir(),`.agent-console`,`releases`),k=p.join(d,n),w=process.platform==`win32`,q=String.fromCharCode(34);f.mkdirSync(d,{recursive:true});f.writeFileSync(k,b);console.error(n+` matches the release SHA256SUMS: `+h);const r=require(`child_process`).spawnSync(w?[`npx`,`--yes`,`file:`+k,...a].map(x=>q+x+q).join(` `):`npx`,w?[]:[`--yes`,`file:`+k,...a],{stdio:`inherit`,shell:w,env:{...process.env,AGENT_CONSOLE_PACKAGE:k}});process.exit(r.status??1)})().catch(e=>{const c=e.cause;console.error(String(e.message)+(c?` (`+String(c.code||c.name||c)+`)`:``));if(c)console.error(`Behind a proxy or TLS inspection? Set HTTPS_PROXY and NODE_USE_ENV_PROXY=1, and NODE_EXTRA_CA_CERTS=<your company root .pem>`);process.exit(1)})
 ```
 
 ## Development

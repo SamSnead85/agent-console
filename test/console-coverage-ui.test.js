@@ -81,7 +81,7 @@ test("\"no alert\" is claimed only from alertsCoverage.since, and the sixty-minu
   // the Attention hero, its stat, the alerts sheet's caption and Team's alert count all name the time
   assert.match(JS, /known \? `No alert since \$\{hhmm\(known\)\}`/u);
   assert.match(JS, /html: known \? `since \$\{hhmm\(known\)\}` : cov && unwatched \? `\$\{cov\.watched\} of \$\{current\} watched` : "last hour"/u);
-  assert.match(JS, /foot = known \? `Not held before \$\{hhmm\(known\)\}: quiet then is not "no alert"\.`/u);
+  assert.match(JS, /known \? `Not held before \$\{hhmm\(known\)\}: quiet then is not "no alert"\.`/u);
   // a sentence in the foot gives way at its end with the whole on hover
   assert.match(JS, /\$\("attnFoot"\)\.innerHTML = top \? foot : foot \? `<span class="ft">\$\{foot\}<\/span>` : "";\s*\$\("attnFoot"\)\.title = top \? "" : \$\("attnFoot"\)\.textContent;/u);
   assert.match(CSS, /\.attention \.afoot \.ft \{ min-width: 0; overflow: hidden; text-overflow: ellipsis; \}/u);
@@ -124,7 +124,7 @@ test("the spend legend flows as whole items, and the Attention timeline has an a
   assert.match(CSS, /\.console\.two > \.col\.attention > \.alist \{ flex: 0 1 auto; min-height: 0; overflow: hidden; \}/u);
   // an Attention row is one line: the kind whole, the lane's name giving way, the whole on the row's hover
   assert.match(CSS, /\.arow b \{[^}]*white-space: nowrap;/u);
-  assert.match(JS, /title="\$\{esc\(ALERT_LABEL\[a\.kind\] \|\| "Alert"\)\}\$\{name \? ` · \$\{esc\(name\)\}` : ""\} · \$\{esc\(alertCause\(a\)\)\} · \$\{hhmm\(a\.at\)\}/u);
+  assert.match(JS, /title="\$\{esc\(ALERT_LABEL\[a\.kind\] \|\| "Alert"\)\}\$\{name \? ` · \$\{esc\(name\)\}` : ""\} · \$\{esc\(alertCause\(a\)\)\} · \$\{esc\(alertWhen\(a\.at\)\)\}/u);
   // the stat drops its least important parts whole when the caption is tight
   assert.match(JS, /fitLine\(\$\("attnStat"\), stat,/u);
   assert.match(HTML, /<span class="capr fit" id="attnStat">/u);

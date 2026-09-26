@@ -63,7 +63,7 @@ test("a join link is a credential: masked, never revealable, cleared when the sh
   // the commands on screen carry their codes masked; Copy puts the real ones on the clipboard
   assert.match(JS, /j\.command\.replace\(secret, "••••••••"\)/u);
   assert.match(JS, /j\.typed\.replace\(j\.code, "••••-••••"\)/u);
-  assert.match(JS, /addDialog\.addEventListener\("close", \(\) => clearSecret\(\)\)/u);
+  assert.match(JS, /addDialog\.addEventListener\("close", \(\) => \{\s*clearSecret\(\)/u);
   assert.match(read("join.js"), /command\.replace\(code, "••••••••"\)/u);
 });
 

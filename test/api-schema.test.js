@@ -78,5 +78,8 @@ test("H18: the fixtures exercise every new field", () => {
   assert.ok(PROJECTS.projects.some((p) => p.parent && p.repoHash));
   assert.equal(PROJECTS.computedAt, PROJECTS.asOf);
   assert.ok(PROJECTS.fleet["24h"].tokens >= PROJECTS.tokens, "this machine is a part of the team");
+  assert.equal(CONSOLE.alertsToday.exact, false, "bounded retained alerts are not a complete daily count");
+  assert.equal(CONSOLE.alertsToday.count, CONSOLE.alertsToday.kept);
+  assert.ok(Number.isInteger(PROJECTS.subagents) && PROJECTS.projects.every((p) => "subagents" in p), "subagents counted apart from sessions");
   assert.equal(CONSOLE.hub.demo, true, "the fixtures are the demo's, never a real machine's");
 });

@@ -275,10 +275,10 @@ usage attestation. Read [SECURITY.md](../SECURITY.md) before network deployment.
 | Component | Responsibility and source |
 | --- | --- |
 | Entry and configuration | `bin/agent-console.mjs`, `server.js`, `lib/config.js`: command selection, configuration and listener lifecycle. |
-| Collection | `lib/collector/`: parsers, projection, identity, spool, transport and pricing. |
+| Collection | `lib/collector/`: parsers, projection, identity, spool, transport and pricing; `scanner.js` decides which transcripts a pass looks at (a budgeted sweep once a minute, only what can be changing in between). |
 | Reporter | `lib/reporter.js`: enrollment, local credentials, reporting and leave. `lib/reporter-outbox.js`: opt-in alerts and activity pending until the console acknowledges them, kept in the collector's cursor file. |
 | Admin and enrollment | `lib/hub/admin.js`, `registry.js`, `tls.js`: browser sessions, invitation/device state and hub TLS identity. |
-| HTTP surfaces | `lib/hub/routes.js`, `http.js`: routing, access checks, bounded bodies, headers and static assets. |
+| HTTP surfaces | `lib/hub/routes.js`, `http.js`: routing, access checks, bounded bodies, headers and static assets. `lib/hub/notices.js`: what a failed or empty start says, and the command that fixes it. |
 | Response redaction | `lib/redact.js`: recognizable credential patterns masked in ordinary JSON responses; not a provider or MCP gateway. |
 | Usage and views | `lib/hub/store.js`, `aggregate.js`, `accounting.js`, `projects.js`: retained records, aggregates and projections. |
 | Local evidence | `lib/hub/local.js`, `lib/gitstats.js`: hub-local collection, names and Git activity. |
