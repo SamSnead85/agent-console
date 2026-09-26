@@ -11,7 +11,16 @@
     "now": { "type": "integer" },
     "asOf": { "type": "integer", "description": "When this payload was computed (ms)." },
     "alertsAsOf": { "type": "integer" },
-    "hub": { "type": "object", "required": ["demo"], "properties": { "demo": { "type": "boolean" } } },
+    "hub": { "type": "object", "required": ["demo"], "properties": { "demo": { "type": "boolean" },
+      "prices": { "type": ["object", "null"], "description": "The offline price table this console prices with: its format version, the day its inventory was checked, the newest row's verification day, currency, basis and model count.",
+        "properties": { "v": { "type": ["integer", "null"] }, "checkedOn": { "type": ["string", "null"] }, "lastVerifiedOn": { "type": ["string", "null"] },
+          "currency": { "type": ["string", "null"] }, "basis": { "type": ["string", "null"] }, "models": { "type": "integer" } } },
+      "wsl": { "type": "boolean", "description": "The join addresses were read inside WSL and no --advertise was given: the first is likely reachable from this computer only." },
+      "local": { "type": "object", "properties": {
+        "roots": { "type": "array", "description": "Every folder read for this machine's transcripts: the tool, the path, whether it exists (null before the first read) and how many transcripts it holds.",
+          "items": { "type": "object", "required": ["tool", "path", "exists", "files"], "additionalProperties": false,
+            "properties": { "tool": { "enum": ["claude-code", "codex"] }, "path": { "type": "string" }, "exists": { "type": ["boolean", "null"] }, "files": { "type": ["integer", "null"] } } } },
+        "backfill": { "type": ["object", "null"], "description": "This machine's first read of the console's 30 days, once complete." } } } } },
     "windows": {
       "type": "object", "required": ["1h", "24h", "7d", "30d"],
       "additionalProperties": { "type": "object", "required": ["key", "basis", "from", "to", "tokens", "cost"],
@@ -148,7 +157,7 @@
   },
   "$defs": {
     "hash64": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-    "coverageReason": { "enum": ["console-restarted", "sharing-started", "outbox-overflow", "sharing-off", "reporter-undeclared", "not-heard"] },
+    "coverageReason": { "enum": ["console-restarted", "first-start", "sharing-started", "outbox-overflow", "sharing-off", "reporter-undeclared", "not-heard"] },
     "coverage": {
       "type": "object", "required": ["state", "since", "reason"], "additionalProperties": false,
       "description": "How much of a window a machine's opt-in alerts or activity cover. complete: the whole window, so nothing held is a known zero. partial: whole only since `since` (the console started inside the window, the console first heard the machine share then, or the machine's reporter reported a loss up to then); what is held is a floor and nothing held is unavailable. off: the machine's reporter says it does not share (since `since`). undeclared: an older reporter that does not say. unknown: nothing from the machine's reporter since the console started (`since`). Only complete may ever be drawn as zero.",

@@ -33,7 +33,7 @@ import { createActivityBook } from "../lib/collector/activity.js";
 import { eventMeasurement } from "../lib/collector/measurement.js";
 import { buildConsole } from "../lib/hub/aggregate.js";
 import { projectsPayload } from "../lib/hub/projects.js";
-import { allAlerts, consoleSignals, demoInterop } from "../lib/hub/routes.js";
+import { allAlerts, consoleSignals, demoInterop, priceTableInfo } from "../lib/hub/routes.js";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const VERSION = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")).version;
@@ -65,8 +65,12 @@ export async function demoPayloads({ period = "24h" } = {}) {
   const alerts = { list: () => demo.alerts(now) };
   const hub = { product: "Agent Console", version: VERSION, demo: true, interop: true,
     listen: { address: "127.0.0.1", port: 4318, network: false }, consolePort: 4317, urls: ["http://127.0.0.1:4318"],
-    networkCommand: null, fingerprint: "0".repeat(64), retentionDays: 8,
-    release: { url: null, page: null }, local: { enabled: true, tools: ["claude-code", "codex"], firstRunComplete: true, progress: null, error: null } };
+    networkCommand: null, fingerprint: "0".repeat(64), retentionDays: 8, wsl: false, prices: priceTableInfo(prices),
+    release: { url: null, page: null }, local: { enabled: true, tools: ["claude-code", "codex"], firstRunComplete: true, progress: null, error: null,
+      // The folders a console reads for its own machine, as a home directory would name them (synthetic).
+      roots: [{ tool: "claude-code", path: "~/.claude/projects", exists: true, files: 42 }, { tool: "codex", path: "~/.codex/sessions", exists: true, files: 9 },
+        { tool: "codex", path: "~/.codex/archived_sessions", exists: false, files: 0 }],
+      backfill: { from: new Date(Math.floor(now / 86_400_000) * 86_400_000 - 29 * 86_400_000).toISOString().slice(0, 10), days: 30, complete: true } } };
   const console = buildConsole({ store, registry, names: demo.names, now, hub,
     alerts: allAlerts({ alerts, fleet }, now), signals: consoleSignals({ alerts, fleet, activity }, now), alertDay: demo.alertDay(now) });
   console.interop = demoInterop(now);
