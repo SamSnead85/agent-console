@@ -31,10 +31,10 @@ import { createFleetSignals } from "../lib/hub/fleet.js";
 import { buildConsole } from "../lib/hub/aggregate.js";
 import { createReportingHandler, consoleSignals, allAlerts } from "../lib/hub/routes.js";
 import { createActivityBook, ACTIVITY_KINDS } from "../lib/collector/activity.js";
-import { activityFor, extrasFor } from "../lib/collector/transport.js";
+import { activityFor, extrasFor, postRecords } from "../lib/collector/transport.js";
 import { eventMeasurement } from "../lib/collector/measurement.js";
 import { createInteropStore } from "../lib/interop/ingest.js";
-import { createExtrasOutbox } from "../lib/reporter-outbox.js";
+import { createExtrasOutbox, OUTBOX_LIMITS } from "../lib/reporter-outbox.js";
 import { parseLine } from "../lib/collector/parsers.js";
 
 const PRICES = JSON.parse(await fs.readFile(new URL("../lib/collector/prices.json", import.meta.url), "utf8"));
@@ -440,6 +440,48 @@ test("an outbox over its bound carries a loss marker, and the console reads part
   assert.equal(c.lane(v, "quiet").activityCoverage.state, "complete");
   // A declared-off kind cannot carry a marker.
   assert.throws(() => extrasFor({ share: { alerts: "off", activity: "off" }, lost: taken.lost }), /off/u);
+});
+
+for (const kind of ["activity", "alerts"]) test(`clock-skew overflow in ${kind} preserves loss coverage and token delivery`, async (t) => {
+  const now = Date.now();
+  const at = iso(floorMinute(now + 90_000));
+  const hub = await consoleFor(t);
+  const { device, token } = hub.join("Synthetic workstation");
+  const ctx = { deviceId: device.id, hashIdentity: (k, v) => h(`${k}|${v}`) };
+  const pending = Array.from({ length: OUTBOX_LIMITS[kind] + 1 }, (_, i) => kind === "activity"
+    ? { id: h(`activity-${i}`), sessionHash: h(`session-${i}`), at,
+      calls: Object.fromEntries(ACTIVITY_KINDS.map((k) => [k, k === "read" ? 1 : 0])),
+      results: { ok: 1, error: 0 }, lastTool: null }
+    : { id: h(`alert-${i}`), kind: "loop", sessionHash: h(`session-${i}`), at, count: 1, historical: false });
+  const makeBox = () => createExtrasOutbox({ now: () => now,
+    ...(kind === "activity" ? { activity: createActivityBook({ now: () => now }) } : { alerts: { drain: () => [] } }) });
+  const box = makeBox();
+  box.journal.restore({ v: 1, epoch: "a".repeat(32), seq: pending.length, activity: [], alerts: [], lost: [], [kind]: pending }, ctx);
+  const saved = box.saved();
+  assert.equal(saved[kind].length, OUTBOX_LIMITS[kind]);
+  assert.equal(saved.lost.length, 1);
+  assert.equal(saved.lost[0].from, at);
+  assert.equal(saved.lost[0].to, at, "the interval covers the dropped minute, including supported clock skew");
+  const restarted = makeBox();
+  restarted.journal.restore(saved, ctx);
+  assert.deepEqual(restarted.saved().lost, saved.lost, "the same loss marker survives restart");
+  const extras = { share: { activity: kind === "activity" ? "on" : "off", alerts: kind === "alerts" ? "on" : "off" }, ...restarted.take() };
+  const record = { id: h("skew-usage"), tool: "claude-code", model: "claude-sonnet-5", sessionHash: h("usage-session"),
+    parentSessionHash: null, isSubagent: false, projectHash: h("synthetic-project"), engagement: null,
+    reportingDevice: device.id, executionOrigin: "unknown", at: iso(floorMinute(now)), fresh: 10, output: 4,
+    cacheWrite: 0, cacheWrite5m: null, cacheWrite1h: null, ttl: "unknown", cacheRead: 0, observed: true,
+    continuation: false, tier: "standard", cumulative: false };
+  record.measurement = eventMeasurement(record);
+  const identity = { id: device.id, label: device.label };
+  const first = await postRecords(hub.url, identity, [record], { token, ...extras });
+  assert.equal(first.accepted, 1, "valid tokens are delivered alongside the overflow marker");
+  const replay = await postRecords(hub.url, identity, [record], { token, ...extras });
+  assert.equal(replay.duplicate, 1, "a retry does not count the usage twice");
+  const lossReplay = hub.fleet.accept(device.id, extras, now);
+  assert.equal(lossReplay.lost.duplicate, 1, "the hub retained the original loss marker");
+  assert.equal(lossReplay.lost.future, 0, "the existing clock-skew allowance is preserved");
+  assert.equal(restarted.ack(), true);
+  assert.deepEqual(restarted.saved().lost, []);
 });
 
 test("a cursor write that landed although the pass saw it fail is adopted, not overwritten", () => {
