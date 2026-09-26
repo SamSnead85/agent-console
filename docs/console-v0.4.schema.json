@@ -131,10 +131,10 @@
   },
   "$defs": {
     "hash64": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-    "coverageReason": { "enum": ["console-restarted", "sharing-started", "sharing-off", "reporter-undeclared", "not-heard"] },
+    "coverageReason": { "enum": ["console-restarted", "sharing-started", "outbox-overflow", "sharing-off", "reporter-undeclared", "not-heard"] },
     "coverage": {
       "type": "object", "required": ["state", "since", "reason"], "additionalProperties": false,
-      "description": "How much of a window a machine's opt-in alerts or activity cover. complete: the whole window, so nothing held is a known zero. partial: only since `since` (the console restarted then, or the machine began sharing then); what is held is a floor and nothing held is unavailable. off: the machine's reporter says it does not share (since `since`). undeclared: an older reporter that does not say. unknown: nothing from the machine's reporter since the console started (`since`). Only complete may ever be drawn as zero.",
+      "description": "How much of a window a machine's opt-in alerts or activity cover. complete: the whole window, so nothing held is a known zero. partial: whole only since `since` (the console started inside the window, the console first heard the machine share then, or the machine's reporter reported a loss up to then); what is held is a floor and nothing held is unavailable. off: the machine's reporter says it does not share (since `since`). undeclared: an older reporter that does not say. unknown: nothing from the machine's reporter since the console started (`since`). Only complete may ever be drawn as zero.",
       "properties": {
         "state": { "enum": ["complete", "partial", "off", "undeclared", "unknown"] },
         "since": { "type": ["integer", "null"] },

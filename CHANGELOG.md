@@ -181,7 +181,10 @@
   count, and the same session on two machines stays two readings. What the
   console has not acknowledged is kept in the reporter's cursor file, written
   with the transcript positions it came from, and sent again under the same
-  ids.
+  ids. Coverage starts when the console hears "on", never earlier, since a
+  run with sharing off may have read past activity nobody counted; and what
+  the reporter's bounded outbox has to drop travels as a loss marker
+  (`lost`), so those minutes read partial (`outbox-overflow`), never whole.
 - One clock rule for alerts and activity: a minute, an alert or a last tool
   more than two minutes ahead is refused and counted on its machine, never
   stored, so it never becomes "now"; the five-minute window has two edges.

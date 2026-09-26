@@ -141,6 +141,7 @@ test("H03: fleet alerts merge per machine; the coverage says which machines are 
   const at = new Date(Math.floor((NOW - 2 * MINUTE) / MINUTE) * MINUTE).toISOString();
   const sent = alertsFor([{ id: h("x"), kind: "spike", at, sessionHash: h("sb"), count: 90_000, historical: false }]);
   const share = { alerts: "on", activity: "off" };
+  fleet.accept("dev_b", { share }, NOW - 2 * HOUR);   // sharing since two hours ago: the hour is whole
   fleet.accept("dev_b", { share, alerts: sent });
   fleet.accept("dev_b", { share, alerts: sent });   // the same envelope again: once
   fleet.accept("dev_c", {});                        // a 0.3 reporter: no declaration
