@@ -23,6 +23,8 @@ function samples(tmp) {
     "--json": null,             // every run uses --json
     "--report-port": ["0"],
     "--listen": ["127.0.0.1"],
+    "--advertise": ["192.168.1.20"],
+    "--poll-ms": ["5000"],        // the demo reads no machine; accepted, and its console answers as ever
     "--allow-public": [],
     "--allow-cgnat": [],
     "--demo": [],

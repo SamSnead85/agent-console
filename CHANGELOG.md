@@ -1,5 +1,329 @@
 # Changelog
 
+## Unreleased
+
+### Console
+
+- On a phone the Effort and Shipped tables — the Projects panes and the
+  Console's folds — keep every cell: they scroll sideways under a right-edge
+  fade like the lanes, and only the four dense tables (people, machines,
+  projects, days) become card rows. Before, every cell of them was hidden at
+  390 and the panes were two empty blocks.
+- A window in which nothing ran, on a hub whose machines have reported, names
+  its cause on every pane: "Nothing ran in the last hour · last usage 9:58 AM
+  · nothing is estimated in its place" on the spend spectrum, the by-model
+  rows, the class table's marks, the Team and Projects activity waves and the
+  chart, which is a drawn void rather than a flat line. "This hub does not
+  split its estimate" is said only of a hub that priced something and sent no
+  split; "no model has reported" only of a hub with no machine.
+- An alert raised before today carries a dated stamp ("yesterday 2:58 PM",
+  "Sep 23 9:10 AM") and sits under "earlier · before today" on Team, in the
+  alerts sheet and on the Attention card — never under "today", and never in
+  today's count.
+- The lanes' footer says where the lanes on unavailable machines are, by
+  state: "3 on silent machines · 2 drawn dimmed · 1 in the Cold fold", never
+  "(hidden)" over a row that is drawn; the hairline over the cold fill names
+  the states under it ("the day's most recent sessions · silent machine").
+- With no machine sharing its alerts, the Team head reads "not watched · 0 of
+  1 machine share alerts", its rows are one hatched sentence, the sixty-minute
+  strip is hatched whole and named "not watched", and the Attention stat says
+  so — a known zero no longer stands in for unknown. The unpriced-model hero
+  still ranks first.
+- The lanes' footer wraps whole on a phone: "80 of 316 shown" and the
+  provenance line are on the card, set off by dots, never cut at its edge.
+- The sheet's "Why a command…" disclosure and the phone's mark are 24px
+  targets; the add-a-machine sheet is in the axe run at its link step.
+- The restart command masks `--state-dir`, `--claude-root` and `--codex-root`
+  while presenting as it masks `--name` and `--person`, and outside presenting
+  masks the account's name in any path segment outside the home directory.
+- While presenting, the transcript folders an empty or quiet pane names are
+  stand-ins ("…") as well, with what each held.
+- Every figure stays while presenting: one rule, on every pane — a shared
+  screen hides whose work it is, never what it cost; the strip's scope line
+  (counts only) stays. The hero "$1,729 est." and the Projects effort line no
+  longer disagree with the columns beside them.
+- The room the day's lanes leave under the strip goes to the folds that fit
+  it — the Cold fold among them, the tallest that fits first, then the next
+  that fits what is left — and the lanes card hugs its rows; what no fold
+  fills is the tray, as on Projects and Team, never a hatched tile.
+- A person's machine row in the inspector shows "Reporting · now" whole; the
+  join page's step ordinals stay one word so the three heads share a baseline
+  at 390.
+- The row the keyboard is on keeps its focus through every poll: lane rows
+  are placed by position and moved only when their order changed, never
+  re-appended, so J and K walk consecutive rows and a focused row is still
+  focused after two polls with no key pressed (the probe presses J five
+  times and waits 4.6 s).
+- Nothing stands bare between the fold strip and the status bar on a tall
+  screen: when the day's lanes leave the pane room, the first fold with rows
+  whose rendered height fits that room (Projects, then Effort, then Shipped)
+  opens in it, measured, and when none fits the lanes card keeps the room
+  with its own hatched line, "nothing more today · 3 cold lanes drawn". The
+  probe holds the gap under the strip to 48px at 1920×1080 and 1440×900.
+- When nothing ran in the last hour, the lanes pane draws the day's most
+  recent sessions, dimmed as cold with when they last spoke, under a hairline
+  that says so — never an empty hatch on the first screen.
+- An empty console says where it looked (`hub.local.roots`): each folder in
+  mono with what it held ("~/.claude/projects (0 files), ~/.codex/sessions
+  (not there)") and the exact flag or variable that points it elsewhere
+  (`--claude-root`, `--codex-root`, `CLAUDE_CONFIG_DIR`, `CODEX_HOME`); the
+  chart's void says the same. A path under the home directory is always
+  written with `~`.
+- Team's Days table: the days before this console's first record are one
+  hatched row, "21 days before this console's first record · not kept",
+  never "no usage" per day; a held day with nothing in it is a counted zero
+  and prints 0; the head reads "7 of 9 kept days with usage"; a day the
+  rollup holds only in part is marked "part held" with a "+" on its figure
+  (`series["30d"].whole`).
+- A project name keeps its lane cell: the cell's first track is the name's
+  own width, and the branch beside it takes what is left and gives way
+  first, so a three-word project is never cut beside a four-letter branch
+  and alone it keeps the whole cell. In every inspector's session
+  rows the name-and-branch column takes most of the row (2.2fr against the
+  model's 1fr, 56px and 46px for the figure and the state), and inside it
+  only the branch gives way; below 400px the branch goes under the name.
+- The Attention card draws only whole rows — a row the card's height would
+  cut is hidden outright — and the rule over the earlier alerts is a door,
+  "6 alerts earlier · open"; the hero's second line is ordered parts on one
+  line that drop whole when the card is tight ("restarted 10:34 PM · nothing
+  held from before"; "247M tokens · no verified price · left out of the
+  estimate"), never a clamp that cuts a sentence mid-word, the whole line on
+  hover. The console's very first start is "first start", never "restarted".
+- The first part of a fitted line (a fold summary, the hero's line) is never
+  folded away: a line always shows its reading or its reason, and Git nobody
+  could read is the short "not in Git" with the hub's whole sentence on hover.
+- One void for the Git that is not there: a project outside Git is one
+  hatched sentence in its inspector ("Not a Git repository · commits, lines,
+  PR-linked commits, $ per commit and $ per merge are not counted"), keeping
+  its estimate and sessions; in the Projects table and the Projects fold a
+  folder outside Git is one merged hatched cell, "not in Git", with the
+  reason on hover and for a screen reader, and when no project at all is in
+  Git the seven Git columns leave the table and the head says so once.
+- Every dash says why where it reads: the Effort table's fleet column says
+  "this machine only" for commits and carries the reason for messages and
+  the estimate on hover; the Shipped table's "no remote", "no default" and
+  "no merge" carry theirs.
+- Presenting steps a column's header back with its values ("EST. $" over the
+  lanes, the by-model, by-machine and Projects rows, the Team and Projects
+  tables), and the add-a-machine sheet's restart command is shown with
+  `--name '…' --person '…'` and the home directory as `~`, so no name and no
+  home path survives anywhere in the document (the probe scans the page
+  source, hidden nodes included). Copy still gives the real command.
+- The add-a-machine sheet: the restart command's paths are written with `~`,
+  the Copy button beside a tall command sits at its top instead of
+  stretching to its height, and the minutes select is the sheet's own
+  material with a drawn chevron, not the browser's grey control.
+- An inspector's empty hour reads as a drawn void: "Nothing in the last hour"
+  inside the tile over the dotted base, and its head says "nothing" rather
+  than "0 tokens".
+- The class table draws a clean void mark with its reason for a class with
+  nothing in it (never "— no reading" running past the card), and the status
+  bar names the price table from the hub's own `hub.prices` (version, the
+  inventory's check date, model count and newest verification on hover),
+  never "not reported" for a table that ships with the console.
+- The header lockup is a 24px target (WCAG 2.5.8); a card lifts 2px under
+  the pointer with its rim brightened. Projects' "tokens by project" rows
+  give the name the room (minmax 120px, 1fr) and fix the bar at 90px.
+- A demonstration's join page shows one warn line — a link that could never
+  be used is not also reported as missing its code — and its add-link sheet
+  says "A demonstration console cannot be joined" quietly, with no pulse,
+  instead of waiting for a machine that can never come.
+- `scripts/ui-probes.mjs`: the five-J walk, the strip-to-status-bar gap, whole
+  Attention rows, the hero's one line, non-empty fold summaries, a
+  twenty-four-character lane name alone and in an inspector row, the presented
+  page source, and — on a console that listens on this machine only — the
+  restart command's `~` and its masked names while presenting.
+
+### Hub (first-install round)
+
+- The 30-day view is whole on a first install. The console's first read of
+  its own machine, and a reporter's first delivery (which says so with
+  `backfill: { from }` on each envelope until complete), go back 30 UTC days
+  instead of the 8-day minute retention; records of days wholly past
+  retention go straight into the daily totals, once per machine and day, and
+  a re-read never counts twice. A first read interrupted by a hub restart is
+  rebuilt from the records it wrote. `windows["30d"].since` is the first
+  read's first day and `series["30d"].whole` says per day whether the rollup
+  holds it whole. Those records do not count against a machine's daily
+  allowance.
+- Codex threads in `archived_sessions` are read, and a thread that moves
+  there when it is archived keeps its place: nothing in it is counted or
+  alerted on twice.
+- `CLAUDE_CONFIG_DIR` (`<dir>/projects`, a comma list read in full),
+  `~/.config/claude/projects` and `CODEX_HOME` (`<dir>/sessions` and
+  `archived_sessions`) are read; `--claude-root` and `--codex-root` still
+  replace their tool's list. `/api/console` `hub.local.roots` names every
+  folder read with `{ tool, path, exists, files }`.
+- Idle CPU on a 21,000-transcript history: 47.9% of a core before, 1.5%
+  after (idle memory 441 MB to 242 MB): a scanner looks between sweeps only
+  at what can be changing and sweeps everything once a minute in 15 ms
+  slices; a first read's alert analysis skips history older than the day it
+  keeps. The reporter uses the scanner too.
+- A newer version that finds an older console on its port says so plainly,
+  gives the exact stop command, and never opens it; a state directory held by
+  another console names the process and how to stop it. A start that fails
+  says one line and the remedy, never a stack trace.
+- Join links carry a LAN-reachable address (wired and Wi-Fi adapters before
+  VPNs, virtual switches and link-local addresses last); `--advertise
+  <address>` puts an address first; inside WSL the window says the address
+  is likely this computer's only, and how to fix it (`hub.wsl`).
+- `hub.prices` names the offline price table (format version, inventory
+  check date, newest verification date, currency, basis, model count), and a
+  console's very first start reads `first-start`, never `console-restarted`.
+- The join command's download check names why it failed ("fetch failed
+  (UNABLE_TO_GET_ISSUER_CERT_LOCALLY)") and, whenever there is a cause, the
+  fix behind a proxy or TLS inspection (`HTTPS_PROXY`, `NODE_USE_ENV_PROXY=1`,
+  `NODE_EXTRA_CA_CERTS`). The check's SHA-256 is now
+  `77aea0b4b487f2e39065b5739377f16678d6977b0fbd6d1ab0ef901052e581bc`.
+- Sessions are per machine: two machines reporting one session hash (a
+  synced home folder, a copied transcript that went on elsewhere) used to
+  show as one lane on whichever reported last; the store now keeps a session
+  per (machine, session hash), and lane roots, subagent trees, per-session
+  tokens, period session counts, Projects' sessions and alert magnitudes
+  follow. Each machine keeps its own lane, tokens and activity; the records
+  they share are still counted once. A lane's key adds "-" and 8 hex
+  characters of its machine only when two machines share the hash, and an
+  alert opens its own machine's lane.
+- The README's Options section says where transcripts are found and names
+  `AGENT_CONSOLE_ADVERTISE`; `--help` points to that list instead of
+  claiming every option has a variable; `--poll-ms` (`AGENT_CONSOLE_POLL_MS`)
+  now sets how often this machine's transcripts are read (default 2000 ms,
+  at least 1000) — it was accepted and ignored.
+
+### Distribution
+
+- macOS executables are signed with a Developer ID (hardened runtime, secure
+  timestamp) and notarized; the release checks Apple's ticket names the
+  file's CDHash and that Gatekeeper accepts a quarantined copy before
+  labelling it signed, and computes SHA256SUMS and attestations over the
+  signed files. A manual run of the binaries workflow can sign and notarize
+  as a dry run, uploading only workflow artifacts. Where Gatekeeper
+  assessments are off, the check asks Apple's ticket service instead.
+- `install.ps1` works in Windows PowerShell 5.1 (no progress bar, TLS 1.2,
+  `-UseBasicParsing`), takes the latest release from the releases/latest
+  redirect, adds its folder to the user's PATH (`AGENT_CONSOLE_NO_MODIFY_PATH=1`
+  opts out), installs the x64 executable on Windows 11 on Arm and refuses
+  Windows 10 on Arm and 32-bit Windows with the `npx.cmd` line. `install.sh`
+  prints the exact PATH line for the shell in use, refuses musl and glibc
+  older than 2.28 with the npx line, and names `HTTPS_PROXY` and
+  `CURL_CA_BUNDLE` when a download fails. `docs/uninstall.md` lists every
+  file, folder and background item, per system.
+- Upgrading the standalone executable no longer leaves the previous version's
+  unpacked copy behind: each version's cache folder is marked in use by its
+  process id, and other versions' folders nobody runs from are removed on
+  start.
+- The Docker image carries the licence and third-party notices; shell scripts
+  keep LF in a Windows checkout; the README lists the environment variables
+  the code reads and the options that have none.
+
+### Earlier in this cycle
+
+- The lanes pane is never left standing empty: when the day's lanes leave it
+  room, the lanes idle for more than an hour fill it, dimmed, under a hairline
+  that names them cold, with the rest in the Cold fold; when every lane of the
+  day fits with room to spare, the card hugs its rows and this machine's
+  Projects fold opens in the room until the reader opens or closes a fold by
+  hand; with no lane at all the pane is the hatched void with its reason and
+  "Nothing is estimated in its place". The UI probe holds the gap under the
+  last row to 48px at 1440 and 1920 on the demo, a synthetic month and a
+  four-lane hub.
+- Team's alert head prints the day's count from the hub's own counter
+  (`alertsToday`), exact, and says "· 100 kept" when the list it draws is
+  shorter — never the length of the kept list as the day's figure. Projects'
+  sessions, live and subagent counts come from the hub's per-project rollup
+  over every lane on this machine, so the band, the strip and the Sessions
+  head agree.
+- The "24 h" group label over the four day columns has a row of its own inside
+  the lane header, whole at every width. The strip's clock, scan note and
+  presenter controls sit on a plate of the strip's own dark, so quiet ink reads
+  over the brightest part of the artwork; the probe samples the pixels behind
+  them and holds 4.5:1.
+- Closing a sheet returns focus to the row that opened it inside its own
+  container: a Team table row is never mistaken for the band's row for the
+  same person, a lane opened with Enter gets its focus back, and a row
+  repainted away hands the focus to its section's head, never to the body.
+  Focus then survives the next poll: when the Team tables, the band's rows or
+  the Projects lists are rebuilt under the row the keyboard is on, its
+  successor takes the focus, so a place in a table is never lost to a
+  repaint (the probe checks past the next poll).
+- While presenting, a person's or project's door (`data-inspect`) carries the
+  same opaque token as the address, so no name remains in any attribute; the
+  probe scans every attribute value, not only the text.
+- One quiet line per pane once any figure in it is a floor — "+ a floor · 3
+  messages not counted" under the by-machine rows, in the spend legend and
+  beside the class legend — never a bare "+" with no legend, never a zero
+  count named as a cause.
+- The burn rate's money is in the tokens' unit ($/min beside tok/min, $/s
+  beside tok/s; the hour on hover): one denominator per line. The lane
+  inspector's context history is a stepped area with the flag threshold as a
+  hairline and the peak named, not a row of bars. The Projects Live column
+  prints a measured 0 and keeps "—" for unknown. A period read from the daily
+  rollup marks sessions "—" per cell with the sentence once in the pane's hint
+  and on the column head, and an empty hour prints a counted 0. A long project
+  name in an inspector's session rows gives way inside its own cell with its
+  whole on hover. The join page's Copy with nothing to copy is drawn out, not
+  in the accent.
+- `scripts/ui-probes.mjs` no longer waits for a network that is never idle
+  (the console polls every two seconds): each page is waited for by its own
+  reading, every section fails by name instead of aborting the run, and the
+  last line counts checks and failures for the gate to read.
+- Every row's activity is the wave: the Console lanes, the Projects and
+  Sessions tables, the Team People and Machines tables and the inspector's
+  hour draw the same soft line over the chart's light as the activity chart,
+  the newest step lit while the row is live, dim when its machine is silent
+  or gone; a row with nothing in the window is a flat dotted baseline with
+  its reason on hover, never a zero wave. No bar spark remains.
+- The Doing column draws coverage, not a boolean (docs/COLLECTOR-CONTRACT.md,
+  "What the console shows for them"): tool counts are zero only under
+  complete coverage; under partial coverage what is held is a floor, marked
+  `+` with the figure and the time sharing began on hover, and nothing held
+  is "tool not held since …", unavailable rather than idle; a machine whose
+  reporter does not share, does not say, or has not been heard since the
+  console started is "tool not shared", "tool not declared" or "tool not
+  heard", each with the reporter's own reason. The lane inspector's Tools
+  block and the agent tree's foot say the same.
+- Team's Machines rows and the machine inspector say what each machine
+  shares (alerts over the hour, tool activity over five minutes) — on the
+  status line when it shares everything, on a line of its own in warn when
+  it does not — and flag entries the console refused for being dated in the
+  future, when there are any.
+- "No alert" is claimed only from the time alerts are held
+  (`alertsCoverage.since`): the Attention hero reads "No alert since 6:38
+  PM" with the reason, its stat says "since" rather than "last hour", the
+  alerts sheet's caption and Team's alert count say "known since", the
+  machine inspector says since when its own alerts are held, and the
+  sixty-minute strip is hatched up to that time.
+- The Attention card's timeline has an axis row of its own ("60 min ago ·
+  2 alerts · now") inside the card's padding, never cut by the card's edge;
+  the alert rows above it are one line each, the lane's name giving way with
+  the whole row on hover; the stat drops its least important parts whole when
+  the caption is tight. The spend spectrum's legend keeps each item on one
+  line and flows the items as whole units.
+- The Console chart's hatched cap on the step still filling is drawn: its
+  rect shared the id `cCap` with the Tokens caption and was never reached.
+  The Tokens caption's "daily totals kept since …" note drops whole when the
+  caption is tight, with the window's definition on hover.
+- Presenting aliases the address of an open inspector (`#team/person/<token>`,
+  a token of the session's own, resolved on the way back) and the
+  add-a-machine sheet: no name in its people list, stand-ins in the link's
+  explanation and the joined line, the restart command stepped back.
+- The day's alerts are counted, not read off the list: `/api/console`
+  `alertsToday` counts every alert raised or accepted today, by its own time
+  on the console's calendar, and keeps the count in the state directory
+  across restarts. The retained list stops at 100 per machine; a busy day no
+  longer reads "100 alerts". `kept` names how many the list still holds,
+  `lastHour` the live ones of the hour.
+- Projects counts sessions as the Console counts lanes: a subagent thread,
+  at any depth, is folded into its top-level session, and counted apart as
+  `subagents` on each row and on the payload. The Projects band and the
+  lanes no longer give two numbers for the sessions on this machine.
+- Team's counts for a minute period give every current machine, person and
+  tool a row: an hour with nothing in it is a counted 0, and only the daily
+  rollup's sessions are null ("not kept").
+- A partial interval names its true cause: "console restarted" only when the
+  machine's first "on" came within one live report interval of the
+  console's start; heard later, or after an "off", it is "sharing started".
+
 ## 0.4.0 — 2026-09-25
 
 ### Console and team visibility

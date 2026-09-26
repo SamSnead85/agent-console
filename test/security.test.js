@@ -480,13 +480,15 @@ const fs = require("node:fs"), path = require("node:path");
 const dir = process.env.STUB_RELEASE_DIR;
 globalThis.fetch = async (url) => {
   fs.appendFileSync(path.join(dir, "..", "fetched.txt"), url + "\\n");
+  // What fetch does behind a proxy or TLS inspection: "fetch failed", the reason in its cause.
+  if (process.env.STUB_FETCH_CAUSE) throw Object.assign(new TypeError("fetch failed"), { cause: Object.assign(new Error("synthetic network error"), { code: process.env.STUB_FETCH_CAUSE }) });
   const file = path.join(dir, path.basename(new URL(url).pathname));
   if (!fs.existsSync(file)) return new Response("not found", { status: 404 });
   return new Response(fs.readFileSync(file));
 };
 `;
 
-function verifyRun(t, { sums, file = Buffer.from("the release file"), url = releaseUrl("9.9.9") } = {}) {
+function verifyRun(t, { sums, file = Buffer.from("the release file"), url = releaseUrl("9.9.9"), cause = null } = {}) {
   const root = scratch(t, "verify");
   const release = path.join(root, "release");
   const bin = path.join(root, "bin");
@@ -499,7 +501,8 @@ function verifyRun(t, { sums, file = Buffer.from("the release file"), url = rele
   fs.writeFileSync(path.join(bin, "npx"), `#!/bin/sh\nprintf '%s\\n' "$@" > "${root}/npx-args.txt"\nprintf '%s' "$AGENT_CONSOLE_PACKAGE" > "${root}/npx-package.txt"\n`, { mode: 0o755 });
   const link = "http://192.168.1.20:6788/join#" + "A".repeat(22) + "." + "B".repeat(43);
   const run = spawnSync(process.execPath, ["--require", path.join(root, "stub.cjs"), "-e", VERIFY_AND_RUN, url, "join", link], {
-    encoding: "utf8", env: { ...process.env, HOME: home, USERPROFILE: home, PATH: bin + path.delimiter + process.env.PATH, STUB_RELEASE_DIR: release },
+    encoding: "utf8", env: { ...process.env, HOME: home, USERPROFILE: home, PATH: bin + path.delimiter + process.env.PATH, STUB_RELEASE_DIR: release,
+      ...(cause ? { STUB_FETCH_CAUSE: cause } : {}) },
   });
   const read = (name) => (fs.existsSync(path.join(root, name)) ? fs.readFileSync(path.join(root, name), "utf8") : null);
   const kept = path.join(home, ".agent-console", "releases", releaseAsset("9.9.9"));
@@ -534,6 +537,21 @@ test("S4: every printed command checks the release file against SHA256SUMS befor
   }
   // The address is checked before anything is fetched.
   assert.equal(verifyRun(t, { url: "https://example.invalid/x.tgz" }).fetched, null);
+});
+
+test("S4: a download that fails behind a proxy or TLS inspection names its cause and the remedy, and runs nothing", { skip: process.platform === "win32" && "the stand-in npx is a POSIX script" }, async (t) => {
+  const REMEDY = "Behind a proxy or TLS inspection? Set HTTPS_PROXY and NODE_USE_ENV_PROXY=1, and NODE_EXTRA_CA_CERTS=<your company root .pem>";
+  for (const code of ["UNABLE_TO_GET_ISSUER_CERT_LOCALLY", "ECONNREFUSED"]) {
+    const r = verifyRun(t, { cause: code });
+    assert.equal(r.run.status, 1, code);
+    assert.deepEqual(r.run.stderr.trim().split("\n"), [`fetch failed (${code})`, REMEDY], code);
+    assert.equal(r.npx, null, code + ": npx ran");
+    assert.equal(fs.existsSync(r.kept), false, code + ": the file was kept");
+  }
+  // A refusal of the check's own has no cause, and no remedy line.
+  const mismatch = verifyRun(t, { sums: `${"0".repeat(64)}  ${releaseAsset("9.9.9")}\n` });
+  assert.equal(mismatch.run.stderr.trim().split("\n").length, 1);
+  assert.ok(!mismatch.run.stderr.includes("proxy"));
 });
 
 test("S4: the check is the same text in the console, the join page and every command, and pastes literally into any shell", async (t) => {

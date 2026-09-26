@@ -109,8 +109,10 @@ test("burn on an unpriced model has no dollar rate at all, never $0.00", () => {
   assert.ok(view.burn.usdPerMinute > 0);
   assert.ok(view.burn.cost.unpricedTokensPerMinute > 0);
 
-  // The screen draws a void with "unpriced" for a null rate, and never passes null to money().
-  assert.match(CONSOLE_JS, /D\.burn\.usdPerMinute === null\s*\?\s*"—" \+ per \+ " · unpriced"/u);
+  // The screen draws a void with "unpriced" for a null rate, and never passes null to money(); the rate is in the tokens' own unit (G14).
+  assert.match(CONSOLE_JS, /const usdRate = D\.burn\.usdPerMinute === null \? null : D\.burn\.usdPerMinute \* \(perSecond \? 1 \/ 60 : 1\);/u);
+  assert.match(CONSOLE_JS, /usdRate === null\s*\?\s*"—" \+ per \+ " · unpriced"/u);
+  assert.match(CONSOLE_JS, /const per = perSecond \? "\/s" : "\/min";/u, "one denominator per line: the money is per minute beside tokens per minute, per second beside tokens per second");
 });
 
 test("a machine's uncounted records make its money a floor, marked with the number and counted on hover", () => {

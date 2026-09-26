@@ -161,9 +161,18 @@ test("Git nobody could read is a void with the hub's reason, never 0 commits (F6
   assert.doesNotMatch($("shipSum").innerHTML, /\+—|−—|referencing/u, "no line count or PR count stands in for unread Git");
   // the fold row carries the same summary as the strip button (the phone shows the rows alone)
   assert.equal($("effortSumRow").innerHTML, $("effortSum").innerHTML);
-  // the folder outside Git is said once over the table, never once per row
-  assert.match($("foldProjBody").innerHTML, /1 of 1 not in Git/u);
-  assert.doesNotMatch($("foldProjBody").innerHTML, /not a Git repository/u);
+  // with no project in Git at all the Git columns are left out and the head says so once (R3-06), never a void per row
+  assert.match($("foldProjBody").innerHTML, /Git columns left out: no project here is in a Git repository/u);
+  assert.match($("foldProjBody").innerHTML, /<table class="grid nogit">/u);
+  assert.doesNotMatch($("foldProjBody").innerHTML, /not a Git repository|not in Git|no Git/u);
+  assert.doesNotMatch($("foldProjBody").innerHTML, /<th[^>]*>Commits<\/th>/u, "no Git column stands over a table with nothing to count");
+  // with one project in Git and one outside, the outside one is a single merged, hatched cell with the short word
+  local.withRepo = 1;
+  local.projects.push({ name: "lib", tokens: 5, usd: 1, sessions: 1, repo: { commits: 3, added: 10, removed: 2, prsMerged: null }, branches: ["main"], costPerOutcome: { perCommitUsd: 0.5 } });
+  paint();
+  assert.match($("foldProjBody").innerHTML, /1 of 2 not in Git/u);
+  assert.equal(($("foldProjBody").innerHTML.match(/not in Git/gu) || []).length, 2, "the head once, the row once");
+  assert.match($("foldProjBody").innerHTML, /<td class="merged git" colspan="4"><span class="na" title="Not a Git repository/u);
 });
 
 test("a money figure with records the reporter could not count is a floor, marked with the number (G6)", () => {

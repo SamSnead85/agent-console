@@ -174,7 +174,8 @@ test("different-port and port-zero hub starts cannot resurrect a revoked device"
     const competing = hub(t, dir, extra);
     const refusal = await competing.closed;
     assert.equal(refusal.code, 1);
-    assert.match(refusal.errors, /state directory is already in use/u);
+    // Named, with the process holding it and the command that stops it (lib/hub/notices.js).
+    assert.match(refusal.errors, /Another Agent Console \(process \d+[^)]*\) is using .*\n.*stop it first: +(kill|taskkill)/u);
   }
   const revoke = await fetch(dashboard.url + "/api/devices/" + enrolled.device.id + "/revoke", {
     method: "POST", headers: { "x-agent-console": "1", cookie }, signal: AbortSignal.timeout(5000),
