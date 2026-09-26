@@ -5,6 +5,8 @@ COPY --chown=node:node package.json server.js ./
 COPY --chown=node:node bin/ ./bin/
 COPY --chown=node:node lib/ ./lib/
 COPY --chown=node:node public/ ./public/
+# The licence, and the notices for what ships inside (the IBM Plex fonts in public/).
+COPY --chown=node:node LICENSE THIRD_PARTY_NOTICES.md ./
 
 RUN mkdir -p /home/dev/.agent-console/hub && chown -R node:node /home/dev
 ENV HOME=/home/dev

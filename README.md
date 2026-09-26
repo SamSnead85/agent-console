@@ -655,7 +655,49 @@ node bin/agent-console.mjs join --help     # the reporter
 | `--claude-root`, `--codex-root` | where this computer's transcripts are |
 | `--json` | print launch details as JSON and keep running |
 
-Environment equivalents use the `AGENT_CONSOLE_` prefix.
+Some console options can also be set in the environment, for a console that a
+service or `docker run -e` starts. An option given on the command line wins
+over its variable. A yes/no variable counts as on for `1`, `true`, `yes` or `on`.
+
+| Variable | Same as |
+| --- | --- |
+| `AGENT_CONSOLE_PORT` | `--port` |
+| `AGENT_CONSOLE_REPORT_PORT` | `--report-port` |
+| `AGENT_CONSOLE_LISTEN` | `--listen` |
+| `AGENT_CONSOLE_ALLOW_CGNAT` | `--allow-cgnat` (yes/no) |
+| `AGENT_CONSOLE_DEMO` | `--demo` (yes/no) |
+| `AGENT_CONSOLE_NAME_MACHINE` | `--name` |
+| `AGENT_CONSOLE_NO_LOCAL` | `--no-local` (yes/no) |
+| `AGENT_CONSOLE_STATE_DIR` | `--state-dir` |
+| `AGENT_CONSOLE_RETENTION_DAYS` | `--retention-days` |
+| `AGENT_CONSOLE_CLAUDE_ROOT` | `--claude-root` |
+| `AGENT_CONSOLE_CODEX_ROOT` | `--codex-root` |
+| `AGENT_CONSOLE_HOME` | `--home <path>`: read that home folder's transcripts instead of yours |
+| `AGENT_CONSOLE_DESKTOP_ALERTS` | `--desktop-alerts` (yes/no) |
+| `AGENT_CONSOLE_ALERT_REPEAT` | `--alert-repeat` |
+| `AGENT_CONSOLE_ALERT_SPIKE_FACTOR` | `--alert-spike-factor` |
+| `AGENT_CONSOLE_ALERT_STALL_MINUTES` | `--alert-stall-minutes` |
+| `AGENT_CONSOLE_INTEROP` | `--interop` (yes/no) |
+| `AGENT_CONSOLE_POLL_MS` | `--poll-ms`, which is accepted but currently changes nothing |
+
+`--open`, `--allow-public`, `--person`, `--invite-minutes` and `--json` have no
+variable. The reporter reads two: `AGENT_CONSOLE_REPORTER_DIR` in place of its
+default `--state-dir` (`~/.agent-console/reporter`), and `AGENT_CONSOLE_TOKEN`,
+which it sends in place of its enrolment's device token. `AGENT_CONSOLE_NAME`
+and `AGENT_CONSOLE_VENDOR` change the product and vendor names that the console
+and the reporter print. `AGENT_CONSOLE_PACKAGE` is set by the check in a
+join command, for the reporter it starts; it is not one to set yourself.
+
+Claude Code's `CLAUDE_CONFIG_DIR` and Codex's `CODEX_HOME` are not read to find
+transcripts: the console and the reporter read `.claude/projects` and
+`.codex/sessions` in the home folder. If yours are elsewhere, pass
+`--claude-root` / `--codex-root`. (`policy` reads `CLAUDE_CONFIG_DIR` only to
+stay out of your user-level Claude Code settings.)
+
+The installers and the standalone executable have their own:
+`AGENT_CONSOLE_VERSION`, `AGENT_CONSOLE_INSTALL_DIR` and
+`AGENT_CONSOLE_NO_MODIFY_PATH` ([standalone-install.md](docs/standalone-install.md)),
+and `AGENT_CONSOLE_CACHE_DIR` ([executables.md](docs/executables.md#what-it-does-on-your-computer)).
 
 ## Upgrading a hub
 

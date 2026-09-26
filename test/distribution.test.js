@@ -192,6 +192,19 @@ test("install.ps1 puts its folder on the user's PATH, keeping %VARIABLES%, unles
   assert.match(script, /if \(\[Environment\]::OSVersion\.Version\.Build -lt 22000\) \{\s+throw "[^"]*npx\.cmd --yes \$package --open"/u);
 });
 
+test("every shell script is checked out with LF endings, even on Windows", () => {
+  const attributes = read(".gitattributes");
+  assert.match(attributes, /^\*\.sh text eol=lf$/mu);
+  // Every script with a shell #! line is a .sh file, so the rule reaches it.
+  const tracked = spawnSync("git", ["ls-files"], { cwd: ROOT, encoding: "utf8" });
+  if (tracked.status !== 0) return; // not a git checkout (an unpacked tarball): nothing to hold
+  for (const file of tracked.stdout.split("\n").filter(Boolean)) {
+    let head = "";
+    try { head = fs.readFileSync(path.join(ROOT, file), "utf8").slice(0, 32); } catch { continue; }
+    if (/^#!\s*\/(?:usr\/)?bin\/(?:env\s+)?(?:ba|z|da)?sh\b/u.test(head)) assert.match(file, /\.sh$/u, `${file} is a shell script without .sh`);
+  }
+});
+
 /* ── Homebrew formula ── */
 
 const ARCHIVES = ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64"].map((t) => `agent-console-${t}.tar.gz`);
@@ -238,6 +251,10 @@ test("the hub image runs unprivileged, keeps its reporting port and checks its o
   assert.match(docker, /^USER node$/mu);
   assert.match(docker, /^ENV AGENT_CONSOLE_REPORT_PORT=6788$/mu);
   assert.match(docker, /^HEALTHCHECK .*\/join/msu);
+  // The licence and the third-party notices travel inside the image, and the build context lets them in.
+  assert.match(docker, /^COPY --chown=node:node LICENSE THIRD_PARTY_NOTICES\.md \.\/$/mu);
+  const ignored = read(".dockerignore").split("\n");
+  assert.ok(!ignored.includes("LICENSE") && ignored.indexOf("!THIRD_PARTY_NOTICES.md") > ignored.indexOf("*.md"), ".dockerignore keeps both");
   const workflow = read(".github/workflows/ghcr.yml");
   assert.match(workflow, /docker\/setup-qemu-action@[0-9a-f]{40}/u, "arm64 is emulated on the amd64 runner");
   assert.match(workflow, /docker\/setup-buildx-action@[0-9a-f]{40}/u);
@@ -525,6 +542,25 @@ test("the README gives Windows PowerShell lines its default policy runs, and say
   assert.match(install, /\*\*On Windows\*\* the executable is not code-signed/u);
   assert.match(install, /NODE_USE_ENV_PROXY=1[\s\S]*NODE_EXTRA_CA_CERTS/u, "the join check behind a proxy");
   assert.match(readme, /\n## Uninstall\n[\s\S]*\(docs\/uninstall\.md\)/u);
+});
+
+test("the README names exactly the environment variables the code reads", () => {
+  const readme = read("README.md");
+  const options = readme.slice(readme.indexOf("\n## Options\n"), readme.indexOf("\n## Upgrading a hub\n"));
+  const names = (text) => new Set([...text.matchAll(/\bAGENT_CONSOLE_[A-Z0-9_]*[A-Z0-9]\b/gu)].map((m) => m[0]));
+  const files = (dir) => fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }).flatMap((d) =>
+    d.isDirectory() ? files(path.join(dir, d.name)) : /\.(?:m?js|cjs)$/u.test(d.name) ? [path.join(dir, d.name)] : []);
+  const code = [...files("lib"), ...files("bin"), "server.js"].map((f) => read(f)).join("\n");
+  const read_ = new Set([...code.matchAll(/env\??\.(AGENT_CONSOLE_[A-Z0-9_]+)/gu)].map((m) => m[1]));
+  for (const name of read_) assert.ok(options.includes("`" + name + "`"), `README Options does not name ${name}, which the code reads`);
+  // Anything the README names anywhere is read by the program, its installers or its executable.
+  const everything = code + read("install.sh") + read("install.ps1") + read("packaging/sea/main.cjs");
+  for (const name of names(readme)) assert.ok(everything.includes(name), `README names ${name}, which nothing reads`);
+  assert.doesNotMatch(readme, /Environment equivalents use/u);
+  // Where Claude Code and Codex history is found: the README says what the collector does.
+  const collector = read("lib/collector/collector.js");
+  const readsHomes = /env\??\.CODEX_HOME/u.test(collector) || /env\??\.CLAUDE_CONFIG_DIR/u.test(collector);
+  assert.equal(options.includes("`CODEX_HOME` are not read to find\ntranscripts"), !readsHomes, "README and collector disagree about CLAUDE_CONFIG_DIR / CODEX_HOME");
 });
 
 test("the uninstall guide names every file, folder and background item Agent Console creates", () => {
