@@ -34,6 +34,10 @@
   the whole row on hover; the stat drops its least important parts whole when
   the caption is tight. The spend spectrum's legend keeps each item on one
   line and flows the items as whole units.
+- The Console chart's hatched cap on the step still filling is drawn: its
+  rect shared the id `cCap` with the Tokens caption and was never reached.
+  The Tokens caption's "daily totals kept since …" note drops whole when the
+  caption is tight, with the window's definition on hover.
 - Presenting aliases the address of an open inspector (`#team/person/<token>`,
   a token of the session's own, resolved on the way back) and the
   add-a-machine sheet: no name in its people list, stand-ins in the link's

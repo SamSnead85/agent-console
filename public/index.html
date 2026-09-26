@@ -105,7 +105,7 @@
 
     <div class="console" id="band">
       <div class="col tokens">
-        <div class="cap"><span id="cCap">Tokens · last 24 hours</span></div>
+        <div class="cap"><span id="cCap" class="fit">Tokens · last 24 hours</span></div>
         <div id="cTotal" class="big" data-src="windows.tokens.total">—</div>
         <div class="tline"><span id="cSpend" data-src="windows.cost.usd">—</span><em><span id="cMsgs" data-src="windows.messages">—</span> messages</em></div>
         <div class="prov" id="cProv">—</div>
@@ -131,7 +131,7 @@
             <g id="cStack" aria-hidden="true"><path class="cacheRead"/><path class="fresh"/><path class="cacheWrite"/><path class="output"/></g>
             <path id="cArea" fill="url(#fg)"/>
             <path id="cLine" fill="none" stroke="var(--chart-line)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-            <rect id="cCap" class="cap-step" x="0" y="0" width="0" height="0" fill="url(#hatchcap)"><title>The step still filling: measured so far, hatched to what it would be at this pace</title></rect>
+            <rect id="cCapStep" class="cap-step" x="0" y="0" width="0" height="0" fill="url(#hatchcap)"><title>The step still filling: measured so far, hatched to what it would be at this pace</title></rect>
             <line id="cHover" x1="0" x2="0" y1="0" y2="100" stroke="var(--quiet)" stroke-width="1" vector-effect="non-scaling-stroke" opacity="0"/>
           </svg>
           <div class="gaplabel" id="cGapLabel" hidden></div>

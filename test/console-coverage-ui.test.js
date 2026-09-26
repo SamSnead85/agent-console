@@ -81,7 +81,10 @@ test("\"no alert\" is claimed only from alertsCoverage.since, and the sixty-minu
   // the Attention hero, its stat, the alerts sheet's caption and Team's alert count all name the time
   assert.match(JS, /known \? `No alert since \$\{hhmm\(known\)\}`/u);
   assert.match(JS, /html: known \? `since \$\{hhmm\(known\)\}` : cov && unwatched \? `\$\{cov\.watched\} of \$\{current\} watched` : "last hour"/u);
-  assert.match(JS, /foot = known \? `Before \$\{hhmm\(known\)\} the watched machines' alerts are not held, so their quiet is not "no alert"\.`/u);
+  assert.match(JS, /foot = known \? `Not held before \$\{hhmm\(known\)\}: quiet then is not "no alert"\.`/u);
+  // a sentence in the foot gives way at its end with the whole on hover
+  assert.match(JS, /\$\("attnFoot"\)\.innerHTML = top \? foot : foot \? `<span class="ft">\$\{foot\}<\/span>` : "";\s*\$\("attnFoot"\)\.title = top \? "" : \$\("attnFoot"\)\.textContent;/u);
+  assert.match(CSS, /\.attention \.afoot \.ft \{ min-width: 0; overflow: hidden; text-overflow: ellipsis; \}/u);
   assert.match(JS, /\(cov && Number\.isFinite\(cov\.since\) \? ` · known since \$\{hhmm\(cov\.since\)\}` : " · last hour"\)/u);
   assert.match(JS, /\+ \(known \? ` · known since \$\{hhmm\(known\)\}` : ""\)/u);
   assert.match(JS, /No alert \$\{known \? `held since \$\{hhmm\(known\)\}` : "has been raised today"\}/u);
@@ -125,6 +128,14 @@ test("the spend legend flows as whole items, and the Attention timeline has an a
   // the stat drops its least important parts whole when the caption is tight
   assert.match(JS, /fitLine\(\$\("attnStat"\), stat,/u);
   assert.match(HTML, /<span class="capr fit" id="attnStat">/u);
+  // so does the Tokens caption: "Tokens · last 30 days", then since when the window is partial, the window's definition on hover
+  assert.match(JS, /fitLine\(\$\("cCap"\), \[\{ html: "Tokens · " \+ esc\(label\), pri: 0 \}, since \? \{ html: esc\(since\.replace\(\/\^ · \/u, ""\)\), pri: 1 \} : null\]/u);
+  assert.match(HTML, /<span id="cCap" class="fit">/u);
+  assert.match(CSS, /#cCap \{ min-width: 0; overflow: hidden; \}/u);
+  // the chart's hatched cap has an id of its own: it shared "cCap" with the caption and was never drawn
+  assert.match(HTML, /<rect id="cCapStep" class="cap-step"/u);
+  assert.equal((HTML.match(/id="cCap"/gu) || []).length, 1, "one element carries the id cCap");
+  assert.match(JS, /const cap = \$\("cCapStep"\), c = chart\.cap;/u);
 });
 
 test("presenting aliases the address of an open inspector and every name in the add-a-machine sheet", () => {

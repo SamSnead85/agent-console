@@ -348,6 +348,9 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .attention .afoot { margin-top: calc(2px * var(--k)); font: 400 calc(12px * var(--k))/1.4 var(--sans); color: var(--ink2); display: flex; align-items: baseline; gap: 8px; white-space: nowrap; overflow: hidden; }
 .attention .afoot time { font: 400 calc(12px * var(--k)) var(--sans); color: var(--quiet); font-variant-numeric: tabular-nums; }
 .attention .afoot .linkbtn { margin-left: auto; font-size: calc(12px * var(--k)); flex: none; }
+.attention .afoot .ft { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* the Tokens caption names its window and, when the window is partial, since when: ordered parts that drop whole, the whole on hover */
+#cCap { min-width: 0; overflow: hidden; }
 .attention .astat b { font: 500 calc(12px * var(--k)) var(--sans); color: var(--ink2); }
 .attention .cap .capr .tag { display: inline-block; margin-left: 6px; padding: 0 5px; border-radius: 4px; font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .04em; color: var(--warn); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 45%, transparent); }
 .attention .ahead[hidden], .attention .aline[hidden], .attention .afoot[hidden] { display: none; }

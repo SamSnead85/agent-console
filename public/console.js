@@ -513,9 +513,10 @@
       : period === "30d" ? (w.since && Date.parse(w.since + "T00:00:00Z") > w.from ? " · daily totals kept since " + day(w.since + "T00:00:00Z")
         : " · partial: some usage arrived after its day's detail was gone")
       : w.since ? " · minute detail kept since " + day(w.since) : " · partial";
-    $("cCap").textContent = "Tokens · " + label + since;
-    $("cCap").title = period === "30d" ? "The last 30 calendar days in UTC, today included, from the daily totals the console keeps after its minute-by-minute detail."
-      : "The whole minutes of the " + label + ", ending with the current one. The chart's bars add up to this figure.";
+    // the window, then since when it is partial: parts that drop whole when the caption is tight, the whole on hover with the window's definition
+    fitLine($("cCap"), [{ html: "Tokens · " + esc(label), pri: 0 }, since ? { html: esc(since.replace(/^ · /u, "")), pri: 1 } : null],
+      " · " + (period === "30d" ? "The last 30 calendar days in UTC, today included, from the daily totals the console keeps after its minute-by-minute detail."
+        : "The whole minutes of the " + label + ", ending with the current one. The chart's bars add up to this figure."));
     capWin("cModelCap", "by model", short);
   }
 
@@ -1097,14 +1098,16 @@
         : known ? `<em>${esc(SINCE_WHY[cov.reason] || "alerts are held only since then")}</em>${unwatched ? ` · ${plural(unwatched, "machine")} not watched: <em>${esc(unwatchedNames)}</em>` : " · every model priced, every machine reporting"}.`
         : unwatched ? `${plural(unwatched, "machine")} not watched: <em>${esc(unwatchedNames)}</em> · every model priced, every machine reporting.`
         : "No alert in the last hour, every model priced, every machine reporting.";
-      foot = known ? `Before ${hhmm(known)} the watched machines' alerts are not held, so their quiet is not "no alert".` : unwatched ? "A reporter shares its alerts only with --share-alerts; until then its silence is not \"no alert\"." : "";
+      foot = known ? `Not held before ${hhmm(known)}: quiet then is not "no alert".` : unwatched ? "A reporter shares its alerts only with --share-alerts; until then its silence is not \"no alert\"." : "";
       hot = false;
     }
     box.classList.toggle("hot", hot);
     $("attnHead").textContent = head;
     $("attnLine").innerHTML = line;
     $("attnLine").title = $("attnLine").textContent;
-    $("attnFoot").innerHTML = foot;
+    // a foot that is a sentence gives way at its end with the whole on hover; the alert's foot keeps its time and its door
+    $("attnFoot").innerHTML = top ? foot : foot ? `<span class="ft">${foot}</span>` : "";
+    $("attnFoot").title = top ? "" : $("attnFoot").textContent;
     // "0 alerts · last hour" is only said when every current machine is watched for the whole hour; otherwise the count names its coverage: since when, or how many watched.
     // ordered parts that drop whole from the least important when the caption is tight, the whole line on hover — never a cut word
     const stat = [{ html: `<b>${alerts.length}</b> ${alerts.length === 1 ? "alert" : "alerts"}`, pri: 0 }, { html: known ? `since ${hhmm(known)}` : cov && unwatched ? `${cov.watched} of ${current} watched` : "last hour", pri: 1 }];
@@ -1524,7 +1527,8 @@
     $("cLine").setAttribute("d", line);
     $("cArea").setAttribute("d", line + `L${lastX.toFixed(1)} ${H}L${pts[0][0].toFixed(1)} ${H}Z`);
     // the step still filling: hatched from its measured height up to what it would be at this pace, over its own width
-    const cap = $("cCap"), c = chart.cap;
+    // (the rect's own id: "cCap" is the caption's, and an id shared with it left this hatch never drawn)
+    const cap = $("cCapStep"), c = chart.cap;
     if (c && c.projected > c.measured && c.measured > 0) {
       const x0 = xOf(chart.vals.length - 1.5);
       cap.setAttribute("x", x0.toFixed(1)); cap.setAttribute("width", Math.max(0, lastX - x0).toFixed(1));
