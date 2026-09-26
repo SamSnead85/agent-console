@@ -267,7 +267,7 @@ if (config.demo) {
   activityBook = createActivityBook();
   local = startLocalCollection({
     registry, store, names, stateDir: config.stateDir, roots,
-    intervalMs: 2_000, onTranscriptLine: (args) => { alertEngine.observeLine(args); activityBook.observeLine(args); },
+    intervalMs: config.pollMs, onTranscriptLine: (args) => { alertEngine.observeLine(args); activityBook.observeLine(args); },
     journal: activityBook.journal,
     label: config.machineName, person: config.person,
     onError: (error) => process.stderr.write("  this machine: " + (error?.code ? remedy(error, { what: "reading this machine's transcripts", command: COMMAND })

@@ -644,6 +644,7 @@ node bin/agent-console.mjs join --help     # the reporter
 | `--port <n>` | `6787`: the console, on this computer only |
 | `--report-port <n>` | the port above it (`6788`): where other computers join and report |
 | `--listen <address>` | `127.0.0.1`; `0.0.0.0` lets other computers reach the reporting port |
+| `--advertise <address>` | the address join links carry, as other computers reach this one (WSL, several network adapters, a port forward) |
 | `--allow-public` | accept reports from outside private networks |
 | `--allow-cgnat` | also accept 100.64.0.0/10 (Tailscale, carrier-grade NAT) |
 | `--demo` | a synthetic team; reads nothing, accepts no machine |
@@ -652,7 +653,8 @@ node bin/agent-console.mjs join --help     # the reporter
 | `--state-dir <path>` | `~/.agent-console/hub` |
 | `--retention-days <n>` | `8` (1–90) |
 | `--invite-minutes <n>` | `30` (at most 60) |
-| `--claude-root`, `--codex-root` | where this computer's transcripts are |
+| `--claude-root`, `--codex-root` | where this computer's transcripts are, instead of the folders found below |
+| `--poll-ms <n>` | `2000`: how often this computer's transcripts are read, in milliseconds (1000 or more) |
 | `--json` | print launch details as JSON and keep running |
 
 Some console options can also be set in the environment, for a console that a
@@ -664,6 +666,7 @@ over its variable. A yes/no variable counts as on for `1`, `true`, `yes` or `on`
 | `AGENT_CONSOLE_PORT` | `--port` |
 | `AGENT_CONSOLE_REPORT_PORT` | `--report-port` |
 | `AGENT_CONSOLE_LISTEN` | `--listen` |
+| `AGENT_CONSOLE_ADVERTISE` | `--advertise` |
 | `AGENT_CONSOLE_ALLOW_CGNAT` | `--allow-cgnat` (yes/no) |
 | `AGENT_CONSOLE_DEMO` | `--demo` (yes/no) |
 | `AGENT_CONSOLE_NAME_MACHINE` | `--name` |
@@ -678,7 +681,7 @@ over its variable. A yes/no variable counts as on for `1`, `true`, `yes` or `on`
 | `AGENT_CONSOLE_ALERT_SPIKE_FACTOR` | `--alert-spike-factor` |
 | `AGENT_CONSOLE_ALERT_STALL_MINUTES` | `--alert-stall-minutes` |
 | `AGENT_CONSOLE_INTEROP` | `--interop` (yes/no) |
-| `AGENT_CONSOLE_POLL_MS` | `--poll-ms`, which is accepted but currently changes nothing |
+| `AGENT_CONSOLE_POLL_MS` | `--poll-ms` |
 
 `--open`, `--allow-public`, `--person`, `--invite-minutes` and `--json` have no
 variable. The reporter reads two: `AGENT_CONSOLE_REPORTER_DIR` in place of its
@@ -688,11 +691,17 @@ and `AGENT_CONSOLE_VENDOR` change the product and vendor names that the console
 and the reporter print. `AGENT_CONSOLE_PACKAGE` is set by the check in a
 join command, for the reporter it starts; it is not one to set yourself.
 
-Claude Code's `CLAUDE_CONFIG_DIR` and Codex's `CODEX_HOME` are not read to find
-transcripts: the console and the reporter read `.claude/projects` and
-`.codex/sessions` in the home folder. If yours are elsewhere, pass
-`--claude-root` / `--codex-root`. (`policy` reads `CLAUDE_CONFIG_DIR` only to
-stay out of your user-level Claude Code settings.)
+The console and the reporter find transcripts where Claude Code and Codex put
+them: Claude Code's `CLAUDE_CONFIG_DIR` (its `projects` folder; a
+comma-separated list is read in full) when it is set, `~/.claude/projects`,
+and `~/.config/claude/projects` where it exists; Codex's `CODEX_HOME` (its
+`sessions` folder, and `archived_sessions`, where Codex moves a thread it
+archives) when it is set, and `~/.codex/sessions` with `~/.codex/archived_sessions`.
+`--claude-root` / `--codex-root` (or their variables) replace their tool's
+list. With `--home`, these two variables are not used: that home stands for
+another computer's layout. The console names every folder it read, and says
+so in its window when it finds nothing. (`policy` reads `CLAUDE_CONFIG_DIR`
+too, to stay out of your user-level Claude Code settings.)
 
 The installers and the standalone executable have their own:
 `AGENT_CONSOLE_VERSION`, `AGENT_CONSOLE_INSTALL_DIR` and
