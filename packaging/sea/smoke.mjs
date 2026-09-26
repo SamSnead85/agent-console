@@ -5,8 +5,8 @@
  * the package: it prints its version, starts in demo mode, serves the console,
  * signs a browser in and serves the join page, and a reporter it starts in
  * the background (join --background) runs until stop. Also: it unpacks into its cache
- * once, repairs a file changed there, and names itself (not node) in the
- * commands it prints.
+ * once, repairs a file changed there, clears away other versions' copies that
+ * nothing runs from, and names itself (not node) in the commands it prints.
  *
  *   node packaging/sea/smoke.mjs dist/sea/dist/agent-console-<platform>-<arch>[.exe]
  */
@@ -49,6 +49,24 @@ try {
   const again = runExe(["--version"]);
   assert.equal(again.status, 0, again.stderr);
   assert.equal(fs.readFileSync(server, "utf8"), fs.readFileSync(path.join(ROOT, "server.js"), "utf8"), "server.js restored");
+
+  // Another version's folder that no running copy uses is cleared away; one
+  // that a running process uses stays, and so does this copy's own mark only
+  // while it runs.
+  const ended = spawnSync(process.execPath, ["-e", ""]).pid;
+  const stale = path.join(cache, "0.0.1-aaaaaaaaaaaaaaaa");
+  const busy = path.join(cache, "0.0.2-bbbbbbbbbbbbbbbb");
+  for (const [folder, pid] of [[stale, ended], [busy, process.pid]]) {
+    fs.mkdirSync(path.join(folder, ".in-use"), { recursive: true });
+    fs.writeFileSync(path.join(folder, "server.js"), "");
+    fs.writeFileSync(path.join(folder, ".in-use", String(pid)), "");
+  }
+  const pruned = runExe(["--version"]);
+  assert.equal(pruned.status, 0, pruned.stderr);
+  assert.equal(fs.existsSync(stale), false, "an older copy nothing runs from is cleared away");
+  assert.equal(fs.existsSync(busy), true, "a copy a running process uses stays");
+  fs.rmSync(busy, { recursive: true, force: true });
+  assert.deepEqual(fs.readdirSync(path.join(dir, ".in-use")), [], "a copy that exited leaves no mark");
 
   // Commands it prints name the executable, never node.
   const usage = runExe(["join"]);
@@ -148,7 +166,7 @@ try {
     await hubClosed;
   }
   const size = (fs.statSync(exe).size / 1048576).toFixed(1);
-  process.stdout.write(`${path.basename(exe)} (${size} MB): version, unpack, repair, own name in commands, demo console, sign-in, join page, background reporter: all fine\n`);
+  process.stdout.write(`${path.basename(exe)} (${size} MB): version, unpack, repair, old copies cleared, own name in commands, demo console, sign-in, join page, background reporter: all fine\n`);
 } finally {
   fs.rmSync(scratch, { recursive: true, force: true });
 }
