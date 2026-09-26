@@ -559,16 +559,25 @@ await section("keyboard", async () => {
   if (!first || !second || first === second || back !== first) fail(`J/K do not move DOM focus across rows (${first}, ${second}, ${back})`); else ok("J/K move DOM focus onto the rows");
   // five more presses land on five consecutive rows, none skipped, and the focus is still on that row after two polls with no key pressed (R3-01)
   const order = await page.evaluate(() => [...document.querySelectorAll("#cLanes .lane")].map((r) => r.dataset.key));
+  // A poll may reorder the lanes by burn between two presses (the demo's lanes do): J goes to the row after the focused one as the
+  // rows stand when it is pressed, so each step is judged against the order just before it, or just after it when a poll lands
+  // between the press and the read — never against the order before the whole walk.
+  const rowsNow = () => page.evaluate(() => { const a = document.activeElement; return { keys: [...document.querySelectorAll("#cLanes .lane")].map((r) => r.dataset.key), on: a && a.classList.contains("lane") ? a.dataset.key : null }; });
   const walk = [];
+  let steps = true;
   for (let i = 0; i < 5; i += 1) {
+    const pre = await rowsNow();
+    const want = pre.keys[Math.min(pre.keys.length - 1, pre.keys.indexOf(pre.on) + 1)];
     await page.keyboard.press("j");
     await page.waitForTimeout(150);
-    walk.push(await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("lane") ? document.activeElement.dataset.key : null));
+    const post = await rowsNow();
+    walk.push(post.on);
+    const next = post.on && (post.on === want || post.keys.indexOf(post.on) === Math.min(post.keys.length - 1, post.keys.indexOf(pre.on) + 1));
+    if (!next) steps = false;
   }
   await page.waitForTimeout(4600);
   const held = await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("lane") ? document.activeElement.dataset.key : (document.activeElement && document.activeElement.tagName) || null);
-  const consecutive = walk.every((k, i) => k && order.indexOf(k) === Math.min(order.length - 1, order.indexOf(first) + 1 + i));
-  if (!consecutive) fail(`J skips rows or loses focus across polls: ${walk.map((k) => (k ? order.indexOf(k) : "BODY")).join(" → ")} from row ${order.indexOf(first)}`); else ok(`five J presses land on five consecutive rows (${walk.map((k) => order.indexOf(k)).join(" → ")})`);
+  if (!steps) fail(`J skips rows or loses focus across polls: ${walk.map((k) => (k ? order.indexOf(k) : "BODY")).join(" → ")} from row ${order.indexOf(first)}`); else ok(`five J presses land on five consecutive rows (${walk.map((k) => order.indexOf(k)).join(" → ")} in the order before the walk)`);
   if (held !== walk[4]) fail(`the focused row is on ${held} 4.6 s later with no key pressed`); else ok("the focused row keeps DOM focus through two polls");
   for (let i = 0; i < 5; i += 1) { await page.keyboard.press("k"); await page.waitForTimeout(120); }
   await page.keyboard.press("Enter");
