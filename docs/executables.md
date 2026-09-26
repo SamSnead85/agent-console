@@ -95,9 +95,10 @@ into a folder named for its version and contents:
 | Windows | `%LOCALAPPDATA%\agent-console\Cache\` |
 
 `AGENT_CONSOLE_CACHE_DIR` chooses another folder. Every start checks the files
-again and puts back any that changed, and clears away the folders other
-versions left there once no running copy uses them. It fetches nothing, and it
-keeps its data where the npm package does (`~/.agent-console/`).
+again and puts back any that changed. Other versions' folders stay in place
+because a running older console may still need them. After stopping all copies,
+you can remove this cache to reclaim the space; the next start unpacks it again.
+It fetches nothing, and it keeps its data where the npm package does (`~/.agent-console/`).
 [uninstall.md](uninstall.md) lists everything to delete. The commands it prints, such
 as the one to run it again, name the executable, never `node`.
 
@@ -112,7 +113,7 @@ into a copy of the Node.js that ran the build, with
 [its lockfile](../packaging/sea/package-lock.json). CI builds each target on its
 own platform's runner and starts it there with no Node.js on `PATH`
 ([`smoke.mjs`](../packaging/sea/smoke.mjs)): version, unpack, repair of a
-changed file, clearing old copies, demo console, sign-in, join page and a
+changed file, preserving a running older version, demo console, sign-in, join page and a
 background reporter. The package itself still has
 no dependencies.
 

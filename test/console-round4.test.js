@@ -285,10 +285,10 @@ test("J4-08 / J4-09: presenting is switched on from the console before the scan,
   assert.match(PROBES, /--\(\?:name\|person\|state-dir\|claude-root\|codex-root\)/u);
   const source = JS.slice(JS.indexOf("  function shownCommand("), JS.indexOf("\n  }\n", JS.indexOf("  function shownCommand(")) + 4);
   const run = (present, cmd, D = null) => vm.runInNewContext(source + "\nshownCommand(cmd)", { present, cmd, D });
-  const cmd = "/Users/someone/.nvm/bin/node /Users/someone/work/agent-console/bin/agent-console.mjs --name 'Mac Studio' --person Sam --state-dir /private/tmp/claude-1/someone/atlas-web/state --claude-root /private/tmp/claude-1/someone/atlas-web/home/.claude/projects --listen 0.0.0.0";
+  const cmd = "/Users/someone/.nvm/bin/node /Users/someone/work/agent-console/bin/agent-console.mjs --name 'Mac Studio' --person Sam --state-dir /private/tmp/claude-1/someone/atlas-web/state --claude-root /private/tmp/claude-1/someone/atlas-web/sandbox/.claude/projects --listen 0.0.0.0";
   // outside presenting: the home directory is ~, and the account's name in a path outside it is masked at that segment; the project's name stays
   const plain = run(false, cmd);
-  assert.equal(plain, "~/.nvm/bin/node ~/work/agent-console/bin/agent-console.mjs --name 'Mac Studio' --person Sam --state-dir /private/tmp/claude-1/…/atlas-web/state --claude-root /private/tmp/claude-1/…/atlas-web/home/.claude/projects --listen 0.0.0.0");
+  assert.equal(plain, "~/.nvm/bin/node ~/work/agent-console/bin/agent-console.mjs --name 'Mac Studio' --person Sam --state-dir /private/tmp/claude-1/…/atlas-web/state --claude-root /private/tmp/claude-1/…/atlas-web/sandbox/.claude/projects --listen 0.0.0.0");
   assert.doesNotMatch(plain, /someone/u);
   // while presenting: every folder option is masked as the names are
   const shown = run(true, cmd);

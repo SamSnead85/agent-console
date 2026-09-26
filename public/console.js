@@ -733,8 +733,8 @@
     };
   }
   function keepFocus(box, active) {
-    if (!active || !active.classList || !active.classList.contains("lane") || document.activeElement === active) return;
-    if (active.isConnected && box.contains(active)) active.focus({ preventScroll: true });
+    if (!active || !active.closest || !active.closest(".lane") || document.activeElement !== document.body) return;
+    if (active.isConnected && box.contains(active) && !document.querySelector("dialog[open]")) active.focus({ preventScroll: true });
   }
   function paintLanes() {
     const now = serverNow();

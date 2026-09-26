@@ -69,7 +69,7 @@ test("G06: the lanes card hugs its rows when the day leaves the pane room, fills
   assert.match(JS, /if \(ev\.target\.closest\("summary"\)\) foldTouched = true;/u);
   // rows are placed by position, never re-appended (R3-01), so the row the keyboard is on keeps its focus through every poll
   assert.match(JS, /if \(want !== node\) box\.insertBefore\(node, want\);/u);
-  assert.match(JS, /if \(active\.isConnected && box\.contains\(active\)\) active\.focus\(\{ preventScroll: true \}\);/u);
+  assert.match(JS, /if \(active\.isConnected && box\.contains\(active\) && !document\.querySelector\("dialog\[open\]"\)\) active\.focus\(\{ preventScroll: true \}\);/u);
   assert.doesNotMatch(JS, /box\.appendChild\(row\);\s*\/\/ moves it into sorted position/u);
 });
 
