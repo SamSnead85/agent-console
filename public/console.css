@@ -286,7 +286,7 @@ body.paused .wave .top, .flowwrap.void .wave .top { filter: none; }
 /* by model, by machine: one row each */
 .mhead { display: grid; grid-template-columns: 1fr calc(60px * var(--k)) calc(64px * var(--k)); gap: calc(8px * var(--k)); padding-bottom: calc(3px * var(--k)); border-bottom: 1px solid var(--hair2);
   font: 500 calc(12px * var(--k))/1.1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); white-space: normal; }
-.mhead.second { margin-top: calc(8px * var(--k)); }
+.mhead.second { margin-top: calc(8px * var(--k)); grid-template-columns: minmax(0, 1fr) minmax(max-content, calc(60px * var(--k))) calc(64px * var(--k)); }
 .mhead[hidden] { display: none; }
 .mhead.machines, .mhead.people, .mhead.tools { margin-top: calc(3px * var(--k)); grid-template-columns: 1fr calc(50px * var(--k)) calc(56px * var(--k)) calc(72px * var(--k)); }
 .mhead.people { grid-template-columns: 1fr calc(50px * var(--k)) calc(72px * var(--k)) calc(72px * var(--k)); }
@@ -459,6 +459,9 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .lhead { height: calc(32px * var(--k)); align-items: end; padding-bottom: 4px; font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--quiet); white-space: nowrap;
   background: var(--band-head); border-bottom: 1px solid var(--hair2); box-shadow: inset 0 1px 0 var(--rim); overflow: hidden; position: relative; }
 .lhead span { overflow: hidden; }
+/* Short headings keep their full text within the spare column gap; data tracks stay aligned. */
+.lhead .c-sp, .lhead .c-cx { min-width: max-content; }
+.lhead .c-cx { justify-self: end; }
 /* the four day figures are named for their window once: a bracket over their columns, the word sitting on its line, whatever the period control says */
 .lhead .grp { position: absolute; top: 3px; left: 0; right: 0; height: 9px; border-bottom: 1px solid var(--hair); font: 500 12px/1 var(--sans); letter-spacing: .1em; color: var(--quiet); text-align: center; pointer-events: auto; }
 .lhead .grp::before, .lhead .grp::after { content: ""; position: absolute; bottom: 0; width: 1px; height: 4px; background: var(--hair); }
