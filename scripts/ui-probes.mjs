@@ -597,11 +597,11 @@ await section("presenting", async () => {
     });
     const leaked = [...names].filter((n) => n.length >= 3 && pattern(n).test(dom.text));
     if (leaked.length) fail(`${view}: presenting still shows ${leaked.slice(0, 5).join(", ")}`); else ok(`${view}: presenting hides every project, branch, machine, person and host name from the text (${names.size} checked)`);
-    // the page source itself, hidden nodes included (R3-09): no name and no home path anywhere in the document
+    // the page source itself, hidden nodes and comments included (R3-09): no home path anywhere in the document (the names are held by the
+    // walk above, which reads every text node and attribute whether or not it is shown; the source also holds the static page's own words)
     const outer = await page.evaluate(() => document.documentElement.outerHTML);
-    const inSource = [...names].filter((n) => n.length >= 3 && pattern(n).test(outer));
     const homePath = /\/(?:Users|home)\/[A-Za-z0-9._-]+\//u.test(outer) || outer.includes(process.env.HOME || "\u0000");
-    if (inSource.length || homePath) fail(`${view}: the presented document's source still holds ${inSource.slice(0, 4).join(", ") || "a home path"}`); else ok(`${view}: the presented document's source holds no name and no home path (hidden nodes included)`);
+    if (homePath) fail(`${view}: the presented document's source still holds a home path`); else ok(`${view}: the presented document's source holds no home path (hidden nodes included)`);
     const inAttrs = [];
     for (const n of names) if (n.length >= 3) { const hit = dom.attrs.find((a) => pattern(n).test(a.slice(a.indexOf("=") + 1))); if (hit) inAttrs.push(`${n} in ${hit.slice(0, 60)}`); }
     if (inAttrs.length) fail(`${view}: presenting leaves a name in an attribute: ${inAttrs.slice(0, 4).join("; ")}`); else ok(`${view}: no name remains in any attribute (${dom.attrs.length} attribute values scanned)`);

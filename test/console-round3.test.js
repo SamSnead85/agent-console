@@ -159,9 +159,10 @@ test("R3-13: a demonstration's join page shows one warn line, and its add-link s
 });
 
 test("R3-04/R3-05/R3-07/R3-08/R3-12/R3-15: the CSS and source shapes of the smaller gaps", () => {
-  // the lane name gives way only beside a branch
-  assert.match(CSS, /\.lane \.pr b \{ font: 500 calc\(12\.5px \* var\(--k\)\) var\(--sans\); flex: none; max-width: 100%;/u);
-  assert.match(CSS, /\.lane \.pr\.branched b \{ max-width: 70%; \}/u);
+  // the lane name keeps its cell: the cell is a grid whose first track is the name's own width, the branch takes what is left
+  assert.match(CSS, /\.lane \.pr \{ min-width: 0; display: grid; grid-template-columns: minmax\(0, auto\) minmax\(0, 1fr\);/u);
+  assert.doesNotMatch(CSS, /\.lane \.pr b \{[^}]*max-width: 70%/u, "no fixed cap on the name at desk width");
+  assert.match(CSS, /\.lane \.pr \{ display: flex; flex-direction: column;/u, "the phone keeps the name over its branch");
   assert.match(JS, /row\.querySelector\("\.pr"\)\.classList\.toggle\("branched", Boolean\(branchName\)\);/u);
   // an inspector row: the name-and-branch cell takes most of the row, and inside it only the branch gives way
   assert.match(CSS, /\.inspect \.irow \{ display: grid; grid-template-columns: minmax\(0, 2\.2fr\) minmax\(0, 1fr\) 56px 46px;/u);
@@ -181,7 +182,7 @@ test("R3-04/R3-05/R3-07/R3-08/R3-12/R3-15: the CSS and source shapes of the smal
   assert.match(HOUSE, /\.lockup \{[^}]*min-height: 24px; padding: 1px 0; \}/u);
   assert.match(CSS, /\.console > \.col:hover \{ transform: translateY\(-2px\); box-shadow: inset 0 1px 0 color-mix\(in srgb, var\(--card-rim\) 70%, #fff\)/u);
   // a project ranking gives the name the room and fixes the bar
-  assert.match(CSS, /\.mrow\.proj \{ grid-template-columns: minmax\(calc\(120px \* var\(--k\)\), 1fr\) auto calc\(90px \* var\(--k\)\)/u);
+  assert.match(CSS, /\.mrow\.proj \{ grid-template-columns: minmax\(0, 1fr\) auto minmax\(calc\(48px \* var\(--k\)\), calc\(72px \* var\(--k\)\)\) calc\(44px \* var\(--k\)\)/u);
   assert.match(JS, /<div class="mrow proj door" data-inspect="project:/u);
 });
 

@@ -308,8 +308,12 @@ body.paused .wave .top, .flowwrap.void .wave .top { filter: none; }
 .mrow { display: grid; grid-template-columns: calc(104px * var(--k)) auto 1fr calc(60px * var(--k)) calc(64px * var(--k)); align-items: center; gap: calc(8px * var(--k)); margin-top: calc(1px * var(--k)); line-height: 1.2; min-height: calc(17px * var(--k)); }
 /* a row that opens an inspector is a 24px target (WCAG 2.5.8): the type keeps its size, the row takes the height */
 .mrow.door { min-height: 24px; margin-top: 0; cursor: pointer; }
-/* a ranking of projects (R3-15): the name is the reading and keeps its words; the bar is the illustration and is fixed */
-.mrow.proj { grid-template-columns: minmax(calc(120px * var(--k)), 1fr) auto calc(90px * var(--k)) calc(60px * var(--k)) calc(64px * var(--k)); }
+/* a ranking of projects (R3-15): the name is the reading and takes the room, in the sans the Projects table names them in; the bar is the
+   illustration and is held to a short fixed span, the share and the estimate to what their figures need */
+.mrow.proj { grid-template-columns: minmax(0, 1fr) auto minmax(calc(48px * var(--k)), calc(72px * var(--k))) calc(44px * var(--k)) calc(64px * var(--k)); }
+/* a name longer than its track wraps to a second line (D07: two lines with the whole on hover, never an ellipsis on meaning) */
+.mrow.proj .mn { font-family: var(--sans); white-space: normal; }
+.mrow.proj .mn .txt { overflow: visible; text-overflow: clip; white-space: normal; line-height: 1.2; overflow-wrap: anywhere; }
 .mrow .ms { display: flex; min-width: 0; }
 .mrow .ms:empty { margin-left: calc(-8px * var(--k)); }
 .mn { font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); white-space: nowrap; display: flex; align-items: center; gap: calc(6px * var(--k)); min-width: 0; }
@@ -474,9 +478,12 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .lanescroll:focus-visible { outline: 2px solid var(--lit); outline-offset: -2px; }
 /* the state column is 124px at every width: room for the longest word the console says (REMOVED, RECONNECTING) beside the DEMO stamp, never a stamp cut to DEM;
    the last column is 60px, the width of a clock time, so a silent lane's last report is never cut */
-.lhead, .lane { display: grid; align-items: center; gap: calc(12px * var(--k)); padding: 0 calc(16px * var(--k)) 0 calc(20px * var(--k));
-  grid-template-columns: calc(124px * var(--k)) minmax(calc(150px * var(--k)), 1.2fr) minmax(calc(124px * var(--k)), .55fr) minmax(calc(92px * var(--k)), .5fr)
-    calc(66px * var(--k)) calc(78px * var(--k)) calc(58px * var(--k)) calc(60px * var(--k)) calc(60px * var(--k)) calc(50px * var(--k)) calc(58px * var(--k)) minmax(calc(128px * var(--k)), 1fr) minmax(calc(76px * var(--k)), .6fr) calc(60px * var(--k)); }
+/* the desk grid (1440 up to 1799): each figure column is held to what its widest header or value needs, so the room a 1440 frame has
+   beyond the minimum (its minimum is 1288px of the 1376px the frame holds) goes first to the project name (1.4fr), then to Doing,
+   the model, the machine and the activity — at 1440 the name's track is ~190px, wider than a twenty-six-character name (R3-04) */
+.lhead, .lane { display: grid; align-items: center; gap: calc(10px * var(--k)); padding: 0 calc(16px * var(--k)) 0 calc(20px * var(--k));
+  grid-template-columns: calc(124px * var(--k)) minmax(calc(160px * var(--k)), 1.4fr) minmax(calc(116px * var(--k)), .5fr) minmax(calc(92px * var(--k)), .4fr)
+    calc(54px * var(--k)) calc(72px * var(--k)) calc(48px * var(--k)) calc(52px * var(--k)) calc(60px * var(--k)) calc(50px * var(--k)) calc(58px * var(--k)) minmax(calc(120px * var(--k)), 1fr) minmax(calc(76px * var(--k)), .6fr) calc(60px * var(--k)); }
 .lhead { height: calc(32px * var(--k)); align-items: end; padding-bottom: 4px; font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--quiet); white-space: nowrap;
   background: var(--band-head); border-bottom: 1px solid var(--hair2); box-shadow: inset 0 1px 0 var(--rim); overflow: visible; position: relative; }
 .lhead span { overflow: hidden; }
@@ -517,12 +524,13 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .lane.silent .st, .lane.revoked .st, .lane.catching-up .st, .lane.reconnecting .st { color: var(--quiet); }
 .lane.silent .st { color: var(--warn); }
 .lane.silent .st i, .lane.revoked .st i, .lane.catching-up .st i, .lane.reconnecting .st i { background: none; box-shadow: inset 0 0 0 1px currentColor; animation: none; }
-.lane .pr { min-width: 0; display: flex; align-items: baseline; gap: calc(8px * var(--k)); white-space: nowrap; overflow: hidden; }
-/* the name gives way only when a branch shares its cell (R3-04): alone it keeps the whole cell, so a three-word project is never cut beside empty room */
-.lane .pr b { font: 500 calc(12.5px * var(--k)) var(--sans); flex: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
-.lane .pr.branched b { max-width: 70%; }
+/* the name keeps its cell (R3-04): the cell is a grid whose first track takes the name's own width up to the cell, and the branch
+   (mono meta, its whole on the row's hover) takes what is left and gives way first — a three-word project is never cut beside a
+   four-letter branch, and alone it keeps the whole cell; only a name longer than the cell itself gives way, with the row's title */
+.lane .pr { min-width: 0; display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); align-items: baseline; column-gap: calc(8px * var(--k)); white-space: nowrap; overflow: hidden; }
+.lane .pr b { font: 500 calc(12.5px * var(--k)) var(--sans); min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
 .lane .pr b.hash { font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); }
-.lane .pr em { font-style: normal; font: 400 calc(12px * var(--k)) var(--mono); color: var(--quiet); overflow: hidden; text-overflow: ellipsis; }
+.lane .pr em { font-style: normal; font: 400 calc(12px * var(--k)) var(--mono); color: var(--quiet); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .lane .md { font: 400 calc(12px * var(--k)) var(--mono); color: var(--ink2); white-space: nowrap; overflow: hidden; display: flex; align-items: center; gap: 6px; min-width: 0; }
 /* the tool as a chip before the model, whole at every width; the model name is the part that gives way, its whole on hover */
 .lane .md .tool { font-style: normal; font: 500 calc(12px * var(--k))/16px var(--mono); letter-spacing: .04em; color: var(--quiet); padding: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1px var(--hair2); flex: none; }
@@ -990,8 +998,7 @@ body[data-present] .mhead:not(.tools):not(.people) > span:last-child, body[data-
 @media (min-width: 1241px) and (max-width: 1439px) {
   .lhead, .lane { gap: 8px; grid-template-columns: calc(124px * var(--k)) minmax(calc(160px * var(--k)), 1.2fr) minmax(calc(97px * var(--k)), .5fr) minmax(calc(93px * var(--k)), .4fr)
     calc(41px * var(--k)) calc(32px * var(--k)) calc(32px * var(--k)) calc(43px * var(--k)) calc(51px * var(--k)) calc(52px * var(--k)) calc(60px * var(--k)) minmax(calc(116px * var(--k)), 1fr) minmax(calc(76px * var(--k)), .5fr) calc(60px * var(--k)); }
-  /* the project name stays whole in the 160px track: "project b1d604" is 101px, and 70% of 160 (112) holds it; the branch or agent beside it takes the ellipsis, the whole on hover */
-  .lane .pr b { max-width: 70%; }
+  /* the project name stays whole in the 160px track: the cell's first track takes the name's own width, and the branch beside it takes the ellipsis, the whole on hover */
 }
 /* below 1440 the uncached-input column is 32px: its header is the short word, the long one on hover */
 @media (max-width: 1439px) {
@@ -1135,7 +1142,7 @@ body[data-present] .mhead:not(.tools):not(.people) > span:last-child, body[data-
   .lhead .c-tot, .lane .tot { order: 5; }
   .lhead .c-md, .lane .md { order: 6; }
   .lhead .c-sp, .lane .sp { order: 7; }
-  .lane .pr { flex-direction: column; align-items: flex-start; gap: 0; line-height: 1.15; justify-content: center; }
+  .lane .pr { display: flex; flex-direction: column; align-items: flex-start; gap: 0; line-height: 1.15; justify-content: center; }
   .lane .pr b { max-width: 100%; }
   .lane .pr em { font-size: 12px; max-width: 100%; }
   .lane { height: 44px; cursor: pointer; }

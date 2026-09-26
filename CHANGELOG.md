@@ -30,8 +30,10 @@
   and prints 0; the head reads "7 of 9 kept days with usage"; a day the
   rollup holds only in part is marked "part held" with a "+" on its figure
   (`series["30d"].whole`).
-- A project name alone in its lane cell keeps the whole cell; the 70% cap
-  applies only when a branch shares the cell. In every inspector's session
+- A project name keeps its lane cell: the cell's first track is the name's
+  own width, and the branch beside it takes what is left and gives way
+  first, so a three-word project is never cut beside a four-letter branch
+  and alone it keeps the whole cell. In every inspector's session
   rows the name-and-branch column takes most of the row (2.2fr against the
   model's 1fr, 56px and 46px for the figure and the state), and inside it
   only the branch gives way; below 400px the branch goes under the name.
@@ -128,6 +130,20 @@
   fix behind a proxy or TLS inspection (`HTTPS_PROXY`, `NODE_USE_ENV_PROXY=1`,
   `NODE_EXTRA_CA_CERTS`). The check's SHA-256 is now
   `77aea0b4b487f2e39065b5739377f16678d6977b0fbd6d1ab0ef901052e581bc`.
+- Sessions are per machine: two machines reporting one session hash (a
+  synced home folder, a copied transcript that went on elsewhere) used to
+  show as one lane on whichever reported last; the store now keeps a session
+  per (machine, session hash), and lane roots, subagent trees, per-session
+  tokens, period session counts, Projects' sessions and alert magnitudes
+  follow. Each machine keeps its own lane, tokens and activity; the records
+  they share are still counted once. A lane's key adds "-" and 8 hex
+  characters of its machine only when two machines share the hash, and an
+  alert opens its own machine's lane.
+- The README's Options section says where transcripts are found and names
+  `AGENT_CONSOLE_ADVERTISE`; `--help` points to that list instead of
+  claiming every option has a variable; `--poll-ms` (`AGENT_CONSOLE_POLL_MS`)
+  now sets how often this machine's transcripts are read (default 2000 ms,
+  at least 1000) — it was accepted and ignored.
 
 ### Distribution
 
