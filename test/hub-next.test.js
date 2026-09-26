@@ -369,6 +369,24 @@ test("H11: a lane's Doing reading comes from its activity; an unshared machine s
   for (const l of shared) assert.equal(l.activityCoverage.state, "complete");
 });
 
+test("H11: the demo's failing shell lane shows its failure whatever second the demo starts", () => {
+  const base = Math.floor(Date.now() / MINUTE) * MINUTE - MINUTE;
+  for (const second of [0, 1, 20, 40, 59]) {
+    const at = base + second * 1000;
+    const store = createStore({ dir: null, retentionMs: 8 * DAY, prices: PRICES, now: () => at });
+    const registry = createRegistry({ dir: null, now: () => at });
+    const fleet = createFleetSignals({ now: () => at });
+    const activity = createActivityBook({ now: () => at });
+    const demo = startDemo({ registry, store, fleet, activity, now: () => at, tickMs: 1e9 });
+    demo.stop();
+    const alerts = { list: () => demo.alerts(at) };
+    const view = buildConsole({ store, registry, names: demo.names, now: at, hub: { demo: true },
+      alerts: allAlerts({ alerts, fleet }, at), signals: consoleSignals({ alerts, fleet, activity }, at) });
+    const infra = view.lanes.find((l) => l.project.name === "infra");
+    assert.ok(infra.activity.results.error > 0, `started at second ${second}`);
+  }
+});
+
 test("demo: alerts tie to demo lanes, one is earlier, and two machines are not watched", () => {
   const { view } = demoHub();
   assert.ok(view.alerts.some((a) => !a.historical) && view.alerts.some((a) => a.historical));
