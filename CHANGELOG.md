@@ -38,6 +38,9 @@
 
 ### Distribution and integration
 
+- Preserve older executables' cached files during upgrades so an already-running
+  console keeps serving its pages. Cache cleanup remains an explicit action after
+  stopping all copies.
 - Publish versioned Console and Projects payload schemas with synthetic fixtures.
 - Clarify GitHub release installation, unsigned native downloads, and the current
   availability of npm and Homebrew distribution.

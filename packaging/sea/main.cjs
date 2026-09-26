@@ -8,8 +8,8 @@
  * when the executable was built, and starts it exactly as
  * `node bin/agent-console.mjs` would. Nothing is fetched: everything it writes
  * came out of this file, and a folder that no longer matches is unpacked again.
- * Folders other versions left behind are cleared away once no running copy
- * uses them, so upgrading does not pile up old copies.
+ * Other versions' folders stay in place: a running older executable may
+ * still need their files and does not necessarily leave a process marker.
  *
  * Built by packaging/sea/build.mjs; see docs/executables.md.
  */
@@ -78,59 +78,6 @@ function unpack(root, dir) {
   }
 }
 
-/** True when a process with this id is running (EPERM: running, as someone else). */
-function alive(pid) {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return error.code === "EPERM";
-  }
-}
-
-/**
- * Marks the folder as in use by this process for as long as it runs, so that
- * another version starting meanwhile leaves it alone. A mark whose process has
- * ended (even without a clean exit) no longer counts.
- */
-function markInUse(dir) {
-  const marks = path.join(dir, ".in-use");
-  const mine = path.join(marks, String(process.pid));
-  fs.mkdirSync(marks, { recursive: true, mode: 0o700 });
-  fs.writeFileSync(mine, "");
-  process.on("exit", () => {
-    try { fs.rmSync(mine, { force: true }); } catch { /* best effort */ }
-  });
-}
-
-function inUse(dir) {
-  try {
-    return fs.readdirSync(path.join(dir, ".in-use")).some((name) => /^[1-9][0-9]*$/u.test(name) && alive(Number(name)));
-  } catch {
-    return false;
-  }
-}
-
-/** Clears away other versions' folders that no running copy uses, and leftovers of an interrupted unpack. */
-function pruneOthers(root, keep) {
-  const hour = 60 * 60 * 1000;
-  for (const name of fs.readdirSync(root)) {
-    const full = path.join(root, name);
-    if (full === keep) continue;
-    try {
-      if (/^[0-9]+\.[0-9]+\.[0-9]+[0-9A-Za-z.+-]*-[0-9a-f]{16}$/u.test(name)) {
-        if (inUse(full)) continue;
-      } else if (/^\.unpacking-|\.damaged-[0-9]+-[0-9]+$/u.test(name)) {
-        // Another copy may be unpacking right now: only an hour-old leftover goes.
-        if (Date.now() - fs.statSync(full).mtimeMs < hour) continue;
-      } else {
-        continue;
-      }
-      fs.rmSync(full, { recursive: true, force: true });
-    } catch { /* in use or not ours to remove: leave it */ }
-  }
-}
-
 const root = cacheRoot(process.env);
 const dir = path.join(root, `${manifest.version}-${manifest.digest.slice(0, 16)}`);
 try {
@@ -142,10 +89,6 @@ try {
   );
   process.exit(1);
 }
-// Neither is needed to start: a failure here never stops the console.
-try { markInUse(dir); } catch { /* read-only cache: nothing to mark */ }
-try { pruneOthers(root, dir); } catch { /* nothing cleared */ }
-
 const entry = path.join(dir, manifest.entry);
 process.argv[1] = entry;
 import(pathToFileURL(entry).href).catch((error) => {
