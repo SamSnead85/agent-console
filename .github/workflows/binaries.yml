@@ -14,25 +14,39 @@ on:
       - server.js
       - package.json
       - .github/workflows/binaries.yml
+  # Run by hand with release checked, on a branch, it signs and notarizes
+  # exactly as a release would: the dry run of signing before a tag.
   workflow_dispatch:
+    inputs:
+      release:
+        description: Sign and notarize the macOS builds, as a release does
+        type: boolean
+        default: false
   workflow_call:
+    # A release (release.yml passes release: true) must be signed and
+    # notarized: without all five secrets its macOS builds fail, never ship
+    # unsigned. Pull requests, and manual runs without release, build
+    # unsigned and say so.
     inputs:
       ref:
         description: The release tag to build from
         required: true
         type: string
-    # Only when all five are set are the macOS executables signed with a
-    # Developer ID and notarized; otherwise they are labelled unsigned.
+      release:
+        description: Require Developer ID signing and notarization for macOS
+        required: false
+        type: boolean
+        default: false
     secrets:
-      APPLE_DEVELOPER_ID_P12:
+      MACOS_CERT_P12_BASE64:
         required: false
-      APPLE_DEVELOPER_ID_P12_PASSWORD:
+      MACOS_CERT_P12_PASSWORD:
         required: false
-      APPLE_NOTARY_KEY_P8:
+      APPLE_API_KEY_P8_BASE64:
         required: false
-      APPLE_NOTARY_KEY_ID:
+      APPLE_API_KEY_ID:
         required: false
-      APPLE_NOTARY_ISSUER:
+      APPLE_API_ISSUER:
         required: false
 permissions:
   contents: read
@@ -40,7 +54,8 @@ jobs:
   build:
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 25
+    # Notarization and waiting for Apple to publish the ticket take minutes.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -51,8 +66,8 @@ jobs:
           - { target: linux-arm64, runner: ubuntu-24.04-arm, exe: agent-console-linux-arm64 }
           - { target: win32-x64, runner: windows-2025, exe: agent-console-win32-x64.exe }
     env:
-      # Signing is for releases only, and only when every Apple value exists.
-      SIGN_MAC: ${{ inputs.ref != '' && secrets.APPLE_DEVELOPER_ID_P12 != '' && secrets.APPLE_DEVELOPER_ID_P12_PASSWORD != '' && secrets.APPLE_NOTARY_KEY_P8 != '' && secrets.APPLE_NOTARY_KEY_ID != '' && secrets.APPLE_NOTARY_ISSUER != '' }}
+      # A release signs and notarizes macOS, or fails. Other runs never sign.
+      SIGN_MAC: ${{ inputs.release == true && startsWith(matrix.target, 'darwin-') }}
     steps:
       # Byte for byte the files the release tarball has: no CRLF on Windows.
       - name: Check out without line-ending conversion
@@ -71,14 +86,34 @@ jobs:
           check-latest: true
       - name: Install the build tool (postject, pinned by its lockfile)
         run: npm ci --prefix packaging/sea --ignore-scripts --no-audit --no-fund
-      - name: Load the Developer ID into a throwaway keychain
-        id: apple
-        if: runner.os == 'macOS' && env.SIGN_MAC == 'true'
+      - name: Require the Apple signing secrets for a release
+        if: env.SIGN_MAC == 'true'
         shell: bash
         env:
-          P12: ${{ secrets.APPLE_DEVELOPER_ID_P12 }}
-          P12_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_P12_PASSWORD }}
-          NOTARY_KEY: ${{ secrets.APPLE_NOTARY_KEY_P8 }}
+          P12: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.MACOS_CERT_P12_PASSWORD }}
+          API_KEY: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
+          API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          missing=()
+          [ -n "$P12" ] || missing+=(MACOS_CERT_P12_BASE64)
+          [ -n "$P12_PASSWORD" ] || missing+=(MACOS_CERT_P12_PASSWORD)
+          [ -n "$API_KEY" ] || missing+=(APPLE_API_KEY_P8_BASE64)
+          [ -n "$API_KEY_ID" ] || missing+=(APPLE_API_KEY_ID)
+          [ -n "$API_ISSUER" ] || missing+=(APPLE_API_ISSUER)
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::A release's macOS executables must be signed with a Developer ID and notarized, and these repository secrets are missing: ${missing[*]}. Nothing unsigned is shipped in their place."
+            exit 1
+          fi
+      - name: Load the Developer ID into a throwaway keychain
+        id: apple
+        if: env.SIGN_MAC == 'true'
+        shell: bash
+        env:
+          P12: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.MACOS_CERT_P12_PASSWORD }}
+          API_KEY: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
         run: |
           set -euo pipefail
           keychain="$RUNNER_TEMP/signing.keychain-db"
@@ -90,20 +125,24 @@ jobs:
           security import "$RUNNER_TEMP/id.p12" -k "$keychain" -P "$P12_PASSWORD" -T /usr/bin/codesign
           rm -f "$RUNNER_TEMP/id.p12"
           security set-key-partition-list -S apple-tool:,apple: -s -k "$password" "$keychain" > /dev/null
-          security list-keychains -d user -s "$keychain" login.keychain-db
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
           # The certificate's SHA-1, never its name: this log is public.
           identity="$(security find-identity -v -p codesigning "$keychain" | awk '/Developer ID Application/ { print $2; exit }')"
-          test -n "$identity" || { echo "::error::No Developer ID Application certificate in APPLE_DEVELOPER_ID_P12"; exit 1; }
-          printf '%s' "$NOTARY_KEY" | base64 --decode > "$RUNNER_TEMP/notary.p8"
+          test -n "$identity" || { echo "::error::MACOS_CERT_P12_BASE64 holds no valid Developer ID Application identity"; exit 1; }
+          printf '%s' "$API_KEY" | base64 --decode > "$RUNNER_TEMP/notary.p8"
+          chmod 600 "$RUNNER_TEMP/notary.p8"
           echo "identity=$identity" >> "$GITHUB_OUTPUT"
           echo "key=$RUNNER_TEMP/notary.p8" >> "$GITHUB_OUTPUT"
+      # Signs, notarizes and asks Gatekeeper before labelling anything signed
+      # (packaging/sea/build.mjs); with SIGN_MAC it fails rather than build unsigned.
       - name: Build
         shell: bash
         env:
+          AGENT_CONSOLE_REQUIRE_SIGNING: ${{ env.SIGN_MAC == 'true' && '1' || '' }}
           MACOS_SIGN_IDENTITY: ${{ steps.apple.outputs.identity }}
           APPLE_NOTARY_KEY_PATH: ${{ steps.apple.outputs.key }}
-          APPLE_NOTARY_KEY_ID: ${{ steps.apple.outputs.identity && secrets.APPLE_NOTARY_KEY_ID || '' }}
-          APPLE_NOTARY_ISSUER: ${{ steps.apple.outputs.identity && secrets.APPLE_NOTARY_ISSUER || '' }}
+          APPLE_NOTARY_KEY_ID: ${{ steps.apple.outputs.identity && secrets.APPLE_API_KEY_ID || '' }}
+          APPLE_NOTARY_ISSUER: ${{ steps.apple.outputs.identity && secrets.APPLE_API_ISSUER || '' }}
         run: node packaging/sea/build.mjs --out sea
       - name: Start it, with no Node.js on PATH
         shell: bash

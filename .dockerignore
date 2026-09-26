@@ -7,5 +7,6 @@ scripts
 site
 test
 *.md
+!THIRD_PARTY_NOTICES.md
 *.tgz
 *.log

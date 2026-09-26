@@ -250,6 +250,51 @@ for (const width of [1440, 390]) {
 }
 
 // ── 5. keyboard ─────────────────────────────────────────────────────────
+// Drive a real poll that changes row order. The row starts second so the
+// renderer must move it, rather than moving its siblings around it.
+async function focusThroughReorder(page, contextButton) {
+  const label = contextButton ? "Context button" : "mobile lane row";
+  const selected = await page.evaluate((button) => {
+    const row = document.querySelectorAll("#cLanes .lane")[1];
+    const control = button ? row?.querySelector(".cx button") : row;
+    if (!control) return null;
+    control.focus();
+    control.click();
+    return row.dataset.key;
+  }, contextButton);
+  if (!selected) { fail(`${label}: the fixture needs two lanes`); return; }
+  await page.waitForSelector("#inspectDialog[open]");
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#inspectDialog[open]", { state: "hidden" });
+  let polls = 0;
+  const marker = "Reordered fixture model";
+  const pattern = "**/api/console";
+  const reorder = async (route) => {
+    const response = await route.fetch();
+    const data = await response.json();
+    const row = data.lanes?.find((lane) => lane.key === selected);
+    if (!row) { await route.fulfill({ response }); return; }
+    polls += 1;
+    await route.fulfill({ response, json: { ...data, lanes: [{ ...row, modelLabel: marker }, ...data.lanes.filter((lane) => lane.key !== selected)] } });
+  };
+  await page.route(pattern, reorder);
+  try {
+    await page.waitForFunction(({ key, model }) => {
+      const row = document.querySelector("#cLanes .lane");
+      return row?.dataset.key === key && row.querySelector(".mname")?.textContent === model;
+    }, { key: selected, model: marker }, { timeout: 10_000 });
+    const retained = await page.evaluate(({ key, button }) => {
+      const active = document.activeElement;
+      return active?.closest(".lane")?.dataset.key === key && (button ? Boolean(active.closest(".cx")) : active.classList.contains("lane"));
+    }, { key: selected, button: contextButton });
+    if (!polls || !retained) fail(`${label}: focus was lost when a poll reordered its lane`);
+    else ok(`${label}: focus survives an observed poll that reorders its lane`);
+  } catch (error) {
+    fail(`${label}: the controlled poll did not reorder the lane (${error.message})`);
+  } finally {
+    await page.unroute(pattern, reorder);
+  }
+}
 process.stdout.write("keyboard\n");
 {
   const { page, context } = await open(1440, "dark");
@@ -288,6 +333,7 @@ process.stdout.write("keyboard\n");
   await page.waitForTimeout(400);
   const ctxBack = await page.evaluate(() => { const a = document.activeElement; return a && a.closest(".cx") ? a.closest(".lane").dataset.key : null; });
   if (ctxBack !== ctx) fail(`closing the context inspector after 5 s leaves focus on ${await page.evaluate(() => document.activeElement.tagName)}, not the lane's context button`); else ok("closing the context inspector after 5 s returns focus to the context button");
+  await focusThroughReorder(page, true);
   // the palette: combobox, listbox, active descendant, announced option
   await page.keyboard.press("Meta+k");
   await page.waitForTimeout(300);
@@ -312,6 +358,9 @@ process.stdout.write("keyboard\n");
   await phone.page.waitForTimeout(400);
   const phoneOpened = await phone.page.evaluate(() => document.getElementById("inspectDialog").open);
   if (!phoneOpened) fail("390: Enter on a row does not open it"); else ok("390: Enter opens the row");
+  await phone.page.keyboard.press("Escape");
+  await phone.page.waitForSelector("#inspectDialog[open]", { state: "hidden" });
+  await focusThroughReorder(phone.page, false);
   await phone.context.close();
 }
 

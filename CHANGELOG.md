@@ -16,6 +16,8 @@
   Include the affected session and its observed baseline with spike and stall alerts.
 - Add presenting mode with aliases for people, machines, projects and branches,
   including inspector addresses and the Add a machine dialog.
+- Keep keyboard focus on a session row or its controls through refreshes and
+  changes in row order, including after closing its inspector.
 
 ### Reporting reliability
 
@@ -38,6 +40,9 @@
 
 ### Distribution and integration
 
+- Preserve older executables' cached files during upgrades so an already-running
+  console keeps serving its pages. Cache cleanup remains an explicit action after
+  stopping all copies.
 - Publish versioned Console and Projects payload schemas with synthetic fixtures.
 - Clarify GitHub release installation, unsigned native downloads, and the current
   availability of npm and Homebrew distribution.

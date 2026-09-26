@@ -1,3 +1,7 @@
 # The conformance suite is compared byte for byte, here and by receivers that
 # vendor it; never convert its line endings on checkout.
 test/conformance/** -text
+
+# Shell scripts run as downloaded and on Linux, macOS and WSL: always LF, even
+# in a Windows checkout (a CR breaks every line of them).
+*.sh text eol=lf

@@ -29,3 +29,8 @@ The versioned image appears after its release workflow completes. Replace
 `v0.4.0` with the exact release tag you want; do not use a floating `latest`
 tag. On macOS and Windows, Docker's host-network behavior differs; use the
 native executable for a local hub there.
+
+To remove it, `docker rm -f agent-console-hub`; `docker volume rm
+agent-console-state` then deletes the hub's data, and `docker image rm
+ghcr.io/samsnead85/agent-console:v0.4.0` the image
+([uninstall.md](uninstall.md)).

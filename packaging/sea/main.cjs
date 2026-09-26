@@ -8,6 +8,8 @@
  * when the executable was built, and starts it exactly as
  * `node bin/agent-console.mjs` would. Nothing is fetched: everything it writes
  * came out of this file, and a folder that no longer matches is unpacked again.
+ * Other versions' folders stay in place: a running older executable may
+ * still need their files and does not necessarily leave a process marker.
  *
  * Built by packaging/sea/build.mjs; see docs/executables.md.
  */
@@ -87,7 +89,6 @@ try {
   );
   process.exit(1);
 }
-
 const entry = path.join(dir, manifest.entry);
 process.argv[1] = entry;
 import(pathToFileURL(entry).href).catch((error) => {

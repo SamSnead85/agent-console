@@ -5,8 +5,8 @@
  * the package: it prints its version, starts in demo mode, serves the console,
  * signs a browser in and serves the join page, and a reporter it starts in
  * the background (join --background) runs until stop. Also: it unpacks into its cache
- * once, repairs a file changed there, and names itself (not node) in the
- * commands it prints.
+ * once, repairs a file changed there, preserves a running older version's
+ * cached files, and names itself (not node) in the commands it prints.
  *
  *   node packaging/sea/smoke.mjs dist/sea/dist/agent-console-<platform>-<arch>[.exe]
  */
@@ -49,6 +49,50 @@ try {
   const again = runExe(["--version"]);
   assert.equal(again.status, 0, again.stderr);
   assert.equal(fs.readFileSync(server, "utf8"), fs.readFileSync(path.join(ROOT, "server.js"), "utf8"), "server.js restored");
+
+  // Published older versions do not leave a process marker. Keep serving a
+  // file from such a cache while the new executable starts: upgrading must
+  // not break another running console, even for a --version invocation.
+  const legacy = path.join(cache, "0.3.0-aaaaaaaaaaaaaaaa");
+  const legacyPage = path.join(legacy, "public", "index.html");
+  fs.mkdirSync(path.dirname(legacyPage), { recursive: true });
+  fs.writeFileSync(legacyPage, "running older console");
+  const older = spawn(process.execPath, ["--input-type=module", "-e", `
+    import fs from "node:fs";
+    import http from "node:http";
+    const server = http.createServer((_request, response) => {
+      try { response.end(fs.readFileSync(process.argv[1])); }
+      catch { response.statusCode = 404; response.end("cached file missing"); }
+    });
+    server.listen(0, "127.0.0.1", () => console.log(server.address().port));
+  `, legacyPage], { env, cwd: scratch, stdio: ["ignore", "pipe", "pipe"] });
+  const olderClosed = once(older, "close");
+  try {
+    const port = await new Promise((resolve, reject) => {
+      let output = "";
+      const timer = setTimeout(() => reject(new Error("older console startup timed out")), 10_000);
+      const finish = (error, value) => { clearTimeout(timer); error ? reject(error) : resolve(value); };
+      older.once("error", (error) => finish(error));
+      older.once("exit", (code) => finish(new Error(`older console exited early: ${code}`)));
+      older.stdout.on("data", (chunk) => {
+        output += chunk;
+        if (output.includes("\n")) finish(null, Number(output.trim()));
+      });
+    });
+    const address = `http://127.0.0.1:${port}/`;
+    const before = await fetch(address, { signal: AbortSignal.timeout(10_000) });
+    assert.equal(before.status, 200);
+    assert.equal(await before.text(), "running older console");
+    const upgraded = runExe(["--version"]);
+    assert.equal(upgraded.status, 0, upgraded.stderr);
+    assert.equal(older.exitCode, null, "the older console is still running");
+    const after = await fetch(address, { signal: AbortSignal.timeout(10_000) });
+    assert.equal(after.status, 200, "an upgrade preserves the older console's cached files");
+    assert.equal(await after.text(), "running older console");
+  } finally {
+    older.kill("SIGTERM");
+    await olderClosed;
+  }
 
   // Commands it prints name the executable, never node.
   const usage = runExe(["join"]);
@@ -148,7 +192,7 @@ try {
     await hubClosed;
   }
   const size = (fs.statSync(exe).size / 1048576).toFixed(1);
-  process.stdout.write(`${path.basename(exe)} (${size} MB): version, unpack, repair, own name in commands, demo console, sign-in, join page, background reporter: all fine\n`);
+  process.stdout.write(`${path.basename(exe)} (${size} MB): version, unpack, repair, running older version preserved, own name in commands, demo console, sign-in, join page, background reporter: all fine\n`);
 } finally {
   fs.rmSync(scratch, { recursive: true, force: true });
 }
