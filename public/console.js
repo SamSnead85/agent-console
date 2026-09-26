@@ -628,10 +628,12 @@
     if (!roots.length) return null;
     const found = roots.reduce((a, r) => a + (r.exists && Number.isFinite(r.files) ? r.files : 0), 0);
     const held = (r) => (r.exists === false ? "not there" : r.exists === null ? "not read yet" : plural(r.files || 0, "file"));
-    const list = roots.map((r) => `<code title="${esc(TOOL[r.tool] || r.tool)} · ${esc(held(r))}">${esc(homeShort(r.path))}</code> <span class="held">(${esc(held(r))})</span>`).join(", ");
+    // while presenting a folder is a stand-in, as the restart command's folder options are: a path can carry a project or a client
+    const where = (r) => (present ? "…" : homeShort(r.path));
+    const list = roots.map((r) => `<code title="${esc(TOOL[r.tool] || r.tool)} · ${esc(held(r))}">${esc(where(r))}</code> <span class="held">(${esc(held(r))})</span>`).join(", ");
     const hint = `<span class="hint">Elsewhere? Start with <code>--claude-root &lt;folder&gt;</code> or <code>--codex-root &lt;folder&gt;</code>, or set <code>CLAUDE_CONFIG_DIR</code> or <code>CODEX_HOME</code>.</span>`;
     return { found, head: found ? `Read ${plural(found, "transcript")} in` : "No Claude Code or Codex transcript found. Looked in", html: `<span class="roots">${list}.</span> ${found ? `<span class="hint">None has usage in the ${esc(PERIOD_TEXT[period][0])}.</span> ` : ""}${hint}`,
-      text: `${found ? `read ${plural(found, "transcript")} in` : "looked in"} ${roots.map((r) => `${homeShort(r.path)} (${held(r)})`).join(", ")} · elsewhere: --claude-root, --codex-root, CLAUDE_CONFIG_DIR, CODEX_HOME` };
+      text: `${found ? `read ${plural(found, "transcript")} in` : "looked in"} ${roots.map((r) => `${where(r)} (${held(r)})`).join(", ")} · elsewhere: --claude-root, --codex-root, CLAUDE_CONFIG_DIR, CODEX_HOME` };
   }
   // A path under the home directory is written with ~ (R3-10): the screen never carries the account's name in a path
   const homeShort = (p) => String(p ?? "").replace(/^(?:\/Users\/[^/\s'"]+|\/home\/[^/\s'"]+|[A-Za-z]:\\Users\\[^\\\s'"]+)(?=[\\/]|$)/u, "~");

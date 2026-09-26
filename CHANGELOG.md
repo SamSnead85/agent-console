@@ -36,6 +36,8 @@
 - The restart command masks `--state-dir`, `--claude-root` and `--codex-root`
   while presenting as it masks `--name` and `--person`, and outside presenting
   masks the account's name in any path segment outside the home directory.
+- While presenting, the transcript folders an empty or quiet pane names are
+  stand-ins ("…") as well, with what each held.
 - Every figure stays while presenting: one rule, on every pane — a shared
   screen hides whose work it is, never what it cost; the strip's scope line
   (counts only) stays. The hero "$1,729 est." and the Projects effort line no

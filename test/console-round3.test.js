@@ -196,13 +196,17 @@ test("R3-04/R3-05/R3-07/R3-08/R3-12/R3-15: the CSS and source shapes of the smal
 test("U1: an empty console says where it looked, in mono, with the flag that points it elsewhere", () => {
   const D = { hub: { local: { enabled: true, roots: [{ tool: "claude-code", path: "/Users/someone/.claude/projects", exists: true, files: 0 }, { tool: "codex", path: "/Users/someone/.codex/sessions", exists: false, files: 0 }] } } };
   const homeShort = arrow("homeShort");
-  const line = fn("rootsLine", { D, TOOL: { "claude-code": "Claude Code", codex: "Codex" }, period: "7d", PERIOD_TEXT: { "7d": ["last 7 days"] }, homeShort });
+  const line = fn("rootsLine", { D, TOOL: { "claude-code": "Claude Code", codex: "Codex" }, period: "7d", PERIOD_TEXT: { "7d": ["last 7 days"] }, homeShort, present: false });
   const r = line();
   assert.equal(r.found, 0);
   assert.equal(r.head, "No Claude Code or Codex transcript found. Looked in");
   assert.match(r.html, /<code title="Claude Code · 0 files">~\/\.claude\/projects<\/code> <span class="held">\(0 files\)<\/span>, <code title="Codex · not there">~\/\.codex\/sessions<\/code> <span class="held">\(not there\)<\/span>\./u);
   assert.match(r.html, /<code>--claude-root &lt;folder&gt;<\/code> or <code>--codex-root &lt;folder&gt;<\/code>, or set <code>CLAUDE_CONFIG_DIR<\/code> or <code>CODEX_HOME<\/code>/u);
   assert.doesNotMatch(r.html + r.text, /\/Users\/someone/u, "the account's name is never on screen in a path");
+  // while presenting a folder is a stand-in: no path of any kind reaches the screen
+  const shown = fn("rootsLine", { D, TOOL: { "claude-code": "Claude Code", codex: "Codex" }, period: "7d", PERIOD_TEXT: { "7d": ["last 7 days"] }, homeShort, present: true })();
+  assert.match(shown.html, /<code title="Claude Code · 0 files">…<\/code>/u);
+  assert.doesNotMatch(shown.html + shown.text, /\.claude\/projects|\.codex\/sessions/u);
   D.hub.local.roots[0].files = 42;
   assert.equal(line().head, "Read 42 transcripts in");
   assert.match(line().html, /None has usage in the last 7 days\./u);
