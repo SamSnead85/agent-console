@@ -53,14 +53,17 @@ function hub({ now = NOW, devices = [{ id: "dev_a", label: "Studio", person: "Yo
 }
 
 function demoHub() {
-  const store = createStore({ dir: null, retentionMs: 8 * DAY, prices: PRICES });
-  const registry = createRegistry({ dir: null });
-  const fleet = createFleetSignals();
-  const activity = createActivityBook();
-  const demo = startDemo({ registry, store, fleet, activity, tickMs: 1e9 });
+  // Demo activity follows the local working day. These contract assertions
+  // need a fixed working hour, not the CI runner's wall clock or timezone.
+  const now = new Date(2026, 8, 24, 13, 30, 20).getTime();
+  const clock = () => now;
+  const store = createStore({ dir: null, retentionMs: 8 * DAY, prices: PRICES, now: clock });
+  const registry = createRegistry({ dir: null, now: clock });
+  const fleet = createFleetSignals({ now: clock });
+  const activity = createActivityBook({ now: clock });
+  const demo = startDemo({ registry, store, fleet, activity, now: clock, tickMs: 1e9 });
   demo.stop();
   const alerts = { list: () => demo.alerts() };
-  const now = Date.now();
   const view = buildConsole({ store, registry, names: demo.names, now, hub: { demo: true },
     alerts: allAlerts({ alerts, fleet }, now), signals: consoleSignals({ alerts, fleet, activity }, now) });
   return { store, registry, demo, view, now };
@@ -462,8 +465,8 @@ test("F6: with no project in Git the totals are unknown with a reason, never mea
   assert.equal(p.withRepo, 0);
   assert.deepEqual([p.totals.commits, p.totals.added, p.totals.removed, p.totals.prsMerged], [null, null, null, null]);
   assert.match(p.totals.reason, /Git/u);
-  const { store: s2, registry: r2, demo } = demoHub();
-  const d = await projectsPayload({ store: s2, registry: r2, names: demo.names, period: "24h", demo: true, now: Date.now() });
+  const { store: s2, registry: r2, demo, now: demoNow } = demoHub();
+  const d = await projectsPayload({ store: s2, registry: r2, names: demo.names, period: "24h", demo: true, now: demoNow });
   assert.ok(d.withRepo > 0);
   assert.ok(Number.isFinite(d.totals.commits));
   assert.equal(d.totals.reason, null);

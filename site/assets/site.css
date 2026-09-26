@@ -1,6 +1,5 @@
 /*
- * Agent Console · open-source download page. Drawn in the Command Center v3 frame and depth system
- * (briefs/command-center-v3-app-frame-and-depth.md; tokens verbatim from scratchpad/preview/cc-v3-app/assets/app.css).
+ * Agent Console · open-source download page.
  * Every colour is a token; every surface sits on a named level; cobalt is the only accent; colour otherwise carries state.
  * Graphite is the default; light is authored, not swapped. IBM Plex is self-hosted (SIL OFL 1.1, fonts/LICENSE-OFL.txt).
  */
@@ -11,7 +10,7 @@
 @font-face { font-family: "IBM Plex Mono"; font-weight: 400; font-style: normal; font-display: swap; src: url("fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2"); }
 @font-face { font-family: "IBM Plex Mono"; font-weight: 500; font-style: normal; font-display: swap; src: url("fonts/ibm-plex-mono-latin-500-normal.woff2") format("woff2"); }
 
-/* ═══════════════════ 1. TOKENS (v3, verbatim) ═══════════════════ */
+/* ═══════════════════ 1. TOKENS ═══════════════════ */
 :root {
   color-scheme: dark;
   --well: #14171d; --chrome: #1a1e26; --panel: #20252f; --panel-2: #262c37; --raised: #2c3340; --overlay: #303845;
@@ -278,7 +277,7 @@ table.t { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .kv dt { color: var(--quiet); }
 .kv dd { margin: 0; color: var(--ink); font-size: 12px; overflow-wrap: anywhere; }
 
-/* the trace: reused from the v3 inspector (request → … → evidence) for how a release is built */
+/* the trace: how a release is built, step by step */
 .trace { position: relative; display: grid; gap: 2px; }
 .trace .step { position: relative; display: grid; grid-template-columns: 26px 1fr; gap: 12px; padding: 8px 0 10px; }
 .trace .step::before { content: ""; position: absolute; left: 12px; top: 26px; bottom: -6px; width: 2px; background: var(--line-2); }

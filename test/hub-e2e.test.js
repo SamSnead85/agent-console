@@ -24,16 +24,33 @@ import { fileURLToPath } from "node:url";
 
 import { CANARIES, writeHome } from "./fixtures/transcripts.js";
 import { readAdminKey, scrapeToken } from "../lib/hub/admin.js";
+import { REPORTER_SEARCH } from "../lib/reporter-search.js";
 
 const BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "bin", "agent-console.mjs");
 const INTENT = { "x-agent-console": "1" };
 
-function freePort() {
+function bindable(port) {
   return new Promise((resolve, reject) => {
     const probe = net.createServer();
     probe.on("error", reject);
-    probe.listen(0, "127.0.0.1", () => { const { port } = probe.address(); probe.close(() => resolve(port)); });
+    probe.listen(port, "127.0.0.1", () => { const { port: bound } = probe.address(); probe.close(() => resolve(bound)); });
   });
+}
+
+/**
+ * A port nothing is listening on: any the system offers, or, given `near`,
+ * one within the reporter's search span of it (the span a reporter looks in
+ * when its console's reporting port moves).
+ */
+async function freePort(near) {
+  if (near === undefined) return bindable(0);
+  for (let d = 1; d <= REPORTER_SEARCH; d += 1) {
+    for (const candidate of [near + d, near - d]) {
+      if (candidate <= 0 || candidate > 65_535) continue;
+      try { return await bindable(candidate); } catch { /* taken: try the next */ }
+    }
+  }
+  throw new Error(`no free port within ${REPORTER_SEARCH} of ${near}`);
 }
 
 function run(args, { env = {}, timeoutMs = 30_000 } = {}) {
@@ -112,7 +129,7 @@ const wholeAnswer = (a) => [a.status, JSON.stringify(a.headers), a.body].join("\
  * way for data to reach a screen or another machine cannot skip the canaries.
  */
 const CONSOLE_READS = ["/api/console", "/api/projects?period=24h", "/api/projects?period=3d", "/api/hello"];
-const REPORTING_READS = ["/join", "/join.js", "/join.css", "/house.css", "/brand/mark.svg", "/favicon.svg", "/api/join/info"];
+const REPORTING_READS = ["/join", "/join.js", "/join.css", "/house.css", "/theme.js", "/brand/mark.svg", "/brand/substrate.jpg", "/favicon.svg", "/api/join/info"];
 /** With --interop, read with the scrape token, never the cookie. */
 const METRICS_READS = ["/metrics"];
 
@@ -496,13 +513,15 @@ test("a reporter follows its console to a new reporting port, by its pinned cert
   assert.equal((await run(["join", (await invite(hub, "You", "Laptop")).link, "--once", "--home", home, "--state-dir", state])).code, 0);
   one.child.kill("SIGTERM");
   await new Promise((r) => one.child.once("exit", r));
-  const two = startHub(["--no-local", "--state-dir", hubState, "--report-port", String(port + 3)]);
+  // A free port the reporter's search reaches, not a fixed guess that may be taken.
+  const movedPort = await freePort(port);
+  const two = startHub(["--no-local", "--state-dir", hubState, "--report-port", String(movedPort)]);
   t.after(() => two.child.kill("SIGKILL"));
   await two.ready;
   const moved = await run(["report", "--once", "--json", "--home", home, "--state-dir", state]);
   assert.equal(moved.code, 0, moved.out + moved.err);
   assert.match(moved.out, /"event":"moved"/u);
-  assert.equal(JSON.parse(fs.readFileSync(path.join(state, "credentials.json"), "utf8")).hub, `https://127.0.0.1:${port + 3}`);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(state, "credentials.json"), "utf8")).hub, `https://127.0.0.1:${movedPort}`);
 });
 
 test("the hub's own machine: nothing of it leaves through the reporting port", async (t) => {

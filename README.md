@@ -28,7 +28,7 @@
 [The same screen in the light theme.](docs/console-demo-light.png)*
 
 ```sh
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --open
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz --open
 ```
 
 You need Node.js 22 or newer. There is no account to create, nothing else to
@@ -62,10 +62,11 @@ You need a Mac, a Linux machine or a Windows PC, and about two minutes.
    [nodejs.org](https://nodejs.org). To check, open a terminal (*Terminal* on a
    Mac, *PowerShell* on Windows) and type `node --version` — it should say
    `v22` or higher.
+   No Node.js? [Install the standalone executable](docs/standalone-install.md) instead.
 2. **Start it.** Paste this into the terminal and press Return:
 
    ```sh
-   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz --open
+   npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz --open
    ```
 
    That fetches Agent Console from this project's GitHub release (nothing to
@@ -154,6 +155,15 @@ screen the link and its code stay masked; **Copy** puts them on the clipboard.
 ![Add a machine: the join link, masked, and the one command](docs/console-demo-join-dark.png)
 
 ![The Team view in demo mode, light](docs/console-demo-team-light.png)
+
+![The Projects view in demo mode, dark: this machine's projects, their Git figures and the sessions behind them](docs/console-demo-projects-dark.png)
+
+**Presenting.** Press `P` (or choose *Present* in ⌘K) before sharing a screen:
+every project, branch, machine and person becomes a stable stand-in name
+(project A, machine 1), the estimates and the console's addresses step back,
+and the strip reads PRESENTING. Press `P` again to stop.
+
+![The Console presenting: stand-in names, no estimates](docs/console-demo-presenting-dark.png)
 
 ### Signing in
 
@@ -256,6 +266,8 @@ import { ANALYSIS_VERSION, contextHealth } from '@lockedinlabs/agent-console/ana
 const health = contextHealth(samples, prices);
 ```
 
+The package is not on the npm registry yet; install it from the release tarball with `npm install https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz`.
+
 `ANALYSIS_VERSION` is 1. `contextHealth` accepts only plain usage data:
 `samples` contains timestamps, token counts and model IDs; `prices` contains
 offline model rates, table version and check date. It returns a plain object
@@ -343,9 +355,9 @@ suite that checks them to the token, are in [docs/accounting.md](docs/accounting
 Add `agent-policy.yaml` at your repository root, then, from that root:
 
 ```sh
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy diff
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy apply
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz policy remove
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz policy diff
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz policy apply
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz policy remove
 ```
 
 `policy diff` shows the proposed Claude Code agents, settings and hooks;
@@ -409,9 +421,9 @@ Nothing leaves that directory.
 out, with the release link:
 
 ```sh
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz join '<join link>'
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz report
-npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.3.0/lockedinlabs-agent-console-0.3.0.tgz leave
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz join '<join link>'
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz report
+npx --yes https://github.com/SamSnead85/agent-console/releases/download/v0.4.0/lockedinlabs-agent-console-0.4.0.tgz leave
 ```
 
 `join` enrols this computer, then keeps reporting. `report` keeps reporting after
@@ -589,9 +601,9 @@ The release page lists its SHA-256 in `SHA256SUMS`, and GitHub keeps a signed
 build provenance attestation for it. To check a file you downloaded:
 
 ```sh
-shasum -a 256 lockedinlabs-agent-console-0.3.0.tgz              # macOS, Linux
-Get-FileHash lockedinlabs-agent-console-0.3.0.tgz               # Windows PowerShell
-gh attestation verify lockedinlabs-agent-console-0.3.0.tgz -R SamSnead85/agent-console
+shasum -a 256 lockedinlabs-agent-console-0.4.0.tgz              # macOS, Linux
+Get-FileHash lockedinlabs-agent-console-0.4.0.tgz               # Windows PowerShell
+gh attestation verify lockedinlabs-agent-console-0.4.0.tgz -R SamSnead85/agent-console
 ```
 
 The standalone executables ([docs/executables.md](docs/executables.md)) are

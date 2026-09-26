@@ -101,7 +101,7 @@ test("the burn median names active minutes and does not call empty history obser
   const values = new Array(60).fill(0);
   const D = { devices: [{}], burn: { reporting: 1 }, now: 59.5 * 60_000,
     series: { "1h": { start: 0, step: 60_000, values } } };
-  const paint = renderer("paintBurnSpark", "  // ── the rest of the day", { D, $, fmt: String });
+  const paint = renderer("paintBurnSpark", "  // ── the rest of the day", { D, $, fmt: String, smooth: () => "" });
   values[20] = 100;
   paint();
   assert.match($("burnMedian").innerHTML, /median active minute <b>100<\/b>/u);
@@ -124,12 +124,7 @@ test("the local Git estimate never divides fleet dollars by local commits", () =
   const local = { totals: { commits: 2, prsMerged: null, added: 0, removed: 0 }, projects: [], withRepo: 0,
     tokens: 100, sessions: 1, demo: false };
   let fleetUsd = 20;
-  const paint = renderer("paintFold", "  // ── scrollable regions", { $, foldFetched: { data: local },
-    period: "1h", PERIOD_TEXT: { "1h": ["last hour", "1 h"] },
-    win: () => ({ tokens: { total: 200 }, cost: { usd: fleetUsd, status: "estimated" }, messages: 3 }),
-    esc: String, fmt: String, money: (n) => "$" + n, plural: (n, word) => `${n} ${word}`,
-    gitN: (v) => (v === null ? "—" : String(v)), gitLines: () => null,
-  });
+  const paint = renderer("paintFold", "  // ── scrollable regions", foldGlobals({ $, foldFetched: { data: local }, win: () => ({ tokens: { total: 200 }, cost: { usd: fleetUsd, status: "estimated" }, messages: 3 }) }));
   paint();
   const estimate = () => $("foldEffortBody").innerHTML.match(/<tr><td>Estimate<\/td><td[^>]*>.*?<\/td><td[^>]*>(.*?)<\/td>/u)?.[1];
   const before = estimate();
@@ -138,4 +133,51 @@ test("the local Git estimate never divides fleet dollars by local commits", () =
   paint();
   assert.equal(estimate(), before, "remote spend cannot change the local Git estimate");
   assert.doesNotMatch(before, /\$[\d.]+ per commit/u);
+});
+
+/** The globals paintFold needs besides the payload: the fitted-line and Git-void helpers as the page defines them, in plain form. */
+function foldGlobals(extra) {
+  return { period: "1h", PERIOD_TEXT: { "1h": ["last hour", "1 h"] }, view: "console", pn: (kind, value) => value, hhmm: () => "",
+    esc: String, fmt: String, money: (n) => "$" + n, plural: (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`,
+    gitN: (v) => (v === null ? "—" : String(v)), gitLines: (t) => (t.added === null || t.removed === null ? "—" : null),
+    gitUnread: (t) => !t || t.commits === null || t.commits === undefined, gitWhy: (t) => (t && t.reason) || "Git figures could not be read on this machine",
+    na: (word, why) => `<span class="na" title="${why}">${word}</span>`,
+    fitLine: (el, parts, tail = "") => { const live = parts.filter((x) => x && x.html); el.innerHTML = live.map((x) => x.html).join(" · "); el.title = live.map((x) => x.text ?? x.html.replace(/<[^>]+>/gu, "")).join(" · ") + tail; },
+    effortTable: () => "", shippedTable: () => "", paintProjectsEffort: () => {}, fleetOf: () => null, ...extra };
+}
+
+test("Git nobody could read is a void with the hub's reason, never 0 commits (F6)", () => {
+  const $ = elements();
+  const reason = "no project here is in a Git repository this console could read";
+  const local = { totals: { commits: null, prsMerged: null, added: null, removed: null, reason }, projects: [{ name: "app", tokens: 10, usd: 1, sessions: 2, repo: null, branches: [], costPerOutcome: { perCommitUsd: null } }], withRepo: 0,
+    tokens: 100, sessions: 1, demo: false, period: { basis: "minutes", sessionsKept: true, branchesKept: true } };
+  const paint = renderer("paintFold", "  // ── scrollable regions", foldGlobals({ $, foldFetched: { data: local }, win: () => ({ tokens: { total: 200 }, cost: { usd: 20, status: "estimated" }, messages: 3 }) }));
+  paint();
+  for (const id of ["effortSum", "shipSum"]) {
+    assert.doesNotMatch($(id).innerHTML, /0 commits/u, `${id} shows a measured zero for Git nobody read`);
+    assert.ok($(id).innerHTML.includes(reason), `${id} carries the hub's reason`);
+    assert.ok($(id).title.includes(reason), `${id} carries the reason on hover`);
+  }
+  assert.doesNotMatch($("shipSum").innerHTML, /\+—|−—|referencing/u, "no line count or PR count stands in for unread Git");
+  // the fold row carries the same summary as the strip button (the phone shows the rows alone)
+  assert.equal($("effortSumRow").innerHTML, $("effortSum").innerHTML);
+  // the folder outside Git is said once over the table, never once per row
+  assert.match($("foldProjBody").innerHTML, /1 of 1 not in Git/u);
+  assert.doesNotMatch($("foldProjBody").innerHTML, /not a Git repository/u);
+});
+
+test("a money figure with records the reporter could not count is a floor, marked with the number (G6)", () => {
+  const start = JS.indexOf("  function costMark(");
+  const end = JS.indexOf("  const droppedOf", start);
+  const costMark = vm.runInNewContext(JS.slice(start, end) + "\ncostMark", { money: (n) => "$" + n.toFixed(2) });
+  const whole = costMark({ usd: 21.26, status: "estimated" }, 0);
+  assert.equal(whole.html, "$21.26");
+  assert.match(whole.title, /Not an invoice/u);
+  const floor = costMark({ usd: 21.26, status: "estimated" }, 3);
+  assert.match(floor.html, /^\$21\.26<em class="part">partial<\/em>$/u, "the mark sits with the number");
+  assert.match(floor.title, /3 messages not counted · list-price estimate, a floor/u);
+  assert.match(costMark({ usd: 21.26, status: "estimated" }, 3, false).html, /^\$21\.26<em class="part">\+<\/em>$/u, "a narrow cell carries the mark alone");
+  assert.match(costMark({ usd: 5, status: "partial" }, 0).html, /partial/u, "a partly unpriced estimate is a floor too");
+  assert.match(costMark({ usd: null, status: "unpriced" }, 3).html, /unpriced/u);
+  assert.equal(costMark({ status: "none" }, 3).html, "—");
 });

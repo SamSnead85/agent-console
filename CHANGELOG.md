@@ -2,92 +2,6 @@
 
 ## Unreleased
 
-- The period control moves Team's and Projects' counts and sparklines too.
-  `/api/console` gives sessions and tokens by tool, machine and person for
-  every period (`laneTotals.periods`), and each machine and person a
-  sparkline per period at the chart's own resolution; each Projects row
-  carries its sparkline for the requested period. Thirty days are read from
-  the daily rollup, which keeps no sessions: their session counts are null
-  with the reason, never the day's count under a month's caption.
-- Git figures nobody could read are unknown, not zero: with no project in a
-  Git repository the console can read, the Projects totals (commits, lines,
-  PR-linked commits) are null with the reason, and the screen shows a dash.
-- `npm run lint`: every JavaScript file parses and every JSON file is valid.
-- Alerts are dated by the transcript line that raised them, not by when it
-  was read, and the stall's five minutes are measured on that clock too. An
-  alert older than the hour, or raised while a first run replays history, is
-  `historical`: listed as earlier, never counted as live, and never a desktop
-  notification. A first start over a month of transcripts no longer fills the
-  last hour with a month of loops.
-- A spike or a stall says how far above normal it is: the session's tokens in
-  the five minutes ending with the alert, its own median five minutes over
-  the day before, and the factor between them. Every alert names its lane.
-- Joined machines can send their alerts (`--share-alerts`) and their tool
-  activity (`--share-tool-activity`), each off unless passed, each counts,
-  kinds, minutes and salted hashes only (docs/COLLECTOR-CONTRACT.md). The
-  console says how many current machines are watched for alerts and names the
-  ones that are not, instead of reading their silence as "no alert".
-- Shared alerts and activity are counted once, per machine, and only where
-  they are covered. Every report says what its run shares (`share`); a
-  machine that turns sharing off, a reporter older than 0.4 and the minutes
-  before the console last started are unavailable with their reason, never
-  zero (`activityCoverage` on each lane, `sharing` on each machine,
-  `alertsCoverage.since`, `reason` and `byDevice`). Activity travels as
-  contributions with salted ids: a resent report, a later batch that failed
-  or a restarted reporter adds nothing, two contributions to one minute both
-  count, and the same session on two machines stays two readings. What the
-  console has not acknowledged is kept in the reporter's cursor file, written
-  with the transcript positions it came from, and sent again under the same
-  ids. Coverage starts when the console hears "on", never earlier, since a
-  run with sharing off may have read past activity nobody counted; and what
-  the reporter's bounded outbox has to drop travels as a loss marker
-  (`lost`), so those minutes read partial (`outbox-overflow`), never whole.
-- One clock rule for alerts and activity: a minute, an alert or a last tool
-  more than two minutes ahead is refused and counted on its machine, never
-  stored, so it never becomes "now"; the five-minute window has two edges.
-- Claude Code tool results and Codex tool calls reach the activity and alert
-  readers. They carry no usage, so the reader used to skip them: most results
-  and Codex calls went uncounted, and a stall alert missed the tool successes
-  it is measured against. Token accounting still never sees these lines.
-- Tool activity, counts only: each tool call is mapped on the machine to one
-  of eight kinds (read, edit, shell, search, web, agent, mcp, other) — never
-  its name, arguments, output, a path or an MCP server's name — and each
-  result to ok or error. Each lane carries its last five minutes of calls by
-  kind, its results and its last tool; a machine that does not share them is
-  marked as such, not shown as idle.
-- Every period is stacked by machine (and, on Projects, by project) at the
-  chart's own resolution — 3 minutes, 15 minutes, 2 hours, a day — over the
-  same span as the headline, so the bands add up to it. The week is also given
-  by this console's local calendar day, with its time zone named.
-- Counts over every lane, not only the 80 sent: sessions by tool, machine,
-  person and project, subagents, and the lanes the list folds away. A
-  subagent whose root last reported more than a day ago is folded under it
-  instead of becoming a lane of its own.
-- Projects: a project is its folder's hash, so two folders called `app` are two
-  rows, each with its parent folder's name; Git is read once per repository.
-  Each project's estimate says whether it is priced, partial (a floor) or
-  unpriced, and the payload's total says the same. The payload carries the
-  whole team's totals for every period at the same clock, and says whether
-  its period keeps branches and sessions (30 days does not).
-- Per machine names its denominator: the machines heard within the period and
-  not removed, from their own figures. A machine whose reporter never said
-  what it could not count has unknown drops (null), never 0, and the console
-  knows since when each machine has said.
-- OTel: a point sent again is dropped by its series and time, cumulative
-  points are counted as ignored, and each telemetry source names what its
-  token total adds up. A series is its resource, scope, metric and point
-  attributes in canonical order, kept only as a salted hash: a retry with its
-  attributes reordered is dropped, and two resources (two
-  `service.instance.id`s) with the same point at the same time both count.
-- `claude-haiku-4-5` prices through its published alias of
-  `claude-haiku-4-5-20251001`; every model the benchmark generator writes has
-  a price.
-- Fixtures and schemas for building against the next payloads:
-  `fixtures/console-v0.4.json`, `fixtures/projects-v0.4.json`,
-  `docs/console-v0.4.schema.json`, `docs/projects-v0.4.schema.json`
-  (`node scripts/api-fixtures.mjs` regenerates the fixtures from the demo).
-- README: a "No Node.js?" path under Start here, and the nine standalone
-  files listed under Checking a download.
 - The day's alerts are counted, not read off the list: `/api/console`
   `alertsToday` counts every alert raised or accepted today, by its own time
   on the console's calendar, and keeps the count in the state directory
@@ -105,6 +19,54 @@
   machine's first "on" came within one live report interval of the
   console's start; heard later, or after an "off", it is "sharing started".
 
+## 0.4.0 — 2026-09-25
+
+### Console and team visibility
+
+- Redesign Console, Team and Projects with compact instrument panels, layered
+  activity charts, keyboard navigation, light and dark themes, and mobile layouts.
+  Session rows and inspectors show the same activity readings and coverage.
+- Make period selection apply consistently to headline totals, people, machines,
+  projects and charts. Count all observed sessions, including those outside the
+  displayed row limit. Mark session and branch history that was not retained.
+- Show partial estimates as lower bounds and unavailable readings with their
+  reason. Unreadable Git history is never reported as zero commits.
+- Separate current alerts from alerts found while importing historical logs.
+  Include the affected session and its observed baseline with spike and stall alerts.
+- Add presenting mode with aliases for people, machines, projects and branches,
+  including inspector addresses and the Add a machine dialog.
+
+### Reporting reliability
+
+- Add optional sharing of alerts and tool activity using fixed categories, counts,
+  timestamps and salted identifiers. Raw commands, arguments and tool output stay
+  on the source machine. Sharing is disabled unless explicitly enabled.
+- Deduplicate activity by device and contribution, including lost responses,
+  later-batch failures and reporter restarts. Distinct contributions in the same
+  minute remain distinct.
+- Save pending activity and alerts atomically with their source positions. Report
+  bounded-outbox losses and unavailable coverage after opt-out or Console restart.
+  Coverage starts when sharing is observed; missing readings are never assumed zero.
+- Preserve valid loss intervals when overflow includes observations within the
+  two-minute clock-skew allowance. Activity and alert overflow no longer block
+  delivery of valid token records. Excessively future-dated readings remain rejected.
+- Include Claude Code tool results and Codex tool calls in activity analysis without
+  adding them to token usage.
+- Deduplicate OpenTelemetry points using resource, scope and metric-series identity.
+  Reordered attributes are treated as retries; distinct resources remain separate.
+
+### Distribution and integration
+
+- Publish versioned Console and Projects payload schemas with synthetic fixtures.
+- Clarify GitHub release installation, unsigned native downloads, and the current
+  availability of npm and Homebrew distribution.
+- Add browser checks for accessibility, keyboard interaction, presentation privacy,
+  desktop and mobile layouts, and synthetic multi-period data.
+
+Upgrade the Console before its reporters. Version 0.4 reporters with shared activity
+or alerts require a 0.4 Console; older reporters remain readable with unavailable
+activity coverage clearly identified. Cost figures remain estimates, not invoices.
+
 ## 0.3.0 — 2026-09-25
 
 - Six things the screen said that were not so. On Team and Projects the
@@ -119,7 +81,7 @@
   row is a door — to its lane, or to the alert list that carries it —
   by pointer and by keyboard. Projects fills its frame: the sessions behind
   the projects take the height the table leaves.
-- Three residuals the final captures still showed. Projects' Effort lines
+- Three more layout fixes. Projects' Effort lines
   wrap their figures whole under the label instead of cutting a 30-day
   estimate or the word after a number. Every row that opens an inspector —
   the machines on Console and in the agent tree, the people on Team, the
@@ -422,10 +384,10 @@ carrier-grade NAT addresses (100.64.0.0/10) must now be started with
   platform, checks the version they print, and on Linux their attestation.
 - **npm** receives the exact package file on the release, after it installed on
   macOS, Linux and Windows, checked against `SHA256SUMS` and its attestation,
-  with npm provenance. A tag push alone publishes nothing; without the owner's
-  `NPM_TOKEN` the release says so and skips npm.
+  with npm provenance. A tag push alone publishes nothing; without an `NPM_TOKEN` repository
+  secret the release says so and skips npm.
 - **A Homebrew formula** rendered only from a release's archive checksums
-  (`scripts/render-homebrew-formula.mjs`), for a tap the owner creates.
+  (`scripts/render-homebrew-formula.mjs`), for a Homebrew tap a maintainer publishes.
 - **A team hub image** for Linux amd64 and arm64 (arm64 built under QEMU), non-root,
   with a `HEALTHCHECK` on its join page. Pull requests build and start both
   architectures; a release pushes only the version tag, after starting it, and
