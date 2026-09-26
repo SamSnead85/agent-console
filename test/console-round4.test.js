@@ -31,7 +31,7 @@ import { test } from "node:test";
 import fs from "node:fs";
 import vm from "node:vm";
 
-const read = (file) => fs.readFileSync(new URL("../public/" + file, import.meta.url), "utf8");
+const read = (file) => fs.readFileSync(new URL("../public/" + file, import.meta.url), "utf8").replace(/\r\n/gu, "\n");
 const JS = read("console.js");
 const CSS = read("console.css");
 const JOIN_CSS = read("join.css");

@@ -745,6 +745,78 @@ await section("presenting", async () => {
   }
 });
 
+// Previously visited panes and closed dialogs remain in the document. Distinct
+// synthetic names make a complete source scan unambiguous, including attributes.
+await section("presenting after navigation", async () => {
+  const names = [
+    ["Studio", "Presentation machine canary"],
+    ["You", "Presentation person canary"],
+    ["atlas-web", "presentation-project-canary"],
+  ];
+  const host = "presentation-console.example.test";
+  const canaries = [...names.map(([, value]) => value), host];
+  for (const width of [1440, 390]) {
+    const context = await browser.newContext({ viewport: { width, height: SIZES[width][1] } });
+    try {
+      await context.route(/\/api\/(?:console|projects)(?:\?|$)/u, async (route) => {
+        const response = await route.fetch();
+        let text = JSON.stringify(await response.json());
+        for (const [from, to] of names) text = text.split(JSON.stringify(from)).join(JSON.stringify(to));
+        const data = JSON.parse(text);
+        if (data.hub) {
+          data.hub.demo = false;
+          data.hub.listen.network = true;
+          data.hub.urls = [`https://${host}:6788`];
+        }
+        await route.fulfill({ response, json: data });
+      });
+      const page = await context.newPage();
+      await page.goto(await signInUrl(hubs[0]), { waitUntil: "domcontentloaded" });
+      await settled(page);
+      await page.evaluate(() => document.querySelector('.tab[data-view="team"]').click());
+      await page.waitForSelector("#peopleTable .rowbtn");
+      await page.locator("#peopleTable .rowbtn").first().click();
+      await page.waitForSelector("#inspectDialog[open]");
+      await page.keyboard.press("Escape");
+      await page.waitForSelector("#inspectDialog[open]", { state: "hidden" });
+      await page.evaluate(() => document.querySelector('.tab[data-view="projects"]').click());
+      await page.waitForSelector("#projTable .rowbtn");
+      await page.evaluate(() => document.querySelector('.tab[data-view="console"]').click());
+      // The hidden Projects pane still holds a different period's last reading.
+      await page.evaluate(() => document.querySelector('#winSeg button[data-w="7d"]').click());
+      await page.evaluate(() => document.getElementById("addBtn").click());
+      await page.waitForSelector("#addDialog[open]");
+      await page.keyboard.press("Escape");
+      await page.waitForSelector("#addDialog[open]", { state: "hidden" });
+      await page.evaluate(() => document.getElementById("palBtn").click());
+      await page.waitForSelector("#pal[open]");
+      await page.keyboard.press("Escape");
+      await page.waitForSelector("#pal[open]", { state: "hidden" });
+      const before = await page.evaluate(() => document.documentElement.outerHTML);
+      if (!canaries.every((value) => before.includes(value))) {
+        fail(`${width}: privacy fixture did not render every canary before presenting`);
+        continue;
+      }
+      for (const round of ["first toggle", "second toggle"]) {
+        await page.keyboard.press("p");
+        await page.waitForFunction(() => !document.getElementById("presentStamp").hidden);
+        for (const phase of ["immediately", "after a poll"]) {
+          if (phase === "after a poll") await page.waitForTimeout(2600);
+          const outer = await page.evaluate(() => document.documentElement.outerHTML);
+          const leaked = canaries.filter((value) => outer.includes(value));
+          if (leaked.length) fail(`${width}: ${round}, ${phase}: ${leaked.length} private canaries remain in the full document`);
+          else ok(`${width}: ${round}, ${phase}: hidden panes, closed dialogs and network hints contain no private canaries`);
+        }
+        await page.keyboard.press("p");
+        await page.waitForFunction(() => document.getElementById("presentStamp").hidden);
+        const restored = await page.locator("#reach").getAttribute("title");
+        if (!restored.includes(host)) fail(`${width}: ordinary mode did not restore the network tooltip`);
+        else ok(`${width}: ordinary mode restores its network tooltip`);
+      }
+    } finally { await context.close(); }
+  }
+});
+
 await browser.close();
 process.stdout.write(failures.length ? `\n${failures.length} bar(s) missed:\n${failures.map((f) => "  - " + f).join("\n")}\n` : "\nevery bar met\n");
 process.stdout.write(`${checks} checks · ${failures.length} failed\n`);

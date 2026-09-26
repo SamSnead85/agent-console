@@ -25,7 +25,7 @@ import { test } from "node:test";
 import fs from "node:fs";
 import vm from "node:vm";
 
-const read = (file) => fs.readFileSync(new URL("../public/" + file, import.meta.url), "utf8");
+const read = (file) => fs.readFileSync(new URL("../public/" + file, import.meta.url), "utf8").replace(/\r\n/gu, "\n");
 const JS = read("console.js");
 const CSS = read("console.css");
 const HOUSE = read("house.css");
@@ -195,7 +195,8 @@ test("R3-04/R3-05/R3-07/R3-08/R3-12/R3-15: the CSS and source shapes of the smal
 test("U1: an empty console says where it looked, in mono, with the flag that points it elsewhere", () => {
   const D = { hub: { local: { enabled: true, roots: [{ tool: "claude-code", path: "/Users/someone/.claude/projects", exists: true, files: 0 }, { tool: "codex", path: "/Users/someone/.codex/sessions", exists: false, files: 0 }] } } };
   const homeShort = arrow("homeShort");
-  const line = fn("rootsLine", { D, TOOL: { "claude-code": "Claude Code", codex: "Codex" }, period: "7d", PERIOD_TEXT: { "7d": ["last 7 days"] }, homeShort });
+  const helpers = { D, TOOL: { "claude-code": "Claude Code", codex: "Codex" }, period: "7d", PERIOD_TEXT: { "7d": ["last 7 days"] }, homeShort };
+  const line = fn("rootsLine", { ...helpers, present: false });
   const r = line();
   assert.equal(r.found, 0);
   assert.equal(r.head, "No Claude Code or Codex transcript found. Looked in");
@@ -205,6 +206,13 @@ test("U1: an empty console says where it looked, in mono, with the flag that poi
   D.hub.local.roots[0].files = 42;
   assert.equal(line().head, "Read 42 transcripts in");
   assert.match(line().html, /None has usage in the last 7 days\./u);
+  D.hub.local.roots[0].path = "/srv/private-project/claude/projects";
+  D.hub.local.roots[1].path = "/srv/private-project/codex/sessions";
+  const masked = fn("rootsLine", { ...helpers, present: true })();
+  assert.doesNotMatch(masked.html + masked.text, /private-project|\/srv\//u);
+  assert.match(masked.html, /Folder 1[\s\S]*Folder 2/u);
+  assert.equal(masked.found, 42, "presenting preserves the observed file count");
+  assert.match(line().html, /\/srv\/private-project\/claude\/projects/u, "ordinary view retains useful source locations");
   D.hub.local.roots = [];
   assert.equal(line(), null, "a 0.4 hub without roots says nothing");
   assert.match(JS, /: looked && !looked\.found \? \["No Claude Code or Codex transcript found on this machine", ""\]/u);

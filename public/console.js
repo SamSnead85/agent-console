@@ -331,6 +331,12 @@
     }
   }
 
+  function reachHint() {
+    if (!D || present) return "";
+    return D.hub.demo ? "Demo mode: nothing is read and no machine can join."
+      : D.hub.listen.network ? "Other machines can join at " + D.hub.urls.join(", ") + ". The console itself answers only here."
+      : "Only this machine can reach this console. Start it with --listen 0.0.0.0 to add other computers.";
+  }
   function onData() {
     document.body.classList.remove("offline");
     document.body.dataset.demo = String(Boolean(D.hub.demo));
@@ -338,11 +344,8 @@
     const net = D.hub.listen.network;
     $("reach").classList.toggle("network", net);
     $("reachText").textContent = D.hub.demo ? "Synthetic team" : net ? "Accepting machines on this network" : "This machine only";
-    // the addresses name this machine on the network: kept off the screen while presenting
-    $("reach").dataset.title = D.hub.demo ? "Demo mode: nothing is read and no machine can join."
-      : net ? "Other machines can join at " + D.hub.urls.join(", ") + ". The console itself answers only here."
-      : "Only this machine can reach this console. Start it with --listen 0.0.0.0 to add other computers.";
-    $("reach").title = present ? "" : $("reach").dataset.title;
+    // Network addresses stay in memory while presenting, never in a hidden attribute.
+    $("reach").title = reachHint();
     const reporting = D.devices.filter((d) => d.status === "reporting").length;
     const current = currentDevices().length;
     $("tabTeam").textContent = current ? reporting + "/" + current : "0";
@@ -628,10 +631,11 @@
     if (!roots.length) return null;
     const found = roots.reduce((a, r) => a + (r.exists && Number.isFinite(r.files) ? r.files : 0), 0);
     const held = (r) => (r.exists === false ? "not there" : r.exists === null ? "not read yet" : plural(r.files || 0, "file"));
-    const list = roots.map((r) => `<code title="${esc(TOOL[r.tool] || r.tool)} · ${esc(held(r))}">${esc(homeShort(r.path))}</code> <span class="held">(${esc(held(r))})</span>`).join(", ");
+    const folder = (r, i) => present ? `Folder ${i + 1}` : homeShort(r.path);
+    const list = roots.map((r, i) => `<code title="${esc(TOOL[r.tool] || r.tool)} · ${esc(held(r))}">${esc(folder(r, i))}</code> <span class="held">(${esc(held(r))})</span>`).join(", ");
     const hint = `<span class="hint">Elsewhere? Start with <code>--claude-root &lt;folder&gt;</code> or <code>--codex-root &lt;folder&gt;</code>, or set <code>CLAUDE_CONFIG_DIR</code> or <code>CODEX_HOME</code>.</span>`;
     return { found, head: found ? `Read ${plural(found, "transcript")} in` : "No Claude Code or Codex transcript found. Looked in", html: `<span class="roots">${list}.</span> ${found ? `<span class="hint">None has usage in the ${esc(PERIOD_TEXT[period][0])}.</span> ` : ""}${hint}`,
-      text: `${found ? `read ${plural(found, "transcript")} in` : "looked in"} ${roots.map((r) => `${homeShort(r.path)} (${held(r)})`).join(", ")} · elsewhere: --claude-root, --codex-root, CLAUDE_CONFIG_DIR, CODEX_HOME` };
+      text: `${found ? `read ${plural(found, "transcript")} in` : "looked in"} ${roots.map((r, i) => `${folder(r, i)} (${held(r)})`).join(", ")} · elsewhere: --claude-root, --codex-root, CLAUDE_CONFIG_DIR, CODEX_HOME` };
   }
   // A path under the home directory is written with ~ (R3-10): the screen never carries the account's name in a path
   const homeShort = (p) => String(p ?? "").replace(/^(?:\/Users\/[^/\s'"]+|\/home\/[^/\s'"]+|[A-Za-z]:\\Users\\[^\\\s'"]+)(?=[\\/]|$)/u, "~");
@@ -2039,14 +2043,21 @@
     present = Boolean(on);
     document.body.toggleAttribute("data-present", present);
     $("presentStamp").hidden = !present;
-    $("reach").title = present ? "" : $("reach").dataset.title || "";
+    $("reach").title = reachHint();
     // every row takes its new name at once, not at its own moment inside the poll interval; a hover's cached title (data-t) is dropped too, so no pre-presenting name survives in an attribute
     for (const rows of [laneRows, fillRows, coldRows, projLaneRows]) for (const row of rows.values()) row._painted = false;
     for (const el of document.querySelectorAll("[data-t]")) delete el.dataset.t;
-    if (D) { paintAll(); if (foldFetched.data) paintFold(); if (view === "projects") loadProjects(true); }
+    if (D) {
+      paintAll();
+      // Previously visited panes remain in the document even when hidden.
+      paintTeam();
+      if (foldFetched.data) paintFold();
+      if (projCache) loadProjects(true);
+      else if (view === "projects") loadProjects();
+    }
     // an open inspector's address takes the stand-in too, at once
     if (inspect.open && inspectDialog.open && inspect.kind !== "lane") setHash(`${view}/${inspect.kind}/${idInUrl(inspect.kind, inspect.id)}`);
-    if (addDialog.open) $("peopleList").innerHTML = present ? "" : (D ? D.people : []).map((p) => `<option value="${esc(p.person)}"></option>`).join("");
+    $("peopleList").innerHTML = present || !addDialog.open ? "" : (D ? D.people : []).map((p) => `<option value="${esc(p.person)}"></option>`).join("");
     // the restart command on the open sheet takes its masks at once (R3-09): no name and no home path survives in the DOM while presenting
     if (D && D.hub.networkCommand) $("networkCmdShown").textContent = shownCommand(D.hub.networkCommand);
     toast(present ? "Presenting: names are stand-ins until you press P again." : "Presenting is off: real names are back.");
@@ -2589,7 +2600,9 @@
     if (!projCache) body.innerHTML = `<tr><td colspan="14">Reading this machine…</td></tr>`;
     try {
       let p = projCache;
-      if (!fromCache || !p || (p.period && p.period.id !== period)) {
+      // A privacy redraw must replace old names synchronously, before any network wait.
+      // Opening Projects or changing period calls this without fromCache and refreshes it.
+      if (!fromCache || !p) {
         const r = await fetch("/api/projects?period=" + period, { headers: HEADERS });
         p = await r.json();
         if (!r.ok) throw new Error(p.reason || String(r.status));
@@ -2766,7 +2779,13 @@
   }
   $("addBtn").addEventListener("click", openAdd);
   addDialog.addEventListener("click", (ev) => { if (ev.target.closest("[data-close]")) closeAdd(); });
-  addDialog.addEventListener("close", () => clearSecret());
+  addDialog.addEventListener("close", () => {
+    clearSecret();
+    $("addForm").reset();
+    $("peopleList").replaceChildren();
+    $("linkSay").textContent = "—";
+    $("joinStatus").textContent = "";
+  });
   function closeAdd() { if (addDialog.open) addDialog.close(); }
   function clearSecret() {
     // The link is a credential until it is used or expires. It is not kept
@@ -2862,7 +2881,12 @@
     paintInspect();
     openSheet(inspectDialog, `${view}/${kind}/${idInUrl(kind, id)}`, from);
   }
-  inspectDialog.addEventListener("close", () => { inspect.open = false; });
+  inspectDialog.addEventListener("close", () => {
+    inspect.open = false;
+    $("inspectTitle").textContent = "—";
+    $("inspectBody").replaceChildren();
+    $("inspectFoot").replaceChildren();
+  });
   document.addEventListener("click", (ev) => {
     const door = ev.target.closest("[data-inspect]"); if (!door) return;
     const other = ev.target.closest("button, a");
@@ -3005,6 +3029,7 @@
   /* Everything reachable is one keystroke away from every view, and what is
      not reachable right now is listed too, struck through with the reason. */
   const pal = $("pal"), palq = $("palq"), palres = $("palres");
+  pal.addEventListener("close", () => { palq.value = ""; palres.replaceChildren(); });
   let palSel = 0, palRows = [];
   const PERIODS = ["1h", "24h", "7d", "30d"];
   function palItems() {

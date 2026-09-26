@@ -23,7 +23,9 @@
 - Prefer reachable local network adapters for join links, support an explicit
   advertised address, and explain Windows Subsystem for Linux networking.
 - Keep private names and command paths out of the full document source while
-  presenting, including script content and attributes.
+  presenting, including configured folders, network hints, previously visited
+  panes and closed dialogs. Check the complete document after polling and
+  repeated mode changes at desktop and phone widths.
 
 ## 0.4.0 — 2026-09-25
 
