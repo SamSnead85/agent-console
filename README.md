@@ -50,8 +50,9 @@ token counts and salted hashes, and never a prompt, a reply, a file path or a
 file's contents. A test pushes transcripts full of planted canaries through
 the real reporter and the real hub and checks every byte that crosses the wire.
 The console itself sends nothing anywhere: no telemetry, no update check, no
-account. (One opt-in, `--share-project-names`, also sends each project
-folder's *name*, never its path. It is off unless you pass it.)
+account. (Three opt-ins, each off unless you pass it: `--share-project-names`
+sends each project folder's *name*, never its path; `--share-alerts` and
+`--share-tool-activity` send alerts and tool calls as kinds and counts.)
 
 ## Start here
 
@@ -76,6 +77,21 @@ You need a Mac, a Linux machine or a Windows PC, and about two minutes.
    The first start reads the Claude Code and Codex history already on this
    computer. With months of it that can take a minute; the terminal counts the
    files as it goes, and so does the console.
+
+**No Node.js?** Each release also carries one executable per platform with
+Node.js inside, and an installer that checks it before installing
+([docs/standalone-install.md](docs/standalone-install.md)). On a Mac or Linux:
+
+```sh
+curl -fsSLO https://raw.githubusercontent.com/SamSnead85/agent-console/main/install.sh && sh ./install.sh
+```
+
+On Windows, [docs/standalone-install.md](docs/standalone-install.md#windows-powershell)
+has the PowerShell line (`install.ps1`). Both installers compare the
+executable's SHA-256 with the release's `SHA256SUMS` line for it and install
+nothing if it differs; then `agent-console --open` starts the console. The
+files, and how to check one yourself, are under
+[Checking a download](#checking-a-download).
 
 **Or download it.** On the [GitHub page](https://github.com/SamSnead85/agent-console),
 press the green **Code** button, then **Download ZIP**, and unzip it. You get a
@@ -138,6 +154,15 @@ screen the link and its code stay masked; **Copy** puts them on the clipboard.
 ![Add a machine: the join link, masked, and the one command](docs/console-demo-join-dark.png)
 
 ![The Team view in demo mode, light](docs/console-demo-team-light.png)
+
+![The Projects view in demo mode, dark: this machine's projects, their Git figures and the sessions behind them](docs/console-demo-projects-dark.png)
+
+**Presenting.** Press `P` (or choose *Present* in ⌘K) before sharing a screen:
+every project, branch, machine and person becomes a stable stand-in name
+(project A, machine 1), the estimates and the console's addresses step back,
+and the strip reads PRESENTING. Press `P` again to stop.
+
+![The Console presenting: stand-in names, no estimates](docs/console-demo-presenting-dark.png)
 
 ### Signing in
 
@@ -419,7 +444,21 @@ reporter's own restart line names that checked file.
 Options: `--name` (what to call this computer), `--interval <seconds>` (2 to
 3600; over 60 the console shows it as reporting periodically), `--background`,
 `--once`, `--state-dir`, `--home`, `--claude-root`, `--codex-root`,
-`--share-project-names`, `--json`. An unknown option is refused, not ignored.
+`--share-project-names`, `--share-alerts`, `--share-tool-activity`, `--json`.
+An unknown option is refused, not ignored.
+
+Two more opt-ins, each off unless passed on that run, let the console see
+more of this computer. `--share-alerts` sends the alerts it raises (repeated
+tool call, burn spike, spending without a tool success) as a kind, a minute, a
+salted session hash and one count; without it the console names this computer
+as *not watched* rather than showing its silence as "no alert".
+`--share-tool-activity` sends how many tool calls each session made per minute
+by kind (read, edit, shell, search, web, agent, mcp, other) and how many results
+were errors — never a tool's name, its arguments or output, a path, or an MCP
+server's name. Every report says which of the two its run shares: run without
+one and the console shows that computer's alerts or activity as unavailable
+from then on, never as zero. What the console has not yet acknowledged waits
+beside the reporter's cursor and is sent again, and counted once.
 
 `--background` keeps reporting after the window closes. To start reporting at
 every login, [docs/BACKGROUND.md](docs/BACKGROUND.md) has launchd, systemd and
@@ -437,7 +476,9 @@ never leaves the reporting computer. The machine's name is whatever the
 person who made the link typed (or `--name` when joining). With
 `--share-project-names` on that run, also the last part of each project
 folder's name, reduced to letters, digits and dashes; run without it and names
-stop at once.
+stop at once. With `--share-alerts`, each alert as a kind, a minute, a session
+hash and a count; with `--share-tool-activity`, tool calls per minute counted
+by one of eight kinds, and results counted as ok or error.
 
 What never leaves: prompts, replies, thinking, tool input and output, file
 paths, file names, file contents, git branches, command lines, credentials.
@@ -561,6 +602,13 @@ shasum -a 256 lockedinlabs-agent-console-0.3.0.tgz              # macOS, Linux
 Get-FileHash lockedinlabs-agent-console-0.3.0.tgz               # Windows PowerShell
 gh attestation verify lockedinlabs-agent-console-0.3.0.tgz -R SamSnead85/agent-console
 ```
+
+The standalone executables ([docs/executables.md](docs/executables.md)) are
+nine more files on the same page, each with its line in `SHA256SUMS` and the
+same attestation: `agent-console-darwin-arm64`, `agent-console-darwin-x64`,
+`agent-console-linux-x64`, `agent-console-linux-arm64` and
+`agent-console-win32-x64.exe`, and a `.tar.gz` of each of the first four.
+Check one the same way, by its own file name.
 
 ## The check in every command
 

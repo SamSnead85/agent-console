@@ -58,6 +58,13 @@
   --elev: 0 1px 2px rgba(28, 24, 16, .08), 0 16px 40px rgba(28, 24, 16, .12);
   --elev2: 0 1px 2px rgba(28, 24, 16, .06), 0 8px 22px rgba(28, 24, 16, .08);
   --elev-tile: 0 1px 1px rgba(28, 24, 16, .05), 0 6px 16px rgba(28, 24, 16, .06);
+  /* a card is an object: a surface that catches light at the top, a rim, and a shadow that gets deeper the further it lifts */
+  --card-a: #FFFFFF; --card-b: #F6F4F0;
+  --card-rim: rgba(255, 255, 255, .95); --card-edge: rgba(28, 24, 16, .12);
+  --card-shadow: 0 1px 1px rgba(28, 24, 16, .08), 0 2px 5px rgba(28, 24, 16, .08), 0 12px 28px -6px rgba(28, 24, 16, .2), 0 28px 56px -18px rgba(28, 24, 16, .22);
+  --card-lift: 0 2px 3px rgba(28, 24, 16, .1), 0 6px 12px rgba(28, 24, 16, .1), 0 20px 40px -8px rgba(28, 24, 16, .26), 0 40px 72px -20px rgba(28, 24, 16, .28);
+  --card-press: 0 1px 1px rgba(28, 24, 16, .1), 0 4px 10px -4px rgba(28, 24, 16, .2);
+  --tray: #E2DFD8; --tray-edge: rgba(28, 24, 16, .12);
   --btn-rim: rgba(255, 255, 255, .18);
   --stamp-edge: rgba(28, 24, 16, .3);
   /* type */
@@ -92,6 +99,12 @@
     --elev: 0 1px 0 rgba(0, 0, 0, .5), 0 24px 60px rgba(0, 0, 0, .6);
     --elev2: 0 1px 0 rgba(0, 0, 0, .45), 0 12px 32px rgba(0, 0, 0, .5);
     --elev-tile: 0 1px 0 rgba(0, 0, 0, .4), 0 6px 16px rgba(0, 0, 0, .34);
+    --card-a: #161B24; --card-b: #0F1319;
+    --card-rim: rgba(255, 255, 255, .11); --card-edge: rgba(255, 255, 255, .07);
+    --card-shadow: 0 1px 0 rgba(0, 0, 0, .55), 0 3px 6px rgba(0, 0, 0, .35), 0 12px 28px -6px rgba(0, 0, 0, .6), 0 28px 56px -18px rgba(0, 0, 0, .7);
+    --card-lift: 0 2px 0 rgba(0, 0, 0, .55), 0 8px 14px rgba(0, 0, 0, .4), 0 22px 44px -8px rgba(0, 0, 0, .65), 0 44px 80px -20px rgba(0, 0, 0, .7);
+    --card-press: 0 1px 0 rgba(0, 0, 0, .55), 0 4px 10px -4px rgba(0, 0, 0, .5);
+    --tray: #06080C; --tray-edge: rgba(255, 255, 255, .05);
     --btn-rim: rgba(255, 255, 255, .18);
     --stamp-edge: rgba(255, 255, 255, .2);
   }
@@ -119,6 +132,12 @@
   --elev: 0 1px 0 rgba(0, 0, 0, .5), 0 24px 60px rgba(0, 0, 0, .6);
   --elev2: 0 1px 0 rgba(0, 0, 0, .45), 0 12px 32px rgba(0, 0, 0, .5);
   --elev-tile: 0 1px 0 rgba(0, 0, 0, .4), 0 6px 16px rgba(0, 0, 0, .34);
+  --card-a: #161B24; --card-b: #0F1319;
+  --card-rim: rgba(255, 255, 255, .11); --card-edge: rgba(255, 255, 255, .07);
+  --card-shadow: 0 1px 0 rgba(0, 0, 0, .55), 0 3px 6px rgba(0, 0, 0, .35), 0 12px 28px -6px rgba(0, 0, 0, .6), 0 28px 56px -18px rgba(0, 0, 0, .7);
+  --card-lift: 0 2px 0 rgba(0, 0, 0, .55), 0 8px 14px rgba(0, 0, 0, .4), 0 22px 44px -8px rgba(0, 0, 0, .65), 0 44px 80px -20px rgba(0, 0, 0, .7);
+  --card-press: 0 1px 0 rgba(0, 0, 0, .55), 0 4px 10px -4px rgba(0, 0, 0, .5);
+  --tray: #06080C; --tray-edge: rgba(255, 255, 255, .05);
   --btn-rim: rgba(255, 255, 255, .18);
   --stamp-edge: rgba(255, 255, 255, .2);
 }
@@ -165,6 +184,18 @@ button { font: inherit; color: inherit; }
 }
 /* the per-row stamp: the same mark, small enough to sit beside a state word */
 .stamp.sm { padding: 1px 4px 1px 5px; letter-spacing: .1em; font-size: calc(12px * var(--k)); line-height: 1.1; }
+.stamp[hidden] { display: none; }
+
+/* the card: one surface, lit from the top, standing off the tray on its own shadow; it lifts under the pointer and settles under a press */
+.card {
+  position: relative; border-radius: 10px;
+  background: linear-gradient(180deg, var(--card-a), var(--card-b));
+  box-shadow: inset 0 1px 0 var(--card-rim), inset 0 0 0 1px var(--card-edge), var(--card-shadow);
+  transition: transform .2s var(--spring), box-shadow .22s var(--ease);
+}
+.card.door:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 var(--card-rim), inset 0 0 0 1px var(--card-edge), var(--card-lift); }
+.card.door:active { transform: translateY(0) scale(.995); box-shadow: inset 0 1px 0 var(--card-rim), inset 0 0 0 1px var(--card-edge), var(--card-press); }
+.tray { background: var(--tray); box-shadow: inset 0 0 0 1px var(--tray-edge), inset 0 1px 3px rgba(0, 0, 0, .18); }
 
 .btn {
   display: inline-flex; align-items: center; gap: calc(7px * var(--k));

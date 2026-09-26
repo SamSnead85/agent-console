@@ -20,7 +20,7 @@ test('shared alert rules detect repeated calls, session spike and stalled spend 
   observe('usage', 6 * 60_000, { tokens: 600_000 });
   assert.ok(events.some((event) => event.kind === 'stall'));
   assert.ok(events.every((event) => Object.keys(event).every((key) =>
-    ['kind', 'sessionHash', 'at', 'sourceAt', 'tokens'].includes(key))));
+    ['kind', 'sessionHash', 'at', 'sourceAt', 'seenAt', 'tokens'].includes(key))));
   const projected = analyzeAlertEvent({ ...state, rawCommand: 'CANARY-PRIVATE-COMMAND' },
     { kind: 'success', sessionHash: 'salted-session', at: 7 * 60_000 });
   assert.ok(!JSON.stringify(projected).includes('CANARY-PRIVATE-COMMAND'));

@@ -39,9 +39,15 @@ test("the console is a semantic page with named regions", () => {
   assert.match(HTML, /id="cLanes"[^>]*tabindex="0"[^>]*role="region"[^>]*aria-label="[^"]+"/u);
   assert.match(HTML, /id="toast" role="status" aria-live="polite"/u);
   assert.match(HTML, /id="joinStatus" role="status" aria-live="polite"/u);
-  for (const id of ["addDialog", "inspectDialog", "contextDialog", "alertPanel"]) {
+  for (const id of ["addDialog", "inspectDialog", "alertPanel"]) {
     assert.match(HTML, new RegExp(`<dialog class="sheet dock" id="${id}" aria-labelledby="[^"]+"`, "u"), id + " is not a docked sheet");
   }
+  // one door, one content: a lane's context lives in its inspector, and the context button opens the inspector at that section
+  assert.doesNotMatch(HTML, /id="contextDialog"/u, "a second sheet repeats the inspector's context block");
+  assert.match(JS, /function showContext\(lane, from = null\) \{\s*openInspect\("lane", lane\.key, from\);/u);
+  assert.match(HTML + JS, /id="inspectContext"/u);
+  // the address opens one thing beside the canvas: whatever it does not name closes first
+  assert.match(JS, /for \(const d of document\.querySelectorAll\("dialog\[open\]"\)\) d\.close\(\);/u);
   // Remove confirms inside the machine's inspector, never in a modal that blanks the frame.
   assert.doesNotMatch(HTML, /id="revokeDialog"/u);
   assert.match(JS, /data-revoke-go=/u);
@@ -114,8 +120,14 @@ test("the dark theme is declared twice, so the toggle and the system agree", () 
 
 test("each lane's buttons are named with their reading and their row", () => {
   assert.doesNotMatch(JS, /aria-label="Show agent tree"|aria-label="Session context details"/u, "every row's buttons share one name");
-  assert.match(JS, /agButton\.setAttribute\("aria-label", [^\n]*l\.agents\.live[^\n]*l\.project\.name/u);
-  assert.match(JS, /cx\.querySelector\("button"\)\.setAttribute\("aria-label"[\s\S]{0,200}Context \$\{fmt\(l\.context\.latest\)\}[\s\S]{0,120}l\.project\.name/u);
+  // the row's name goes through pn(), so presenting swaps it for a stand-in in the label too
+  assert.match(JS, /const projectName = pn\("project", l\.project\.name\);/u);
+  assert.match(JS, /agButton\.setAttribute\("aria-label", [^\n]*l\.agents\.live[^\n]*projectName/u);
+  assert.match(JS, /cx\.querySelector\("button"\)\.setAttribute\("aria-label"[\s\S]{0,200}Context \$\{fmt\(l\.context\.latest\)\}[\s\S]{0,120}projectName/u);
+  // every lane row is a button named for its lane, and the keyboard lands on it
+  assert.match(JS, /row\.setAttribute\("role", "button"\);/u);
+  assert.match(JS, /row\.setAttribute\("aria-label", `\$\{projectName\}/u);
+  assert.match(JS, /row\.focus\(\{ preventScroll: true \}\);/u);
 });
 
 test("the Machines panel names the chosen period, and the agent tree says when an outcome is unknown", () => {

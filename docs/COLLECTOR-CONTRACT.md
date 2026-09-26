@@ -83,6 +83,143 @@ names are plain words, the values non-negative integers, at most 32 of them.
 The console shows them beside the figures ([accounting.md](accounting.md) §3.2).
 A 0.2 reporter does not send it, and a 0.2 console ignores it.
 
+`share` says what this run of the reporter shares beyond its records, on
+every envelope of every delivery (later batches too):
+
+```json
+"share": { "alerts": "on", "activity": "off" }
+```
+
+`"on"` means the run was started with `--share-alerts` or
+`--share-tool-activity`; each is off unless given, each run. The declaration,
+not the presence of a list, is what the console trusts: a later batch carries
+no lists and changes nothing; `"off"` makes that machine's alerts or activity
+unavailable on the console from that envelope on; a reporter older than 0.4
+sends no `share` and is accepted as before, its alerts and activity shown as
+unavailable, never as zero. An envelope that carries a list its own `share`
+says is off is refused.
+
+`alerts` is optional and sent only when `share.alerts` is `"on"`. It is the
+alerts the reporter's own collector raised that the console has not yet
+acknowledged, on the first envelope of a delivery only, and only when there is
+one:
+
+```json
+"alerts": [
+  { "id": "64 hex characters", "kind": "spike", "at": "2026-09-20T12:34:00.000Z",
+    "sessionHash": "64 hex characters", "count": 440000, "historical": false }
+]
+```
+
+| Field | Meaning |
+| --- | --- |
+| `id` | A salted hash naming this alert, so a resent envelope is not counted twice. |
+| `kind` | `loop` (the same tool call with the same arguments, repeated), `spike` (one response far above the session's recent median), or `stall` (spending without a tool success). Nothing else. |
+| `at` | The minute of the transcript line that raised it — the line's own time, not when it was read. |
+| `sessionHash` | The session's hash, as on its records. |
+| `count` | The alert's one number: repeats for a loop, tokens for a spike or a stall. |
+| `historical` | `true` when it was raised while the reporter's first pass was reading history: the console lists it under "earlier" and never counts it as live. |
+
+The tool's name and arguments are hashed together on the machine to tell a
+repeat, and the hash stays there. At most 100.
+
+`activity` is optional and sent only when `share.activity` is `"on"`:
+contributions, each one session's tool calls counted by kind and tool results
+counted as ok or error in one minute, as the reporter sealed them, that the
+console has not yet acknowledged.
+
+```json
+"activity": [
+  { "id": "64 hex characters", "sessionHash": "64 hex characters", "at": "2026-09-20T12:34:00.000Z",
+    "calls": { "read": 3, "edit": 2, "shell": 1, "search": 0, "web": 0, "agent": 0, "mcp": 1, "other": 0 },
+    "results": { "ok": 6, "error": 1 },
+    "lastTool": { "kind": "edit", "at": "2026-09-20T12:34:00.000Z" } }
+]
+```
+
+`id` names the contribution: an HMAC under the shared salt of the device, a
+random per-state epoch, the session and the contribution's own sequence
+number. A resend — an answer that was lost, a later batch that failed, a
+reporter that restarted — carries the same id, and the console counts it
+once. More calls in the same minute read on a later pass are a new
+contribution with a new id; the console adds the two, and never keeps one
+minute's maximum in place of a sum. The console keys what it has counted by
+the authenticated machine as well as the id, so the same session hash, or
+even the same id, on two machines is two readings.
+
+A tool's name is mapped to its kind on the machine that read it
+(`lib/collector/activity.js`): Claude Code's Read is `read`; Write, Edit and
+MultiEdit are `edit`; Bash is `shell`; Grep, Glob and LS are `search`;
+WebFetch and WebSearch are `web`; Task is `agent`; every MCP tool is `mcp`,
+whatever its server is called; and a tool the list does not know is `other`.
+Codex's shell and exec calls are `shell`, `apply_patch` is `edit`. The name
+itself, its arguments, its output, a path and a server's name have no field
+to go in: the console refuses an entry with any key or kind not listed here.
+All eight kinds are present in every entry. At most 500 entries.
+
+**Time.** One rule everywhere: a minute, an alert or a last tool dated more
+than two minutes after the receiving clock is refused — by the console for an
+envelope's entries, one by one, and by the collector for its own transcript
+lines. A refused entry is counted on the machine's row (`sharing.rejectedFuture`),
+never stored, so it cannot become "now" later; the rest of the envelope, and
+every record in it, is accepted. The console's five-minute window has two
+edges: a minute after the current one is not in it yet, and a last tool later
+than now is not the last tool yet.
+
+**Custody on the reporter.** What the console has not acknowledged is kept in
+the collector's own cursor file (`extras` in `cursor-v2.json`, mode 600),
+written in the same atomic step as the transcript positions it was read from:
+after a crash either both are on disk, or neither is and those lines are read
+again. A transcript that fails half-way, or a pass that fails before its
+cursor is written, has its lines read again rather than counted twice. It
+holds exactly the envelope's shapes — counts, fixed kinds, minutes and salted
+hashes — at most 1,000 contributions no older than an hour and 100 alerts no
+older than a day, and it drops a kind as soon as a run does not share it. It
+is emptied as the console acknowledges it, and replayed with the same ids
+until then. `leave` deletes it with the cursor.
+
+**Custody on the console.** The console keeps these counts in memory: alerts
+for a day, activity for a quarter of an hour. After it restarts it does not
+hold what it had, and it says so rather than showing zero (below).
+
+A console older than 0.4 ignores `share` and both lists; a 0.4 console refuses
+an envelope whose `share` or lists do not have exactly these shapes.
+
+### What the console shows for them
+
+`GET /api/console` says how much of each window every machine's alerts and
+activity cover, as a `coverage`: `{ "state", "since", "reason" }`.
+
+| `state` | Meaning | What a screen may draw |
+| --- | --- | --- |
+| `complete` | Shared for the whole window. | Counts, and zero where nothing was held. |
+| `partial` | Shared only since `since`. | Counts as a floor; where nothing is held, unavailable — never zero. |
+| `off` | The machine's reporter says it does not share (since `since`). | Unavailable. |
+| `undeclared` | An older reporter that does not say. | Unavailable. |
+| `unknown` | Nothing from the machine's reporter since the console started (`since`). | Unavailable. |
+
+`reason` is one fixed word, or `null` for `complete`: `console-restarted`
+(these counts are kept in memory; before this console started at `since` they
+are not held), `sharing-started` (the machine began sharing at `since`),
+`sharing-off`, `reporter-undeclared`, `not-heard`. A machine that joined after
+the console started has sent it everything it ever read, so its first `"on"`
+has no gap.
+
+Where it appears:
+
+- each lane: `activityCoverage` over the five-minute window. `activity` is
+  zeros only when it is `complete`, counts (a floor) when `partial`, and
+  `null` when nothing is held under `partial` or the machine does not share.
+  `activityShared` stays, true for `complete` and `partial`.
+- each machine: `sharing: { alerts, activity, rejectedFuture }`, alerts over
+  the last hour and activity over the last five minutes.
+- `alertsCoverage` keeps `watched`, `unwatched` and `unwatchedDevices` (a
+  machine is watched when its alerts are `complete` or `partial`) and adds
+  `since` and `reason`: when a watched machine is covered for only part of
+  the hour, the latest time from which every watched machine's alerts are
+  held, and why — "no alert" is known only since then; `null` when the hour is
+  whole. `byDevice` gives each current machine's coverage of the hour.
+
 ## How it is delivered
 
 `POST /api/ingest` on the console's reporting port, over TLS, with
@@ -179,7 +316,10 @@ estimate; anything else is unpriced, never priced at zero. The figure is a
 standard-API-price estimate, not an invoice: it cannot see subscriptions,
 negotiated rates, batch, data residency or taxes. Fast mode is priced from a
 row's `fast` rates where the vendor publishes them; without them it is
-unpriced.
+unpriced. `aliases` lists the short ids a vendor publishes for a dated one
+(`claude-haiku-4-5` for `claude-haiku-4-5-20251001`), each with its source and
+the day it was checked; an alias prices at its dated row and nothing else is
+matched loosely.
 
 ## What the numbers do not say
 

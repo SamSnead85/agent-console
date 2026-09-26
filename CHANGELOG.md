@@ -1,5 +1,234 @@
 # Changelog
 
+## Unreleased
+
+- Every row's activity is the wave: the Console lanes, the Projects and
+  Sessions tables, the Team People and Machines tables and the inspector's
+  hour draw the same soft line over the chart's light as the activity chart,
+  the newest step lit while the row is live, dim when its machine is silent
+  or gone; a row with nothing in the window is a flat dotted baseline with
+  its reason on hover, never a zero wave. No bar spark remains.
+- The Doing column draws coverage, not a boolean (docs/COLLECTOR-CONTRACT.md,
+  "What the console shows for them"): tool counts are zero only under
+  complete coverage; under partial coverage what is held is a floor, marked
+  `+` with the figure and the time sharing began on hover, and nothing held
+  is "tool not held since …", unavailable rather than idle; a machine whose
+  reporter does not share, does not say, or has not been heard since the
+  console started is "tool not shared", "tool not declared" or "tool not
+  heard", each with the reporter's own reason. The lane inspector's Tools
+  block and the agent tree's foot say the same.
+- Team's Machines rows and the machine inspector say what each machine
+  shares (alerts over the hour, tool activity over five minutes) — on the
+  status line when it shares everything, on a line of its own in warn when
+  it does not — and flag entries the console refused for being dated in the
+  future, when there are any.
+- "No alert" is claimed only from the time alerts are held
+  (`alertsCoverage.since`): the Attention hero reads "No alert since 6:38
+  PM" with the reason, its stat says "since" rather than "last hour", the
+  alerts sheet's caption and Team's alert count say "known since", the
+  machine inspector says since when its own alerts are held, and the
+  sixty-minute strip is hatched up to that time.
+- The Attention card's timeline has an axis row of its own ("60 min ago ·
+  2 alerts · now") inside the card's padding, never cut by the card's edge;
+  the alert rows above it are one line each, the lane's name giving way with
+  the whole row on hover; the stat drops its least important parts whole when
+  the caption is tight. The spend spectrum's legend keeps each item on one
+  line and flows the items as whole units.
+- The Console chart's hatched cap on the step still filling is drawn: its
+  rect shared the id `cCap` with the Tokens caption and was never reached.
+  The Tokens caption's "daily totals kept since …" note drops whole when the
+  caption is tight, with the window's definition on hover.
+- Presenting aliases the address of an open inspector (`#team/person/<token>`,
+  a token of the session's own, resolved on the way back) and the
+  add-a-machine sheet: no name in its people list, stand-ins in the link's
+  explanation and the joined line, the restart command stepped back.
+
+- The strip is the approved band's hero again, compact: 76px on the substrate
+  with the artwork reading from a third of the way across, the instrument's
+  name in the display sans and the view beside it, and everything else on the
+  same line. The first band is one height whatever the reading says, so a
+  partial estimate's notes never push the lanes down: eight lane rows stay
+  whole above their footer at 1440×900 under a real alert load, and the
+  compact frame (1280×800, 1366×768, 1024×768) folds the second band to one
+  row — the alert and its factor, the cost bar, the burn and its dollars, the
+  rest in the alerts sheet — and every caption to its short form, so it keeps
+  eight rows too (six is the floor at 1024). The status bar is one line.
+- Nothing cut mid-word: the fold summaries and the strip's scope line are
+  ordered parts that drop whole from the least important when the frame is
+  tight, with the whole line on hover; the tool is a chip before the model
+  name, whole at every width; Doing and Machine have the room a tool, its
+  recency and its pace need; the "24 h" group label is a bracket over its
+  four columns.
+- Git nobody could read is a void with the hub's reason everywhere the
+  console used to say "0 commits": the Effort and Shipped summaries, the
+  Projects figures, the effort line and the fold tables.
+- Every money figure with records the reporter could not count is a floor,
+  marked with the number ("partial" in the Team tables and the machine
+  inspector, "+" in the band's machine rows) and counted on hover; the chart
+  legend and the spend spectrum say "est." on every dollar and mark a partial
+  estimate.
+- The period control moves Team and Projects whole: by tool, by person, each
+  row's activity wave and the table heads follow it; thirty days say sessions
+  are not kept rather than showing the day's count under a month's caption. A
+  folder outside Git, and a period without sessions or branches, are said once
+  over the table, each cell a plain void with its reason on hover.
+- Closing a sheet returns focus to what opened it even after the rows were
+  repainted: the opener is found again by what names it. The context button
+  opens the lane's inspector at its Context section (one door, one content),
+  and an address opens one sheet at a time. Projects' breakdown card carries
+  spend per merge; Projects and Team end where their rows end, never stretched
+  into an empty tile, and Team's last card carries the last thirty days, one
+  row each — the day's tokens, its share, the machine that carried it — so a
+  one-machine fleet on a large frame is still a full instrument. The join
+  page names its steps in plain labels, and a link without a code disables
+  Copy and says why. On the phone the fold rows alone carry the summaries and
+  the state and name stay while the figures scroll.
+- `scripts/ui-probes.mjs` counts the lane rows drawn whole above the footer at
+  1440, 1280 and 1024, checks caption and status-bar heights, the fold
+  summaries and model names for clipping, the 12px floor with a sheet open,
+  focus return after a sheet stayed open, and runs against a synthetic month
+  beside the demo (`--also`), in CI too.
+- The console is a set of instruments on a tray, not a page: every pane is a
+  card with its own light, rim and shadow that lifts under the pointer and
+  settles under a press, in the dark theme and the light one; the strip that
+  names the console sits on the substrate the approved band used. Figures are
+  set in the display sans with tabular numerals and quieter units; mono is
+  kept for ids, models, branches, hashes and times.
+- Every series is a wave. Team's activity by machine and Projects' activity by
+  project are layered waves from the hub's own per-machine and per-project
+  series at the chart's resolution, and follow the period control with every
+  other figure (no more "kept for the hour only"). The burn's last hour and the
+  week under the day's figure are waves too. The step still filling is drawn
+  at what was measured, with a hatched cap up to what it would be at this
+  pace, and the hover says "so far" and "projected".
+- The first screen at 1440×900 holds eight lane rows under a real alert load:
+  the second band is one height and folds what does not fit behind "n more",
+  the lanes card takes the height the bands leave and scrolls inside itself,
+  and the four folds (Cold, Projects, Effort, Shipped) become one strip of
+  summaries under the lanes that opens each fold.
+- Attention leads with the worst alert as its hero — its lane, its tokens in
+  five minutes and how many times its own normal — then the rest as compact
+  rows; alerts raised earlier today sit under a rule and are never counted as
+  live; "no alert" is said only for the machines that share their alerts, and
+  the unwatched ones are named.
+- Every count is over every lane the hub knows, not the eighty it draws:
+  sessions by tool, by person and by project, subagents, and "80 of N shown"
+  when the list is cut. Per machine is the hub's own denominator (the
+  machines heard in the period, from their own estimates); per person names
+  the people with a current machine.
+- Every money figure carries its status: a floor is marked "+" and named
+  partial, an unpriced one is named, on Projects too; the lanes' four day
+  columns carry one "24 h" label whatever the period; coverage a machine's
+  version never reported is a void with its reason, never 0; branches and
+  sessions on 30 days say "not kept" with the reason; a folder outside Git
+  says so once across its Git cells.
+- Doing reads from tool activity where a machine shares it — "Edit · 31 s ·
+  2/min", "shell failing 3/5" — and says "tool not shared" where it does not;
+  the agent tree carries the lane's tool results (ok and error counts).
+- Presenting: P (or the palette) swaps every project, branch, machine and
+  person for a stable stand-in, hides internal figures and the console's
+  addresses, and stamps PRESENTING in the strip.
+- Keyboard and screen readers: every lane row is a named, focusable door
+  (Enter opens it), J/K and the arrows move focus between rows, closing a
+  sheet returns focus to what opened it, the palette is a combobox with a
+  listbox and an active descendant, the presenter controls keep one name each
+  with aria-pressed, every cell button is a 24px target, and axe-core WCAG
+  2.2 AA passes on every page, theme and width (`scripts/ui-probes.mjs`,
+  run in CI).
+- The join page is built in the console's grammar: the strip, one card per
+  step, the command with its check folded behind "Show the check", the
+  restart command folded, a theme toggle, and the DEMO stamp only when the
+  console says it is a demonstration.
+- The Team canvas lists today's alerts by machine under the join links;
+  Projects lists Effort and Shipped under the sessions, so no frame stands
+  empty. Docked sheets are sized to what they hold. The phone lane row leads
+  with the name (its branch on a second line) and fades its right edge while
+  there is more to the right.
+
+- The period control moves Team's and Projects' counts and sparklines too.
+  `/api/console` gives sessions and tokens by tool, machine and person for
+  every period (`laneTotals.periods`), and each machine and person a
+  sparkline per period at the chart's own resolution; each Projects row
+  carries its sparkline for the requested period. Thirty days are read from
+  the daily rollup, which keeps no sessions: their session counts are null
+  with the reason, never the day's count under a month's caption.
+- Git figures nobody could read are unknown, not zero: with no project in a
+  Git repository the console can read, the Projects totals (commits, lines,
+  PR-linked commits) are null with the reason, and the screen shows a dash.
+- `npm run lint`: every JavaScript file parses and every JSON file is valid.
+- Alerts are dated by the transcript line that raised them, not by when it
+  was read, and the stall's five minutes are measured on that clock too. An
+  alert older than the hour, or raised while a first run replays history, is
+  `historical`: listed as earlier, never counted as live, and never a desktop
+  notification. A first start over a month of transcripts no longer fills the
+  last hour with a month of loops.
+- A spike or a stall says how far above normal it is: the session's tokens in
+  the five minutes ending with the alert, its own median five minutes over
+  the day before, and the factor between them. Every alert names its lane.
+- Joined machines can send their alerts (`--share-alerts`) and their tool
+  activity (`--share-tool-activity`), each off unless passed, each counts,
+  kinds, minutes and salted hashes only (docs/COLLECTOR-CONTRACT.md). The
+  console says how many current machines are watched for alerts and names the
+  ones that are not, instead of reading their silence as "no alert".
+- Shared alerts and activity are counted once, per machine, and only where
+  they are covered. Every report says what its run shares (`share`); a
+  machine that turns sharing off, a reporter older than 0.4 and the minutes
+  before the console last started are unavailable with their reason, never
+  zero (`activityCoverage` on each lane, `sharing` on each machine,
+  `alertsCoverage.since`, `reason` and `byDevice`). Activity travels as
+  contributions with salted ids: a resent report, a later batch that failed
+  or a restarted reporter adds nothing, two contributions to one minute both
+  count, and the same session on two machines stays two readings. What the
+  console has not acknowledged is kept in the reporter's cursor file, written
+  with the transcript positions it came from, and sent again under the same
+  ids.
+- One clock rule for alerts and activity: a minute, an alert or a last tool
+  more than two minutes ahead is refused and counted on its machine, never
+  stored, so it never becomes "now"; the five-minute window has two edges.
+- Claude Code tool results and Codex tool calls reach the activity and alert
+  readers. They carry no usage, so the reader used to skip them: most results
+  and Codex calls went uncounted, and a stall alert missed the tool successes
+  it is measured against. Token accounting still never sees these lines.
+- Tool activity, counts only: each tool call is mapped on the machine to one
+  of eight kinds (read, edit, shell, search, web, agent, mcp, other) — never
+  its name, arguments, output, a path or an MCP server's name — and each
+  result to ok or error. Each lane carries its last five minutes of calls by
+  kind, its results and its last tool; a machine that does not share them is
+  marked as such, not shown as idle.
+- Every period is stacked by machine (and, on Projects, by project) at the
+  chart's own resolution — 3 minutes, 15 minutes, 2 hours, a day — over the
+  same span as the headline, so the bands add up to it. The week is also given
+  by this console's local calendar day, with its time zone named.
+- Counts over every lane, not only the 80 sent: sessions by tool, machine,
+  person and project, subagents, and the lanes the list folds away. A
+  subagent whose root last reported more than a day ago is folded under it
+  instead of becoming a lane of its own.
+- Projects: a project is its folder's hash, so two folders called `app` are two
+  rows, each with its parent folder's name; Git is read once per repository.
+  Each project's estimate says whether it is priced, partial (a floor) or
+  unpriced, and the payload's total says the same. The payload carries the
+  whole team's totals for every period at the same clock, and says whether
+  its period keeps branches and sessions (30 days does not).
+- Per machine names its denominator: the machines heard within the period and
+  not removed, from their own figures. A machine whose reporter never said
+  what it could not count has unknown drops (null), never 0, and the console
+  knows since when each machine has said.
+- OTel: a point sent again is dropped by its series and time, cumulative
+  points are counted as ignored, and each telemetry source names what its
+  token total adds up. A series is its resource, scope, metric and point
+  attributes in canonical order, kept only as a salted hash: a retry with its
+  attributes reordered is dropped, and two resources (two
+  `service.instance.id`s) with the same point at the same time both count.
+- `claude-haiku-4-5` prices through its published alias of
+  `claude-haiku-4-5-20251001`; every model the benchmark generator writes has
+  a price.
+- Fixtures and schemas for building against the next payloads:
+  `fixtures/console-v0.4.json`, `fixtures/projects-v0.4.json`,
+  `docs/console-v0.4.schema.json`, `docs/projects-v0.4.schema.json`
+  (`node scripts/api-fixtures.mjs` regenerates the fixtures from the demo).
+- README: a "No Node.js?" path under Start here, and the nine standalone
+  files listed under Checking a download.
+
 ## 0.3.0 — 2026-09-25
 
 - Six things the screen said that were not so. On Team and Projects the

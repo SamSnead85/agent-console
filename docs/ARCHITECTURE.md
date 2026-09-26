@@ -277,7 +277,7 @@ usage attestation. Read [SECURITY.md](../SECURITY.md) before network deployment.
 | --- | --- |
 | Entry and configuration | `bin/agent-console.mjs`, `server.js`, `lib/config.js`: command selection, configuration and listener lifecycle. |
 | Collection | `lib/collector/`: parsers, projection, identity, spool, transport and pricing. |
-| Reporter | `lib/reporter.js`: enrollment, local credentials, reporting and leave. |
+| Reporter | `lib/reporter.js`: enrollment, local credentials, reporting and leave. `lib/reporter-outbox.js`: opt-in alerts and activity pending until the console acknowledges them, kept in the collector's cursor file. |
 | Admin and enrollment | `lib/hub/admin.js`, `registry.js`, `tls.js`: browser sessions, invitation/device state and hub TLS identity. |
 | HTTP surfaces | `lib/hub/routes.js`, `http.js`: routing, access checks, bounded bodies, headers and static assets. |
 | Response redaction | `lib/redact.js`: recognizable credential patterns masked in ordinary JSON responses; not a provider or MCP gateway. |
